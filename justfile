@@ -39,7 +39,3 @@ docs-serve:
 # Build documentation
 docs-build:
     uv run --group docs zensical build
-
-# Deploy documentation to GitHub Pages
-docs-deploy:
-    uv run --group docs zensical gh-deploy
