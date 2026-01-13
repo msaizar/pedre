@@ -1,0 +1,164 @@
+[project]
+name = "pedre"
+version = "0.0.1"
+description = "A Python RPG framework built on Arcade with seamless Tiled map editor integration"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {text = "BSD-3-Clause"}
+authors = [
+    {name = "Martin Saizar", email = "saizar.martin@gmail.com"}
+]
+maintainers = [
+    {name = "Martin Saizar", email = "saizar.martin@gmail.com"}
+]
+keywords = ["game", "rpg", "arcade", "tiled", "game-framework", "2d-game", "game-engine", "tilemap"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.14"
+dependencies = [
+    "arcade",
+    "rich",
+]
+
+[project.urls]
+Homepage = "https://github.com/msaizar/pedre"
+Repository = "https://github.com/msaizar/pedre"
+Documentation = "https://github.com/msaizar/pedre/tree/main/docs"
+Issues = "https://github.com/msaizar/pedre/issues"
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "ty",
+    "pytest",
+    "coverage",
+    "pyinstaller",
+]
+docs = [
+    "zensical",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "D",     # pydocstyle
+    "UP",    # pyupgrade
+    "ANN",   # flake8-annotations
+    "B",     # flake8-bugbear
+    "BLE",   # flake8-blind-except
+    "C4",    # flake8-comprehensions
+    "C90",   # mccabe complexity
+    "COM",   # flake8-commas
+    "EM",    # flake8-errmsg
+    "FBT",   # flake8-boolean-trap
+    "FIX",   # flake8-fixme
+    "ICN",   # flake8-import-conventions
+    "INP",   # flake8-no-pep420
+    "ISC",   # flake8-implicit-str-concat
+    "Q",     # flake8-quotes
+    "SIM",   # flake8-simplify
+    "SLF",   # flake8-self
+    "T10",   # flake8-debugger
+    "TCH",   # flake8-type-checking
+    "TD",    # flake8-todos
+    "TID",   # flake8-tidy-imports
+    "TRY",   # tryceratops
+    "RUF",   # ruff-specific rules
+    "PT",    # flake8-pytest-style
+    "PIE",   # flake8-pie
+    "T20",   # flake8-print
+    "PL",    # pylint
+    "PERF",  # perflint
+    "FURB",  # refurb
+    "LOG",   # flake8-logging
+    "G",     # flake8-logging-format
+    "A",     # flake8-builtins
+    "S",     # flake8-bandit (security)
+    "ARG",   # flake8-unused-arguments
+    "PTH",   # flake8-use-pathlib
+    "ERA",   # eradicate (commented-out code)
+    "PD",    # pandas-vet
+    "PGH",   # pygrep-hooks
+    "FLY",   # flynt
+    "NPY",   # numpy-specific rules
+    "ASYNC", # flake8-async
+    "DTZ",   # flake8-datetimez
+    "RSE",   # flake8-raise
+    "RET",   # flake8-return
+]
+ignore = [
+    "COM812",  # Trailing comma missing (conflicts with formatter)
+    "D203",    # One blank line before class (conflicts with D211)
+    "PLR2004",
+    "PLR0911",
+    "PLR0913",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "SLF001"]  # Allow assert and private member access in tests
+"src/pedre/**.py" = [
+    "ARG002",   # Allow unused args in view method overrides
+    "C901",     # Allow complex functions (mccabe complexity)
+    "PLR0912",  # Allow too many branches
+    "PLR0915",  # Allow too many statements
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # Use Google docstring style
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["-v", "--strict-markers"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/.venv/*",
+    "*/venv/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"

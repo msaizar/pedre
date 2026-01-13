@@ -1,0 +1,72 @@
+[project]
+site_name = "Pedre Documentation"
+site_description = "A Python RPG framework built on Arcade with seamless Tiled map editor integration"
+site_author = "Martin Saizar"
+repo_url = "https://github.com/msaizar/pedre"
+
+nav = [
+    {"Home" = "index.md"},
+    {"Getting Started" = "getting-started.md"},
+    {"Configuration" = "configuration.md"},
+    {"Tiled Integration" = "tiled-integration.md"},
+    {"Scripting" = [
+        "scripting/index.md",
+        "scripting/basics.md",
+        "scripting/events.md",
+        "scripting/conditions.md",
+        "scripting/actions.md",
+        "scripting/advanced.md",
+        "scripting/examples.md"
+    ]},
+    {"Systems" = [
+        "systems/index.md",
+        "systems/audio.md",
+        "systems/camera.md",
+        "systems/dialog.md",
+        "systems/event-bus.md",
+        "systems/input.md",
+        "systems/interaction.md",
+        "systems/inventory.md",
+        "systems/npc.md",
+        "systems/particle.md",
+        "systems/portal.md",
+        "systems/save.md",
+        "systems/script.md",
+    ]},
+    {"API Reference" = "api-reference.md"},
+]
+
+[project.extra]
+social = [
+    { icon = "fontawesome/brands/github", link = "https://github.com/msaizar/pedre" },
+    { icon = "fontawesome/brands/python", link = "https://pypi.org/project/pedre/" },
+]
+
+[theme]
+name = "material"
+palette = [
+    { scheme = "default", primary = "indigo", accent = "indigo", toggle = { icon = "material/brightness-7", name = "Switch to dark mode" } },
+    { scheme = "slate", primary = "indigo", accent = "indigo", toggle = { icon = "material/brightness-4", name = "Switch to light mode" } },
+]
+features = [
+    "navigation.instant",
+    "navigation.tracking",
+    "navigation.tabs",
+    "navigation.sections",
+    "navigation.expand",
+    "navigation.top",
+    "search.suggest",
+    "search.highlight",
+    "content.code.copy",
+    "content.code.annotate",
+]
+
+[markdown_extensions]
+pymdownx.highlight = { use_pygments = true }
+pymdownx.superfences = true
+pymdownx.inlinehilite = true
+pymdownx.snippets = true
+pymdownx.tabbed = { alternate_style = true }
+admonition = true
+codehilite = true
+toc = { permalink = true }
