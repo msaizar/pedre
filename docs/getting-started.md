@@ -312,19 +312,31 @@ Let's create a second map and a portal to travel between them.
 2. Use the same settings as before (32×32 tiles, 25×20 map)
 3. Add the same layers: Floor, Walls, NPCs, Portals, Waypoints
 4. Paint some terrain (make it look different from the village)
-5. Add a waypoint named `from_village` where the player should spawn
+5. Select the Waypoints object layer
+6. Insert → Point (or press I)
+7. Click where you want the player to spawn when entering from village
+8. In Properties panel, set Name: `from_village`
+9. Save the map
+
+### Add Waypoint in Village Map
+
+1. Open `assets/maps/village.tmx`
+2. Select the Waypoints object layer (create it if it doesn't exist)
+3. Insert → Point (or press I)
+4. Click where you want the player to spawn when returning from forest
+5. In Properties panel, set Name: `from_forest`
 6. Save the map
 
 ### Add Portal in Village Map
 
-1. Open `assets/maps/village.tmx`
+1. Still in `assets/maps/village.tmx`
 2. Select the Portals object layer
 3. Insert → Insert Rectangle
 4. Draw a rectangle at the edge of your map (this is the portal zone)
 5. In Properties panel:
       - Set Name: `to_forest`
       - Add custom property `target_map` (string): `forest.tmx`
-      - Add custom property `target_portal` (string): `from_village`
+      - Add custom property `spawn_waypoint` (string): `from_village`
 6. Save the map
 
 ### Add Return Portal in Forest Map
@@ -336,7 +348,7 @@ Let's create a second map and a portal to travel between them.
 5. In Properties panel:
       - Set Name: `to_village`
       - Add custom property `target_map` (string): `village.tmx`
-      - Add custom property `target_portal` (string): `player_spawn`
+      - Add custom property `spawn_waypoint` (string): `from_forest`
 6. Save the map
 
 ### Test Portals

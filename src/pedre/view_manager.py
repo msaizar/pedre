@@ -385,7 +385,7 @@ class ViewManager:
             self.game_view.player_sprite.center_y = save_data.player_y
 
         # Restore all manager states using the centralized method
-        restored_objects = self.game_view.save_manager.restore_all_state(
+        restored_objects, scene_states = self.game_view.save_manager.restore_all_state(
             save_data,
             self.game_view.npc_manager,
             self.game_view.inventory_manager,
@@ -395,6 +395,10 @@ class ViewManager:
 
         # Update script manager's interacted_objects
         self.game_view.script_manager.interacted_objects = restored_objects
+
+        # Restore scene state cache for NPC persistence across scene transitions
+        if scene_states:
+            GameView.restore_scene_state_cache(scene_states)
 
     def exit_game(self) -> None:
         """Close the game window and exit the application.

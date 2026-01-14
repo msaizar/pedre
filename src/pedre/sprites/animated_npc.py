@@ -496,6 +496,12 @@ class AnimatedNPC(AnimatedPlayer):
             - Sets texture to first appear frame
             - Logs debug message
         """
+        if not self.animation_textures.get("appear"):
+            logger.debug("No appear animation, showing immediately")
+            self.visible = True
+            self.appear_complete = True
+            return
+
         self.is_appearing = True
         self.appear_complete = False
         self.current_frame = 0
@@ -521,6 +527,12 @@ class AnimatedNPC(AnimatedPlayer):
             - Sets sprite.visible = False when animation completes (via update_animation)
             - Logs debug message
         """
+        if not self.animation_textures.get("disappear"):
+            logger.debug("No disappear animation, hiding immediately")
+            self.visible = False
+            self.disappear_complete = True
+            return
+
         self.is_disappearing = True
         self.disappear_complete = False
         self.current_frame = 0

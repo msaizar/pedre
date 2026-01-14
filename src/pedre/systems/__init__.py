@@ -13,6 +13,7 @@ from pedre.systems.particle import ParticleManager
 from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.portal import Portal, PortalManager
 from pedre.systems.save import GameSaveData, SaveManager
+from pedre.systems.scene_state import SceneStateCache
 from pedre.systems.script import ScriptManager
 
 __all__ = [
@@ -33,5 +34,6 @@ __all__ = [
     "Portal",
     "PortalManager",
     "SaveManager",
+    "SceneStateCache",
     "ScriptManager",
 ]

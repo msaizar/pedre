@@ -15,7 +15,9 @@ settings = GameSettings(
     window_title="My RPG Game",
     player_movement_speed=3,
     tile_size=32,
-    interaction_distance=50,
+    interaction_manager_distance=50,
+    npc_interaction_distance=50,
+    portal_interaction_distance=50,
     waypoint_threshold=2,
     npc_speed=80.0,
     menu_title="My RPG Game",
@@ -68,7 +70,9 @@ Player character movement and interaction settings.
 | ------- | ---- | ------- | ----------- |
 | `player_movement_speed` | int | 3 | Player movement speed in pixels per frame |
 | `tile_size` | int | 32 | Base tile size for grid-based movement |
-| `interaction_distance` | int | 50 | Maximum distance for player to interact with objects/NPCs |
+| `interaction_manager_distance` | int | 50 | Maximum distance for player to interact with objects |
+| `npc_interaction_distance` | int | 50 | Maximum distance for player to interact with NPCs |
+| `portal_interaction_distance` | int | 50 | Maximum distance for player to activate portals |
 | `waypoint_threshold` | int | 2 | Distance threshold to consider waypoint reached |
 
 **Example:**
@@ -77,7 +81,9 @@ Player character movement and interaction settings.
 settings = GameSettings(
     player_movement_speed=5,
     tile_size=16,
-    interaction_distance=64,
+    interaction_manager_distance=64,
+    npc_interaction_distance=64,
+    portal_interaction_distance=64,
     waypoint_threshold=1
 )
 ```
@@ -85,7 +91,9 @@ settings = GameSettings(
 **Notes:**
 
 - `player_movement_speed` affects how fast the player moves when clicking to move
-- `interaction_distance` determines how close the player must be to press E and interact
+- `interaction_manager_distance` determines how close the player must be to interact with objects
+- `npc_interaction_distance` determines how close the player must be to interact with NPCs
+- `portal_interaction_distance` determines how close the player must be to activate portals
 - `waypoint_threshold` controls pathfinding precision (lower = more precise)
 
 ### NPC Settings
@@ -226,7 +234,9 @@ settings = GameSettings(
     screen_width=1280,
     screen_height=720,
     player_movement_speed=3,
-    interaction_distance=50
+    interaction_manager_distance=50,
+    npc_interaction_distance=50,
+    portal_interaction_distance=50
 )
 
 # Access settings directly
@@ -253,7 +263,9 @@ settings = GameSettings(
     # Player settings
     player_movement_speed=4,
     tile_size=32,
-    interaction_distance=60,
+    interaction_manager_distance=60,
+    npc_interaction_distance=60,
+    portal_interaction_distance=60,
     waypoint_threshold=2,
 
     # NPC settings
@@ -302,7 +314,9 @@ menu_background_image: str = ""
 menu_music_files: list[str] = []
 player_movement_speed: int = 3
 tile_size: int = 32
-interaction_distance: int = 50
+interaction_manager_distance: int = 50
+npc_interaction_distance: int = 50
+portal_interaction_distance: int = 50
 waypoint_threshold: int = 2
 npc_speed: float = 80.0
 assets_handle: str = "game_assets"
