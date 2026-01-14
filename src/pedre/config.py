@@ -35,7 +35,9 @@ class GameSettings:
     # Player settings
     player_movement_speed: int = 3
     tile_size: int = 32
-    interaction_distance: int = 50
+    interaction_manager_distance: int = 50
+    npc_interaction_distance: int = 50
+    portal_interaction_distance: int = 50
     waypoint_threshold: int = 2
 
     # NPC settings

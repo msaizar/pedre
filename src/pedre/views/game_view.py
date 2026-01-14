@@ -296,15 +296,15 @@ class GameView(arcade.View):
         self.pathfinding_manager = PathfindingManager(tile_size=settings.tile_size)
         self.npc_manager = NPCManager(
             pathfinding_manager=self.pathfinding_manager,
-            interaction_distance=settings.interaction_distance,
+            interaction_distance=settings.npc_interaction_distance,
             waypoint_threshold=settings.waypoint_threshold,
             npc_speed=settings.npc_speed,
             inventory_manager=self.inventory_manager,
             event_bus=self.event_bus,
             interacted_objects=self.script_manager.interacted_objects,
         )
-        self.interaction_manager = InteractionManager(interaction_distance=settings.interaction_distance)
-        self.portal_manager = PortalManager(interaction_distance=settings.interaction_distance)
+        self.interaction_manager = InteractionManager(interaction_distance=settings.interaction_manager_distance)
+        self.portal_manager = PortalManager(interaction_distance=settings.portal_interaction_distance)
 
         # Use initial_map from settings if map_file was not provided
         if self.map_file is None:
