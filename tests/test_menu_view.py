@@ -45,6 +45,10 @@ def test_menu_view_initialization(menu_view: MenuView) -> None:
         menu_view: MenuView fixture.
     """
     assert menu_view.selected_option == MenuOption.CONTINUE
+    assert MenuOption.CONTINUE in menu_view.menu_text
+    assert MenuOption.NEW_GAME in menu_view.menu_text
+    assert MenuOption.LOAD_GAME in menu_view.menu_text
+    assert MenuOption.EXIT in menu_view.menu_text
     assert menu_view.menu_enabled[MenuOption.CONTINUE] is False  # Initially disabled, updated on show
     assert menu_view.menu_enabled[MenuOption.NEW_GAME] is True
     assert menu_view.menu_enabled[MenuOption.LOAD_GAME] is True
