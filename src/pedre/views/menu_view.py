@@ -49,6 +49,7 @@ from pedre.constants import asset_path
 from pedre.types import MenuOption
 
 if TYPE_CHECKING:
+    from pedre.config import GameSettings
     from pedre.view_manager import ViewManager
 
 logger = logging.getLogger(__name__)
@@ -89,15 +90,6 @@ class MenuView(arcade.View):
         super().__init__()
         self.view_manager = view_manager
         self.selected_option = MenuOption.CONTINUE
-
-        # Menu option text mapping
-        self.menu_text = {
-            MenuOption.CONTINUE: "Continuar",
-            MenuOption.NEW_GAME: "Nueva partida",
-            MenuOption.SAVE_GAME: "Guardar partida",
-            MenuOption.LOAD_GAME: "Cargar partida",
-            MenuOption.EXIT: "Salir",
-        }
 
         # Menu option enabled state (Continue and Save Game will be updated based on game view existence)
         self.menu_enabled = {
@@ -228,7 +220,7 @@ class MenuView(arcade.View):
 
             # Add selection indicator
             prefix = "> " if option == self.selected_option else "  "
-            text = prefix + self.menu_text[option]
+            text = prefix + self._get_menu_text(option, settings)
 
             # Create or update text object for this option
             if option not in self.menu_text_objects:
@@ -392,6 +384,17 @@ class MenuView(arcade.View):
         # If currently selected option is now disabled, move to next enabled option
         if not self.menu_enabled.get(self.selected_option, False):
             self.selected_option = MenuOption.NEW_GAME
+
+    def _get_menu_text(self, option: MenuOption, settings: GameSettings) -> str:
+        """Get the display text for a menu option from settings."""
+        menu_text_map: dict[MenuOption, str] = {
+            MenuOption.CONTINUE: settings.menu_text_continue,
+            MenuOption.NEW_GAME: settings.menu_text_new_game,
+            MenuOption.SAVE_GAME: settings.menu_text_save_game,
+            MenuOption.LOAD_GAME: settings.menu_text_load_game,
+            MenuOption.EXIT: settings.menu_text_exit,
+        }
+        return menu_text_map.get(option, option.name)
 
     def _start_background_preloading(self) -> None:
         """Start preloading game assets in parallel using thread pool (internal implementation).

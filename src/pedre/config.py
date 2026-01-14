@@ -31,6 +31,11 @@ class GameSettings:
     menu_spacing: int = 50
     menu_background_image: str = ""
     menu_music_files: list[str] | None = None
+    menu_text_continue: str = "Continue"
+    menu_text_new_game: str = "New Game"
+    menu_text_save_game: str = "Save Game"
+    menu_text_load_game: str = "Load Game"
+    menu_text_exit: str = "Exit"
 
     # Player settings
     player_movement_speed: int = 3
