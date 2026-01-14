@@ -164,14 +164,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Documentation
 
-Full documentation is available in the [docs/](https://github.com/msaizar/pedre/tree/main/docs) directory:
-
-- [Getting Started Guide](https://github.com/msaizar/pedre/blob/main/docs/getting-started.md) - Build your first RPG
-- [Systems Reference](https://github.com/msaizar/pedre/blob/main/docs/systems/index.md) - Detailed manager documentation
-- [Tiled Integration](https://github.com/msaizar/pedre/blob/main/docs/tiled-integration.md) - Map editor integration guide
-- [Scripting Guide](https://github.com/msaizar/pedre/blob/main/docs/scripting/index.md) - Event-driven scripting system
-- [Configuration Guide](https://github.com/msaizar/pedre/blob/main/docs/configuration.md) - Framework settings reference
-- [API Reference](https://github.com/msaizar/pedre/blob/main/docs/api-reference.md) - Core classes and methods
+Full documentation is available at **[msaizar.github.io/pedre](https://msaizar.github.io/pedre/)**
 
 ## License
 
