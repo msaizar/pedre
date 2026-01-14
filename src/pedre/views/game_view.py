@@ -78,6 +78,7 @@ from pedre.systems import (
     PathfindingManager,
     PortalManager,
     SaveManager,
+    SceneStateCache,
     ScriptManager,
 )
 from pedre.systems.actions import ActionSequence
@@ -181,6 +182,19 @@ class GameView(arcade.View):
     # Class-level cache for per-scene script JSON data (lazy loaded).
     # Maps scene name to raw JSON data loaded from script files.
     _script_cache: ClassVar[dict[str, dict[str, Any]]] = {}
+
+    # Class-level cache for NPC state per scene (persists across scene transitions).
+    # Stores NPC positions, visibility, and dialog levels for each visited scene.
+    _scene_state_cache: ClassVar[SceneStateCache] = SceneStateCache()
+
+    @classmethod
+    def restore_scene_state_cache(cls, scene_states: dict[str, Any]) -> None:
+        """Restore the scene state cache from saved data.
+
+        Args:
+            scene_states: Dictionary of scene states from a save file.
+        """
+        cls._scene_state_cache.from_dict(scene_states)
 
     def __init__(
         self,
@@ -332,6 +346,21 @@ class GameView(arcade.View):
                 npc_name = self._get_npc_name(npc_sprite)
                 if npc_name:
                     self.npc_manager.register_npc(npc_sprite, npc_name)
+
+        # Restore cached NPC state if returning to a previously visited scene
+        if (
+            self.map_file
+            and self._scene_state_cache.restore_scene_state(self.map_file, self.npc_manager)
+            and self.wall_list
+            and self.npc_manager
+        ):
+            # Sync wall_list with NPC visibility after restore
+            # NPCs that became invisible need to be removed from wall_list
+            for npc_state in self.npc_manager.npcs.values():
+                if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
+                    self.wall_list.remove(npc_state.sprite)
+                elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
+                    self.wall_list.append(npc_state.sprite)
 
         # Extract scene name from map file (e.g., "Casa.tmx" -> "casa")
         self.current_scene = self.map_file.replace(".tmx", "").lower()
@@ -1539,6 +1568,9 @@ class GameView(arcade.View):
             # Load the new map
             if self.pending_map_file:
                 logger.info("Loading new map: %s", self.pending_map_file)
+                # Cache NPC state for current scene before transitioning
+                if self.map_file and self.npc_manager:
+                    self._scene_state_cache.cache_scene_state(self.map_file, self.npc_manager)
                 self.map_file = self.pending_map_file
                 self.spawn_waypoint = self.pending_spawn_waypoint
                 self.pending_map_file = None
@@ -1773,12 +1805,16 @@ class GameView(arcade.View):
             self.player_sprite.center_y = save_data.player_y
 
         # Restore all manager states using the convenience method
-        restored_objects = self.save_manager.restore_all_state(
+        restored_objects, scene_states = self.save_manager.restore_all_state(
             save_data, self.npc_manager, self.inventory_manager, self.audio_manager, self.script_manager
         )
 
         # Update script manager's interacted_objects
         self.script_manager.interacted_objects = restored_objects
+
+        # Restore scene state cache for NPC persistence across scene transitions
+        if scene_states:
+            self._scene_state_cache.from_dict(scene_states)
 
         self.audio_manager.play_sfx("load.wav")
         logger.info("Quick load completed from %s", save_data.save_timestamp)
@@ -1820,7 +1856,11 @@ class GameView(arcade.View):
             - Resets all managers to empty state
             - Sets initialized = False
         """
-        # Auto-save on cleanup
+        # Cache NPC state for this scene before clearing (for scene transitions)
+        if self.map_file and self.npc_manager:
+            self._scene_state_cache.cache_scene_state(self.map_file, self.npc_manager)
+
+        # Auto-save on cleanup (includes cached scene states for persistence)
         if self.player_sprite and self.map_file:
             self.save_manager.auto_save(
                 player_x=self.player_sprite.center_x,
@@ -1830,6 +1870,7 @@ class GameView(arcade.View):
                 inventory_manager=self.inventory_manager,
                 audio_manager=self.audio_manager,
                 script_manager=self.script_manager,
+                scene_states=self._scene_state_cache.to_dict(),
             )
 
         # Stop audio

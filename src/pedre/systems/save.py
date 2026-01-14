@@ -144,6 +144,9 @@ class GameSaveData:
                           Used for dialog conditions and puzzle state tracking.
         completed_scripts: Optional list of run_once script names that have completed.
                           Scripts in this list won't trigger again. None if no scripts completed.
+        scene_states: Optional dictionary storing NPC states per scene for persistence across
+                     scene transitions. Maps scene names to NPC states (position, visibility,
+                     dialog level). None if no scenes have been visited yet.
         save_timestamp: Unix timestamp when save was created (seconds since epoch).
         save_version: Save format version string for future compatibility.
     """
@@ -167,6 +170,9 @@ class GameSaveData:
     # Game state
     interacted_objects: list[str] | None = None
     completed_scripts: list[str] | None = None
+
+    # Scene state cache (NPC states per scene for persistence across transitions)
+    scene_states: dict[str, dict[str, dict[str, float | bool | int]]] | None = None
 
     # Metadata
     save_timestamp: float = 0.0
@@ -280,6 +286,7 @@ class SaveManager:
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
+        scene_states: dict[str, dict[str, dict[str, float | bool | int]]] | None = None,
     ) -> bool:
         """Save game to a slot.
 
@@ -319,6 +326,8 @@ class SaveManager:
                           If None, audio_settings will be saved as None.
             script_manager: Optional script manager with interacted_objects and completed scripts.
                            If None, interacted_objects and completed_scripts will be saved as None.
+            scene_states: Optional dictionary of per-scene NPC states from SceneStateCache.
+                         If None, scene_states will be saved as None.
 
         Returns:
             True if save succeeded and file was written, False if any error occurred.
@@ -355,6 +364,7 @@ class SaveManager:
                 audio_settings=audio_settings,
                 interacted_objects=interacted_objects_list,
                 completed_scripts=completed_scripts,
+                scene_states=scene_states,
                 save_timestamp=datetime.now(UTC).timestamp(),
             )
 
@@ -557,6 +567,7 @@ class SaveManager:
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
+        scene_states: dict[str, dict[str, dict[str, float | bool | int]]] | None = None,
     ) -> bool:
         """Auto-save to a special auto-save slot.
 
@@ -585,13 +596,22 @@ class SaveManager:
             inventory_manager: Optional inventory manager with item collection states.
             audio_manager: Optional audio manager with volume and enable/disable settings.
             script_manager: Optional script manager with interacted_objects and completed scripts.
+            scene_states: Optional dictionary of per-scene NPC states from SceneStateCache.
 
         Returns:
             True if auto-save succeeded, False if it failed.
         """
         # Use slot 0 for auto-save
         return self.save_game(
-            0, player_x, player_y, current_map, npc_manager, inventory_manager, audio_manager, script_manager
+            0,
+            player_x,
+            player_y,
+            current_map,
+            npc_manager,
+            inventory_manager,
+            audio_manager,
+            script_manager,
+            scene_states,
         )
 
     def load_auto_save(self) -> GameSaveData | None:
@@ -624,7 +644,7 @@ class SaveManager:
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
-    ) -> set[str]:
+    ) -> tuple[set[str], dict[str, dict[str, dict[str, float | bool | int]]] | None]:
         """Restore all manager states from save data.
 
         Convenience method that applies loaded save data to all game managers.
@@ -639,6 +659,7 @@ class SaveManager:
         - Audio settings via audio_manager.from_dict()
         - Completed scripts via script_manager.restore_completed_scripts()
         - Interacted objects set (returned for game to use)
+        - Scene states (returned for game to restore to SceneStateCache)
 
         Args:
             save_data: The GameSaveData object loaded from a save file.
@@ -648,18 +669,21 @@ class SaveManager:
             script_manager: Optional script manager to restore completed scripts to.
 
         Returns:
-            Set of interacted object names from save data (empty set if none saved).
+            Tuple of (interacted_objects set, scene_states dict or None).
+            The scene_states should be passed to SceneStateCache.from_dict().
 
         Example:
             # Load and restore a save
             save_data = save_manager.load_game(slot=1)
             if save_data:
-                interacted_objects = save_manager.restore_all_state(
+                interacted_objects, scene_states = save_manager.restore_all_state(
                     save_data,
                     npc_manager,
                     inventory_manager,
                     audio_manager
                 )
+                if scene_states:
+                    scene_state_cache.from_dict(scene_states)
                 # Now all managers have their state restored
         """
         # Restore NPC dialog levels
@@ -690,7 +714,7 @@ class SaveManager:
         interacted_objects = set(save_data.interacted_objects) if save_data.interacted_objects else set()
 
         logger.info("Restored all manager states from save data")
-        return interacted_objects
+        return interacted_objects, save_data.scene_states
 
     def _get_save_path(self, slot: int) -> Path:
         """Get the file path for a save slot.
