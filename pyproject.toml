@@ -30,7 +30,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/msaizar/pedre"
 Repository = "https://github.com/msaizar/pedre"
-Documentation = "https://github.com/msaizar/pedre/tree/main/docs"
+Documentation = "https://msaizar.github.io/pedre/"
 Issues = "https://github.com/msaizar/pedre/issues"
 
 [dependency-groups]
