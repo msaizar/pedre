@@ -111,7 +111,9 @@ In Tiled, create a "Portals" object layer and add a rectangle with properties:
 
 - `name`: "to_forest"
 - `target_map`: "forest.tmx"
-- `target_portal`: "from_village"
+- `spawn_waypoint`: "from_village"
+
+Create a matching waypoint in the target map's "Waypoints" layer (Point object named "from_village") where the player should spawn.
 
 The framework automatically handles transitions when the player enters the portal zone.
 
