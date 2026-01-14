@@ -999,9 +999,9 @@ class GameView(arcade.View):
                 logger.warning("NPC object missing properties, skipping")
                 continue
 
-            npc_name = npc_obj.properties.get("name")
+            npc_name = npc_obj.properties.get("name") or npc_obj.properties.get("Name")
             if not npc_name:
-                logger.warning("NPC object missing 'name' property, skipping")
+                logger.warning("NPC object missing 'name' or 'Name' property, skipping")
                 continue
 
             sprite_sheet = npc_obj.properties.get("sprite_sheet")
