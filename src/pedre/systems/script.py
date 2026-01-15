@@ -377,10 +377,16 @@ class ScriptManager:
 
             logger.info("Loaded %d scripts from %s", loaded_count, script_file)
 
+        except FileNotFoundError:
+            logger.warning("Script file not found: %s", script_file)
         except json.JSONDecodeError:
-            logger.exception("Failed to parse script file: %s", script_file)
+            logger.exception("Failed to parse script JSON from %s", script_file)
+        except OSError:
+            logger.warning("Failed to access script file: %s", script_file)
+        except KeyError:
+            logger.exception("Missing required field in script data from %s", script_file)
         except Exception:
-            logger.exception("Error loading scripts from %s", script_file)
+            logger.exception("Unexpected error loading scripts from %s", script_file)
 
     def _parse_script(
         self,

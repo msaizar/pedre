@@ -406,14 +406,18 @@ class GameView(arcade.View):
 
         # Load scene-specific scripts (with per-scene caching)
         npc_dialogs_data = self.npc_manager.dialogs  # Raw dialog data
-        scene_script_file = asset_path(f"scripts/{self.current_scene}_scripts.json", settings.assets_handle)
+        try:
+            scene_script_file = asset_path(f"scripts/{self.current_scene}_scripts.json", settings.assets_handle)
+        except (KeyError, FileNotFoundError, OSError) as e:
+            logger.warning("Failed to resolve script file path for scene %s: %s", self.current_scene, str(e))
+            scene_script_file = None
 
         if self.current_scene in GameView._script_cache:
             # Reuse cached script JSON data for this scene
             cached_data = GameView._script_cache[self.current_scene]
             self.script_manager.load_scripts_from_data(cached_data, npc_dialogs_data)
             logger.debug("Reusing cached script data for scene: %s", self.current_scene)
-        else:
+        elif scene_script_file is not None:
             # First time loading this scene - load, parse, and cache the scripts
             self.script_manager.load_scripts(scene_script_file, npc_dialogs_data)
             # Cache the raw JSON data for future use
