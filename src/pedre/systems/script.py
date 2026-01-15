@@ -765,6 +765,10 @@ class ScriptManager:
                     return
                 if scene_filter and event.scene_name != scene_filter:
                     return
+                # Update cached context's scene to match the event since the event
+                # fires before update() is called with the new scene's context
+                if self._current_context:
+                    self._current_context.current_scene = event.scene_name
                 self.trigger_script(script_name, self._current_context)
 
             self.event_bus.subscribe(SceneStartEvent, handler)
@@ -1063,6 +1067,13 @@ class ScriptManager:
                 if not script.has_run:
                     logger.debug(
                         "Condition failed: script_completed - script=%s has not run",
+                        script_name,
+                    )
+                    return False
+                # Check if script is currently running
+                if any(name == script_name for name, _ in self.active_sequences):
+                    logger.debug(
+                        "Condition failed: script_completed - script=%s is still running",
                         script_name,
                     )
                     return False
