@@ -1,6 +1,8 @@
 """Game systems for managing different aspects of gameplay."""
 
+from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.audio import AudioManager
+from pedre.systems.base import BaseSystem
 from pedre.systems.camera import CameraManager
 from pedre.systems.dialog import DialogManager
 from pedre.systems.events import EventBus
@@ -12,12 +14,15 @@ from pedre.systems.npc import NPCManager
 from pedre.systems.particle import ParticleManager
 from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.portal import Portal, PortalManager
+from pedre.systems.registry import SystemRegistry
 from pedre.systems.save import GameSaveData, SaveManager
 from pedre.systems.scene_state import SceneStateCache
 from pedre.systems.script import ScriptManager
 
 __all__ = [
+    "ActionRegistry",
     "AudioManager",
+    "BaseSystem",
     "CameraManager",
     "DialogManager",
     "EventBus",
@@ -36,4 +41,5 @@ __all__ = [
     "SaveManager",
     "SceneStateCache",
     "ScriptManager",
+    "SystemRegistry",
 ]
