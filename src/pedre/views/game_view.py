@@ -95,6 +95,7 @@ if TYPE_CHECKING:
     from arcade.types import TiledObject
 
     from pedre.systems.npc import NPCDialogConfig
+    from pedre.types import SceneStateCacheDict
     from pedre.view_manager import ViewManager
 
 logger = logging.getLogger(__name__)
@@ -188,7 +189,7 @@ class GameView(arcade.View):
     _scene_state_cache: ClassVar[SceneStateCache] = SceneStateCache()
 
     @classmethod
-    def restore_scene_state_cache(cls, scene_states: dict[str, Any]) -> None:
+    def restore_scene_state_cache(cls, scene_states: SceneStateCacheDict) -> None:
         """Restore the scene state cache from saved data.
 
         Args:
@@ -350,20 +351,8 @@ class GameView(arcade.View):
                 if npc_name:
                     self.npc_manager.register_npc(npc_sprite, npc_name)
 
-        # Restore cached NPC state if returning to a previously visited scene
-        if (
-            self.map_file
-            and self._scene_state_cache.restore_scene_state(self.map_file, self.npc_manager)
-            and self.wall_list
-            and self.npc_manager
-        ):
-            # Sync wall_list with NPC visibility after restore
-            # NPCs that became invisible need to be removed from wall_list
-            for npc_state in self.npc_manager.npcs.values():
-                if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
-                    self.wall_list.remove(npc_state.sprite)
-                elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
-                    self.wall_list.append(npc_state.sprite)
+        # Note: Cached scene state (NPC and script) is restored after scripts are loaded
+        # See the restore call after load_scripts below
 
         # Extract scene name from map file (e.g., "Casa.tmx" -> "casa")
         self.current_scene = self.map_file.replace(".tmx", "").lower()
@@ -424,6 +413,22 @@ class GameView(arcade.View):
                 logger.info("Cached script data for scene: %s", self.current_scene)
             except (FileNotFoundError, json.JSONDecodeError):
                 logger.warning("Failed to cache script data for scene: %s", self.current_scene)
+
+        # Restore cached scene state (NPC and script) after scripts are loaded
+        # (must happen after load_scripts so scripts exist to restore state into)
+        if (
+            self.map_file
+            and self._scene_state_cache.restore_scene_state(self.map_file, self.npc_manager, self.script_manager)
+            and self.wall_list
+            and self.npc_manager
+        ):
+            # Sync wall_list with NPC visibility after restore
+            # NPCs that became invisible need to be removed from wall_list
+            for npc_state in self.npc_manager.npcs.values():
+                if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
+                    self.wall_list.remove(npc_state.sprite)
+                elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
+                    self.wall_list.append(npc_state.sprite)
 
         # Configure pathfinding
         if self.wall_list:
@@ -1573,9 +1578,9 @@ class GameView(arcade.View):
             # Load the new map
             if self.pending_map_file:
                 logger.info("Loading new map: %s", self.pending_map_file)
-                # Cache NPC state for current scene before transitioning
+                # Cache NPC and script state for current scene before transitioning
                 if self.map_file and self.npc_manager:
-                    self._scene_state_cache.cache_scene_state(self.map_file, self.npc_manager)
+                    self._scene_state_cache.cache_scene_state(self.map_file, self.npc_manager, self.script_manager)
                 self.map_file = self.pending_map_file
                 self.spawn_waypoint = self.pending_spawn_waypoint
                 self.pending_map_file = None
@@ -1845,9 +1850,9 @@ class GameView(arcade.View):
             - Resets all managers to empty state
             - Sets initialized = False
         """
-        # Cache NPC state for this scene before clearing (for scene transitions)
+        # Cache NPC and script state for this scene before clearing (for scene transitions)
         if self.map_file and self.npc_manager:
-            self._scene_state_cache.cache_scene_state(self.map_file, self.npc_manager)
+            self._scene_state_cache.cache_scene_state(self.map_file, self.npc_manager, self.script_manager)
 
         # Auto-save on cleanup (includes cached scene states for persistence)
         if self.player_sprite and self.map_file:

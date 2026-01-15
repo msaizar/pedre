@@ -100,6 +100,7 @@ if TYPE_CHECKING:
     from pedre.systems.inventory import InventoryManager
     from pedre.systems.npc import NPCManager
     from pedre.systems.script import ScriptManager
+    from pedre.types import SceneStateCacheDict
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +173,7 @@ class GameSaveData:
     completed_scripts: list[str] | None = None
 
     # Scene state cache (NPC states per scene for persistence across transitions)
-    scene_states: dict[str, dict[str, dict[str, float | bool | int]]] | None = None
+    scene_states: SceneStateCacheDict | None = None
 
     # Metadata
     save_timestamp: float = 0.0
@@ -286,7 +287,7 @@ class SaveManager:
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
-        scene_states: dict[str, dict[str, dict[str, float | bool | int]]] | None = None,
+        scene_states: SceneStateCacheDict | None = None,
     ) -> bool:
         """Save game to a slot.
 
@@ -567,7 +568,7 @@ class SaveManager:
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
-        scene_states: dict[str, dict[str, dict[str, float | bool | int]]] | None = None,
+        scene_states: SceneStateCacheDict | None = None,
     ) -> bool:
         """Auto-save to a special auto-save slot.
 
@@ -644,7 +645,7 @@ class SaveManager:
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
-    ) -> tuple[set[str], dict[str, dict[str, dict[str, float | bool | int]]] | None]:
+    ) -> tuple[set[str], SceneStateCacheDict | None]:
         """Restore all manager states from save data.
 
         Convenience method that applies loaded save data to all game managers.
