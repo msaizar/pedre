@@ -643,7 +643,7 @@ class WaitForNPCMovementAction(WaitForConditionAction):
     Example usage in a sequence:
         [
             {"type": "move_npc", "npc": "martin", "waypoint": "town_square"},
-            {"type": "wait_npc_movement", "npc": "martin"},
+            {"type": "wait_for_movement", "npc": "martin"},
             {"type": "dialog", "speaker": "martin", "text": ["I made it!"]}
         ]
     """
