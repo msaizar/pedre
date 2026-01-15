@@ -121,8 +121,7 @@ script_manager.reset_script("first_meeting")
 | `set_dialog_level` | `npc_name`, `level` | Update conversation progress |
 | `move_npc` | `npc_name`, `waypoint` | Move NPC to position |
 | `reveal_npcs` | `npc_names` (array) | Make NPCs visible |
-| `start_disappear_animation` | `npc_name` | Play disappear animation |
-| `remove_npc_from_walls` | `npc_name` | Remove NPC collision |
+| `start_disappear_animation` | `npcs` (array) | Play disappear animation and remove from walls |
 | `set_current_npc` | `npc_name` | Set context NPC |
 | `emit_particles` | `x`, `y`, `duration` | Spawn particles |
 | `play_sfx` | `audio_file` | Play sound effect |

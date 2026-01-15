@@ -204,7 +204,8 @@ Play disappear animation for NPC(s).
 - NPCs fade out over time
 - Can trigger particle effects
 - Triggers `npc_disappear_complete` event when done
-- NPC still exists until animation completes
+- Waits for all animations to complete before finishing
+- Automatically removes NPCs from collision walls when animation completes
 
 **Use Cases:**
 
@@ -212,36 +213,6 @@ Play disappear animation for NPC(s).
 - Quest completion
 - Teleportation effects
 - Death or transformation scenes
-
-### remove_npc_from_walls
-
-Remove NPC collision (allows player to walk through).
-
-**Parameters:**
-
-- `npcs` (array of strings) - List of NPC identifiers
-
-**Example:**
-
-```json
-{
-  "type": "remove_npc_from_walls",
-  "npcs": ["ghost"]
-}
-```
-
-**Details:**
-
-- Removes NPC from collision detection
-- Player can walk through the NPC
-- Useful for ghosts, spirits, or non-solid entities
-
-**Use Cases:**
-
-- Ghost NPCs
-- Background characters
-- Non-interactive NPCs
-- Special effects
 
 ### set_current_npc
 
