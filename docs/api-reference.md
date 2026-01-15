@@ -301,15 +301,14 @@ from pedre.systems.events import EventBus
 event_bus = EventBus()
 portal_manager = PortalManager(
     event_bus=event_bus,
-    interaction_distance=64.0,
-    cooldown=1.0
+    interaction_distance=64.0
 )
 ```
 
 **Methods:**
 
 - `register_portal(sprite: arcade.Sprite, name: str)` - Register a portal from Tiled map data
-- `check_portals(player_sprite: arcade.Sprite, delta_time: float)` - Check player proximity and publish events
+- `check_portals(player_sprite: arcade.Sprite)` - Check player proximity and publish events on entry
 - `clear()` - Clear all registered portals
 
 **Portal:**

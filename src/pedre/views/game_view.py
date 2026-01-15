@@ -1222,7 +1222,7 @@ class GameView(arcade.View):
             )
 
         # Check for automatic portal transitions (publishes events, scripts handle transitions)
-        self._check_portal_transitions(delta_time)
+        self._check_portal_transitions()
 
     def on_draw(self) -> None:
         """Render the game each frame (arcade lifecycle callback).
@@ -1593,7 +1593,7 @@ class GameView(arcade.View):
                 self.transition_state = TransitionState.NONE
                 logger.info("Fade in complete, transition finished")
 
-    def _check_portal_transitions(self, delta_time: float) -> None:
+    def _check_portal_transitions(self) -> None:
         """Check if player is near any portal and publish events (internal implementation).
 
         Tests whether the player sprite is near any portal. When a portal is entered,
@@ -1601,19 +1601,16 @@ class GameView(arcade.View):
         the actual transition via the change_scene action.
 
         Portal activation is handled by portal_manager, which checks distance and
-        publishes events. Scripts handle conditions and transitions.
-
-        Args:
-            delta_time: Time elapsed since last frame in seconds.
+        publishes events. Scripts handle conditions and transitions. Events only fire
+        when the player enters a portal zone (not while standing on it).
 
         Side effects:
             - Publishes PortalEnteredEvent when player enters portal zone
-            - Portal cooldown prevents rapid re-triggering
         """
         if not self.player_sprite or not self.portal_manager:
             return
 
-        self.portal_manager.check_portals(self.player_sprite, delta_time)
+        self.portal_manager.check_portals(self.player_sprite)
 
     def _try_interact_with_npc(self) -> None:
         """Try to interact with a nearby NPC or object (internal implementation).

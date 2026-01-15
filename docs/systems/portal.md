@@ -25,8 +25,7 @@ from pedre.systems.events import EventBus
 event_bus = EventBus()
 portal_manager = PortalManager(
     event_bus=event_bus,
-    interaction_distance=64.0,  # pixels
-    cooldown=1.0  # seconds
+    interaction_distance=64.0  # pixels
 )
 ```
 
@@ -34,7 +33,6 @@ portal_manager = PortalManager(
 
 - `event_bus` - EventBus for publishing PortalEnteredEvent
 - `interaction_distance` - Maximum distance for portal activation (default 64.0 pixels)
-- `cooldown` - Minimum time between portal activations (default 1.0 seconds)
 
 ## Key Methods
 
@@ -56,20 +54,19 @@ portal_manager.register_portal(
 )
 ```
 
-### `check_portals(player_sprite: arcade.Sprite, delta_time: float) -> None`
+### `check_portals(player_sprite: arcade.Sprite) -> None`
 
-Check if player is near any portal and publish events.
+Check if player is near any portal and publish events. Events only fire when the player enters a portal zone (transitions from outside to inside), not while standing on it.
 
 **Parameters:**
 
 - `player_sprite` - Player's arcade Sprite for position checking
-- `delta_time` - Time elapsed since last frame in seconds
 
 **Example:**
 
 ```python
 def on_update(self, delta_time):
-    self.portal_manager.check_portals(self.player_sprite, delta_time)
+    self.portal_manager.check_portals(self.player_sprite)
 ```
 
 ### `clear() -> None`

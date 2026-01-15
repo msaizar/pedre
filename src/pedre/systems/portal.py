@@ -117,7 +117,7 @@ class PortalManager:
     - Track all portals in the current map
     - Check player distance to each portal every frame
     - Publish PortalEnteredEvent when player enters a portal zone
-    - Manage cooldown to prevent rapid re-triggering
+    - Track which portals player is inside to only fire on entry
     - Clear portals when changing maps
 
     The manager does NOT handle the actual map loading/transition - it only publishes
@@ -128,14 +128,12 @@ class PortalManager:
         portals: List of all registered Portal objects in the current map.
         interaction_distance: Maximum distance in pixels for portal activation.
         event_bus: EventBus for publishing PortalEnteredEvent.
-        cooldown: Minimum time between portal activations in seconds.
     """
 
     def __init__(
         self,
         event_bus: EventBus,
         interaction_distance: float = 64.0,
-        cooldown: float = 1.0,
     ) -> None:
         """Initialize portal manager.
 
@@ -149,15 +147,11 @@ class PortalManager:
             event_bus: EventBus for publishing PortalEnteredEvent.
             interaction_distance: Maximum distance in pixels between player and portal
                                  for activation (default 64.0).
-            cooldown: Minimum time between portal activations in seconds (default 1.0).
-                     Prevents rapid re-triggering when player stands on portal.
         """
         self.event_bus = event_bus
         self.portals: list[Portal] = []
         self.interaction_distance = interaction_distance
-        self.cooldown = cooldown
-        self._cooldown_timer: float = 0.0
-        self._last_triggered_portal: str | None = None
+        self._portals_player_inside: set[str] = set()  # Track which portals player is in
 
     def register_portal(self, sprite: arcade.Sprite, name: str) -> None:
         """Register a portal from Tiled map data.
@@ -180,15 +174,16 @@ class PortalManager:
         self.portals.append(portal)
         logger.info("Registered portal '%s'", name)
 
-    def check_portals(self, player_sprite: arcade.Sprite, delta_time: float) -> None:
+    def check_portals(self, player_sprite: arcade.Sprite) -> None:
         """Check if player is near any portal and publish events.
 
         Checks all registered portals to see if the player is within activation range.
-        When the player enters a portal zone, publishes a PortalEnteredEvent that
-        scripts can respond to.
+        When the player enters a portal zone (transitions from outside to inside),
+        publishes a PortalEnteredEvent that scripts can respond to.
 
-        This method should be called every frame by the game view. It handles cooldown
-        to prevent rapid re-triggering when the player stands on a portal.
+        This method should be called every frame by the game view. It tracks which
+        portals the player is currently inside to only fire events on entry, not
+        while the player remains standing on a portal.
 
         Distance calculation uses Euclidean distance (straight-line) from player
         center to portal center. This creates a circular activation zone around
@@ -196,12 +191,8 @@ class PortalManager:
 
         Args:
             player_sprite: The player's arcade Sprite for position checking.
-            delta_time: Time elapsed since last frame in seconds.
         """
-        # Update cooldown timer
-        if self._cooldown_timer > 0:
-            self._cooldown_timer -= delta_time
-            return
+        currently_inside: set[str] = set()
 
         for portal in self.portals:
             # Check distance
@@ -212,23 +203,21 @@ class PortalManager:
             if distance >= self.interaction_distance:
                 continue
 
-            # Player is near this portal - publish event
-            logger.debug(
-                "Portal '%s': player entered (distance=%.1f, max=%.1f)",
-                portal.name,
-                distance,
-                self.interaction_distance,
-            )
+            # Player is inside this portal zone
+            currently_inside.add(portal.name)
 
-            # Publish event for scripts to handle
-            self.event_bus.publish(PortalEnteredEvent(portal_name=portal.name))
+            # Only fire event if player just entered (wasn't inside before)
+            if portal.name not in self._portals_player_inside:
+                logger.debug(
+                    "Portal '%s': player entered (distance=%.1f, max=%.1f)",
+                    portal.name,
+                    distance,
+                    self.interaction_distance,
+                )
+                self.event_bus.publish(PortalEnteredEvent(portal_name=portal.name))
 
-            # Start cooldown to prevent rapid re-triggering
-            self._cooldown_timer = self.cooldown
-            self._last_triggered_portal = portal.name
-
-            # Only trigger one portal per frame
-            return
+        # Update tracking for next frame
+        self._portals_player_inside = currently_inside
 
     def clear(self) -> None:
         """Clear all registered portals.
@@ -243,5 +232,4 @@ class PortalManager:
         will be published until new portals are registered.
         """
         self.portals.clear()
-        self._cooldown_timer = 0.0
-        self._last_triggered_portal = None
+        self._portals_player_inside.clear()
