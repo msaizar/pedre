@@ -206,9 +206,9 @@ class InventoryManager:
 
     def _initialize_default_items(self) -> None:
         """Initialize default inventory items from JSON data file."""
-        items_file = asset_path("data/inventory_items.json")
-
         try:
+            items_file = asset_path("data/inventory_items.json")
+
             with Path(items_file).open("r", encoding="utf-8") as f:
                 data = json.load(f)
 
@@ -226,12 +226,20 @@ class InventoryManager:
 
             logger.info("Loaded %d inventory items from JSON", len(self.items))
 
-        except FileNotFoundError:
-            logger.warning("Inventory items file not found: %s", items_file)
+        except FileNotFoundError as e:
+            logger.warning(
+                "Inventory items file not found: %s",
+                e.filename if hasattr(e, "filename") else "data/inventory_items.json",
+            )
         except json.JSONDecodeError:
             logger.exception("Failed to parse inventory items JSON")
         except KeyError:
             logger.exception("Missing required field in inventory item data")
+        except OSError as e:
+            if "No such file or directory" in str(e):
+                logger.warning("Assets directory or inventory items file not found, continuing with empty inventory")
+            else:
+                logger.warning("Failed to load inventory items (continuing with empty inventory): %s", str(e))
 
     def add_item(self, item: InventoryItem) -> None:
         """Add an item to the manager's registry of available items.
