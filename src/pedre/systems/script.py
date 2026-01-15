@@ -77,6 +77,7 @@ from pedre.systems.actions import (
     Action,
     ActionSequence,
     AdvanceDialogAction,
+    ChangeSceneAction,
     DialogAction,
     EmitParticlesAction,
     MoveNPCAction,
@@ -91,6 +92,7 @@ from pedre.systems.actions import (
     WaitForInventoryAccessAction,
     WaitForNPCMovementAction,
     WaitForNPCsAppearAction,
+    WaitForNPCsDisappearAction,
 )
 from pedre.systems.events import (
     DialogClosedEvent,
@@ -103,6 +105,7 @@ from pedre.systems.events import (
     NPCInteractedEvent,
     NPCMovementCompleteEvent,
     ObjectInteractedEvent,
+    PortalEnteredEvent,
     SceneStartEvent,
     ScriptCompleteEvent,
 )
@@ -128,6 +131,7 @@ class Script:
         name: Unique identifier for the script (used in logs and event triggers).
         actions: ActionSequence containing all actions to execute in order.
         conditions: List of condition dictionaries that must be met for execution.
+        on_condition_fail: Optional ActionSequence to execute if conditions fail.
         scene: Optional scene/map name - script only runs in this scene.
         defer_conditions: If True, delay condition checking until after current update cycle.
         run_once: If True, script executes only once and is marked as complete.
@@ -138,6 +142,9 @@ class Script:
             "intro_cutscene": {
                 "trigger": {"event": "npc_interacted", "npc": "martin"},
                 "conditions": [{"check": "npc_dialog_level", "npc": "martin", "equals": 0}],
+                "on_condition_fail": [
+                    {"type": "dialog", "speaker": "martin", "text": ["Come back later!"]}
+                ],
                 "scene": "village",
                 "run_once": true,
                 "actions": [
@@ -156,6 +163,7 @@ class Script:
         conditions: list[dict[str, Any]] | None = None,
         scene: str | None = None,
         *,
+        on_condition_fail: ActionSequence | None = None,
         defer_conditions: bool = False,
         run_once: bool = False,
     ) -> None:
@@ -167,6 +175,8 @@ class Script:
             conditions: Optional list of conditions that must be met to run.
                        Each condition is a dict with "check" key and comparison values.
             scene: Optional scene/map name. Script only runs when this scene is active.
+            on_condition_fail: Optional ActionSequence to execute if conditions fail.
+                              Allows fallback behavior like showing reminder dialog.
             defer_conditions: If True, defer condition checking until after current update
                             cycle. This prevents race conditions where conditions check
                             before other systems have updated.
@@ -176,6 +186,7 @@ class Script:
         self.name = name
         self.actions = actions
         self.conditions = conditions or []
+        self.on_condition_fail = on_condition_fail
         self.scene = scene
         self.defer_conditions = defer_conditions
         self.run_once = run_once
@@ -416,11 +427,21 @@ class ScriptManager:
             defer_conditions = script_data.get("defer_conditions", False)
             run_once = script_data.get("run_once", False)
 
+            # Parse on_condition_fail actions if present
+            on_condition_fail = None
+            on_condition_fail_data = script_data.get("on_condition_fail")
+            if on_condition_fail_data:
+                fail_actions = [self._parse_action(action_data, npc_dialogs) for action_data in on_condition_fail_data]
+                fail_actions = [a for a in fail_actions if a is not None]
+                if fail_actions:
+                    on_condition_fail = ActionSequence(fail_actions)
+
             return Script(
                 script_name,
                 ActionSequence(actions),
                 conditions,
                 scene,
+                on_condition_fail=on_condition_fail,
                 defer_conditions=defer_conditions,
                 run_once=run_once,
             )
@@ -449,6 +470,7 @@ class ScriptManager:
         - wait_for_movement: Wait for NPC movement completion
         - wait_for_inventory_access: Wait for inventory to be opened
         - wait_for_npcs_appear: Wait for NPC appear animations
+        - wait_for_npcs_disappear: Wait for NPC disappear animations
         - start_disappear_animation: Trigger NPC disappear animation
         - remove_npc_from_walls: Remove NPCs from collision walls
 
@@ -546,6 +568,10 @@ class ScriptManager:
             npc_names = action_data.get("npcs", [])
             return WaitForNPCsAppearAction(npc_names)
 
+        if action_type == "wait_for_npcs_disappear":
+            npc_names = action_data.get("npcs", [])
+            return WaitForNPCsDisappearAction(npc_names)
+
         if action_type == "start_disappear_animation":
             npc_names = action_data.get("npcs")
             if not npc_names:
@@ -559,6 +585,14 @@ class ScriptManager:
                 logger.warning("remove_npc_from_walls action missing 'npcs' parameter")
                 return None
             return RemoveNPCFromWallsAction(npc_names)
+
+        if action_type == "change_scene":
+            target_map = action_data.get("target_map")
+            if not target_map:
+                logger.warning("change_scene action missing 'target_map' parameter")
+                return None
+            spawn_waypoint = action_data.get("spawn_waypoint")
+            return ChangeSceneAction(target_map, spawn_waypoint)
 
         if action_type == "wait_for_condition":
             # Generic condition - would need custom implementation
@@ -756,6 +790,18 @@ class ScriptManager:
 
             self.event_bus.subscribe(ScriptCompleteEvent, handler)
 
+        elif event_type == "portal_entered":
+            portal_filter = trigger.get("portal")
+
+            def handler(event: Event) -> None:
+                if not isinstance(event, PortalEnteredEvent):
+                    return
+                if portal_filter and event.portal_name != portal_filter:
+                    return
+                self.trigger_script(script_name, self._current_context)
+
+            self.event_bus.subscribe(PortalEnteredEvent, handler)
+
         else:
             logger.warning("Unknown event type in trigger: %s", event_type)
 
@@ -824,6 +870,12 @@ class ScriptManager:
         # Check conditions before triggering
         if script.conditions and context and not self._check_conditions(script.conditions, context):
             logger.debug("Script %s skipped - conditions not met", script_name)
+            # Execute on_condition_fail actions if present
+            if script.on_condition_fail:
+                logger.info("Executing on_condition_fail for script: %s", script_name)
+                script.on_condition_fail.reset()
+                fail_script_name = f"{script_name}__on_condition_fail"
+                self.active_sequences.append((fail_script_name, script.on_condition_fail))
             return
 
         # Check if script is already running
@@ -884,6 +936,7 @@ class ScriptManager:
           (equals, gte, gt, lte, lt)
         - inventory_accessed: Check if inventory has been opened (equals boolean)
         - object_interacted: Check if an object has been interacted with (equals boolean)
+        - script_completed: Check if a run_once script has completed (script name)
 
         If any condition fails, returns False immediately (short-circuit evaluation).
         Unknown condition types log a warning and return False.
@@ -909,6 +962,9 @@ class ScriptManager:
 
             # Treasure chest has been interacted with
             {"check": "object_interacted", "object": "treasure_chest", "equals": true}
+
+            # Intro cutscene has been completed
+            {"check": "script_completed", "script": "intro_cutscene"}
         """
         for condition in conditions:
             check_type = condition.get("check")
@@ -1001,6 +1057,22 @@ class ScriptManager:
                         object_name,
                         expected,
                         was_interacted,
+                    )
+                    return False
+
+            elif check_type == "script_completed":
+                script_name = condition.get("script", "")
+                script = self.scripts.get(script_name)
+                if not script:
+                    logger.debug(
+                        "Condition failed: script_completed - script=%s not found",
+                        script_name,
+                    )
+                    return False
+                if not script.has_run:
+                    logger.debug(
+                        "Condition failed: script_completed - script=%s has not run",
+                        script_name,
                     )
                     return False
 
