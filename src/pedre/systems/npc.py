@@ -348,8 +348,17 @@ class NPCManager:
                 npc_count += 1
 
             logger.info("Loaded dialogs for %d NPCs from %s (scene: %s)", npc_count, json_path.name, scene)
+        except FileNotFoundError:
+            logger.warning("Dialog file not found: %s", json_path)
+            return False
+        except json.JSONDecodeError:
+            logger.exception("Failed to parse dialog JSON from %s", json_path)
+            return False
+        except OSError:
+            logger.warning("Failed to access dialog file: %s", json_path)
+            return False
         except Exception:
-            logger.exception("Failed to load dialogs from %s", json_path)
+            logger.exception("Unexpected error loading dialogs from %s", json_path)
             return False
         else:
             return True

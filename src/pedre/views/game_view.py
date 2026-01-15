@@ -364,8 +364,18 @@ class GameView(arcade.View):
             logger.debug("Reusing cached dialog data for scene: %s", self.current_scene)
         else:
             # First time loading this scene - load and cache the dialogs
-            scene_dialog_file = asset_path(f"dialogs/{self.current_scene}_dialogs.json", settings.assets_handle)
-            if not self.npc_manager.load_dialogs_from_json(scene_dialog_file):
+            try:
+                scene_dialog_file = asset_path(f"dialogs/{self.current_scene}_dialogs.json", settings.assets_handle)
+            except (FileNotFoundError, OSError) as e:
+                if isinstance(e, OSError) and "No such file or directory" in str(e):
+                    logger.warning(
+                        "Dialog assets directory not found for scene %s, NPCs will not have dialog", self.current_scene
+                    )
+                else:
+                    logger.warning("Failed to resolve dialog file path for scene %s: %s", self.current_scene, str(e))
+                scene_dialog_file = None
+
+            if scene_dialog_file and not self.npc_manager.load_dialogs_from_json(scene_dialog_file):
                 logger.warning("Failed to load dialogs for scene %s, NPCs may not have dialog", self.current_scene)
             # Cache only this scene's dialog data
             elif self.current_scene in self.npc_manager.dialogs:
