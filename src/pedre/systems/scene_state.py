@@ -38,6 +38,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pedre.systems.npc import NPCManager
 
+from pedre.sprites.animated_npc import AnimatedNPC
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,12 +55,18 @@ class NPCSceneState:
         y: Y position in pixel coordinates.
         visible: Whether the sprite is visible.
         dialog_level: Current dialog progression level.
+        appear_complete: Whether appear animation has completed (AnimatedNPC only).
+        disappear_complete: Whether disappear animation has completed (AnimatedNPC only).
+        interact_complete: Whether interact animation has completed (AnimatedNPC only).
     """
 
     x: float
     y: float
     visible: bool
     dialog_level: int = 0
+    appear_complete: bool = False
+    disappear_complete: bool = False
+    interact_complete: bool = False
 
     def to_dict(self) -> dict[str, float | bool | int]:
         """Convert to dictionary for serialization."""
@@ -67,6 +75,9 @@ class NPCSceneState:
             "y": self.y,
             "visible": self.visible,
             "dialog_level": self.dialog_level,
+            "appear_complete": self.appear_complete,
+            "disappear_complete": self.disappear_complete,
+            "interact_complete": self.interact_complete,
         }
 
     @classmethod
@@ -77,6 +88,9 @@ class NPCSceneState:
             y=float(data["y"]),
             visible=bool(data["visible"]),
             dialog_level=int(data.get("dialog_level", 0)),
+            appear_complete=bool(data.get("appear_complete", False)),
+            disappear_complete=bool(data.get("disappear_complete", False)),
+            interact_complete=bool(data.get("interact_complete", False)),
         )
 
 
@@ -117,11 +131,23 @@ class SceneStateCache:
         scene_state: dict[str, NPCSceneState] = {}
 
         for npc_name, npc_state in npc_manager.npcs.items():
+            # Extract animation completion flags if this is an AnimatedNPC
+            appear_complete = False
+            disappear_complete = False
+            interact_complete = False
+            if isinstance(npc_state.sprite, AnimatedNPC):
+                appear_complete = npc_state.sprite.appear_complete
+                disappear_complete = npc_state.sprite.disappear_complete
+                interact_complete = npc_state.sprite.interact_complete
+
             scene_state[npc_name] = NPCSceneState(
                 x=npc_state.sprite.center_x,
                 y=npc_state.sprite.center_y,
                 visible=npc_state.sprite.visible,
                 dialog_level=npc_state.dialog_level,
+                appear_complete=appear_complete,
+                disappear_complete=disappear_complete,
+                interact_complete=interact_complete,
             )
 
         self._scene_states[scene_name] = scene_state
@@ -147,6 +173,7 @@ class SceneStateCache:
         Side effects:
             - Updates NPC sprite positions and visibility
             - Updates NPC dialog levels
+            - Updates AnimatedNPC animation completion flags
             - Logs info message on restore, debug if no cache found
         """
         scene_state = self._scene_states.get(scene_name)
@@ -162,6 +189,13 @@ class SceneStateCache:
                 npc.sprite.center_y = cached_state.y
                 npc.sprite.visible = cached_state.visible
                 npc.dialog_level = cached_state.dialog_level
+
+                # Restore animation completion flags for AnimatedNPC
+                if isinstance(npc.sprite, AnimatedNPC):
+                    npc.sprite.appear_complete = cached_state.appear_complete
+                    npc.sprite.disappear_complete = cached_state.disappear_complete
+                    npc.sprite.interact_complete = cached_state.interact_complete
+
                 restored_count += 1
                 logger.debug(
                     "Restored %s: pos=(%.1f, %.1f), visible=%s, dialog=%d",
