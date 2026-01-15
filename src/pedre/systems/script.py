@@ -83,7 +83,6 @@ from pedre.systems.actions import (
     MoveNPCAction,
     PlayMusicAction,
     PlaySFXAction,
-    RemoveNPCFromWallsAction,
     RevealNPCsAction,
     SetCurrentNPCAction,
     SetDialogLevelAction,
@@ -471,8 +470,7 @@ class ScriptManager:
         - wait_for_inventory_access: Wait for inventory to be opened
         - wait_for_npcs_appear: Wait for NPC appear animations
         - wait_for_npcs_disappear: Wait for NPC disappear animations
-        - start_disappear_animation: Trigger NPC disappear animation
-        - remove_npc_from_walls: Remove NPCs from collision walls
+        - start_disappear_animation: Trigger NPC disappear animation and remove from walls
 
         Args:
             action_data: Dictionary with "type" key and type-specific parameters.
@@ -578,13 +576,6 @@ class ScriptManager:
                 logger.warning("start_disappear_animation action missing 'npcs' parameter")
                 return None
             return StartDisappearAnimationAction(npc_names)
-
-        if action_type == "remove_npc_from_walls":
-            npc_names = action_data.get("npcs")
-            if not npc_names:
-                logger.warning("remove_npc_from_walls action missing 'npcs' parameter")
-                return None
-            return RemoveNPCFromWallsAction(npc_names)
 
         if action_type == "change_scene":
             target_map = action_data.get("target_map")

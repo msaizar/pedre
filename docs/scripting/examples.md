@@ -747,7 +747,7 @@ Time-gated event that unlocks new NPCs.
 
 ## Example 12: Ghost NPC Interaction
 
-Special NPC that can be walked through.
+Ghost NPC that vanishes after interaction.
 
 ```json
 {
@@ -762,30 +762,16 @@ Special NPC that can be walked through.
       {
         "type": "dialog",
         "speaker": "Ghost",
-        "text": ["I am but a spirit now...", "Walk through me if you must."]
+        "text": ["I am but a spirit now...", "Farewell, mortal..."]
       },
       {
         "type": "wait_for_dialog_close"
       },
       {
-        "type": "remove_npc_from_walls",
-        "npcs": ["ghost"]
-      },
-      {
         "type": "emit_particles",
         "particle_type": "sparkles",
         "npc": "ghost"
-      }
-    ]
-  },
-  "ghost_vanish": {
-    "scene": "graveyard",
-    "trigger": {
-      "event": "object_interacted",
-      "object_name": "tombstone"
-    },
-    "run_once": true,
-    "actions": [
+      },
       {
         "type": "start_disappear_animation",
         "npcs": ["ghost"]
@@ -802,9 +788,9 @@ Special NPC that can be walked through.
 **What It Does:**
 
 - Ghost introduces itself
-- Removes collision so player can walk through
 - Adds ethereal sparkle effect
-- Second script makes ghost vanish when tombstone is examined
+- Ghost fades away with disappear animation
+- Collision is automatically removed when animation completes
 
 ## Tips for Using These Examples
 

@@ -790,9 +790,9 @@ class StartDisappearAnimationAction(Action):
     Only AnimatedNPC sprites have disappear animations. Regular sprites will be
     silently skipped with a warning in the logs.
 
-    This action completes immediately after starting the animation - it doesn't wait
-    for the animation to finish. The NPC manager will automatically hide the sprite
-    and emit the disappear event when the animation completes.
+    This action waits for all NPCs to complete their disappear animations before
+    completing. Once the animation finishes, the NPCs are automatically removed
+    from the wall collision list so the player can walk through their space.
 
     Example usage:
         # Single NPC
@@ -815,11 +815,12 @@ class StartDisappearAnimationAction(Action):
             npc_names: List of NPC names to make disappear.
         """
         self.npc_names = npc_names
-        self.executed = False
+        self.animation_started = False
 
     def execute(self, context: GameContext) -> bool:
-        """Start the disappear animation."""
-        if not self.executed:
+        """Start the disappear animation and wait for completion."""
+        # Start animations for all NPCs on first call
+        if not self.animation_started:
             for npc_name in self.npc_names:
                 npc_state = context.npc_manager.npcs.get(npc_name)
                 if npc_state and isinstance(npc_state.sprite, AnimatedNPC):
@@ -832,74 +833,29 @@ class StartDisappearAnimationAction(Action):
                         "StartDisappearAnimationAction: NPC %s not found or not AnimatedNPC",
                         npc_name,
                     )
+            self.animation_started = True
 
-            self.executed = True
+        # Check if all animations have completed
+        for npc_name in self.npc_names:
+            npc_state = context.npc_manager.npcs.get(npc_name)
+            if not npc_state:
+                continue
+            # Check if it's an AnimatedNPC and if disappear animation is still running
+            if isinstance(npc_state.sprite, AnimatedNPC) and not npc_state.sprite.disappear_complete:
+                return False
 
-        return True
-
-    def reset(self) -> None:
-        """Reset the action."""
-        self.executed = False
-
-
-class RemoveNPCFromWallsAction(Action):
-    """Remove one or more NPCs from the collision wall list.
-
-    This action removes NPC sprites from the wall collision list, making them
-    non-solid so the player can walk through them. This is commonly used during
-    disappear sequences or when an NPC should no longer block movement.
-
-    NPCs are typically added to the wall list when they're created or revealed,
-    which makes them block the player's movement. This action reverses that,
-    allowing the player to pass through the NPC's space.
-
-    Often used in combination with StartDisappearAnimationAction to make NPCs
-    passable before or during their disappear animation.
-
-    Example usage:
-        # Single NPC
-        {
-            "type": "remove_npc_from_walls",
-            "npcs": ["martin"]
-        }
-
-        # Multiple NPCs
-        {
-            "type": "remove_npc_from_walls",
-            "npcs": ["martin", "yema"]
-        }
-    """
-
-    def __init__(self, npc_names: list[str]) -> None:
-        """Initialize remove NPC from walls action.
-
-        Args:
-            npc_names: List of NPC names to remove from walls.
-        """
-        self.npc_names = npc_names
-        self.executed = False
-
-    def execute(self, context: GameContext) -> bool:
-        """Remove the NPC(s) from the wall list."""
-        if not self.executed:
-            for npc_name in self.npc_names:
-                npc_state = context.npc_manager.npcs.get(npc_name)
-                if npc_state and context.wall_list and npc_state.sprite in context.wall_list:
-                    context.wall_list.remove(npc_state.sprite)
-                    logger.debug("RemoveNPCFromWallsAction: Removed %s from wall list", npc_name)
-                else:
-                    logger.debug(
-                        "RemoveNPCFromWallsAction: NPC %s not in wall list or not found",
-                        npc_name,
-                    )
-
-            self.executed = True
+        # All animations complete - remove NPCs from walls
+        for npc_name in self.npc_names:
+            npc_state = context.npc_manager.npcs.get(npc_name)
+            if npc_state and context.wall_list and npc_state.sprite in context.wall_list:
+                context.wall_list.remove(npc_state.sprite)
+                logger.debug("StartDisappearAnimationAction: Removed %s from wall list", npc_name)
 
         return True
 
     def reset(self) -> None:
         """Reset the action."""
-        self.executed = False
+        self.animation_started = False
 
 
 class ActionSequence(Action):
