@@ -277,6 +277,68 @@ Triggered when an NPC's disappear animation finishes.
 - Spawning new NPCs after others leave
 - Quest progression markers
 
+### portal_entered
+
+Triggered when the player enters a portal zone.
+
+**Available Trigger Fields:**
+
+- `portal` - Which portal was entered (optional, omit to trigger for any portal)
+
+**Example:**
+
+```json
+{
+  "forest_portal": {
+    "trigger": {
+      "event": "portal_entered",
+      "portal": "to_forest"
+    },
+    "actions": [
+      {
+        "type": "change_scene",
+        "target_map": "forest.tmx",
+        "spawn_waypoint": "from_village"
+      }
+    ]
+  }
+}
+```
+
+**Use Cases:**
+
+- Map transitions
+- Conditional portal access
+- Cutscenes before transitions
+- Locked doors with failure messages
+
+**Conditional Portal Example:**
+
+```json
+{
+  "tower_gate_open": {
+    "trigger": {
+      "event": "portal_entered",
+      "portal": "tower_gate"
+    },
+    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
+    "actions": [
+      {"type": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
+    ]
+  },
+  "tower_gate_locked": {
+    "trigger": {
+      "event": "portal_entered",
+      "portal": "tower_gate"
+    },
+    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
+    "actions": [
+      {"type": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
+    ]
+  }
+}
+```
+
 ### script_complete
 
 Triggered when another script finishes executing.

@@ -106,9 +106,10 @@ For more complex checks, use the `conditions` array. All conditions must be true
 
 | Check Type | Fields | Description | Example |
 | ---------- | ------ | ----------- | ------- |
-| `npc_dialog_level` | `npc`, `equals` | Match NPC conversation level | `{"check": "npc_dialog_level", "npc": "merchant", "equals": 2}` |
+| `npc_dialog_level` | `npc`, `equals`/`gte`/`gt`/`lte`/`lt` | Match NPC conversation level | `{"check": "npc_dialog_level", "npc": "merchant", "gte": 2}` |
 | `inventory_accessed` | `equals` | Check if inventory was opened | `{"check": "inventory_accessed", "equals": true}` |
 | `object_interacted` | `object`, `equals` | Check if object was interacted with | `{"check": "object_interacted", "object": "sink", "equals": true}` |
+| `script_completed` | `script` | Check if a run_once script has completed | `{"check": "script_completed", "script": "intro_cutscene"}` |
 
 ### npc_dialog_level
 
@@ -208,6 +209,65 @@ Check if a specific object has been interacted with.
 - Requiring items for dialog
 - Quest prerequisite checks
 - Conditional NPC responses
+
+### script_completed
+
+Check if a run_once script has completed execution. This is useful for creating follow-up scripts that only run after another script has finished, or for portal scripts that should behave differently after an initial cutscene.
+
+**Parameters:**
+
+- `check`: `"script_completed"`
+- `script`: Script name
+
+**Example:**
+
+```json
+{
+  "trigger": {
+    "event": "portal_entered",
+    "portal": "dungeon_gate"
+  },
+  "conditions": [
+    {
+      "check": "script_completed",
+      "script": "dungeon_intro_cutscene"
+    }
+  ],
+  "actions": [
+    {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+  ]
+}
+```
+
+**Use Cases:**
+
+- Portal scripts that skip cutscenes on subsequent visits
+- Chained cutscene sequences
+- Unlocking features after tutorials
+- Quest progression gating
+
+**Portal Pattern Example:**
+
+```json
+{
+  "dungeon_first_entry": {
+    "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
+    "run_once": true,
+    "actions": [
+      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
+      {"type": "wait_for_dialog_close"},
+      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+    ]
+  },
+  "dungeon_return": {
+    "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
+    "conditions": [{"check": "script_completed", "script": "dungeon_first_entry"}],
+    "actions": [
+      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+    ]
+  }
+}
+```
 
 ## Multiple Conditions
 
