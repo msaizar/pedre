@@ -318,7 +318,10 @@ class GameView(arcade.View):
             interacted_objects=self.script_manager.interacted_objects,
         )
         self.interaction_manager = InteractionManager(interaction_distance=settings.interaction_manager_distance)
-        self.portal_manager = PortalManager(interaction_distance=settings.portal_interaction_distance)
+        self.portal_manager = PortalManager(
+            event_bus=self.event_bus,
+            interaction_distance=settings.portal_interaction_distance,
+        )
 
         # Use initial_map from settings if map_file was not provided
         if self.map_file is None:
@@ -750,7 +753,6 @@ class GameView(arcade.View):
                 self.portal_manager.register_portal(
                     sprite=sprite,
                     name=portal.name,
-                    properties=portal.properties,
                 )
 
             logger.info("Registered portal '%s'", portal.name)
@@ -1219,7 +1221,7 @@ class GameView(arcade.View):
                 self.player_sprite.center_y,
             )
 
-        # Check for automatic portal transitions
+        # Check for automatic portal transitions (publishes events, scripts handle transitions)
         self._check_portal_transitions()
 
     def on_draw(self) -> None:
@@ -1508,12 +1510,15 @@ class GameView(arcade.View):
 
         return None
 
-    def _start_scene_transition(self, target_map: str, spawn_waypoint: str | None = None) -> None:
-        """Start a scene transition with fade effect (internal implementation).
+    def start_scene_transition(self, target_map: str, spawn_waypoint: str | None = None) -> None:
+        """Start a scene transition with fade effect.
 
         Initiates a simple fade-to-black transition to a new map:
         1. Sets up pending map and spawn point
         2. Starts the fade-out state
+
+        This method is used by the ChangeSceneAction to trigger map transitions
+        from scripts. It can also be called directly for programmatic transitions.
 
         Args:
             target_map: Name of the target map file (e.g., "Forest.tmx").
@@ -1589,39 +1594,23 @@ class GameView(arcade.View):
                 logger.info("Fade in complete, transition finished")
 
     def _check_portal_transitions(self) -> None:
-        """Check if player is on an active portal and trigger map transition (internal implementation).
+        """Check if player is near any portal and publish events (internal implementation).
 
-        Tests whether the player sprite is overlapping an active portal. If a portal is
-        active (conditions met), starts a fade transition to the target map.
+        Tests whether the player sprite is near any portal. When a portal is entered,
+        publishes a PortalEnteredEvent that scripts can respond to. Scripts handle
+        the actual transition via the change_scene action.
 
-        Portal activation is handled by portal_manager, which checks distance and any
-        custom conditions (like required NPC dialog levels).
+        Portal activation is handled by portal_manager, which checks distance and
+        publishes events. Scripts handle conditions and transitions. Events only fire
+        when the player enters a portal zone (not while standing on it).
 
         Side effects:
-            - Starts scene transition with fade-to-black effect
-            - Sets pending map and spawn waypoint
-            - Logs portal transition info
+            - Publishes PortalEnteredEvent when player enters portal zone
         """
         if not self.player_sprite or not self.portal_manager:
             return
 
-        active_portal = self.portal_manager.get_active_portal(
-            self.player_sprite,
-            npc_manager=self.npc_manager,
-        )
-
-        if active_portal:
-            logger.info(
-                "Portal '%s' activated, transitioning to %s",
-                active_portal.name,
-                active_portal.target_map,
-            )
-
-            # Start the crossfade transition
-            self._start_scene_transition(
-                active_portal.target_map,
-                active_portal.spawn_waypoint,
-            )
+        self.portal_manager.check_portals(self.player_sprite)
 
     def _try_interact_with_npc(self) -> None:
         """Try to interact with a nearby NPC or object (internal implementation).

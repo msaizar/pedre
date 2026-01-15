@@ -643,7 +643,7 @@ class WaitForNPCMovementAction(WaitForConditionAction):
     Example usage in a sequence:
         [
             {"type": "move_npc", "npc": "martin", "waypoint": "town_square"},
-            {"type": "wait_npc_movement", "npc": "martin"},
+            {"type": "wait_for_movement", "npc": "martin"},
             {"type": "dialog", "speaker": "martin", "text": ["I made it!"]}
         ]
     """
@@ -733,6 +733,51 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
             return True
 
         super().__init__(check_all_appeared, f"NPCs {', '.join(npc_names)} appear complete")
+
+
+class WaitForNPCsDisappearAction(WaitForConditionAction):
+    """Wait for multiple NPCs to complete their disappear animations.
+
+    This action pauses script execution until all specified AnimatedNPCs finish
+    their disappear animation. AnimatedNPCs play a special disappear animation when
+    StartDisappearAnimationAction is triggered, and this action ensures that animation
+    completes before proceeding.
+
+    Only AnimatedNPC sprites have disappear animations. Regular NPC sprites will be
+    considered complete immediately. The action waits for all NPCs in the list
+    to finish disappearing.
+
+    Commonly used after StartDisappearAnimationAction to ensure NPCs have fully
+    faded away before continuing the script or transitioning scenes.
+
+    Example usage in a disappear sequence:
+        [
+            {"type": "start_disappear_animation", "npcs": ["martin", "yema"]},
+            {"type": "wait_for_npcs_disappear", "npcs": ["martin", "yema"]},
+            {"type": "change_scene", "target_map": "Forest.tmx"}
+        ]
+    """
+
+    def __init__(self, npc_names: list[str]) -> None:
+        """Initialize NPC disappear wait action.
+
+        Args:
+            npc_names: List of NPC names to wait for.
+        """
+        self.npc_names = npc_names
+
+        def check_all_disappeared(ctx: GameContext) -> bool:
+            for npc_name in npc_names:
+                npc_state = ctx.npc_manager.npcs.get(npc_name)
+                if not npc_state:
+                    continue
+                # Check if it's an AnimatedNPC and if disappear animation is complete
+                if isinstance(npc_state.sprite, AnimatedNPC) and not npc_state.sprite.disappear_complete:
+                    return False
+            # All NPCs have completed their disappear animations
+            return True
+
+        super().__init__(check_all_disappeared, f"NPCs {', '.join(npc_names)} disappear complete")
 
 
 class StartDisappearAnimationAction(Action):
@@ -967,3 +1012,79 @@ class AcquireItemAction(Action):
     def reset(self) -> None:
         """Reset the action."""
         self.started = False
+
+
+class ChangeSceneAction(Action):
+    """Transition to a different map/scene.
+
+    This action triggers a map transition through the game view's scene transition
+    system, complete with fade effects. It allows scripts to control when and where
+    map transitions occur, enabling conditional portals, cutscenes before transitions,
+    and complex multi-step sequences.
+
+    The target_map should be the filename of the map to load (e.g., "Forest.tmx").
+    The optional spawn_waypoint specifies where the player should appear in the new
+    map. If not provided, the default spawn point from the map data is used.
+
+    This action is typically used in response to PortalEnteredEvent, allowing scripts
+    to handle portal transitions with full control over conditions and sequences.
+
+    Example usage:
+        # Simple transition
+        {
+            "type": "change_scene",
+            "target_map": "Forest.tmx"
+        }
+
+        # Transition with specific spawn point
+        {
+            "type": "change_scene",
+            "target_map": "Tower.tmx",
+            "spawn_waypoint": "tower_entrance"
+        }
+
+        # In a portal script with dialog first
+        {
+            "trigger": {"event": "portal_entered", "portal": "forest_gate"},
+            "actions": [
+                {"type": "dialog", "speaker": "Narrator", "text": ["The gate opens..."]},
+                {"type": "wait_for_dialog_close"},
+                {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+            ]
+        }
+    """
+
+    def __init__(self, target_map: str, spawn_waypoint: str | None = None) -> None:
+        """Initialize scene change action.
+
+        Args:
+            target_map: Filename of the map to transition to (e.g., "Forest.tmx").
+            spawn_waypoint: Optional waypoint name for player spawn position in target map.
+                           If None, uses the target map's default spawn point.
+        """
+        self.target_map = target_map
+        self.spawn_waypoint = spawn_waypoint
+        self.executed = False
+
+    def execute(self, context: GameContext) -> bool:
+        """Trigger the scene transition."""
+        if not self.executed:
+            if context.game_view is not None:
+                context.game_view.start_scene_transition(
+                    self.target_map,
+                    self.spawn_waypoint,
+                )
+                logger.debug(
+                    "ChangeSceneAction: Transitioning to %s (spawn: %s)",
+                    self.target_map,
+                    self.spawn_waypoint or "default",
+                )
+            else:
+                logger.warning("ChangeSceneAction: No game_view in context, cannot transition")
+            self.executed = True
+
+        return True
+
+    def reset(self) -> None:
+        """Reset the action."""
+        self.executed = False

@@ -125,7 +125,7 @@ class DialogManager:
             {"type": "dialog", "speaker": "Martin", "text": ["Hello!"]},
             {"type": "wait_dialog_close"},  # Pauses until player presses SPACE
             {"type": "move_npc", "npcs": ["martin"], "waypoint": "door"},
-            {"type": "wait_npc_movement", "npc": "martin"},
+            {"type": "wait_for_movement", "npc": "martin"},
             {"type": "dialog", "speaker": "Martin", "text": ["I'm leaving now!"]}
         ]
     """

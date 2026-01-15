@@ -341,6 +341,71 @@ Play background music.
 - Emotional moments
 - Atmosphere changes
 
+## Scene Actions
+
+### change_scene
+
+Transition to a different map/scene with fade effects.
+
+**Parameters:**
+
+- `target_map` (string) - Destination map filename (relative to assets/maps/)
+- `spawn_waypoint` (string, optional) - Waypoint name in destination map where player spawns
+
+**Example:**
+
+```json
+{
+  "type": "change_scene",
+  "target_map": "forest.tmx",
+  "spawn_waypoint": "from_village"
+}
+```
+
+**Details:**
+
+- Triggers a scene transition with fade out/in effects
+- Player spawns at the specified waypoint in the target map
+- If `spawn_waypoint` is not specified, uses the target map's default spawn point
+- Typically used in response to `portal_entered` events
+
+**Use Cases:**
+
+- Portal transitions
+- Story-driven map changes
+- Conditional area access
+- Cutscenes that end with map transition
+
+**Portal Script Example:**
+
+```json
+{
+  "forest_portal": {
+    "trigger": {"event": "portal_entered", "portal": "to_forest"},
+    "actions": [
+      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "entrance"}
+    ]
+  }
+}
+```
+
+**Cutscene with Transition:**
+
+```json
+{
+  "dungeon_entrance": {
+    "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
+    "run_once": true,
+    "actions": [
+      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
+      {"type": "wait_for_dialog_close"},
+      {"type": "play_sfx", "file": "wind.wav"},
+      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+    ]
+  }
+}
+```
+
 ## Visual Actions
 
 ### emit_particles

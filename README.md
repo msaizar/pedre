@@ -107,15 +107,26 @@ Create a script file `assets/scripts/village_scripts.json`:
 
 ### Adding Portals Between Maps
 
-In Tiled, create a "Portals" object layer and add a rectangle with properties:
+In Tiled, create a "Portals" object layer and add a rectangle with a `name` property:
 
 - `name`: "to_forest"
-- `target_map`: "forest.tmx"
-- `spawn_waypoint`: "from_village"
 
 Create a matching waypoint in the target map's "Waypoints" layer (Point object named "from_village") where the player should spawn.
 
-The framework automatically handles transitions when the player enters the portal zone.
+Then create a script to handle the portal transition:
+
+```json
+{
+  "to_forest_portal": {
+    "trigger": {"event": "portal_entered", "portal": "to_forest"},
+    "actions": [
+      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+    ]
+  }
+}
+```
+
+This event-driven approach allows conditional portals, cutscenes before transitions, and locked doors with custom failure messages.
 
 ## Architecture
 

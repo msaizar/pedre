@@ -292,36 +292,37 @@ camera_manager = CameraManager(window_width, window_height)
 
 ### PortalManager
 
-Handles map transitions.
+Handles map transitions through an event-driven system.
 
 ```python
-from pedre import PortalManager
+from pedre.systems.portal import PortalManager
+from pedre.systems.events import EventBus
 
-portal_manager = PortalManager(game_context)
+event_bus = EventBus()
+portal_manager = PortalManager(
+    event_bus=event_bus,
+    interaction_distance=64.0
+)
 ```
 
 **Methods:**
 
-- `add_portal(portal: Portal)` - Register a portal
-- `check_portal_collision(sprite: arcade.Sprite) -> Portal | None` - Check if sprite is in portal
-- `get_portal_by_name(name: str) -> Portal | None` - Find portal by name
+- `register_portal(sprite: arcade.Sprite, name: str)` - Register a portal from Tiled map data
+- `check_portals(player_sprite: arcade.Sprite)` - Check player proximity and publish events on entry
+- `clear()` - Clear all registered portals
 
 **Portal:**
 
 ```python
-from pedre import Portal
+from pedre.systems.portal import Portal
 
-portal = Portal(
-    name="to_forest",
-    x=100,
-    y=200,
-    width=50,
-    height=50,
-    target_map="forest.tmx",
-    target_portal="from_village",
-    required_item=None  # Optional item requirement
-)
+@dataclass
+class Portal:
+    sprite: arcade.Sprite  # Portal location and collision area
+    name: str              # Unique identifier for script triggers
 ```
+
+Portal transitions are handled via scripts using `portal_entered` events and `change_scene` actions.
 
 ### EventBus
 
@@ -378,7 +379,7 @@ Common event types used throughout the framework:
 - `ItemCollectedEvent` - Item added to inventory
 - `DialogClosedEvent` - Dialog finished
 - `InventoryClosedEvent` - Inventory view closed
-- `PortalTriggeredEvent` - Player entered portal
+- `PortalEnteredEvent` - Player entered portal zone
 - `ObjectInteractedEvent` - Player interacted with object
 
 ## Configuration

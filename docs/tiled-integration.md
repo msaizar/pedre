@@ -586,29 +586,22 @@ Each NPC needs:
 
 ## Portals and Transitions
 
-Portals are **Rectangle Objects** that trigger map transitions when the player enters them.
+Portals are **Rectangle Objects** that trigger map transitions when the player enters them. The portal system uses an event-driven architecture where portal behavior is defined in JSON scripts.
 
 ### Creating a Portal
 
 1. Select the **Portals** object layer
 2. Click **Insert Rectangle** (or press **R**)
 3. Draw a rectangle where the portal zone should be
-4. Set the portal's properties
+4. Set the portal's `name` property
 
-### Required Portal Properties
+### Portal Properties
 
-| Property | Type | Description | Example |
-| -------- | ---- | ----------- | ------- |
-| `name` | string | Unique portal identifier | `"to_forest"` |
-| `target_map` | string | Destination map file (relative to assets/maps/) | `"forest.tmx"` |
+| Property | Type | Required | Description | Example |
+| -------- | ---- | -------- | ----------- | ------- |
+| `name` | string | **Yes** | Unique portal identifier (used in script triggers) | `"to_forest"` |
 
-### Optional Portal Properties
-
-| Property | Type | Description | Example |
-| -------- | ---- | ----------- | ------- |
-| `spawn_waypoint` | string | Waypoint name in destination map where player spawns | `"from_village"` |
-| `condition_type` | string | Type of activation condition | `"npc_disappeared"` |
-| `condition_value` | string | Value for the condition (e.g., NPC name) | `"guard"` |
+Portal behavior (destination, conditions, cutscenes) is defined in script files, not Tiled properties.
 
 ### Example Portal Setup
 
@@ -620,8 +613,6 @@ Object: Rectangle at map edge (64, 0, 32, 64)
 
 Properties:
   name: "to_forest"
-  target_map: "forest.tmx"
-  spawn_waypoint: "from_village"
 ```
 
 **In forest.tmx:**
@@ -634,30 +625,81 @@ Properties:
   name: "from_village"
 ```
 
-**Note:** If `spawn_waypoint` is not specified, the player will spawn at the default location in the target map.
+**In scripts JSON:**
 
-### Conditional Portals
-
-You can make portals that only activate when conditions are met.
-
-**Available Condition Types:**
-
-| Condition Type | Description | condition_value |
-| -------------- | ----------- | --------------- |
-| `npc_disappeared` | Portal activates after specified NPC completes disappear animation | NPC name |
-
-**Example: Portal that opens after NPC disappears:**
-
-```text
-Properties:
-  name: "to_castle"
-  target_map: "castle.tmx"
-  spawn_waypoint: "entrance"
-  condition_type: "npc_disappeared"
-  condition_value: "guard"
+```json
+{
+  "to_forest_portal": {
+    "trigger": {"event": "portal_entered", "portal": "to_forest"},
+    "actions": [
+      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+    ]
+  }
+}
 ```
 
-The player won't be able to use this portal until the NPC named "guard" has completed its disappear animation.
+### Portal Scripts
+
+Portal transitions are handled through the script system using the `portal_entered` event and `change_scene` action.
+
+**Simple Portal:**
+
+```json
+{
+  "forest_portal": {
+    "trigger": {"event": "portal_entered", "portal": "forest_entrance"},
+    "actions": [
+      {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+    ]
+  }
+}
+```
+
+**Conditional Portal:**
+
+```json
+{
+  "tower_gate_open": {
+    "trigger": {"event": "portal_entered", "portal": "tower_gate"},
+    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
+    "actions": [
+      {"type": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
+    ]
+  },
+  "tower_gate_locked": {
+    "trigger": {"event": "portal_entered", "portal": "tower_gate"},
+    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
+    "actions": [
+      {"type": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
+    ]
+  }
+}
+```
+
+**Portal with Cutscene:**
+
+```json
+{
+  "dungeon_first_entry": {
+    "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
+    "run_once": true,
+    "actions": [
+      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
+      {"type": "wait_for_dialog_close"},
+      {"type": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "entrance"}
+    ]
+  },
+  "dungeon_return": {
+    "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
+    "conditions": [{"check": "script_completed", "script": "dungeon_first_entry"}],
+    "actions": [
+      {"type": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "entrance"}
+    ]
+  }
+}
+```
+
+See [Scripting Events](scripting/events.md) and [Scripting Actions](scripting/actions.md) for more details.
 
 ## Waypoints
 
