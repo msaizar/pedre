@@ -85,13 +85,15 @@ from pedre.systems.events import (
     GameStartEvent,
     InventoryClosedEvent,
     ItemAcquiredEvent,
-    NPCDisappearCompleteEvent,
-    NPCInteractedEvent,
-    NPCMovementCompleteEvent,
     ObjectInteractedEvent,
     PortalEnteredEvent,
     SceneStartEvent,
     ScriptCompleteEvent,
+)
+from pedre.systems.npc import (
+    NPCDisappearCompleteEvent,
+    NPCInteractedEvent,
+    NPCMovementCompleteEvent,
 )
 
 if TYPE_CHECKING:

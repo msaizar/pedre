@@ -77,6 +77,7 @@ class GameSettings:
             self.installed_systems = [
                 "pedre.systems.audio",
                 "pedre.systems.dialog",
+                "pedre.systems.npc",
                 # Future: add other systems here as they are migrated
                 # "pedre.systems.camera",
                 # etc.

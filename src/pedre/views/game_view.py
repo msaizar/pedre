@@ -87,10 +87,10 @@ from pedre.systems.dialog import DialogClosedEvent
 from pedre.systems.events import (
     GameStartEvent,
     InventoryClosedEvent,
-    NPCInteractedEvent,
     ObjectInteractedEvent,
     SceneStartEvent,
 )
+from pedre.systems.npc import NPCInteractedEvent
 
 if TYPE_CHECKING:
     from arcade.types import TiledObject

@@ -12,7 +12,7 @@ from pedre.systems.input import InputManager
 from pedre.systems.interaction import InteractionManager, InteractiveObject
 from pedre.systems.inventory import InventoryItem, InventoryManager
 from pedre.systems.loader import CircularDependencyError, MissingDependencyError, SystemLoader
-from pedre.systems.npc import NPCManager
+from pedre.systems.npc import NPCDialogConfig, NPCManager, NPCState
 from pedre.systems.particle import ParticleManager
 from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.portal import Portal, PortalManager
@@ -39,7 +39,9 @@ __all__ = [
     "InventoryItem",
     "InventoryManager",
     "MissingDependencyError",
+    "NPCDialogConfig",
     "NPCManager",
+    "NPCState",
     "ParticleManager",
     "PathfindingManager",
     "Portal",

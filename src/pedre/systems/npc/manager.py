@@ -29,13 +29,8 @@ animations finished) publish events that scripts can listen for to create comple
 scripted sequences.
 
 Example usage:
-    # Initialize manager
-    npc_mgr = NPCManager(
-        pathfinding_manager=pathfinding_mgr,
-        interaction_distance=50,
-        npc_speed=80.0,
-        event_bus=event_bus
-    )
+    # Get the NPC manager from context
+    npc_mgr = context.get_system("npc")
 
     # Load dialog from JSON files
     npc_mgr.load_dialogs_from_json("assets/dialogs/")
@@ -56,27 +51,33 @@ Example usage:
     npc_mgr.move_npc_to_tile("martin", tile_x=10, tile_y=15)
 
     # Update movement each frame
-    npc_mgr.update(delta_time)
+    npc_mgr.update(delta_time, context)
 """
+
+from __future__ import annotations
 
 import json
 import logging
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
 from pedre.sprites import AnimatedNPC
-from pedre.systems.events import (
+from pedre.systems.base import BaseSystem
+from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
     NPCMovementCompleteEvent,
 )
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
+    from pedre.config import GameSettings
     from pedre.systems.events import EventBus
+    from pedre.systems.game_context import GameContext
     from pedre.systems.inventory import InventoryManager
     from pedre.systems.pathfinding import PathfindingManager
 
@@ -169,7 +170,8 @@ class NPCDialogConfig:
     on_condition_fail: list[dict[str, Any]] | None = None  # List of actions to execute if conditions fail
 
 
-class NPCManager:
+@SystemRegistry.register
+class NPCManager(BaseSystem):
     """Manages NPC state, movement, and interactions.
 
     The NPCManager is the central controller for all NPC-related systems. It coordinates
@@ -207,53 +209,59 @@ class NPCManager:
                           dialog condition checking.
     """
 
-    def __init__(
-        self,
-        pathfinding_manager: PathfindingManager,
-        interaction_distance: int = 50,
-        waypoint_threshold: int = 2,
-        npc_speed: float = 80.0,
-        inventory_manager: InventoryManager | None = None,
-        event_bus: EventBus | None = None,
-        interacted_objects: set[str] | None = None,
-    ) -> None:
-        """Initialize the NPC manager with pathfinding and configuration parameters.
+    name: ClassVar[str] = "npc"
+    dependencies: ClassVar[list[str]] = ["pathfinding"]
 
-        Creates a new NPCManager with empty NPC and dialog registries. The pathfinding
-        manager is required for movement calculations. Other parameters configure interaction
-        ranges, movement speeds, and optional integrations with other systems.
+    def __init__(self) -> None:
+        """Initialize the NPC manager with default values.
 
-        Args:
-            pathfinding_manager: PathfindingManager instance for A* path calculation.
-                               Required for move_npc_to_tile() functionality.
-            interaction_distance: Maximum distance in pixels from player to NPC for
-                                interaction to be possible. Typical values: 40-60 pixels.
-                                Default 50 allows comfortable interaction range.
-            waypoint_threshold: Distance in pixels to consider a waypoint "reached" during
-                              pathfinding. Lower values require more precision, higher values
-                              allow cutting corners. Default 2 pixels provides good balance.
-            npc_speed: Movement speed in pixels per second for all NPCs. Frame-rate
-                      independent. Typical values: 60-100 pixels/second. Default 80 gives
-                      moderate walking speed.
-            inventory_manager: Optional InventoryManager for dialog conditions that check
-                             if inventory has been accessed. Pass None if not using
-                             inventory-conditional dialog.
-            event_bus: Optional EventBus for publishing NPC events (movement complete,
-                      animations finished). Pass None if not using event-driven scripts.
-            interacted_objects: Optional set tracking object interaction history for dialog
-                              conditions. Shared with GameContext.interacted_objects for
-                              consistency.
+        Creates an NPC manager with empty registries and default configuration.
+        Actual initialization with dependencies happens in setup().
         """
         self.npcs: dict[str, NPCState] = {}
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
-        self.pathfinding = pathfinding_manager
-        self.interaction_distance = interaction_distance
-        self.waypoint_threshold = waypoint_threshold
-        self.npc_speed = npc_speed
-        self.inventory_manager = inventory_manager
-        self.event_bus = event_bus
-        self.interacted_objects = interacted_objects if interacted_objects is not None else set()
+        self.pathfinding: PathfindingManager | None = None
+        self.interaction_distance = 50
+        self.waypoint_threshold = 2
+        self.npc_speed = 80.0
+        self.inventory_manager: InventoryManager | None = None
+        self.event_bus: EventBus | None = None
+        self.interacted_objects: set[str] = set()
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the NPC system with game context and settings.
+
+        This method is called by the SystemLoader after all systems have been
+        instantiated. It configures the manager with references to required
+        systems and settings.
+
+        Args:
+            context: Game context providing access to other systems.
+            settings: Game configuration containing NPC-related settings.
+        """
+        # Get required dependencies from context
+        self.pathfinding = context.get_system("pathfinding")
+        self.inventory_manager = context.get_system("inventory")
+        self.event_bus = context.event_bus
+        self.interacted_objects = context.interacted_objects
+
+        # Apply settings if available
+        if hasattr(settings, "interaction_distance"):
+            self.interaction_distance = settings.interaction_distance
+        if hasattr(settings, "npc_speed"):
+            self.npc_speed = settings.npc_speed
+
+        logger.debug("NPCManager setup complete")
+
+    def cleanup(self) -> None:
+        """Clean up NPC resources when the scene unloads.
+
+        Clears all registered NPCs and resets state.
+        """
+        self.npcs.clear()
+        self.dialogs.clear()
+        logger.debug("NPCManager cleanup complete")
 
     def load_dialogs(self, dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]]) -> None:
         """Load NPC dialog configurations.
@@ -572,6 +580,10 @@ class NPCManager:
             logger.warning("Cannot move unknown NPC: %s", npc_name)
             return
 
+        if not self.pathfinding:
+            logger.warning("Cannot move NPC %s: pathfinding not available", npc_name)
+            return
+
         logger.info("Starting pathfinding for %s", npc_name)
         logger.debug("  From: (%.1f, %.1f)", npc.sprite.center_x, npc.sprite.center_y)
         logger.debug("  To tile: (%d, %d)", tile_x, tile_y)
@@ -615,12 +627,12 @@ class NPCManager:
                     wall_list.append(npc.sprite)
                 logger.info("Showing hidden NPC: %s", npc_name)
 
-    def update(self, delta_time: float, wall_list: arcade.SpriteList | None = None) -> None:
+    def update(self, delta_time: float, context: GameContext) -> None:
         """Update NPC movements along their paths.
 
         Args:
             delta_time: Time since last update in seconds.
-            wall_list: Optional sprite list containing wall sprites (unused, kept for compatibility).
+            context: Game context (provides access to wall_list if needed).
         """
         for npc in self.npcs.values():
             # Update animation for animated NPCs
@@ -709,7 +721,29 @@ class NPCManager:
             }
         return positions
 
-    def restore_state(self, npc_dialog_levels: dict[str, int]) -> None:
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface).
+
+        Returns:
+            Dictionary with NPC dialog levels and positions.
+        """
+        return {
+            "npc_dialog_levels": {name: npc.dialog_level for name, npc in self.npcs.items()},
+            "npc_positions": self.get_npc_positions(),
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface).
+
+        Args:
+            state: Previously saved state dictionary.
+        """
+        if "npc_dialog_levels" in state:
+            self._restore_dialog_levels(state["npc_dialog_levels"])
+        if "npc_positions" in state:
+            self._restore_positions(state["npc_positions"])
+
+    def _restore_dialog_levels(self, npc_dialog_levels: dict[str, int]) -> None:
         """Restore NPC dialog levels from save data.
 
         Updates the dialog_level for each NPC based on saved state. This is called
@@ -724,7 +758,7 @@ class NPCManager:
             # After loading save data
             save_data = save_manager.load_game(slot=1)
             if save_data:
-                npc_manager.restore_state(save_data.npc_dialog_levels)
+                npc_manager._restore_dialog_levels(save_data.npc_dialog_levels)
                 # All NPCs now have their conversation progress restored
         """
         for npc_name, dialog_level in npc_dialog_levels.items():
@@ -735,7 +769,7 @@ class NPCManager:
             else:
                 logger.warning("Cannot restore dialog level for unknown NPC: %s", npc_name)
 
-    def restore_positions(self, npc_positions: dict[str, dict[str, float | bool]]) -> None:
+    def _restore_positions(self, npc_positions: dict[str, dict[str, float | bool]]) -> None:
         """Restore NPC positions and visibility from save data.
 
         Updates NPC sprite positions and visibility based on saved state. This is called
@@ -758,7 +792,7 @@ class NPCManager:
             # After loading save data
             save_data = save_manager.load_game(slot=1)
             if save_data and save_data.npc_positions:
-                npc_manager.restore_positions(save_data.npc_positions)
+                npc_manager._restore_positions(save_data.npc_positions)
                 # All NPCs now at their saved positions with correct visibility
         """
         for npc_name, position_data in npc_positions.items():
