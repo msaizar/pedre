@@ -333,13 +333,18 @@ class GameView(arcade.View):
             self.pathfinding_manager = PathfindingManager()
             logger.warning("PathfindingManager not in installed_systems, created directly")
 
+        # Get PortalManager from system loader (or create one if not registered)
+        portal_system = system_instances.get("portal")
+        if portal_system and isinstance(portal_system, PortalManager):
+            self.portal_manager = portal_system
+        else:
+            # Fallback: create PortalManager directly if not in installed_systems
+            self.portal_manager = PortalManager()
+            logger.warning("PortalManager not in installed_systems, created directly")
+
         self.input_manager = InputManager(movement_speed=settings.player_movement_speed)
         self.npc_manager = NPCManager()
         self.interaction_manager = InteractionManager(interaction_distance=settings.interaction_manager_distance)
-        self.portal_manager = PortalManager(
-            event_bus=self.event_bus,
-            interaction_distance=settings.portal_interaction_distance,
-        )
 
         # Use initial_map from settings if map_file was not provided
         if self.map_file is None:

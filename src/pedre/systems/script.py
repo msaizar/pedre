@@ -83,7 +83,6 @@ from pedre.systems.events import (
     Event,
     EventBus,
     GameStartEvent,
-    PortalEnteredEvent,
     SceneStartEvent,
     ScriptCompleteEvent,
 )
@@ -94,6 +93,7 @@ from pedre.systems.npc import (
     NPCInteractedEvent,
     NPCMovementCompleteEvent,
 )
+from pedre.systems.portal import PortalEnteredEvent
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext

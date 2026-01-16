@@ -68,12 +68,18 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from pedre.systems.events import EventBus, PortalEnteredEvent
+from pedre.systems.base import BaseSystem
+from pedre.systems.portal.events import PortalEnteredEvent
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     import arcade
+
+    from pedre.config import GameSettings
+    from pedre.systems.events import EventBus
+    from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +107,8 @@ class Portal:
     name: str
 
 
-class PortalManager:
+@SystemRegistry.register
+class PortalManager(BaseSystem):
     """Manages portals and publishes events when player enters them.
 
     The PortalManager coordinates all portal-related functionality in the game. It maintains
@@ -130,28 +137,63 @@ class PortalManager:
         event_bus: EventBus for publishing PortalEnteredEvent.
     """
 
-    def __init__(
-        self,
-        event_bus: EventBus,
-        interaction_distance: float = 64.0,
-    ) -> None:
-        """Initialize portal manager.
+    name: ClassVar[str] = "portal"
+    dependencies: ClassVar[list[str]] = []
+
+    def __init__(self) -> None:
+        """Initialize portal manager with default values.
 
         Creates an empty portal manager ready to register portals. The interaction
-        distance determines how close the player must be to activate a portal.
+        distance and event_bus are configured during setup().
+        """
+        self.event_bus: EventBus | None = None
+        self.portals: list[Portal] = []
+        self.interaction_distance: float = 64.0
+        self._portals_player_inside: set[str] = set()
 
-        A typical value is 64.0 pixels (2 tiles for 32px tiles), which requires the
-        player to be on or very near the portal sprite to activate it.
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the portal system with game context and settings.
+
+        This method is called by the SystemLoader after all systems have been
+        instantiated. It configures the manager with the event bus and settings.
 
         Args:
-            event_bus: EventBus for publishing PortalEnteredEvent.
-            interaction_distance: Maximum distance in pixels between player and portal
-                                 for activation (default 64.0).
+            context: Game context providing access to event bus.
+            settings: Game configuration containing portal_interaction_distance.
         """
-        self.event_bus = event_bus
-        self.portals: list[Portal] = []
-        self.interaction_distance = interaction_distance
-        self._portals_player_inside: set[str] = set()  # Track which portals player is in
+        self.event_bus = context.event_bus
+
+        if hasattr(settings, "portal_interaction_distance"):
+            self.interaction_distance = settings.portal_interaction_distance
+
+        logger.debug("PortalManager setup complete (interaction_distance=%.1f)", self.interaction_distance)
+
+    def cleanup(self) -> None:
+        """Clean up portal resources when the scene unloads.
+
+        Clears all registered portals and resets state.
+        """
+        self.clear()
+        logger.debug("PortalManager cleanup complete")
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving.
+
+        Portal state is transient and not saved.
+
+        Returns:
+            Empty dictionary as portal state is transient.
+        """
+        return {}
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data.
+
+        Portal state is transient and not restored.
+
+        Args:
+            state: Previously saved state dictionary (unused).
+        """
 
     def register_portal(self, sprite: arcade.Sprite, name: str) -> None:
         """Register a portal from Tiled map data.
@@ -192,6 +234,9 @@ class PortalManager:
         Args:
             player_sprite: The player's arcade Sprite for position checking.
         """
+        if not self.event_bus:
+            return
+
         currently_inside: set[str] = set()
 
         for portal in self.portals:
