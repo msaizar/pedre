@@ -49,9 +49,22 @@ Example usage from code:
     ])
 """
 
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
+
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
+
+if TYPE_CHECKING:
+    from pedre.config import GameSettings
+    from pedre.systems.game_context import GameContext
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -91,7 +104,8 @@ class DialogPage:
     total_pages: int
 
 
-class DialogManager:
+@SystemRegistry.register
+class DialogManager(BaseSystem):
     """Manages dialog display and pagination.
 
     The DialogManager is the core system for displaying conversations in the game.
@@ -128,7 +142,12 @@ class DialogManager:
             {"type": "wait_for_movement", "npc": "martin"},
             {"type": "dialog", "speaker": "Martin", "text": ["I'm leaving now!"]}
         ]
+
+    This system has no dependencies on other systems.
     """
+
+    name: ClassVar[str] = "dialog"
+    dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
         """Initialize the dialog manager.
@@ -151,6 +170,30 @@ class DialogManager:
         self.dialog_text: arcade.Text | None = None
         self.page_indicator_text: arcade.Text | None = None
         self.instruction_text: arcade.Text | None = None
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the dialog system with game settings.
+
+        This method is called by the SystemLoader after all systems have been
+        instantiated. DialogManager doesn't require any special setup.
+
+        Args:
+            context: Game context (not used by DialogManager).
+            settings: Game configuration (not used by DialogManager).
+        """
+        logger.debug("DialogManager setup complete")
+
+    def cleanup(self) -> None:
+        """Clean up dialog resources when the scene unloads.
+
+        Closes any open dialog and clears text objects.
+        """
+        self.close_dialog()
+        self.npc_name_text = None
+        self.dialog_text = None
+        self.page_indicator_text = None
+        self.instruction_text = None
+        logger.debug("DialogManager cleanup complete")
 
     def show_dialog(self, npc_name: str, text: list[str], *, instant: bool = False) -> None:
         """Show a dialog from an NPC.
@@ -311,7 +354,7 @@ class DialogManager:
             self.revealed_chars = len(current_page.text)
             self.text_fully_revealed = True
 
-    def update(self, delta_time: float) -> None:
+    def update(self, delta_time: float, context: GameContext) -> None:
         """Update the dialog text reveal animation.
 
         This method should be called every frame with the time elapsed since
@@ -320,6 +363,7 @@ class DialogManager:
 
         Args:
             delta_time: Time elapsed since last update, in seconds.
+            context: Game context (not used by DialogManager).
         """
         if not self.showing or self.text_fully_revealed:
             return
@@ -490,3 +534,23 @@ class DialogManager:
 
         # Draw instruction
         self.instruction_text.draw()
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface).
+
+        DialogManager doesn't need to persist state between saves, so this
+        returns an empty dictionary.
+
+        Returns:
+            Empty dictionary (no state to save).
+        """
+        return {}
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface).
+
+        DialogManager doesn't persist state, so this method does nothing.
+
+        Args:
+            state: Previously saved state dictionary (ignored).
+        """

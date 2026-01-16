@@ -83,8 +83,8 @@ from pedre.systems import (
     SystemLoader,
 )
 from pedre.systems.actions import ActionSequence
+from pedre.systems.dialog import DialogClosedEvent
 from pedre.systems.events import (
-    DialogClosedEvent,
     GameStartEvent,
     InventoryClosedEvent,
     NPCInteractedEvent,
@@ -1213,7 +1213,8 @@ class GameView(arcade.View):
             return
 
         # Update dialog text reveal animation
-        self.dialog_manager.update(delta_time)
+        if self.game_context:
+            self.dialog_manager.update(delta_time, self.game_context)
 
         # Update player movement from input
         if self.player_sprite and self.input_manager and not self.dialog_manager.showing:

@@ -77,9 +77,9 @@ from pedre.systems.actions import (
     Action,
     ActionSequence,
 )
+from pedre.systems.dialog import DialogClosedEvent
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import (
-    DialogClosedEvent,
     Event,
     EventBus,
     GameStartEvent,
