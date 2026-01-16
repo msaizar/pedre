@@ -10,7 +10,14 @@ from pedre.systems.events import EventBus
 from pedre.systems.game_context import GameContext
 from pedre.systems.input import InputManager
 from pedre.systems.interaction import InteractionManager, InteractiveObject
-from pedre.systems.inventory import InventoryItem, InventoryManager
+from pedre.systems.inventory import (
+    AcquireItemAction,
+    InventoryClosedEvent,
+    InventoryItem,
+    InventoryManager,
+    ItemAcquiredEvent,
+    WaitForInventoryAccessAction,
+)
 from pedre.systems.loader import CircularDependencyError, MissingDependencyError, SystemLoader
 from pedre.systems.npc import NPCDialogConfig, NPCManager, NPCState
 from pedre.systems.particle import ParticleManager
@@ -22,6 +29,7 @@ from pedre.systems.scene_state import SceneStateCache
 from pedre.systems.script import ScriptManager
 
 __all__ = [
+    "AcquireItemAction",
     "ActionRegistry",
     "AudioManager",
     "BaseSystem",
@@ -36,8 +44,10 @@ __all__ = [
     "InputManager",
     "InteractionManager",
     "InteractiveObject",
+    "InventoryClosedEvent",
     "InventoryItem",
     "InventoryManager",
+    "ItemAcquiredEvent",
     "MissingDependencyError",
     "NPCDialogConfig",
     "NPCManager",
@@ -51,4 +61,5 @@ __all__ = [
     "ScriptManager",
     "SystemLoader",
     "SystemRegistry",
+    "WaitForInventoryAccessAction",
 ]

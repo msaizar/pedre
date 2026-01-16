@@ -72,7 +72,6 @@ from pedre.systems import (
     GameContext,
     InputManager,
     InteractionManager,
-    InventoryManager,
     NPCManager,
     ParticleManager,
     PathfindingManager,
@@ -86,10 +85,10 @@ from pedre.systems.actions import ActionSequence
 from pedre.systems.dialog import DialogClosedEvent
 from pedre.systems.events import (
     GameStartEvent,
-    InventoryClosedEvent,
     ObjectInteractedEvent,
     SceneStartEvent,
 )
+from pedre.systems.inventory import InventoryClosedEvent
 from pedre.systems.npc import NPCInteractedEvent
 
 if TYPE_CHECKING:
@@ -227,7 +226,7 @@ class GameView(arcade.View):
         self.dialog_manager = DialogManager()
         self.input_manager: InputManager | None = None
         self.pathfinding_manager: PathfindingManager | None = None
-        self.inventory_manager = InventoryManager()
+        self.inventory_manager = None  # Will be set by SystemLoader
 
         # Event-driven scripting system (created early so it can be passed to managers)
         self.event_bus = EventBus()
@@ -402,7 +401,7 @@ class GameView(arcade.View):
         self.game_context = GameContext(
             dialog_manager=self.dialog_manager,
             npc_manager=self.npc_manager,
-            inventory_manager=self.inventory_manager,
+            inventory_manager=None,  # Will be resolved by SystemLoader
             particle_manager=self.particle_manager,
             audio_manager=self.audio_manager,
             event_bus=self.event_bus,
@@ -421,6 +420,9 @@ class GameView(arcade.View):
 
             # Call setup on all pluggable systems
             self.system_loader.setup_all(self.game_context)
+
+            # Get inventory manager from system loader
+            self.inventory_manager = self.game_context.get_system("inventory")
 
         # Load scene-specific scripts (with per-scene caching)
         npc_dialogs_data = self.npc_manager.dialogs  # Raw dialog data
@@ -1868,7 +1870,9 @@ class GameView(arcade.View):
             - Logs event publication
         """
         logger.info("Publishing InventoryClosedEvent")
-        self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.inventory_manager.has_been_accessed))
+        inventory_manager = self.game_context.get_system("inventory")
+        if inventory_manager:
+            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=inventory_manager.has_been_accessed))
 
     def cleanup(self) -> None:
         """Clean up resources when transitioning away from this view.

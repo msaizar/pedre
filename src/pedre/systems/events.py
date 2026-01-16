@@ -43,28 +43,6 @@ class Event:
 
 
 @dataclass
-class InventoryClosedEvent(Event):
-    """Fired when the inventory view is closed.
-
-    This event is published when the player closes the inventory screen. It can be
-    used to trigger scripts after the player has viewed their items, commonly in
-    tutorial sequences or quest chains.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "inventory_closed"
-            }
-        }
-
-    Attributes:
-        has_been_accessed: Whether inventory has been accessed before.
-    """
-
-    has_been_accessed: bool
-
-
-@dataclass
 class ObjectInteractedEvent(Event):
     """Fired when player interacts with an interactive object.
 
@@ -196,37 +174,6 @@ class SceneStartEvent(Event):
     """
 
     scene_name: str
-
-
-@dataclass
-class ItemAcquiredEvent(Event):
-    """Fired when player acquires an inventory item.
-
-    This event is published by the inventory manager when an item is added to the
-    player's inventory for the first time. It can be used to trigger congratulatory
-    messages, unlock new areas, or advance quest chains.
-
-    The event is only published when an item transitions from unacquired to acquired.
-    Attempting to acquire an already-owned item will not fire this event.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "item_acquired",
-                "item_id": "rusty_key"
-            }
-        }
-
-    The item_id filter is optional:
-    - item_id: Only trigger for specific item (omit to trigger for any item)
-
-    Attributes:
-        item_id: Unique identifier of the item that was acquired.
-        item_name: Display name of the item (for logging/debugging).
-    """
-
-    item_id: str
-    item_name: str
 
 
 @dataclass

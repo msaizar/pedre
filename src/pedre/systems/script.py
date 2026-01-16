@@ -83,13 +83,12 @@ from pedre.systems.events import (
     Event,
     EventBus,
     GameStartEvent,
-    InventoryClosedEvent,
-    ItemAcquiredEvent,
     ObjectInteractedEvent,
     PortalEnteredEvent,
     SceneStartEvent,
     ScriptCompleteEvent,
 )
+from pedre.systems.inventory import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.npc import (
     NPCDisappearCompleteEvent,
     NPCInteractedEvent,
