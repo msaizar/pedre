@@ -72,6 +72,7 @@ from pedre.systems import (
     GameContext,
     InputManager,
     InteractionManager,
+    InventoryManager,
     NPCManager,
     ParticleManager,
     PathfindingManager,
@@ -94,6 +95,7 @@ from pedre.systems.npc import NPCInteractedEvent
 if TYPE_CHECKING:
     from arcade.types import TiledObject
 
+    from pedre.config import GameSettings
     from pedre.systems.npc import NPCDialogConfig
     from pedre.types import SceneStateCacheDict
     from pedre.view_manager import ViewManager
@@ -203,6 +205,7 @@ class GameView(arcade.View):
         map_file: str | None = None,
         *,
         debug_mode: bool = False,
+        settings: GameSettings | None = None,
     ) -> None:
         """Initialize the game view.
 
@@ -216,34 +219,34 @@ class GameView(arcade.View):
             view_manager: ViewManager instance for handling view transitions (menu, inventory, etc.).
             map_file: Name of the Tiled .tmx file to load from assets/maps/. If None, uses INITIAL_MAP from config.
             debug_mode: If True, displays debug overlays showing NPC positions and tile coordinates.
+            settings: Game settings. If None, will be retrieved from window.
         """
         super().__init__()
         self.view_manager = view_manager
         self.map_file = map_file
         self.debug_mode = debug_mode
+        self.settings = settings
 
-        # Game systems (initialized with None, will be set up in on_show_view)
-        self.dialog_manager = DialogManager()
-        self.input_manager: InputManager | None = None
-        self.pathfinding_manager: PathfindingManager | None = None
-        self.inventory_manager = None  # Will be set by SystemLoader
+        # Game systems (will be loaded by SystemLoader)
+        self.system_loader: SystemLoader | None = None
+        self.game_context: GameContext | None = None
 
         # Event-driven scripting system (created early so it can be passed to managers)
         self.event_bus = EventBus()
 
-        self.script_manager = ScriptManager(self.event_bus)
-
-        self.npc_manager: NPCManager | None = None
-        self.interaction_manager: InteractionManager | None = None
-        self.portal_manager: PortalManager | None = None
+        # All managers will be loaded by SystemLoader in setup()
+        self.audio_manager: AudioManager | None = None
         self.camera_manager: CameraManager | None = None
-        self.save_manager = SaveManager()
-        self.particle_manager = ParticleManager()
-        self.game_context: GameContext | None = None
-
-        # Pluggable system loader and instances
-        self.system_loader: SystemLoader | None = None
-        self.audio_manager: AudioManager | None = None  # Will be loaded via SystemLoader
+        self.dialog_manager: DialogManager | None = None
+        self.input_manager: InputManager | None = None
+        self.interaction_manager: InteractionManager | None = None
+        self.inventory_manager: InventoryManager | None = None
+        self.npc_manager: NPCManager | None = None
+        self.pathfinding_manager: PathfindingManager | None = None
+        self.particle_manager: ParticleManager | None = None
+        self.portal_manager: PortalManager | None = None
+        self.save_manager = None
+        self.script_manager: ScriptManager | None = None
 
         # Sprite lists
         self.player_sprite: arcade.Sprite | None = None
@@ -309,42 +312,27 @@ class GameView(arcade.View):
             - Creates physics engine and camera
         """
         # Initialize managers with settings
-        settings = self.window.settings
+        if self.settings is None:
+            self.settings = self.window.settings  # type: ignore[attr-defined]
+        settings = self.settings
 
         # Initialize pluggable systems via SystemLoader
         self.system_loader = SystemLoader(settings)
         system_instances = self.system_loader.instantiate_all()
 
-        # Get AudioManager from the system loader (or create one if not registered)
-        audio_system = system_instances.get("audio")
-        if audio_system and isinstance(audio_system, AudioManager):
-            self.audio_manager = audio_system
-        else:
-            # Fallback: create AudioManager directly if not in installed_systems
-            self.audio_manager = AudioManager()
-            logger.warning("AudioManager not in installed_systems, created directly")
-
-        # Get PathfindingManager from system loader (or create one if not registered)
-        pathfinding_system = system_instances.get("pathfinding")
-        if pathfinding_system and isinstance(pathfinding_system, PathfindingManager):
-            self.pathfinding_manager = pathfinding_system
-        else:
-            # Fallback: create PathfindingManager directly if not in installed_systems
-            self.pathfinding_manager = PathfindingManager()
-            logger.warning("PathfindingManager not in installed_systems, created directly")
-
-        # Get PortalManager from system loader (or create one if not registered)
-        portal_system = system_instances.get("portal")
-        if portal_system and isinstance(portal_system, PortalManager):
-            self.portal_manager = portal_system
-        else:
-            # Fallback: create PortalManager directly if not in installed_systems
-            self.portal_manager = PortalManager()
-            logger.warning("PortalManager not in installed_systems, created directly")
-
-        self.input_manager = InputManager(movement_speed=settings.player_movement_speed)
-        self.npc_manager = NPCManager()
-        self.interaction_manager = InteractionManager(interaction_distance=settings.interaction_manager_distance)
+        # Load all managers from SystemLoader
+        self.audio_manager = cast("AudioManager", system_instances.get("audio"))
+        self.camera_manager = cast("CameraManager", system_instances.get("camera"))
+        self.dialog_manager = cast("DialogManager", system_instances.get("dialog"))
+        self.input_manager = cast("InputManager", system_instances.get("input"))
+        self.interaction_manager = cast("InteractionManager", system_instances.get("interaction"))
+        self.inventory_manager = cast("InventoryManager", system_instances.get("inventory"))
+        self.npc_manager = cast("NPCManager", system_instances.get("npc"))
+        self.pathfinding_manager = cast("PathfindingManager", system_instances.get("pathfinding"))
+        self.particle_manager = cast("ParticleManager", system_instances.get("particle"))
+        self.portal_manager = cast("PortalManager", system_instances.get("portal"))
+        self.save_manager = cast("SaveManager", system_instances.get("save"))
+        self.script_manager = cast("ScriptManager", system_instances.get("script"))
 
         # Use initial_map from settings if map_file was not provided
         if self.map_file is None:
@@ -355,13 +343,8 @@ class GameView(arcade.View):
         self._load_tilemap(map_path)
 
         # Load background music from map properties
-        if self.tile_map and hasattr(self.tile_map, "properties") and self.tile_map.properties:
-            props = self.tile_map.properties
-            if isinstance(props, dict):
-                music_file = props.get("music")
-                if music_file and isinstance(music_file, str):
-                    self.audio_manager.play_music(music_file, loop=True, volume=0.7)
-                    logger.info("Playing background music: %s", music_file)
+        # Note: Audio manager now uses system lifecycle, music handled elsewhere
+        logger.info("Background music loading handled by audio system")
 
         # Set up player sprite
         self._setup_player()

@@ -26,7 +26,7 @@ from pedre.systems.portal import Portal, PortalEnteredEvent, PortalManager
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.save import GameSaveData, SaveManager
 from pedre.systems.scene_state import SceneStateCache
-from pedre.systems.script import ScriptManager
+from pedre.systems.script import Script, ScriptCompleteEvent, ScriptManager
 
 __all__ = [
     "AcquireItemAction",
@@ -61,6 +61,8 @@ __all__ = [
     "PortalManager",
     "SaveManager",
     "SceneStateCache",
+    "Script",
+    "ScriptCompleteEvent",
     "ScriptManager",
     "SystemLoader",
     "SystemRegistry",

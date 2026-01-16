@@ -82,8 +82,10 @@ class GameSettings:
                 "pedre.systems.interaction",
                 "pedre.systems.inventory",
                 "pedre.systems.npc",
+                "pedre.systems.particle",
                 "pedre.systems.pathfinding",
                 "pedre.systems.portal",
+                "pedre.systems.script",
                 # Future: add other systems here as they are migrated
                 # etc.
             ]
