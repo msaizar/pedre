@@ -80,6 +80,7 @@ from pedre.systems import (
     SaveManager,
     SceneStateCache,
     ScriptManager,
+    SystemLoader,
 )
 from pedre.systems.actions import ActionSequence
 from pedre.systems.events import (
@@ -238,9 +239,12 @@ class GameView(arcade.View):
         self.portal_manager: PortalManager | None = None
         self.camera_manager: CameraManager | None = None
         self.save_manager = SaveManager()
-        self.audio_manager = AudioManager()
         self.particle_manager = ParticleManager()
         self.game_context: GameContext | None = None
+
+        # Pluggable system loader and instances
+        self.system_loader: SystemLoader | None = None
+        self.audio_manager: AudioManager | None = None  # Will be loaded via SystemLoader
 
         # Sprite lists
         self.player_sprite: arcade.Sprite | None = None
@@ -307,6 +311,20 @@ class GameView(arcade.View):
         """
         # Initialize managers with settings
         settings = self.window.settings
+
+        # Initialize pluggable systems via SystemLoader
+        self.system_loader = SystemLoader(settings)
+        system_instances = self.system_loader.instantiate_all()
+
+        # Get AudioManager from the system loader (or create one if not registered)
+        audio_system = system_instances.get("audio")
+        if audio_system and isinstance(audio_system, AudioManager):
+            self.audio_manager = audio_system
+        else:
+            # Fallback: create AudioManager directly if not in installed_systems
+            self.audio_manager = AudioManager()
+            logger.warning("AudioManager not in installed_systems, created directly")
+
         self.input_manager = InputManager(movement_speed=settings.player_movement_speed)
         self.pathfinding_manager = PathfindingManager(tile_size=settings.tile_size)
         self.npc_manager = NPCManager(
@@ -403,6 +421,14 @@ class GameView(arcade.View):
             waypoints=waypoints,
             interacted_objects=self.script_manager.interacted_objects,
         )
+
+        # Register all pluggable systems with the game context
+        if self.system_loader:
+            for name, system in self.system_loader.get_all_instances().items():
+                self.game_context.register_system(name, system)
+
+            # Call setup on all pluggable systems
+            self.system_loader.setup_all(self.game_context)
 
         # Load scene-specific scripts (with per-scene caching)
         npc_dialogs_data = self.npc_manager.dialogs  # Raw dialog data
@@ -1233,6 +1259,10 @@ class GameView(arcade.View):
         if self.game_context:
             self.script_manager.update(delta_time, self.game_context)
 
+            # Update all pluggable systems
+            if self.system_loader:
+                self.system_loader.update_all(delta_time, self.game_context)
+
         # Smooth camera follow player
         if self.camera_manager and self.player_sprite:
             self.camera_manager.smooth_follow(
@@ -1273,6 +1303,10 @@ class GameView(arcade.View):
 
         # Draw particles (in world coordinates)
         self.particle_manager.draw()
+
+        # Draw pluggable systems (in world coordinates)
+        if self.system_loader and self.game_context:
+            self.system_loader.draw_all(self.game_context)
 
         # Draw UI in screen coordinates
         arcade.camera.Camera2D().use()
@@ -1776,7 +1810,8 @@ class GameView(arcade.View):
         )
 
         if success:
-            self.audio_manager.play_sfx("save.wav")
+            if self.audio_manager:
+                self.audio_manager.play_sfx("save.wav")
             logger.info("Quick save completed")
         else:
             logger.warning("Quick save failed")
@@ -1824,7 +1859,8 @@ class GameView(arcade.View):
         if scene_states:
             self._scene_state_cache.from_dict(scene_states)
 
-        self.audio_manager.play_sfx("load.wav")
+        if self.audio_manager:
+            self.audio_manager.play_sfx("load.wav")
         logger.info("Quick load completed from %s", save_data.save_timestamp)
 
     def trigger_post_inventory_dialog(self) -> None:
@@ -1881,8 +1917,12 @@ class GameView(arcade.View):
                 scene_states=self._scene_state_cache.to_dict(),
             )
 
-        # Stop audio
-        self.audio_manager.stop_music()
+        # Cleanup pluggable systems (includes AudioManager cleanup)
+        if self.system_loader:
+            self.system_loader.cleanup_all()
+        elif self.audio_manager:
+            # Fallback if no system loader (shouldn't happen, but safe)
+            self.audio_manager.stop_music()
 
         # Clear sprite lists
         if self.player_list:

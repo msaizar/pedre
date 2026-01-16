@@ -77,6 +77,7 @@ from pedre.systems.actions import (
     Action,
     ActionSequence,
 )
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import (
     DialogClosedEvent,
     Event,
@@ -691,6 +692,23 @@ class ScriptManager:
                 self.trigger_script(script_name, self._current_context)
 
             self.event_bus.subscribe(PortalEnteredEvent, handler)
+
+        elif event_type and EventRegistry.is_registered(event_type):
+            # Handle custom registered events
+            event_class = EventRegistry.get_event_class(event_type)
+            filter_func = EventRegistry.get_filter(event_type)
+
+            if event_class and filter_func:
+                # Capture trigger dict for filter function
+                trigger_copy = trigger.copy()
+
+                def handler(event: Event) -> None:
+                    # Use the filter function to check if event matches
+                    if filter_func(event, trigger_copy):
+                        self.trigger_script(script_name, self._current_context)
+
+                self.event_bus.subscribe(event_class, handler)
+                logger.debug("Registered custom event handler: %s for script %s", event_type, script_name)
 
         else:
             logger.warning("Unknown event type in trigger: %s", event_type)
