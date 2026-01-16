@@ -78,8 +78,9 @@ class GameSettings:
                 "pedre.systems.audio",
                 "pedre.systems.camera",
                 "pedre.systems.dialog",
-                "pedre.systems.npc",
+                "pedre.systems.input",
                 "pedre.systems.inventory",
+                "pedre.systems.npc",
                 # Future: add other systems here as they are migrated
                 # etc.
             ]

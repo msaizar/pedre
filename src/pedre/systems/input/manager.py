@@ -42,10 +42,25 @@ Example usage:
         interact_with_npc()
 """
 
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, Any, ClassVar
+
 import arcade
 
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
 
-class InputManager:
+if TYPE_CHECKING:
+    from pedre.config import GameSettings
+    from pedre.systems.game_context import GameContext
+
+logger = logging.getLogger(__name__)
+
+
+@SystemRegistry.register
+class InputManager(BaseSystem):
     """Manages player input state and movement calculation.
 
     The InputManager provides a clean interface for handling keyboard input in the game.
@@ -68,6 +83,9 @@ class InputManager:
         keys_pressed: Set of currently pressed key symbols (arcade.key constants).
     """
 
+    name: ClassVar[str] = "input"
+    dependencies: ClassVar[list[str]] = []
+
     def __init__(self, movement_speed: float = 3.0) -> None:
         """Initialize the input manager with configurable movement speed.
 
@@ -86,6 +104,35 @@ class InputManager:
         """
         self.movement_speed = movement_speed
         self.keys_pressed: set[int] = set()
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the input system with game context and settings.
+
+        Args:
+            context: Game context providing access to other systems.
+            settings: Game configuration containing player_movement_speed.
+        """
+        self.movement_speed = settings.player_movement_speed
+        logger.debug("InputManager setup complete with speed=%s", self.movement_speed)
+
+    def cleanup(self) -> None:
+        """Clean up input resources when the scene unloads."""
+        self.keys_pressed.clear()
+        logger.debug("InputManager cleanup complete")
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface).
+
+        Input state typically doesn't need to be saved as it represents
+        transient key presses, but we save movement_speed in case it was modified.
+        """
+        return {
+            "movement_speed": self.movement_speed,
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface)."""
+        self.movement_speed = state.get("movement_speed", 3.0)
 
     def on_key_press(self, symbol: int) -> None:
         """Register a key press event.
