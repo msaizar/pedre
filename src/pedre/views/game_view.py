@@ -327,15 +327,7 @@ class GameView(arcade.View):
 
         self.input_manager = InputManager(movement_speed=settings.player_movement_speed)
         self.pathfinding_manager = PathfindingManager(tile_size=settings.tile_size)
-        self.npc_manager = NPCManager(
-            pathfinding_manager=self.pathfinding_manager,
-            interaction_distance=settings.npc_interaction_distance,
-            waypoint_threshold=settings.waypoint_threshold,
-            npc_speed=settings.npc_speed,
-            inventory_manager=self.inventory_manager,
-            event_bus=self.event_bus,
-            interacted_objects=self.script_manager.interacted_objects,
-        )
+        self.npc_manager = NPCManager()
         self.interaction_manager = InteractionManager(interaction_distance=settings.interaction_manager_distance)
         self.portal_manager = PortalManager(
             event_bus=self.event_bus,
@@ -1250,8 +1242,8 @@ class GameView(arcade.View):
             self.physics_engine.update()
 
         # Update NPC movements
-        if self.npc_manager:
-            self.npc_manager.update(delta_time, self.wall_list)
+        if self.npc_manager and self.game_context:
+            self.npc_manager.update(delta_time, self.game_context)
 
         # Update particles
         self.particle_manager.update(delta_time)

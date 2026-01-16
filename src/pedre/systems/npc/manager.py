@@ -67,19 +67,19 @@ import arcade
 
 from pedre.sprites import AnimatedNPC
 from pedre.systems.base import BaseSystem
+from pedre.systems.inventory import InventoryManager
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
     NPCMovementCompleteEvent,
 )
+from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems.events import EventBus
     from pedre.systems.game_context import GameContext
-    from pedre.systems.inventory import InventoryManager
-    from pedre.systems.pathfinding import PathfindingManager
 
 logger = logging.getLogger(__name__)
 
@@ -241,14 +241,19 @@ class NPCManager(BaseSystem):
             settings: Game configuration containing NPC-related settings.
         """
         # Get required dependencies from context
-        self.pathfinding = context.get_system("pathfinding")
-        self.inventory_manager = context.get_system("inventory")
+        pathfinding_system = context.get_system("pathfinding")
+        if pathfinding_system and isinstance(pathfinding_system, PathfindingManager):
+            self.pathfinding = pathfinding_system
+
+        inventory_system = context.get_system("inventory")
+        if inventory_system and isinstance(inventory_system, InventoryManager):
+            self.inventory_manager = inventory_system
         self.event_bus = context.event_bus
         self.interacted_objects = context.interacted_objects
 
         # Apply settings if available
-        if hasattr(settings, "interaction_distance"):
-            self.interaction_distance = settings.interaction_distance
+        if hasattr(settings, "npc_interaction_distance"):
+            self.interaction_distance = settings.npc_interaction_distance
         if hasattr(settings, "npc_speed"):
             self.npc_speed = settings.npc_speed
 
@@ -401,7 +406,7 @@ class NPCManager(BaseSystem):
             Tuple of (sprite, name, dialog_level) or None.
         """
         closest_npc: NPCState | None = None
-        closest_distance = self.interaction_distance
+        closest_distance: float = self.interaction_distance
 
         for npc_state in self.npcs.values():
             if not npc_state.sprite.visible:
@@ -742,6 +747,14 @@ class NPCManager(BaseSystem):
             self._restore_dialog_levels(state["npc_dialog_levels"])
         if "npc_positions" in state:
             self._restore_positions(state["npc_positions"])
+
+    def restore_positions(self, npc_positions: dict[str, dict[str, float | bool]]) -> None:
+        """Restore NPC positions and visibility from save data.
+
+        Args:
+            npc_positions: Dictionary mapping NPC names to position and visibility data.
+        """
+        self._restore_positions(npc_positions)
 
     def _restore_dialog_levels(self, npc_dialog_levels: dict[str, int]) -> None:
         """Restore NPC dialog levels from save data.
