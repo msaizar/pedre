@@ -435,6 +435,8 @@ class MenuView(arcade.View):
                     return
 
                 audio_manager = game_view.audio_manager
+                if not audio_manager:
+                    return
 
                 def load_music_file(music_file: str) -> None:
                     """Load a single music file (internal worker function).
