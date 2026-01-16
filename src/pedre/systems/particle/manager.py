@@ -33,11 +33,24 @@ Example usage:
     particle_manager.toggle()
 """
 
+from __future__ import annotations
+
+import logging
 import math
 from dataclasses import dataclass
 from random import Random
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
+
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
+
+if TYPE_CHECKING:
+    from pedre.config import GameSettings
+    from pedre.systems.game_context import GameContext
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -75,7 +88,8 @@ class Particle:
     fade: bool = True
 
 
-class ParticleManager:
+@SystemRegistry.register
+class ParticleManager(BaseSystem):
     """Manages particle effects and visual polish.
 
     The ParticleManager coordinates creation, updating, and rendering of particle effects
@@ -105,6 +119,9 @@ class ParticleManager:
         enabled: Whether particle effects are active.
     """
 
+    name: ClassVar[str] = "particle"
+    dependencies: ClassVar[list[str]] = []
+
     def __init__(self) -> None:
         """Initialize the particle manager.
 
@@ -115,6 +132,35 @@ class ParticleManager:
         self.particles: list[Particle] = []
         self.enabled = True
         self._rng = Random()  # noqa: S311 - Non-cryptographic RNG for particle effects
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the particle system with game context and settings.
+
+        Args:
+            context: Game context (not used by particle system).
+            settings: Game configuration (not used by particle system).
+        """
+        logger.debug("ParticleManager setup complete")
+
+    def cleanup(self) -> None:
+        """Clean up particle resources when the scene unloads."""
+        self.clear()
+        logger.debug("ParticleManager cleanup complete")
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving.
+
+        Particle state is not persisted - particles are transient effects.
+        """
+        return {"enabled": self.enabled}
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data.
+
+        Args:
+            state: Previously saved state dictionary.
+        """
+        self.enabled = state.get("enabled", True)
 
     def emit_hearts(
         self,
@@ -321,7 +367,7 @@ class ParticleManager:
             )
             self.particles.append(particle)
 
-    def update(self, delta_time: float) -> None:
+    def update(self, delta_time: float, context: GameContext | None = None) -> None:
         """Update all active particles.
 
         Updates particle ages, positions, and velocities for the current frame. This
@@ -338,6 +384,7 @@ class ParticleManager:
 
         Args:
             delta_time: Time elapsed since last update in seconds.
+            context: Game context (optional, for BaseSystem compatibility).
         """
         # Update particle positions and age
         for particle in self.particles[:]:  # Copy list to allow removal during iteration
@@ -354,6 +401,14 @@ class ParticleManager:
 
             # Apply gravity (slight downward acceleration for realism)
             particle.velocity_y -= 50 * delta_time
+
+    def on_draw(self, context: GameContext | None = None) -> None:
+        """Draw all active particles (BaseSystem interface).
+
+        Args:
+            context: Game context (optional, for BaseSystem compatibility).
+        """
+        self.draw()
 
     def draw(self) -> None:
         """Draw all active particles.

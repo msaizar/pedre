@@ -20,7 +20,7 @@ from pedre.systems.inventory import (
 )
 from pedre.systems.loader import CircularDependencyError, MissingDependencyError, SystemLoader
 from pedre.systems.npc import NPCDialogConfig, NPCManager, NPCState
-from pedre.systems.particle import ParticleManager
+from pedre.systems.particle import EmitParticlesAction, Particle, ParticleManager
 from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.portal import Portal, PortalManager
 from pedre.systems.registry import SystemRegistry
@@ -37,6 +37,7 @@ __all__ = [
     "CircularDependencyError",
     "DialogManager",
     "DialogPage",
+    "EmitParticlesAction",
     "EventBus",
     "EventRegistry",
     "GameContext",
@@ -52,6 +53,7 @@ __all__ = [
     "NPCDialogConfig",
     "NPCManager",
     "NPCState",
+    "Particle",
     "ParticleManager",
     "PathfindingManager",
     "Portal",
