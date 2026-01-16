@@ -21,7 +21,7 @@ from pedre.systems.inventory import (
 from pedre.systems.loader import CircularDependencyError, MissingDependencyError, SystemLoader
 from pedre.systems.npc import NPCDialogConfig, NPCManager, NPCState
 from pedre.systems.particle import EmitParticlesAction, Particle, ParticleManager
-from pedre.systems.pathfinding import PathfindingManager
+from pedre.systems.pathfinding import PathfindingManager  # Now from pathfinding/
 from pedre.systems.portal import Portal, PortalManager
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.save import GameSaveData, SaveManager

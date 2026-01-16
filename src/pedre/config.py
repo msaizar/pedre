@@ -82,6 +82,7 @@ class GameSettings:
                 "pedre.systems.interaction",
                 "pedre.systems.inventory",
                 "pedre.systems.npc",
+                "pedre.systems.pathfinding",
                 # Future: add other systems here as they are migrated
                 # etc.
             ]

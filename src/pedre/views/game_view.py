@@ -324,8 +324,16 @@ class GameView(arcade.View):
             self.audio_manager = AudioManager()
             logger.warning("AudioManager not in installed_systems, created directly")
 
+        # Get PathfindingManager from system loader (or create one if not registered)
+        pathfinding_system = system_instances.get("pathfinding")
+        if pathfinding_system and isinstance(pathfinding_system, PathfindingManager):
+            self.pathfinding_manager = pathfinding_system
+        else:
+            # Fallback: create PathfindingManager directly if not in installed_systems
+            self.pathfinding_manager = PathfindingManager()
+            logger.warning("PathfindingManager not in installed_systems, created directly")
+
         self.input_manager = InputManager(movement_speed=settings.player_movement_speed)
-        self.pathfinding_manager = PathfindingManager(tile_size=settings.tile_size)
         self.npc_manager = NPCManager()
         self.interaction_manager = InteractionManager(interaction_distance=settings.interaction_manager_distance)
         self.portal_manager = PortalManager(
