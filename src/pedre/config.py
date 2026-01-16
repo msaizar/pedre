@@ -76,10 +76,10 @@ class GameSettings:
             # Default installed systems - includes all built-in systems
             self.installed_systems = [
                 "pedre.systems.audio",
+                "pedre.systems.camera",
                 "pedre.systems.dialog",
                 "pedre.systems.npc",
                 "pedre.systems.inventory",
                 # Future: add other systems here as they are migrated
-                # "pedre.systems.camera",
                 # etc.
             ]
