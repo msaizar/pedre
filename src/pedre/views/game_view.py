@@ -85,9 +85,9 @@ from pedre.systems.actions import ActionSequence
 from pedre.systems.dialog import DialogClosedEvent
 from pedre.systems.events import (
     GameStartEvent,
-    ObjectInteractedEvent,
     SceneStartEvent,
 )
+from pedre.systems.interaction import ObjectInteractedEvent
 from pedre.systems.inventory import InventoryClosedEvent
 from pedre.systems.npc import NPCInteractedEvent
 

@@ -30,7 +30,7 @@ Example usage in a map:
     # - message: "Welcome to Townsville!"
 
     # In game code:
-    interaction_mgr = InteractionManager(interaction_distance=64.0)
+    interaction_mgr = context.get_system("interaction")
 
     # Register objects from map
     for obj_sprite in interactive_layer:
@@ -47,14 +47,21 @@ Example usage in a map:
             interaction_mgr.handle_interaction(obj, dialog_manager)
 """
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar
+
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     import arcade
 
+    from pedre.config import GameSettings
     from pedre.systems.dialog import DialogManager
+    from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +108,8 @@ class InteractiveObject:
     properties: dict
 
 
-class InteractionManager:
+@SystemRegistry.register
+class InteractionManager(BaseSystem):
     """Manages interactive objects and their behaviors.
 
     The InteractionManager acts as a registry and handler for all interactive objects
@@ -131,6 +139,9 @@ class InteractionManager:
                            Used for O(1) lookups by name and iteration for distance checks.
     """
 
+    name: ClassVar[str] = "interaction"
+    dependencies: ClassVar[list[str]] = []
+
     def __init__(self, interaction_distance: float = 64.0) -> None:
         """Initialize the interaction manager with configurable interaction distance.
 
@@ -151,6 +162,44 @@ class InteractionManager:
         """
         self.interaction_distance = interaction_distance
         self.interactive_objects: dict[str, InteractiveObject] = {}
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the interaction system with game context and settings.
+
+        Args:
+            context: Game context providing access to other systems.
+            settings: Game configuration containing interaction_manager_distance.
+        """
+        self.interaction_distance = float(settings.interaction_manager_distance)
+        logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
+
+    def cleanup(self) -> None:
+        """Clean up interaction resources when the scene unloads."""
+        self.interactive_objects.clear()
+        logger.debug("InteractionManager cleanup complete")
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface).
+
+        Saves the state of all interactive objects (e.g., toggle states).
+        """
+        object_states = {}
+        for obj_name, obj in self.interactive_objects.items():
+            # Only save state-related properties that can change
+            if "state" in obj.properties:
+                object_states[obj_name] = {"state": obj.properties["state"]}
+        return {
+            "interaction_distance": self.interaction_distance,
+            "object_states": object_states,
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface)."""
+        self.interaction_distance = state.get("interaction_distance", 64.0)
+        object_states = state.get("object_states", {})
+        for obj_name, obj_state in object_states.items():
+            if obj_name in self.interactive_objects:
+                self.interactive_objects[obj_name].properties.update(obj_state)
 
     def register_object(self, sprite: arcade.Sprite, name: str, properties: dict) -> None:
         """Register an interactive object in the manager.

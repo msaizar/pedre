@@ -79,6 +79,7 @@ class GameSettings:
                 "pedre.systems.camera",
                 "pedre.systems.dialog",
                 "pedre.systems.input",
+                "pedre.systems.interaction",
                 "pedre.systems.inventory",
                 "pedre.systems.npc",
                 # Future: add other systems here as they are migrated
