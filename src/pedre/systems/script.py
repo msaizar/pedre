@@ -72,26 +72,10 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.actions import (
-    AcquireItemAction,
     Action,
     ActionSequence,
-    AdvanceDialogAction,
-    ChangeSceneAction,
-    DialogAction,
-    EmitParticlesAction,
-    MoveNPCAction,
-    PlayMusicAction,
-    PlaySFXAction,
-    RevealNPCsAction,
-    SetCurrentNPCAction,
-    SetDialogLevelAction,
-    StartDisappearAnimationAction,
-    WaitForDialogCloseAction,
-    WaitForInventoryAccessAction,
-    WaitForNPCMovementAction,
-    WaitForNPCsAppearAction,
-    WaitForNPCsDisappearAction,
 )
 from pedre.systems.events import (
     DialogClosedEvent,
@@ -458,25 +442,11 @@ class ScriptManager:
     def _parse_action(self, action_data: dict[str, Any], npc_dialogs: dict[str, Any]) -> Action | None:
         """Parse a single action dictionary into an Action object (internal implementation).
 
-        Examines the "type" field to determine which Action class to instantiate, then
-        extracts type-specific parameters and constructs the appropriate Action object.
+        Uses the ActionRegistry to parse actions. The registry maps action type strings
+        to Action classes with from_dict methods that handle instantiation.
 
-        Supported action types:
-        - dialog: Show dialog with text
-        - move_npc: Move NPCs to waypoint
-        - reveal_npcs: Make hidden NPCs visible
-        - play_sfx: Play sound effect
-        - play_music: Play background music
-        - emit_particles: Create particle effects
-        - advance_dialog: Increment NPC dialog level
-        - set_dialog_level: Set NPC dialog level to specific value
-        - set_current_npc: Set current NPC for dialog attribution
-        - wait_for_dialog_close: Wait for dialog to be dismissed
-        - wait_for_movement: Wait for NPC movement completion
-        - wait_for_inventory_access: Wait for inventory to be opened
-        - wait_for_npcs_appear: Wait for NPC appear animations
-        - wait_for_npcs_disappear: Wait for NPC disappear animations
-        - start_disappear_animation: Trigger NPC disappear animation and remove from walls
+        Special handling for dialog actions with text_from references is done here
+        before delegating to the registry.
 
         Args:
             action_data: Dictionary with "type" key and type-specific parameters.
@@ -492,105 +462,24 @@ class ScriptManager:
         """
         action_type = action_data.get("type")
 
-        if action_type == "dialog":
-            speaker = action_data["speaker"]
-            text = action_data.get("text")
-            instant = action_data.get("instant", False)
+        if not action_type:
+            logger.warning("Action data missing 'type' field: %s", action_data)
+            return None
 
-            # If text is not provided, try to resolve from reference
-            if not text:
-                text_ref = action_data.get("text_from", "")
-                text = self._resolve_dialog_text(text_ref, npc_dialogs)
+        # Special handling for dialog with text_from references
+        if action_type == "dialog" and "text_from" in action_data and not action_data.get("text"):
+            text_ref = action_data.get("text_from", "")
+            resolved_text = self._resolve_dialog_text(text_ref, npc_dialogs)
+            if resolved_text:
+                # Create a modified action_data with resolved text
+                action_data = {**action_data, "text": resolved_text}
 
-            return DialogAction(speaker, text or [""], instant=instant)
+        # Use the ActionRegistry to parse the action
+        action = ActionRegistry.parse(action_data)
+        if action is not None:
+            return action
 
-        if action_type == "move_npc":
-            npc_names = action_data.get("npcs")
-            if not npc_names:
-                logger.warning("move_npc action missing 'npcs' parameter")
-                return None
-
-            waypoint = action_data.get("waypoint")
-            if not waypoint:
-                logger.warning("move_npc action missing 'waypoint' parameter")
-                return None
-
-            return MoveNPCAction(npc_names, waypoint)
-
-        if action_type == "reveal_npcs":
-            npcs = action_data["npcs"]
-            return RevealNPCsAction(npcs)
-
-        if action_type == "play_sfx":
-            sfx_file = action_data["file"]
-            return PlaySFXAction(sfx_file)
-
-        if action_type == "play_music":
-            music_file = action_data["file"]
-            loop = action_data.get("loop", True)
-            volume = action_data.get("volume")
-            return PlayMusicAction(music_file, loop=loop, volume=volume)
-
-        if action_type == "emit_particles":
-            particle_type = action_data["particle_type"]
-            x = action_data.get("x")
-            y = action_data.get("y")
-            npc_name = action_data.get("npc")
-            return EmitParticlesAction(particle_type, x, y, npc_name)
-
-        if action_type == "advance_dialog":
-            npc_name = action_data["npc"]
-            return AdvanceDialogAction(npc_name)
-
-        if action_type == "acquire_item":
-            item_id = action_data.get("item_id")
-            if not item_id:
-                logger.warning("acquire_item action missing 'item_id' parameter")
-                return None
-            return AcquireItemAction(item_id)
-
-        if action_type == "set_dialog_level":
-            npc_name = action_data["npc"]
-            level = action_data["dialog_level"]
-            return SetDialogLevelAction(npc_name, level)
-
-        if action_type == "set_current_npc":
-            npc_name = action_data["npc"]
-            return SetCurrentNPCAction(npc_name)
-
-        if action_type == "wait_for_dialog_close":
-            return WaitForDialogCloseAction()
-
-        if action_type == "wait_for_movement":
-            npc_name = action_data.get("npc", "")
-            return WaitForNPCMovementAction(npc_name)
-
-        if action_type == "wait_for_inventory_access":
-            return WaitForInventoryAccessAction()
-
-        if action_type == "wait_for_npcs_appear":
-            npc_names = action_data.get("npcs", [])
-            return WaitForNPCsAppearAction(npc_names)
-
-        if action_type == "wait_for_npcs_disappear":
-            npc_names = action_data.get("npcs", [])
-            return WaitForNPCsDisappearAction(npc_names)
-
-        if action_type == "start_disappear_animation":
-            npc_names = action_data.get("npcs")
-            if not npc_names:
-                logger.warning("start_disappear_animation action missing 'npcs' parameter")
-                return None
-            return StartDisappearAnimationAction(npc_names)
-
-        if action_type == "change_scene":
-            target_map = action_data.get("target_map")
-            if not target_map:
-                logger.warning("change_scene action missing 'target_map' parameter")
-                return None
-            spawn_waypoint = action_data.get("spawn_waypoint")
-            return ChangeSceneAction(target_map, spawn_waypoint)
-
+        # Handle unregistered action types
         if action_type == "wait_for_condition":
             # Generic condition - would need custom implementation
             logger.warning("Generic wait_for_condition not yet implemented")

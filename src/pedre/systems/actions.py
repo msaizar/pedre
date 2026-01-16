@@ -1,10 +1,13 @@
 """Action system for reusable, chainable game actions."""
 
+from __future__ import annotations
+
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Self
 
 from pedre.sprites import AnimatedNPC
+from pedre.systems.action_registry import ActionRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -33,6 +36,7 @@ class Action(ABC):
         """Reset action state for reuse."""
 
 
+@ActionRegistry.register("dialog")
 class DialogAction(Action):
     """Show a dialog to the player.
 
@@ -87,7 +91,21 @@ class DialogAction(Action):
         """Reset the action."""
         self.started = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create DialogAction from a dictionary.
 
+        Note: This handles basic dialog creation. For text_from references,
+        the ScriptManager handles resolution before calling this method.
+        """
+        return cls(
+            speaker=data.get("speaker", ""),
+            text=data.get("text", []),
+            instant=data.get("instant", False),
+        )
+
+
+@ActionRegistry.register("move_npc")
 class MoveNPCAction(Action):
     """Move one or more NPCs to a waypoint.
 
@@ -163,7 +181,15 @@ class MoveNPCAction(Action):
         """Reset the action."""
         self.started = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create MoveNPCAction from a dictionary."""
+        npcs = data.get("npcs", [])
+        waypoint = data.get("waypoint", "")
+        return cls(npc_names=npcs, waypoint=waypoint)
 
+
+@ActionRegistry.register("reveal_npcs")
 class RevealNPCsAction(Action):
     """Reveal hidden NPCs with visual effects.
 
@@ -215,7 +241,13 @@ class RevealNPCsAction(Action):
         """Reset the action."""
         self.executed = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create RevealNPCsAction from a dictionary."""
+        return cls(npc_names=data.get("npcs", []))
 
+
+@ActionRegistry.register("play_sfx")
 class PlaySFXAction(Action):
     """Play a sound effect.
 
@@ -255,7 +287,13 @@ class PlaySFXAction(Action):
         """Reset the action."""
         self.executed = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create PlaySFXAction from a dictionary."""
+        return cls(sfx_file=data.get("file", ""))
 
+
+@ActionRegistry.register("play_music")
 class PlayMusicAction(Action):
     """Play background music.
 
@@ -309,7 +347,17 @@ class PlayMusicAction(Action):
         """Reset the action."""
         self.executed = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create PlayMusicAction from a dictionary."""
+        return cls(
+            music_file=data.get("file", ""),
+            loop=data.get("loop", True),
+            volume=data.get("volume"),
+        )
 
+
+@ActionRegistry.register("emit_particles")
 class EmitParticlesAction(Action):
     """Emit particle effects.
 
@@ -392,7 +440,18 @@ class EmitParticlesAction(Action):
         """Reset the action."""
         self.executed = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create EmitParticlesAction from a dictionary."""
+        return cls(
+            particle_type=data.get("particle_type", "burst"),
+            x=data.get("x"),
+            y=data.get("y"),
+            npc_name=data.get("npc"),
+        )
 
+
+@ActionRegistry.register("advance_dialog")
 class AdvanceDialogAction(Action):
     """Advance an NPC's dialog level.
 
@@ -432,7 +491,13 @@ class AdvanceDialogAction(Action):
         """Reset the action."""
         self.executed = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create AdvanceDialogAction from a dictionary."""
+        return cls(npc_name=data.get("npc", ""))
 
+
+@ActionRegistry.register("set_dialog_level")
 class SetDialogLevelAction(Action):
     """Set an NPC's dialog level to a specific value.
 
@@ -493,7 +558,16 @@ class SetDialogLevelAction(Action):
         """Reset the action."""
         self.executed = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create SetDialogLevelAction from a dictionary."""
+        return cls(
+            npc_name=data.get("npc", ""),
+            level=data.get("dialog_level", 0),
+        )
 
+
+@ActionRegistry.register("set_current_npc")
 class SetCurrentNPCAction(Action):
     """Set the current NPC tracking for dialog event attribution.
 
@@ -556,6 +630,11 @@ class SetCurrentNPCAction(Action):
         """Reset the action."""
         self.executed = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create SetCurrentNPCAction from a dictionary."""
+        return cls(npc_name=data.get("npc", ""))
+
 
 class WaitForConditionAction(Action):
     """Wait until a condition is met.
@@ -604,6 +683,7 @@ class WaitForConditionAction(Action):
         """Reset does nothing for wait actions."""
 
 
+@ActionRegistry.register("wait_dialog_close")
 class WaitForDialogCloseAction(WaitForConditionAction):
     """Wait for dialog to be closed.
 
@@ -626,7 +706,13 @@ class WaitForDialogCloseAction(WaitForConditionAction):
         """Initialize dialog wait action."""
         super().__init__(lambda ctx: not ctx.dialog_manager.showing, "Dialog closed")
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:  # noqa: ARG003
+        """Create WaitForDialogCloseAction from a dictionary."""
+        return cls()
 
+
+@ActionRegistry.register("wait_for_movement")
 class WaitForNPCMovementAction(WaitForConditionAction):
     """Wait for NPC to complete movement.
 
@@ -665,7 +751,13 @@ class WaitForNPCMovementAction(WaitForConditionAction):
 
         super().__init__(check_movement, f"NPC {npc_name} movement complete")
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create WaitForNPCMovementAction from a dictionary."""
+        return cls(npc_name=data.get("npc", ""))
 
+
+@ActionRegistry.register("wait_inventory_access")
 class WaitForInventoryAccessAction(WaitForConditionAction):
     """Wait for inventory to be accessed.
 
@@ -689,7 +781,13 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
         """Initialize inventory access wait action."""
         super().__init__(lambda ctx: ctx.inventory_manager.has_been_accessed, "Inventory accessed")
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:  # noqa: ARG003
+        """Create WaitForInventoryAccessAction from a dictionary."""
+        return cls()
 
+
+@ActionRegistry.register("wait_npcs_appear")
 class WaitForNPCsAppearAction(WaitForConditionAction):
     """Wait for multiple NPCs to complete their appear animations.
 
@@ -734,7 +832,13 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
 
         super().__init__(check_all_appeared, f"NPCs {', '.join(npc_names)} appear complete")
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create WaitForNPCsAppearAction from a dictionary."""
+        return cls(npc_names=data.get("npcs", []))
 
+
+@ActionRegistry.register("wait_npcs_disappear")
 class WaitForNPCsDisappearAction(WaitForConditionAction):
     """Wait for multiple NPCs to complete their disappear animations.
 
@@ -753,7 +857,7 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
     Example usage in a disappear sequence:
         [
             {"type": "start_disappear_animation", "npcs": ["martin", "yema"]},
-            {"type": "wait_for_npcs_disappear", "npcs": ["martin", "yema"]},
+            {"type": "wait_npcs_disappear", "npcs": ["martin", "yema"]},
             {"type": "change_scene", "target_map": "Forest.tmx"}
         ]
     """
@@ -779,7 +883,13 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
 
         super().__init__(check_all_disappeared, f"NPCs {', '.join(npc_names)} disappear complete")
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create WaitForNPCsDisappearAction from a dictionary."""
+        return cls(npc_names=data.get("npcs", []))
 
+
+@ActionRegistry.register("start_disappear_animation")
 class StartDisappearAnimationAction(Action):
     """Start the disappear animation for one or more NPCs.
 
@@ -857,6 +967,11 @@ class StartDisappearAnimationAction(Action):
         """Reset the action."""
         self.animation_started = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create StartDisappearAnimationAction from a dictionary."""
+        return cls(npc_names=data.get("npcs", []))
+
 
 class ActionSequence(Action):
     """Execute multiple actions in sequence.
@@ -913,6 +1028,7 @@ class ActionSequence(Action):
             action.reset()
 
 
+@ActionRegistry.register("acquire_item")
 class AcquireItemAction(Action):
     """Give an item to the player's inventory.
 
@@ -969,7 +1085,13 @@ class AcquireItemAction(Action):
         """Reset the action."""
         self.started = False
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create AcquireItemAction from a dictionary."""
+        return cls(item_id=data.get("item_id", ""))
 
+
+@ActionRegistry.register("change_scene")
 class ChangeSceneAction(Action):
     """Transition to a different map/scene.
 
@@ -1044,3 +1166,8 @@ class ChangeSceneAction(Action):
     def reset(self) -> None:
         """Reset the action."""
         self.executed = False
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create ChangeSceneAction from a dictionary."""
+        return cls(target_map=data.get("target_map", ""), spawn_waypoint=data.get("spawn_waypoint", ""))

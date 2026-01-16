@@ -10,6 +10,7 @@ from pedre.systems.game_context import GameContext
 from pedre.systems.input import InputManager
 from pedre.systems.interaction import InteractionManager, InteractiveObject
 from pedre.systems.inventory import InventoryItem, InventoryManager
+from pedre.systems.loader import CircularDependencyError, MissingDependencyError, SystemLoader
 from pedre.systems.npc import NPCManager
 from pedre.systems.particle import ParticleManager
 from pedre.systems.pathfinding import PathfindingManager
@@ -24,6 +25,7 @@ __all__ = [
     "AudioManager",
     "BaseSystem",
     "CameraManager",
+    "CircularDependencyError",
     "DialogManager",
     "EventBus",
     "GameContext",
@@ -33,6 +35,7 @@ __all__ = [
     "InteractiveObject",
     "InventoryItem",
     "InventoryManager",
+    "MissingDependencyError",
     "NPCManager",
     "ParticleManager",
     "PathfindingManager",
@@ -41,5 +44,6 @@ __all__ = [
     "SaveManager",
     "SceneStateCache",
     "ScriptManager",
+    "SystemLoader",
     "SystemRegistry",
 ]

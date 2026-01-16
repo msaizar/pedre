@@ -38,7 +38,12 @@ Example usage:
     # Update context when game state changes
     context.update_scene("forest")
     context.update_player(new_player_sprite)
+
+    # Access systems by name (for pluggable systems)
+    weather = context.get_system("weather")
 """
+
+from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
@@ -52,6 +57,7 @@ if TYPE_CHECKING:
         NPCManager,
         ParticleManager,
     )
+    from pedre.systems.base import BaseSystem
     from pedre.systems.events import EventBus
     from pedre.views.game_view import GameView
 
@@ -153,6 +159,13 @@ class GameContext:
         self.waypoints = waypoints or {}
         self.interacted_objects = interacted_objects or set()
 
+        # Registry for pluggable systems (accessed via get_system)
+        self._systems: dict[str, BaseSystem] = {}
+
+        # Register the audio manager as a system for backwards compatibility
+        if audio_manager is not None:
+            self._systems["audio"] = audio_manager  # type: ignore[assignment]
+
     def update_player(self, player_sprite: arcade.Sprite | None) -> None:
         """Update the player sprite reference in the context.
 
@@ -223,3 +236,47 @@ class GameContext:
                       coordinate tuples. Example: {"entrance": (5, 10), "exit": (25, 10)}.
         """
         self.waypoints = waypoints
+
+    def register_system(self, name: str, system: BaseSystem) -> None:
+        """Register a pluggable system with the context.
+
+        This method is called by the SystemLoader to register systems that have been
+        instantiated. Once registered, the system can be accessed by name using
+        get_system().
+
+        Args:
+            name: Unique identifier for the system (e.g., "audio", "weather").
+            system: The system instance to register.
+
+        Example:
+            # SystemLoader calls this for each instantiated system
+            context.register_system("weather", weather_manager)
+        """
+        self._systems[name] = system
+
+    def get_system(self, name: str) -> BaseSystem | None:
+        """Get a registered system by name.
+
+        This method allows actions and scripts to access pluggable systems by their
+        registered name. It's the primary way to access custom user-defined systems.
+
+        For built-in systems like audio, npc, dialog, etc., you can still use the
+        direct attribute access (e.g., context.audio_manager) for backwards
+        compatibility.
+
+        Args:
+            name: The system's unique identifier (e.g., "audio", "weather").
+
+        Returns:
+            The system instance if found, None otherwise.
+
+        Example:
+            # Get a custom weather system
+            weather = context.get_system("weather")
+            if weather:
+                weather.set_weather("rain", intensity=0.7)
+
+            # Built-in systems can also be accessed this way
+            audio = context.get_system("audio")
+        """
+        return self._systems.get(name)

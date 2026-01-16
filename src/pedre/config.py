@@ -62,7 +62,22 @@ class GameSettings:
     inventory_box_border_width: int = 3
     inventory_background_image: str = ""
 
+    # Pluggable systems configuration (like Django's INSTALLED_APPS)
+    # List of module paths to import, which will register their systems
+    # Users can add custom systems by appending to this list
+    installed_systems: list[str] | None = None
+
     def __post_init__(self) -> None:
         """Initialize mutable defaults."""
         if self.menu_music_files is None:
             self.menu_music_files = []
+
+        if self.installed_systems is None:
+            # Default installed systems - includes all built-in systems
+            self.installed_systems = [
+                "pedre.systems.audio",
+                # Future: add other systems here as they are migrated
+                # "pedre.systems.camera",
+                # "pedre.systems.dialog",
+                # etc.
+            ]
