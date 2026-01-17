@@ -7,12 +7,13 @@ locations or following NPCs.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.actions import Action
 
 if TYPE_CHECKING:
+    from pedre.systems import NPCManager, ParticleManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -75,22 +76,26 @@ class EmitParticlesAction(Action):
             emit_y = self.y
 
             if self.npc_name:
-                npc_state = context.npc_manager.npcs.get(self.npc_name)
-                if npc_state:
-                    emit_x = npc_state.sprite.center_x
-                    emit_y = npc_state.sprite.center_y
+                npc_manager = cast("NPCManager", context.get_system("npc"))
+                if npc_manager:
+                    npc_state = npc_manager.npcs.get(self.npc_name)
+                    if npc_state:
+                        emit_x = npc_state.sprite.center_x
+                        emit_y = npc_state.sprite.center_y
 
             if emit_x is None or emit_y is None:
                 logger.warning("EmitParticlesAction: No valid position to emit particles")
                 return True
 
             # Emit particles
-            if self.particle_type == "hearts":
-                context.particle_manager.emit_hearts(emit_x, emit_y)
-            elif self.particle_type == "sparkles":
-                context.particle_manager.emit_sparkles(emit_x, emit_y)
-            elif self.particle_type == "burst":
-                context.particle_manager.emit_burst(emit_x, emit_y, color=(255, 215, 0))
+            particle_manager = cast("ParticleManager", context.get_system("particle"))
+            if particle_manager:
+                if self.particle_type == "hearts":
+                    particle_manager.emit_hearts(emit_x, emit_y)
+                elif self.particle_type == "sparkles":
+                    particle_manager.emit_sparkles(emit_x, emit_y)
+                elif self.particle_type == "burst":
+                    particle_manager.emit_burst(emit_x, emit_y, color=(255, 215, 0))
 
             self.executed = True
             logger.debug("EmitParticlesAction: Emitted %s at (%s, %s)", self.particle_type, emit_x, emit_y)

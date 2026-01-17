@@ -312,8 +312,8 @@ class SaveManager(BaseSystem):
         scene_manager = cast("SceneManager", context.get_system("scene"))
 
         scene_states = None
-        if scene_manager and hasattr(scene_manager, "state_cache"):
-            scene_states = scene_manager.state_cache.to_dict()
+        if scene_manager and hasattr(scene_manager, "get_scene_state_dict"):
+            scene_states = cast("SceneManager", scene_manager).get_scene_state_dict()
 
         success = self.auto_save(
             player_x=context.player_sprite.center_x,
@@ -359,10 +359,11 @@ class SaveManager(BaseSystem):
             current_map = map_manager.current_map
 
         if save_data.current_map != current_map:
-            if context.game_view and hasattr(context.game_view, "load_level"):
-                context.game_view.load_level(save_data.current_map, None)
+            scene_manager = cast("SceneManager", context.get_system("scene"))
+            if scene_manager and hasattr(scene_manager, "load_level"):
+                scene_manager.load_level(save_data.current_map, None, context)
             else:
-                logger.warning("Cannot reload map: GameView.load_level not available")
+                logger.warning("Cannot reload map: SceneManager.load_level not available")
                 # Even if we can't reload map, we should try to restore rest of state?
                 # Probably safer to abort if map is different.
                 return
@@ -378,8 +379,8 @@ class SaveManager(BaseSystem):
         )
 
         # Restore scene states to cache
-        if scene_manager and hasattr(scene_manager, "state_cache") and scene_states:
-            scene_manager.state_cache.from_dict(scene_states)
+        if scene_manager and hasattr(scene_manager, "restore_scene_state_cache") and scene_states:
+            cast("SceneManager", scene_manager).restore_scene_state_cache(scene_states)
 
         # Reposition player
         if context.player_sprite:

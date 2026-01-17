@@ -8,7 +8,7 @@ from the main GameView.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
@@ -19,7 +19,9 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
+    from pedre.systems import DialogManager, InputManager
     from pedre.systems.game_context import GameContext
+    from pedre.systems.map import MapManager
 
 logger = logging.getLogger(__name__)
 
@@ -56,11 +58,11 @@ class PlayerManager(BaseSystem):
             return
 
         # Check if dialog is showing (blocking movement)
-        dialog_manager = context.get_system("dialog")
+        dialog_manager = cast("DialogManager", context.get_system("dialog"))
         dialog_showing = dialog_manager.showing if dialog_manager else False
 
         # Get input manager
-        input_manager = context.get_system("input")
+        input_manager = cast("InputManager", context.get_system("input"))
 
         # Determine movement
         dx, dy = 0.0, 0.0
@@ -98,11 +100,12 @@ class PlayerManager(BaseSystem):
     def spawn_player(self, context: GameContext, settings: GameSettings) -> None:
         """Spawn player based on map data."""
         game_view = context.game_view
-        if not game_view or not game_view.tile_map:
+        map_manager = cast("MapManager", context.get_system("map"))
+        if not map_manager or not map_manager.tile_map:
             logger.warning("No tile map available for player spawning")
             return
 
-        tile_map = game_view.tile_map
+        tile_map = map_manager.tile_map
 
         # Get Player object layer
         player_layer = tile_map.object_lists.get("Player")
@@ -156,10 +159,10 @@ class PlayerManager(BaseSystem):
         self.player_list.append(self.player_sprite)
 
         # Add to scene
-        if game_view.scene:
-            if "Player" in game_view.scene:
-                game_view.scene.remove_sprite_list_by_name("Player")
-            game_view.scene.add_sprite_list("Player", sprite_list=self.player_list)
+        if map_manager.scene:
+            if "Player" in map_manager.scene:
+                map_manager.scene.remove_sprite_list_by_name("Player")
+            map_manager.scene.add_sprite_list("Player", sprite_list=self.player_list)
 
         # Update context
         context.update_player(self.player_sprite)

@@ -8,7 +8,7 @@ to other systems (portals, interactive objects).
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
@@ -18,6 +18,7 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
+    from pedre.systems import PortalManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -183,7 +184,7 @@ class MapManager(BaseSystem):
             sprite.width = max(xs) - min(xs)
             sprite.height = max(ys) - min(ys)
 
-            portal_manager.register_portal(sprite=sprite, name=portal.name)
+            cast("PortalManager", portal_manager).register_portal(sprite=sprite, name=portal.name)
 
     def _load_interactive_objects(self, context: GameContext) -> None:
         """Register interactive objects from 'Interactive' layer."""

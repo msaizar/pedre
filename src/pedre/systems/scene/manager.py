@@ -16,10 +16,10 @@ from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
-from pedre.systems import SceneStateCache
 from pedre.systems.base import BaseSystem
 from pedre.systems.events import SceneStartEvent
 from pedre.systems.registry import SystemRegistry
+from pedre.systems.scene_state import SceneStateCache
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings

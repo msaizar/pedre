@@ -61,7 +61,7 @@ import logging
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
@@ -80,8 +80,10 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
+    from pedre.systems import AudioManager, DialogManager, ParticleManager
     from pedre.systems.events import EventBus
     from pedre.systems.game_context import GameContext
+    from pedre.views.game_view import GameView
 
 logger = logging.getLogger(__name__)
 
@@ -518,22 +520,21 @@ class NPCManager(BaseSystem):
             return False
 
         # Visual/Audio feedback
-        particle_manager = context.get_system("particle")
-        audio_manager = context.get_system("audio")
-        dialog_manager = context.get_system("dialog")
+        particle_manager = cast("ParticleManager", context.get_system("particle"))
+        audio_manager = cast("AudioManager", context.get_system("audio"))
+        dialog_manager = cast("DialogManager", context.get_system("dialog"))
 
         if particle_manager:
-            particle_manager.emit("sparkle", npc.sprite.center_x, npc.sprite.center_y, amount=10)
+            particle_manager.emit_sparkles(npc.sprite.center_x, npc.sprite.center_y, count=10)
 
         if audio_manager:
             audio_manager.play_sfx("interact")
 
         # Get dialog
         current_scene = "default"  # Fallback
-        if hasattr(context, "game_view") and context.game_view and context.game_view.current_scene:
-            current_scene = context.game_view.current_scene
-
-        dialog_config = self.get_dialog_config(name, npc.dialog_level, current_scene)
+        if hasattr(context, "game_view") and context.game_view and hasattr(context.game_view, "current_scene"):
+            game_view = cast("GameView", context.game_view)
+            current_scene = game_view.current_scene
 
         dialog_data = self.get_dialog(name, npc.dialog_level, current_scene)
         if not dialog_data:
@@ -586,7 +587,7 @@ class NPCManager(BaseSystem):
     @staticmethod
     def _check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
         """Check if an NPC has been interacted with."""
-        npc_mgr = context.get_system("npc")
+        npc_mgr = cast("NPCManager", context.get_system("npc"))
         if not npc_mgr:
             return False
         npc_name = condition_data.get("npc")
@@ -599,7 +600,7 @@ class NPCManager(BaseSystem):
     @staticmethod
     def _check_npc_dialog_level(condition_data: dict[str, Any], context: GameContext) -> bool:
         """Check an NPC's dialog level."""
-        npc_mgr = context.get_system("npc")
+        npc_mgr = cast("NPCManager", context.get_system("npc"))
         if not npc_mgr:
             return False
         npc_name = condition_data.get("npc")

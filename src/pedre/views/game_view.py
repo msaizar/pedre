@@ -71,6 +71,7 @@ if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems import (
         AudioManager,
+        CameraManager,
         InteractionManager,
         InventoryManager,
         NPCManager,
@@ -315,15 +316,30 @@ class GameView(arcade.View):
         if self.system_loader:
             self.system_loader.update_all(delta_time, self.game_context)
 
+    def on_draw(self) -> None:
+        """Render the game world (arcade lifecycle callback).
+
+        Draws all game elements in proper order with camera transformations.
+        """
+        self.clear()
+
+        if not self.game_context:
+            return
+
+        # Activate game camera for world rendering
+        camera_manager = cast("CameraManager", self.game_context.get_system("camera"))
+        if camera_manager:
+            camera_manager.use()
+
         # Draw ALL systems (world coordinates) via system_loader
-        if self.system_loader and self.game_context:
+        if self.system_loader:
             self.system_loader.draw_all(self.game_context)
 
         # Draw UI in screen coordinates
         arcade.camera.Camera2D().use()
 
         # Draw ALL systems (screen coordinates) via system_loader
-        if self.system_loader and self.game_context:
+        if self.system_loader:
             self.system_loader.draw_ui_all(self.game_context)
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
