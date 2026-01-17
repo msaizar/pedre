@@ -1,6 +1,7 @@
 """Script-related events for the script system."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
@@ -34,3 +35,7 @@ class ScriptCompleteEvent(Event):
     """
 
     script_name: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"script": self.script_name}

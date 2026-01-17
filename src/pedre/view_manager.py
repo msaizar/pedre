@@ -64,7 +64,7 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems import AudioManager, GameSaveData, InventoryManager, ScriptManager
+    from pedre.systems import AudioManager, GameSaveData, InventoryManager, SceneManager, ScriptManager
     from pedre.systems.npc import NPCManager
 
 logger = logging.getLogger(__name__)
@@ -410,14 +410,16 @@ class ViewManager:
             cast("ScriptManager", context.get_system("script")),
         )
 
-        # Update script manager's interacted_objects
-        script_manager = context.get_system("script")
-        if script_manager:
-            script_manager.interacted_objects = restored_objects
+        # Update game context's interacted_objects
+        if context:
+            context.interacted_objects.clear()
+            context.interacted_objects.update(restored_objects)
 
         # Restore scene state cache for NPC persistence across scene transitions
         if scene_states:
-            GameView.restore_scene_state_cache(scene_states)
+            scene_manager = cast("SceneManager", context.get_system("scene"))
+            if scene_manager:
+                scene_manager.restore_scene_state_cache(scene_states)
 
     def exit_game(self) -> None:
         """Close the game window and exit the application.

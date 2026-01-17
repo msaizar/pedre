@@ -50,7 +50,9 @@ from pedre.types import MenuOption
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
+    from pedre.systems import AudioManager
     from pedre.view_manager import ViewManager
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -434,7 +436,7 @@ class MenuView(arcade.View):
                 if not game_view or not hasattr(game_view, "audio_manager"):
                     return
 
-                audio_manager = game_view.audio_manager
+                audio_manager = cast("AudioManager", game_view.audio_manager)
                 if not audio_manager:
                     return
 

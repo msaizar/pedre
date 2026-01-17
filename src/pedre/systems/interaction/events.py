@@ -1,6 +1,7 @@
 """Events for the interaction system."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
@@ -34,3 +35,7 @@ class ObjectInteractedEvent(Event):
     """
 
     object_name: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"object_name": self.object_name}

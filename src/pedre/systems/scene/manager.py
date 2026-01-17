@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum, auto
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
@@ -24,7 +24,10 @@ from pedre.systems.registry import SystemRegistry
 if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
+    from pedre.systems.interaction import InteractionManager
+    from pedre.systems.map import MapManager
     from pedre.systems.npc import NPCManager
+    from pedre.systems.player import PlayerManager
     from pedre.systems.portal.events import PortalEnteredEvent
     from pedre.systems.script import ScriptManager
     from pedre.types import SceneStateCacheDict
@@ -64,9 +67,22 @@ class SceneManager(BaseSystem):
         cls._scene_state_cache.from_dict(scene_states)
 
     @classmethod
-    def cache_scene_state(cls, scene_name: str, npc_manager: NPCManager, script_manager: ScriptManager) -> None:
-        """Cache NPC and script state for a scene."""
-        cls._scene_state_cache.cache_scene_state(scene_name, npc_manager, script_manager)
+    def cache_scene_state(
+        cls,
+        scene_name: str,
+        npc_manager: NPCManager,
+        script_manager: ScriptManager,
+        interaction_manager: InteractionManager | None = None,
+    ) -> None:
+        """Cache NPC and script state for a scene.
+
+        Args:
+            scene_name: The name of the scene to cache.
+            npc_manager: The NPC manager containing current NPC states.
+            script_manager: The script manager containing current script states.
+            interaction_manager: Optional interaction manager containing current interaction states.
+        """
+        cls._scene_state_cache.cache_scene_state(scene_name, npc_manager, script_manager, interaction_manager)
 
     @classmethod
     def get_scene_state_dict(cls) -> SceneStateCacheDict:
@@ -111,14 +127,14 @@ class SceneManager(BaseSystem):
         self.current_scene = current_scene
         context.update_scene(current_scene)
 
-        # 1. Load map (MapManager handles its own state and context update)
-        map_manager = context.get_system("map")
+        # 1. Load map
+        map_manager = cast("MapManager", context.get_system("map"))
         if map_manager and hasattr(map_manager, "load_map"):
             map_manager.load_map(map_file, context, self._settings)
 
         # 2. Load dialogs and scripts
-        npc_manager = context.get_system("npc")
-        script_manager = context.get_system("script")
+        npc_manager = cast("NPCManager", context.get_system("npc"))
+        script_manager = cast("ScriptManager", context.get_system("script"))
 
         npc_dialogs_data = {}
         if npc_manager and hasattr(npc_manager, "load_scene_dialogs"):
@@ -128,8 +144,9 @@ class SceneManager(BaseSystem):
             script_manager.load_scene_scripts(current_scene, self._settings, npc_dialogs_data)
 
         # 3. Restore scene state
+        interaction_manager = cast("InteractionManager", context.get_system("interaction"))
         if npc_manager and script_manager:
-            self._scene_state_cache.restore_scene_state(map_file, npc_manager, script_manager)
+            self._scene_state_cache.restore_scene_state(map_file, npc_manager, script_manager, interaction_manager)
 
             # Sync wall_list with NPC visibility after restore
             if context.wall_list:
@@ -142,7 +159,7 @@ class SceneManager(BaseSystem):
         # 4. Trigger spawn if waypoint provided
         # (PlayerManager.spawn_player is already called by MapManager.load_map)
         if spawn_waypoint and context.player_sprite:
-            player_manager = context.get_system("player")
+            player_manager = cast("PlayerManager", context.get_system("player"))
             if player_manager and hasattr(player_manager, "move_player_to_waypoint"):
                 player_manager.move_player_to_waypoint(spawn_waypoint, context)
 

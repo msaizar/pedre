@@ -68,11 +68,9 @@ import arcade
 
 from pedre.constants import asset_path
 from pedre.systems.base import BaseSystem
+from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.registry import SystemRegistry
-
-if TYPE_CHECKING:
-    from pedre.systems.events import EventBus
 
 if TYPE_CHECKING:
     from typing import Any
@@ -633,6 +631,15 @@ class InventoryManager(BaseSystem):
         if self.event_bus:
             self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.has_been_accessed))
             logger.info("Published InventoryClosedEvent (accessed=%s)", self.has_been_accessed)
+
+    @ConditionRegistry.register("inventory_accessed")
+    @staticmethod
+    def _check_inventory_accessed(_condition_data: dict[str, Any], context: GameContext) -> bool:
+        """Check if inventory has been accessed."""
+        inventory = context.get_system("inventory")
+        if not inventory:
+            return False
+        return inventory.has_been_accessed
 
     def to_dict(self) -> dict[str, bool]:
         """Convert inventory state to dictionary for save data serialization.

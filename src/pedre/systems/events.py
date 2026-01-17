@@ -31,7 +31,7 @@ Example usage:
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pedre.systems.event_registry import EventRegistry
 
@@ -66,6 +66,10 @@ class MapTransitionEvent(Event):
     from_map: str
     to_map: str
 
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"from_map": self.from_map, "to_map": self.to_map}
+
 
 @EventRegistry.register("game_start")
 @dataclass
@@ -89,6 +93,10 @@ class GameStartEvent(Event):
 
     Note: This event has no attributes - it simply signals that a new game has begun.
     """
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {}
 
 
 @EventRegistry.register("scene_start")
@@ -121,6 +129,10 @@ class SceneStartEvent(Event):
     """
 
     scene_name: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"scene": self.scene_name}
 
 
 class EventBus:
@@ -250,3 +262,19 @@ class EventBus:
             event_bus.clear()
         """
         self.listeners.clear()
+
+    def unregister_all(self, subscriber: object) -> None:
+        """Unregister all handlers for a specific subscriber.
+
+        This method removes all registered callback functions that belong to the
+        specified subscriber instance. It's particularly useful during system
+        cleanup to ensure no stale references remain in the event bus.
+
+        Args:
+            subscriber: The instance (e.g., manager, system) whose handlers should be removed.
+                       Matches handlers by their __self__ attribute if they are bound methods.
+        """
+        for event_type in self.listeners:
+            self.listeners[event_type] = [
+                h for h in self.listeners[event_type] if not (hasattr(h, "__self__") and h.__self__ == subscriber)
+            ]

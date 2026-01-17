@@ -93,7 +93,7 @@ import logging
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
@@ -104,8 +104,11 @@ if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems.audio import AudioManager
     from pedre.systems.game_context import GameContext
+    from pedre.systems.interaction import InteractionManager
     from pedre.systems.inventory import InventoryManager
+    from pedre.systems.map import MapManager
     from pedre.systems.npc import NPCManager
+    from pedre.systems.scene import SceneManager
     from pedre.systems.script import ScriptManager
     from pedre.types import SceneStateCacheDict
 
@@ -300,11 +303,13 @@ class SaveManager(BaseSystem):
         if not map_manager or not hasattr(map_manager, "current_map"):
             return
 
-        npc_manager = context.get_system("npc")
-        inventory_manager = context.get_system("inventory")
-        audio_manager = context.get_system("audio")
-        script_manager = context.get_system("script")
-        scene_manager = context.get_system("scene")
+        # Use cast for managers to satisfy type checkers, as get_system returns Optional[BaseSystem]
+        npc_manager = cast("NPCManager", context.get_system("npc"))
+        inventory_manager = cast("InventoryManager", context.get_system("inventory"))
+        audio_manager = cast("AudioManager", context.get_system("audio"))
+        script_manager = cast("ScriptManager", context.get_system("script"))
+        interaction_manager = cast("InteractionManager", context.get_system("interaction"))
+        scene_manager = cast("SceneManager", context.get_system("scene"))
 
         scene_states = None
         if scene_manager and hasattr(scene_manager, "state_cache"):
@@ -313,11 +318,12 @@ class SaveManager(BaseSystem):
         success = self.auto_save(
             player_x=context.player_sprite.center_x,
             player_y=context.player_sprite.center_y,
-            current_map=map_manager.current_map,
+            current_map=cast("MapManager", map_manager).current_map,
             npc_manager=npc_manager,
             inventory_manager=inventory_manager,
             audio_manager=audio_manager,
             script_manager=script_manager,
+            interaction_manager=interaction_manager,
             scene_states=scene_states,
         )
 
@@ -339,12 +345,13 @@ class SaveManager(BaseSystem):
             return
 
         # Restore state
-        map_manager = context.get_system("map")
-        npc_manager = context.get_system("npc")
-        inventory_manager = context.get_system("inventory")
-        audio_manager = context.get_system("audio")
-        script_manager = context.get_system("script")
-        scene_manager = context.get_system("scene")
+        map_manager = cast("MapManager", context.get_system("map"))
+        npc_manager = cast("NPCManager", context.get_system("npc"))
+        inventory_manager = cast("InventoryManager", context.get_system("inventory"))
+        audio_manager = cast("AudioManager", context.get_system("audio"))
+        script_manager = cast("ScriptManager", context.get_system("script"))
+        interaction_manager = cast("InteractionManager", context.get_system("interaction"))
+        scene_manager = cast("SceneManager", context.get_system("scene"))
 
         # Reload map if different
         current_map = ""
@@ -361,17 +368,14 @@ class SaveManager(BaseSystem):
                 return
 
         # Restore positions and levels
-        interacted_objects, scene_states = self.restore_all_state(
+        _interacted_objects, scene_states = self.restore_all_state(
             save_data,
             npc_manager=npc_manager,
             inventory_manager=inventory_manager,
             audio_manager=audio_manager,
             script_manager=script_manager,
+            interaction_manager=interaction_manager,
         )
-
-        # Restore script manager's interacted objects
-        if script_manager:
-            script_manager.interacted_objects = interacted_objects
 
         # Restore scene states to cache
         if scene_manager and hasattr(scene_manager, "state_cache") and scene_states:
@@ -383,7 +387,8 @@ class SaveManager(BaseSystem):
             context.player_sprite.center_y = save_data.player_y
 
         if audio_manager:
-            audio_manager.play_sfx("save.wav")  # Or a load sound if we had one
+            # We know it has play_sfx because it's an AudioManager
+            cast("AudioManager", audio_manager).play_sfx("save.wav")  # Or a load sound if we had one
         logger.info("Quick load completed")
 
     def save_game(
@@ -396,6 +401,7 @@ class SaveManager(BaseSystem):
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
+        interaction_manager: InteractionManager | None = None,
         scene_states: SceneStateCacheDict | None = None,
     ) -> bool:
         """Save game to a slot.
@@ -436,6 +442,8 @@ class SaveManager(BaseSystem):
                           If None, audio_settings will be saved as None.
             script_manager: Optional script manager with interacted_objects and completed scripts.
                            If None, interacted_objects and completed_scripts will be saved as None.
+            interaction_manager: Optional interaction manager with interacted objects.
+                                If None, interacted_objects will be saved as None.
             scene_states: Optional dictionary of per-scene NPC states from SceneStateCache.
                          If None, scene_states will be saved as None.
 
@@ -458,8 +466,8 @@ class SaveManager(BaseSystem):
             # Gather audio settings
             audio_settings = audio_manager.to_dict() if audio_manager else None
 
-            # Gather script state
-            interacted_objects_list = list(script_manager.interacted_objects) if script_manager else None
+            # Gather interaction state
+            interacted_objects_list = list(interaction_manager.interacted_objects) if interaction_manager else None
             completed_scripts = script_manager.get_completed_scripts() if script_manager else None
 
             # Create save data
@@ -677,6 +685,7 @@ class SaveManager(BaseSystem):
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
+        interaction_manager: InteractionManager | None = None,
         scene_states: SceneStateCacheDict | None = None,
     ) -> bool:
         """Auto-save to a special auto-save slot.
@@ -706,6 +715,7 @@ class SaveManager(BaseSystem):
             inventory_manager: Optional inventory manager with item collection states.
             audio_manager: Optional audio manager with volume and enable/disable settings.
             script_manager: Optional script manager with interacted_objects and completed scripts.
+            interaction_manager: Optional interaction manager with interacted objects.
             scene_states: Optional dictionary of per-scene NPC states from SceneStateCache.
 
         Returns:
@@ -721,6 +731,7 @@ class SaveManager(BaseSystem):
             inventory_manager,
             audio_manager,
             script_manager,
+            interaction_manager,
             scene_states,
         )
 
@@ -754,6 +765,7 @@ class SaveManager(BaseSystem):
         inventory_manager: InventoryManager | None = None,
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
+        interaction_manager: InteractionManager | None = None,
     ) -> tuple[set[str], SceneStateCacheDict | None]:
         """Restore all manager states from save data.
 
@@ -775,8 +787,9 @@ class SaveManager(BaseSystem):
             save_data: The GameSaveData object loaded from a save file.
             npc_manager: Optional NPC manager to restore dialog levels to.
             inventory_manager: Optional inventory manager to restore items to.
-            audio_manager: Optional audio manager to restore settings to.
-            script_manager: Optional script manager to restore completed scripts to.
+            audio_manager: Optional audio manager to restore settings into.
+            script_manager: Optional script manager to restore completed scripts into.
+            interaction_manager: Optional interaction manager to restore interaction states into.
 
         Returns:
             Tuple of (interacted_objects set, scene_states dict or None).

@@ -40,6 +40,7 @@ from typing import TYPE_CHECKING
 from pedre.sprites.animated_npc import AnimatedNPC
 
 if TYPE_CHECKING:
+    from pedre.systems.interaction import InteractionManager
     from pedre.systems.npc import NPCManager
     from pedre.systems.script import ScriptManager
     from pedre.types import SceneStateCacheDict
@@ -157,6 +158,7 @@ class SceneStateCache:
         scene_name: str,
         npc_manager: NPCManager,
         script_manager: ScriptManager | None = None,
+        interaction_manager: InteractionManager | None = None,
     ) -> None:
         """Cache the current NPC and script states for a scene.
 
@@ -167,6 +169,7 @@ class SceneStateCache:
             scene_name: Name of the scene (e.g., "village.tmx").
             npc_manager: The NPC manager containing current NPC states.
             script_manager: Optional script manager containing current script states.
+            interaction_manager: Optional interaction manager containing current interaction states.
 
         Side effects:
             - Updates _scene_states with current NPC data
@@ -206,7 +209,7 @@ class SceneStateCache:
         if script_manager:
             script_state = ScriptSceneState(
                 completed_scripts=set(script_manager.get_completed_scripts()),
-                interacted_objects=set(script_manager.interacted_objects),
+                interacted_objects=set(interaction_manager.interacted_objects) if interaction_manager else set(),
             )
             self._script_states[scene_name] = script_state
             logger.debug(
@@ -221,6 +224,7 @@ class SceneStateCache:
         scene_name: str,
         npc_manager: NPCManager,
         script_manager: ScriptManager | None = None,
+        interaction_manager: InteractionManager | None = None,
     ) -> bool:
         """Restore cached NPC and script states for a scene.
 
@@ -231,6 +235,7 @@ class SceneStateCache:
             scene_name: Name of the scene (e.g., "village.tmx").
             npc_manager: The NPC manager to restore states into.
             script_manager: Optional script manager to restore script states into.
+            interaction_manager: Optional interaction manager to restore interaction states into.
 
         Returns:
             True if cached state was found and restored, False if no cache exists.
@@ -288,7 +293,8 @@ class SceneStateCache:
                 # Restore completed scripts (has_run flags)
                 script_manager.restore_completed_scripts(list(script_state.completed_scripts))
                 # Restore interacted objects
-                script_manager.interacted_objects.update(script_state.interacted_objects)
+                if interaction_manager:
+                    interaction_manager.interacted_objects.update(script_state.interacted_objects)
                 logger.debug(
                     "Restored script state for scene %s: %d completed scripts, %d interacted objects",
                     scene_name,

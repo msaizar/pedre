@@ -28,6 +28,7 @@ class EventRegistry:
     """
 
     _events: ClassVar[dict[str, type]] = {}
+    _names: ClassVar[dict[type, str]] = {}
 
     @classmethod
     def register(cls, name: str) -> Callable[[type[T]], type[T]]:
@@ -50,6 +51,7 @@ class EventRegistry:
                     event_class.__name__,
                 )
             cls._events[name] = event_class
+            cls._names[event_class] = name
             logger.debug("Registered event: %s -> %s", name, event_class.__name__)
             return event_class
 
@@ -57,17 +59,16 @@ class EventRegistry:
 
     @classmethod
     def get(cls, name: str) -> type | None:
-        """Get a registered event class by its name.
-
-        Args:
-            name: The registered name of the event.
-
-        Returns:
-            The event class if found, None otherwise.
-        """
+        """Get a registered event class by its name."""
         return cls._events.get(name)
 
     @classmethod
+    def get_name(cls, event_class: type) -> str | None:
+        """Get the registered name for an event class."""
+        return cls._names.get(event_class)
+
+    @classmethod
     def clear(cls) -> None:
-        """Clear the registry (primarilry for testing)."""
+        """Clear the registry (primarily for testing)."""
         cls._events.clear()
+        cls._names.clear()

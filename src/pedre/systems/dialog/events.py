@@ -1,6 +1,7 @@
 """Events for dialog system."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
@@ -39,6 +40,10 @@ class DialogClosedEvent(Event):
     npc_name: str
     dialog_level: int
 
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"npc": self.npc_name, "dialog_level": self.dialog_level}
+
 
 @EventRegistry.register("dialog_opened")
 @dataclass
@@ -59,3 +64,7 @@ class DialogOpenedEvent(Event):
 
     npc_name: str
     dialog_level: int
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"npc": self.npc_name, "dialog_level": self.dialog_level}

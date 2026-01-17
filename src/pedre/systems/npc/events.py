@@ -1,6 +1,7 @@
 """Events for NPC system."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
@@ -37,6 +38,10 @@ class NPCInteractedEvent(Event):
     npc_name: str
     dialog_level: int
 
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"npc": self.npc_name, "dialog_level": self.dialog_level}
+
 
 @EventRegistry.register("npc_movement_complete")
 @dataclass
@@ -67,6 +72,10 @@ class NPCMovementCompleteEvent(Event):
 
     npc_name: str
 
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"npc": self.npc_name}
+
 
 @dataclass
 class NPCAppearCompleteEvent(Event):
@@ -87,6 +96,10 @@ class NPCAppearCompleteEvent(Event):
     """
 
     npc_name: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"npc": self.npc_name}
 
 
 @EventRegistry.register("npc_disappear_complete")
@@ -117,3 +130,7 @@ class NPCDisappearCompleteEvent(Event):
     """
 
     npc_name: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"npc": self.npc_name}

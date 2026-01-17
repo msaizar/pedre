@@ -55,9 +55,9 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from pedre.constants import asset_path
 from pedre.systems.action_registry import ActionRegistry
@@ -65,29 +65,28 @@ from pedre.systems.actions import (
     ActionSequence,
 )
 from pedre.systems.base import BaseSystem
+from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
-    from pedre.systems.dialog import DialogClosedEvent
     from pedre.systems.events import (
+        Event,
         EventBus,
-        GameStartEvent,
-        MapTransitionEvent,
-        SceneStartEvent,
     )
     from pedre.systems.game_context import GameContext
-    from pedre.systems.interaction import ObjectInteractedEvent
-    from pedre.systems.inventory import InventoryClosedEvent, ItemAcquiredEvent
-    from pedre.systems.npc import (
-        NPCInteractedEvent,
-        NPCMovementCompleteEvent,
-    )
-    from pedre.systems.portal import PortalEnteredEvent
 
 logger = logging.getLogger(__name__)
+
+
+class ScriptEvent(Protocol):
+    """Protocol for events that support script data extraction."""
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data formatted for script trigger evaluation."""
+        ...
 
 
 @dataclass
@@ -129,7 +128,7 @@ class ScriptManager(BaseSystem):
     - Register event triggers (dialog_closed, npc_interacted, etc.)
     - Evaluate script conditions (NPC dialog levels, inventory state, etc.)
     - Execute active scripts each frame via update()
-    - Track run_once scripts and object interactions
+    - Track run_once scripts
     - Handle deferred condition checking to avoid race conditions
 
     The manager maintains a registry of all loaded scripts and a list of currently
@@ -146,8 +145,6 @@ class ScriptManager(BaseSystem):
         event_bus: The EventBus for subscribing to and publishing events.
         scripts: Registry of all loaded scripts, keyed by script name.
         active_sequences: List of currently executing (script_name, ActionSequence) tuples.
-        interacted_objects: Set of object names that have been interacted with.
-        _current_context: Cached GameContext for event handlers to access.
         _pending_script_checks: Scripts queued for deferred condition checking.
 
     Example usage:
@@ -179,9 +176,8 @@ class ScriptManager(BaseSystem):
         self.event_bus: EventBus | None = None
         self.scripts: dict[str, Script] = {}
         self.active_sequences: list[tuple[str, ActionSequence]] = []
-        self._current_context: GameContext | None = None
-        self.interacted_objects: set[str] = set()  # Track which objects have been interacted with
         self._pending_script_checks: list[str] = []  # Scripts to check conditions for after current update
+        self.context: GameContext | None = None
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Set up the script system.
@@ -191,6 +187,7 @@ class ScriptManager(BaseSystem):
             settings: Game configuration.
         """
         super().setup(context, settings)
+        self.context = context
         self.event_bus = context.event_bus
         self._register_event_handlers()
 
@@ -202,7 +199,6 @@ class ScriptManager(BaseSystem):
         self.event_bus = None
         self.scripts.clear()
         self.active_sequences.clear()
-        self._current_context = None
         super().cleanup()
 
     def get_state(self) -> dict[str, Any]:
@@ -212,7 +208,6 @@ class ScriptManager(BaseSystem):
             Dictionary containing current script system state.
         """
         return {
-            "interacted_objects": list(self.interacted_objects),
             "active_scripts": [name for name, _ in self.active_sequences],
         }
 
@@ -222,7 +217,6 @@ class ScriptManager(BaseSystem):
         Args:
             state: Dictionary containing saved script system state.
         """
-        self.interacted_objects = set(state.get("interacted_objects", []))
         # Note: active_scripts are not restored as they should restart on load
 
     def load_scripts(self, script_path: str, npc_dialogs: dict[str, Any]) -> None:
@@ -289,18 +283,19 @@ class ScriptManager(BaseSystem):
 
         Args:
             script_data: Dictionary containing script definitions.
-            npc_dialogs: Dictionary of NPC dialog data for resolving text_from references.
+            npc_dialogs: Dictionary of NPC dialog data.
         """
         self._parse_scripts(script_data, npc_dialogs)
 
-    def update(self, delta_time: float) -> None:
+    def update(self, delta_time: float, context: GameContext) -> None:
         """Update all active action sequences.
 
         Called each frame to update all currently executing script action sequences.
         Sequences that complete are removed from the active list.
 
         Args:
-            delta_time: Time elapsed since last update (unused but kept for consistency).
+            delta_time: Time elapsed since the last frame, in seconds.
+            context: Game context providing access to other systems.
         """
         if not self.context:
             return
@@ -343,12 +338,12 @@ class ScriptManager(BaseSystem):
         script = self.scripts[script_name]
 
         # Check scene restriction
-        if not manual_trigger and script.scene and script.scene != self.context.scene_name:
+        if not manual_trigger and script.scene and script.scene != self.context.current_scene:
             logger.debug(
                 "ScriptManager: Script '%s' scene mismatch (need: %s, current: %s)",
                 script_name,
                 script.scene,
-                self.context.scene_name,
+                self.context.current_scene,
             )
             return False
 
@@ -371,61 +366,49 @@ class ScriptManager(BaseSystem):
 
         return True
 
-    def object_interacted(self, object_name: str) -> None:
-        """Mark an object as interacted with.
-
-        This method should be called whenever the player interacts with an object.
-        It tracks interactions for script conditions that check if an object
-        has been interacted with.
-
-        Args:
-            object_name: Name of the object that was interacted with.
-        """
-        self.interacted_objects.add(object_name)
-        logger.debug("ScriptManager: Object '%s' marked as interacted", object_name)
-
-    def has_interacted_with(self, object_name: str) -> bool:
-        """Check if an object has been interacted with.
-
-        Args:
-            object_name: Name of the object to check.
-
-        Returns:
-            True if the object has been interacted with, False otherwise.
-        """
-        return object_name in self.interacted_objects
-
     def _register_event_handlers(self) -> None:
-        """Register event handlers with the EventBus."""
+        """Register event handlers for all events triggered by loaded scripts."""
         if not self.event_bus:
             return
 
-        # Register handlers for all relevant events
+        # Identify all unique events required by loaded scripts
+        required_events = set()
+        for script in self.scripts.values():
+            if script.trigger and "event" in script.trigger:
+                required_events.add(script.trigger["event"])
 
-        # Register handlers for all relevant events via EventRegistry
-        # This avoids direct coupling to event classes while maintaining
-        # the ability to subscribe to them.
-
-        event_mapping = {
-            "game_start": self._on_game_start,
-            "scene_start": self._on_scene_start,
-            "dialog_closed": self._on_dialog_closed,
-            "npc_interacted": self._on_npc_interacted,
-            "npc_movement_complete": self._on_npc_movement_complete,
-            "object_interacted": self._on_object_interacted,
-            "portal_entered": self._on_portal_entered,
-            "item_acquired": self._on_item_acquired,
-            "inventory_closed": self._on_inventory_closed,
-            "map_transition": self._on_map_transition,
-            "script_complete": self._on_script_complete,
-        }
-
-        for event_name, handler in event_mapping.items():
+        # Subscribe to all required events using the generic handler
+        for event_name in required_events:
             event_class = EventRegistry.get(event_name)
-            if event_class:
-                self.event_bus.subscribe(event_class, handler)  # type: ignore[arg-type]
-            else:
-                logger.warning("ScriptManager: Event '%s' not registered in EventRegistry", event_name)
+            if not event_class:
+                logger.warning("ScriptManager: Event '%s' in script trigger is not registered", event_name)
+                continue
+
+            self.event_bus.subscribe(event_class, self._on_generic_event)  # type: ignore[arg-type]
+            logger.debug("ScriptManager: Subscribed to '%s' for script triggers", event_name)
+
+    def _on_generic_event(self, event: Event) -> None:
+        """Generic event handler for any registered event.
+
+        Extracts event logic by calling event.get_script_data() if available,
+        otherwise falls back to dataclass conversion.
+
+        Args:
+            event: The event instance that occurred.
+        """
+        event_name = EventRegistry.get_name(type(event))
+        if not event_name:
+            return
+
+        # Extract data using the protocol if available
+        # cast to ScriptEvent to satisfy type checker for get_script_data call
+        script_event = cast("ScriptEvent", event)
+        event_data = script_event.get_script_data() if hasattr(event, "get_script_data") else asdict(event)
+
+        logger.debug("ScriptManager: Handling event '%s' with data: %s", event_name, event_data)
+
+        # Trigger scripts matching this event and data
+        self._handle_event_trigger(event_name, event_data)
 
     def _load_script_file(self, script_path: str, npc_dialogs: dict[str, Any]) -> None:
         """Load scripts from JSON file.
@@ -519,28 +502,16 @@ class ScriptManager(BaseSystem):
         Returns:
             True if condition is satisfied, False otherwise.
         """
-        check_type = condition.get("check")
-        expected = condition.get("equals")
-
-        if check_type == "inventory_accessed":
-            if not self.context.inventory_manager:
-                return False
-            result = self.context.inventory_manager.has_been_accessed
-        elif check_type == "npc_interacted":
-            npc_name = condition.get("npc")
-            if not npc_name or not self.context.npc_manager:
-                return False
-            result = self.context.npc_manager.has_npc_been_interacted_with(npc_name)
-        elif check_type == "object_interacted":
-            object_name = condition.get("object")
-            if not object_name:
-                return False
-            result = self.has_interacted_with(object_name)
-        else:
-            logger.warning("ScriptManager: Unknown condition type: %s", check_type)
+        if not self.context:
             return False
 
-        return result == expected
+        check_type = condition.get("check")
+        if not check_type:
+            logger.warning("ScriptManager: Condition missing 'check' field")
+            return False
+
+        # Delegate to ConditionRegistry
+        return ConditionRegistry.check(check_type, condition, self.context)
 
     def _execute_script(self, script_name: str, script: Script) -> None:
         """Execute a script's action sequence.
@@ -555,7 +526,7 @@ class ScriptManager(BaseSystem):
         # Parse actions into Action objects
         actions = []
         for action_data in script.actions:
-            action = ActionRegistry.parse_action(action_data)
+            action = ActionRegistry.parse(action_data)
             if action:
                 actions.append(action)
             else:
@@ -584,66 +555,6 @@ class ScriptManager(BaseSystem):
                     if script.run_once:
                         script.has_run = True
 
-    # Event handlers
-
-    def _on_game_start(self, event: GameStartEvent) -> None:
-        """Handle game start event."""
-        self._current_context = self.context
-        # Trigger any scripts with game_start trigger
-        self._handle_event_trigger("game_start", {})
-
-    def _on_scene_start(self, event: SceneStartEvent) -> None:
-        """Handle scene start event."""
-        self._current_context = self.context
-        # Trigger any scripts with scene_start trigger for this scene
-        self._handle_event_trigger("scene_start", {"scene": event.scene_name})
-
-    def _on_dialog_closed(self, event: DialogClosedEvent) -> None:
-        """Handle dialog closed event."""
-        self._current_context = self.context
-        self._handle_event_trigger("dialog_closed", {"npc": event.npc_name, "dialog_level": event.dialog_level})
-
-    def _on_npc_interacted(self, event: NPCInteractedEvent) -> None:
-        """Handle NPC interacted event."""
-        self._current_context = self.context
-        self._handle_event_trigger("npc_interacted", {"npc": event.npc_name, "dialog_level": event.dialog_level})
-
-    def _on_npc_movement_complete(self, event: NPCMovementCompleteEvent) -> None:
-        """Handle NPC movement complete event."""
-        self._current_context = self.context
-        self._handle_event_trigger("npc_movement_complete", {"npc": event.npc_name})
-
-    def _on_object_interacted(self, event: ObjectInteractedEvent) -> None:
-        """Handle object interacted event."""
-        self._current_context = self.context
-        self.object_interacted(event.object_name)
-        self._handle_event_trigger("object_interacted", {"object": event.object_name})
-
-    def _on_portal_entered(self, event: PortalEnteredEvent) -> None:
-        """Handle portal entered event."""
-        self._current_context = self.context
-        self._handle_event_trigger("portal_entered", {"portal": event.portal_name})
-
-    def _on_item_acquired(self, event: ItemAcquiredEvent) -> None:
-        """Handle item acquired event."""
-        self._current_context = self.context
-        self._handle_event_trigger("item_acquired", {"item": event.item_name})
-
-    def _on_inventory_closed(self, event: InventoryClosedEvent) -> None:
-        """Handle inventory closed event."""
-        self._current_context = self.context
-        self._handle_event_trigger("inventory_closed", {})
-
-    def _on_map_transition(self, event: MapTransitionEvent) -> None:
-        """Handle map transition event."""
-        self._current_context = self.context
-        self._handle_event_trigger("map_transition", {"target_map": event.target_map})
-
-    def _on_script_complete(self, event: ScriptCompleteEvent) -> None:
-        """Handle script complete event for chaining."""
-        self._current_context = self.context
-        self._handle_event_trigger("script_complete", {"script": event.script_name})
-
     def _handle_event_trigger(self, event_type: str, event_data: dict[str, Any]) -> None:
         """Handle an event trigger by checking all scripts for matching triggers.
 
@@ -658,7 +569,7 @@ class ScriptManager(BaseSystem):
             # Check if trigger matches this event
             if self._trigger_matches_event(script.trigger, event_type, event_data):
                 # Check scene restriction
-                if script.scene and script.scene != self.context.scene_name:
+                if script.scene and script.scene != self.context.current_scene:
                     continue
 
                 # Check run_once restriction
@@ -696,3 +607,23 @@ class ScriptManager(BaseSystem):
                 return False
 
         return True
+
+    def get_completed_scripts(self) -> list[str]:
+        """Get names of all scripts that have run once and completed.
+
+        Returns:
+            List of script names.
+        """
+        return [name for name, script in self.scripts.items() if script.has_run]
+
+    def restore_completed_scripts(self, completed_scripts: list[str]) -> None:
+        """Restore completed state for scripts.
+
+        Args:
+            completed_scripts: List of script names to mark as having run.
+        """
+        for name in completed_scripts:
+            if name in self.scripts:
+                self.scripts[name].has_run = True
+            else:
+                logger.warning("ScriptManager: Cannot restore unknown script: %s", name)

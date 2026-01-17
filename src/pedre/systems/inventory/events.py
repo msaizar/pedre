@@ -6,6 +6,7 @@ or the inventory view being closed.
 """
 
 from dataclasses import dataclass
+from typing import Any
 
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
@@ -32,6 +33,10 @@ class InventoryClosedEvent(Event):
     """
 
     has_been_accessed: bool
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"inventory_accessed": self.has_been_accessed}
 
 
 @EventRegistry.register("item_acquired")
@@ -64,3 +69,7 @@ class ItemAcquiredEvent(Event):
 
     item_id: str
     item_name: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"item_id": self.item_id}

@@ -68,6 +68,7 @@ import arcade
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
 from pedre.systems.base import BaseSystem
+from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.inventory import InventoryManager
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
@@ -207,7 +208,9 @@ class NPCManager(BaseSystem):
         inventory_manager: Optional reference for checking inventory conditions in dialog.
         event_bus: Optional EventBus for publishing NPC lifecycle events.
         interacted_objects: Set tracking which interactive objects have been used, for
-                          dialog condition checking.
+                           dialog condition checking.
+        interacted_npcs: Set tracking which NPCs have been interacted with, for
+                        dialog and script condition checking.
     """
 
     name: ClassVar[str] = "npc"
@@ -233,6 +236,7 @@ class NPCManager(BaseSystem):
         self.inventory_manager: InventoryManager | None = None
         self.event_bus: EventBus | None = None
         self.interacted_objects: set[str] = set()
+        self.interacted_npcs: set[str] = set()
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize the NPC system with game context and settings.
@@ -255,6 +259,10 @@ class NPCManager(BaseSystem):
             self.inventory_manager = inventory_system
         self.event_bus = context.event_bus
         self.interacted_objects = context.interacted_objects
+        # Use a separate set for NPCs if desired, or share context.interacted_objects
+        # For now, let's keep it consistent with ScriptManager's potential view.
+        # ScriptManager used has_npc_been_interacted_with(npc_name) which checked npc_manager.
+        # Wait, let's check NPCManager.has_npc_been_interacted_with.
 
         # Apply settings if available
         if hasattr(settings, "npc_interaction_distance"):
@@ -548,10 +556,58 @@ class NPCManager(BaseSystem):
 
             # Show dialog
             dialog_manager.show_dialog(name, dialog_config.text, dialog_level=npc.dialog_level)
+            self.mark_npc_as_interacted(name)
 
             return True
 
         return False
+
+    def mark_npc_as_interacted(self, npc_name: str) -> None:
+        """Mark an NPC as interacted with.
+
+        Args:
+            npc_name: Name of the NPC.
+        """
+        self.interacted_npcs.add(npc_name)
+        logger.debug("NPCManager: NPC '%s' marked as interacted", npc_name)
+
+    def has_npc_been_interacted_with(self, npc_name: str) -> bool:
+        """Check if an NPC has been interacted with.
+
+        Args:
+            npc_name: Name of the NPC to check.
+
+        Returns:
+            True if the NPC has been interacted with, False otherwise.
+        """
+        return npc_name in self.interacted_npcs
+
+    @ConditionRegistry.register("npc_interacted")
+    @staticmethod
+    def _check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
+        """Check if an NPC has been interacted with."""
+        npc_mgr = context.get_system("npc")
+        if not npc_mgr:
+            return False
+        npc_name = condition_data.get("npc")
+        expected = condition_data.get("equals", True)
+        if not npc_name:
+            return False
+        return npc_mgr.has_npc_been_interacted_with(npc_name) == expected
+
+    @ConditionRegistry.register("npc_dialog_level")
+    @staticmethod
+    def _check_npc_dialog_level(condition_data: dict[str, Any], context: GameContext) -> bool:
+        """Check an NPC's dialog level."""
+        npc_mgr = context.get_system("npc")
+        if not npc_mgr:
+            return False
+        npc_name = condition_data.get("npc")
+        expected_level = condition_data.get("equals")
+        if not npc_name or expected_level is None:
+            return False
+        npc_state = npc_mgr.get_npc_by_name(npc_name)
+        return npc_state is not None and npc_state.dialog_level == expected_level
 
     def _check_dialog_conditions(self, conditions: list[dict[str, Any]], npc_name: str) -> bool:
         """Check if all dialog conditions are met.

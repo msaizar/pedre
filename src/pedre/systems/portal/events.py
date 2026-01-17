@@ -5,6 +5,7 @@ with portals in the game world.
 """
 
 from dataclasses import dataclass
+from typing import Any
 
 from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
@@ -42,3 +43,7 @@ class PortalEnteredEvent(Event):
     """
 
     portal_name: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"portal": self.portal_name}

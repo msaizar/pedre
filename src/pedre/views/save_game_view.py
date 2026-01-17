@@ -39,7 +39,7 @@ import arcade
 from pedre.systems import SaveManager
 
 if TYPE_CHECKING:
-    from pedre.systems import AudioManager, InventoryManager, ScriptManager
+    from pedre.systems import AudioManager, InventoryManager, MapManager, ScriptManager
     from pedre.systems.npc import NPCManager
     from pedre.view_manager import ViewManager
 from typing import cast
@@ -317,7 +317,7 @@ class SaveGameView(arcade.View):
 
         context = game_view.game_context
         player_sprite = context.player_sprite
-        map_manager = context.get_system("map")
+        map_manager = cast("MapManager", context.get_system("map"))
 
         if (
             not player_sprite
