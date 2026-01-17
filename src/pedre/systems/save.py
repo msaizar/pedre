@@ -93,10 +93,17 @@ import logging
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
+
+import arcade
+
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
+    from pedre.config import GameSettings
     from pedre.systems.audio import AudioManager
+    from pedre.systems.game_context import GameContext
     from pedre.systems.inventory import InventoryManager
     from pedre.systems.npc import NPCManager
     from pedre.systems.script import ScriptManager
@@ -217,41 +224,21 @@ class GameSaveData:
         return cls(**data)
 
 
-class SaveManager:
+@SystemRegistry.register
+class SaveManager(BaseSystem):
     """Manages game save and load operations.
 
     The SaveManager coordinates all save/load functionality, handling file I/O, slot
     management, and state serialization. It provides a high-level interface for the
     game to persist and restore player progress.
 
-    The manager uses a slot-based system:
-    - Slots 1-3: Manual player saves (accessible from save/load menu)
-    - Slot 0: Auto-save (automatic periodic saves for crash recovery)
-
-    Each slot is an independent save file stored in JSON format. The manager ensures
-    the save directory exists and handles all file operations safely with exception
-    handling to prevent data corruption.
-
-    Save file lifecycle:
-    1. Game calls save_game() with current state
-    2. Manager gathers state from various managers (NPCs, inventory)
-    3. Creates GameSaveData snapshot with timestamp
-    4. Serializes to JSON and writes to appropriate slot file
-    5. On load, reads JSON, deserializes to GameSaveData
-    6. Game restores state from returned data
-
-    The manager tracks the current_slot to remember which save was last used,
-    useful for quick-save/quick-load functionality.
-
-    Error handling:
-    All file operations are wrapped in try-except blocks. Errors are logged and
-    methods return False/None to indicate failure, allowing the game to show
-    appropriate error messages to the player.
-
     Attributes:
         saves_dir: Path to directory containing save files.
         current_slot: Most recently used save slot number, or None if no saves yet.
+        settings: Game settings for resolving asset paths.
     """
+
+    name: ClassVar[str] = "save"
 
     def __init__(self, saves_dir: Path | None = None) -> None:
         """Initialize the save manager.
@@ -274,8 +261,130 @@ class SaveManager:
         self.saves_dir = saves_dir
         self.saves_dir.mkdir(exist_ok=True)
 
-        # Track current save slot
         self.current_slot: int | None = None
+        self.settings: GameSettings | None = None
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the save system with settings."""
+        self.settings = settings
+
+    def cleanup(self) -> None:
+        """Clean up save system resources."""
+        self.settings = None
+
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle quick save/load hotkeys.
+
+        Args:
+            symbol: Keyboard symbol.
+            modifiers: Key modifiers.
+            context: Game context.
+
+        Returns:
+            True if hotkey was handled.
+        """
+        if symbol == arcade.key.F5:
+            self._handle_quick_save(context)
+            return True
+        if symbol == arcade.key.F9:
+            self._handle_quick_load(context)
+            return True
+        return False
+
+    def _handle_quick_save(self, context: GameContext) -> None:
+        """Perform a quick save using current context state."""
+        if not context.game_view or not context.player_sprite:
+            return
+
+        map_manager = context.get_system("map")
+        if not map_manager or not hasattr(map_manager, "current_map"):
+            return
+
+        npc_manager = context.get_system("npc")
+        inventory_manager = context.get_system("inventory")
+        audio_manager = context.get_system("audio")
+        script_manager = context.get_system("script")
+        scene_manager = context.get_system("scene")
+
+        scene_states = None
+        if scene_manager and hasattr(scene_manager, "state_cache"):
+            scene_states = scene_manager.state_cache.to_dict()
+
+        success = self.auto_save(
+            player_x=context.player_sprite.center_x,
+            player_y=context.player_sprite.center_y,
+            current_map=map_manager.current_map,
+            npc_manager=npc_manager,
+            inventory_manager=inventory_manager,
+            audio_manager=audio_manager,
+            script_manager=script_manager,
+            scene_states=scene_states,
+        )
+
+        if success:
+            if audio_manager:
+                audio_manager.play_sfx("save.wav")
+            logger.info("Quick save completed")
+        else:
+            logger.warning("Quick save failed")
+
+    def _handle_quick_load(self, context: GameContext) -> None:
+        """Perform a quick load from auto-save."""
+        if not context.game_view:
+            return
+
+        save_data = self.load_auto_save()
+        if not save_data:
+            logger.warning("No auto-save found for quick load")
+            return
+
+        # Restore state
+        map_manager = context.get_system("map")
+        npc_manager = context.get_system("npc")
+        inventory_manager = context.get_system("inventory")
+        audio_manager = context.get_system("audio")
+        script_manager = context.get_system("script")
+        scene_manager = context.get_system("scene")
+
+        # Reload map if different
+        current_map = ""
+        if map_manager and hasattr(map_manager, "current_map"):
+            current_map = map_manager.current_map
+
+        if save_data.current_map != current_map:
+            if context.game_view and hasattr(context.game_view, "load_level"):
+                context.game_view.load_level(save_data.current_map, None)
+            else:
+                logger.warning("Cannot reload map: GameView.load_level not available")
+                # Even if we can't reload map, we should try to restore rest of state?
+                # Probably safer to abort if map is different.
+                return
+
+        # Restore positions and levels
+        interacted_objects, scene_states = self.restore_all_state(
+            save_data,
+            npc_manager=npc_manager,
+            inventory_manager=inventory_manager,
+            audio_manager=audio_manager,
+            script_manager=script_manager,
+        )
+
+        # Restore script manager's interacted objects
+        if script_manager:
+            script_manager.interacted_objects = interacted_objects
+
+        # Restore scene states to cache
+        if scene_manager and hasattr(scene_manager, "state_cache") and scene_states:
+            scene_manager.state_cache.from_dict(scene_states)
+
+        # Reposition player
+        if context.player_sprite:
+            context.player_sprite.center_x = save_data.player_x
+            context.player_sprite.center_y = save_data.player_y
+
+        if audio_manager:
+            audio_manager.play_sfx("save.wav")  # Or a load sound if we had one
+        logger.info("Quick load completed")
 
     def save_game(
         self,

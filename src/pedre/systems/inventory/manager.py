@@ -56,17 +56,30 @@ Example usage:
     inventory_mgr.from_dict(save_data)
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar
+
+import arcade
 
 from pedre.constants import asset_path
-from pedre.systems.events import ItemAcquiredEvent
+from pedre.systems.base import BaseSystem
+from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.events import EventBus
+
+if TYPE_CHECKING:
+    from typing import Any
+
+    from pedre.config import GameSettings
+    from pedre.systems.events import EventBus
+    from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -144,12 +157,13 @@ class InventoryItem:
     acquired: bool = False  # Whether the player has this item
 
 
-class InventoryManager:
-    """Manages the player's inventory and item collection.
+@SystemRegistry.register
+class InventoryManager(BaseSystem):
+    """Manages player's inventory and item collection.
 
-    The InventoryManager acts as the central registry for all collectible items in the game.
-    It maintains a master list of possible items, tracks which ones the player has acquired,
-    and provides methods for querying, filtering, and persisting the inventory state.
+    The InventoryManager acts as a central registry for all collectible items in game.
+    It maintains a master list of possible items, tracks which ones player has acquired,
+    and provides methods for querying, filtering, and persisting inventory state.
 
     This manager supports multiple gameplay patterns:
     - **Collectathon**: Track progress toward collecting all items in a category
@@ -162,33 +176,31 @@ class InventoryManager:
     displaying items in a consistent, meaningful order (e.g., chronological for photos).
 
     The inventory state is designed to be serializable to/from dictionaries, making it
-    compatible with JSON-based save systems. The to_dict() and from_dict() methods handle
-    conversion between the manager's internal state and save data format.
+    compatible with JSON-based save systems. The get_state() and restore_state() methods handle
+    conversion between manager's internal state and save data format.
 
     Attributes:
         items: Dictionary mapping item IDs to InventoryItem instances. Maintains insertion
               order for consistent display. All possible items are stored here regardless
               of acquisition status.
-        has_been_accessed: Boolean flag tracking whether the player has opened the inventory
+        has_been_accessed: Boolean flag tracking whether player has opened the inventory
                           view at least once. Used for tutorial prompts, achievements, or
                           quest progression that requires checking inventory.
         event_bus: Optional event bus for publishing ItemAcquiredEvent when items are obtained.
     """
 
-    def __init__(self, event_bus: EventBus | None = None) -> None:
-        """Initialize the inventory manager with default items.
+    name: ClassVar[str] = "inventory"
+    dependencies: ClassVar[list[str]] = []
+
+    def __init__(self) -> None:
+        """Initialize inventory manager with default items.
 
         Creates a new InventoryManager with an empty items dictionary and unaccessed status.
-        Immediately calls _initialize_default_items() to populate the inventory with the
-        game's predefined collectibles.
+        Items will be loaded in setup() method.
 
         This initialization approach separates the manager's setup (empty state) from
         the game's content (default items), making it easier to modify starting items
         or load from save data without changing the manager's core initialization.
-
-        Args:
-            event_bus: Optional event bus for publishing ItemAcquiredEvent. If None,
-                      events won't be published when items are acquired.
         """
         # Asset paths are resolved via resource handles - no need to store them
 
@@ -199,10 +211,43 @@ class InventoryManager:
         self.has_been_accessed: bool = False
 
         # Event bus for publishing events
-        self.event_bus = event_bus
+        self.event_bus: EventBus | None = None
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the inventory system with game context and settings.
+
+        Args:
+            context: Game context providing access to event bus.
+            settings: Game configuration (not used by inventory system).
+        """
+        self.event_bus = context.event_bus
 
         # Initialize default items
         self._initialize_default_items()
+
+        logger.debug("InventoryManager setup complete")
+
+    def cleanup(self) -> None:
+        """Clean up inventory resources when the scene unloads."""
+        self.items.clear()
+        self.has_been_accessed = False
+        logger.debug("InventoryManager cleanup complete")
+
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle key presses for inventory."""
+        if symbol == arcade.key.I and context.game_view and context.game_view.view_manager:
+            context.game_view.view_manager.show_inventory()
+            return True
+        return False
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface)."""
+        return {"inventory_items": self.to_dict()}
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface)."""
+        if "inventory_items" in state:
+            self.from_dict(state["inventory_items"])
 
     def _initialize_default_items(self) -> None:
         """Initialize default inventory items from JSON data file."""
@@ -575,6 +620,19 @@ class InventoryManager:
         if not self.has_been_accessed:
             self.has_been_accessed = True
             logger.info("Inventory accessed for the first time")
+
+    def emit_closed_event(self, context: GameContext) -> None:
+        """Emit InventoryClosedEvent when inventory view closes.
+
+        This allows the script system to react when the player finishes browsing
+        their items.
+
+        Args:
+            context: Game context for accessing event bus.
+        """
+        if self.event_bus:
+            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.has_been_accessed))
+            logger.info("Published InventoryClosedEvent (accessed=%s)", self.has_been_accessed)
 
     def to_dict(self) -> dict[str, bool]:
         """Convert inventory state to dictionary for save data serialization.

@@ -52,10 +52,11 @@ Example usage:
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import arcade
 
+from pedre.systems import SaveManager
 from pedre.views.game_view import GameView
 from pedre.views.inventory_view import InventoryView
 from pedre.views.load_game_view import LoadGameView
@@ -63,7 +64,8 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems import GameSaveData
+    from pedre.systems import AudioManager, GameSaveData, InventoryManager, ScriptManager
+    from pedre.systems.npc import NPCManager
 
 logger = logging.getLogger(__name__)
 
@@ -209,8 +211,10 @@ class ViewManager:
             - May create and cache InventoryView instance on first access
             - Returns None if game view hasn't been created yet
         """
-        if self._inventory_view is None and self._game_view is not None:
-            self._inventory_view = InventoryView(self, self._game_view.inventory_manager)
+        if self._inventory_view is None and self._game_view is not None and self._game_view.game_context:
+            inventory_manager = cast("InventoryManager", self._game_view.game_context.get_system("inventory"))
+            if inventory_manager:
+                self._inventory_view = InventoryView(self, inventory_manager)
         return self._inventory_view  # type: ignore[return-value]
 
     def show_menu(self, *, from_game_pause: bool = False) -> None:
@@ -243,26 +247,28 @@ class ViewManager:
         inventory view to notify scripts that the player checked their inventory.
 
         Args:
-            trigger_post_inventory_dialog: If True, calls trigger_post_inventory_dialog()
-                on the game view after showing it. This publishes an InventoryClosedEvent
-                for the script system.
+            trigger_post_inventory_dialog: If True, calls emit_closed_event()
+                on the inventory manager after showing it. This publishes an
+                InventoryClosedEvent for the script system.
 
         Side effects:
             - Shows game view via window.show_view()
             - Triggers game view's on_show_view() callback
-            - May call game_view.trigger_post_inventory_dialog() to publish event
+            - May call inventory_manager.emit_closed_event() to publish event
             - Logs transition details
         """
         logger.info("show_game called with trigger_post_inventory_dialog=%s", trigger_post_inventory_dialog)
         self.window.show_view(self.game_view)
-        if trigger_post_inventory_dialog and hasattr(self.game_view, "trigger_post_inventory_dialog"):
-            logger.info("Calling trigger_post_inventory_dialog on game_view")
-            self.game_view.trigger_post_inventory_dialog()
+        if trigger_post_inventory_dialog and self.game_view.game_context:
+            inventory_manager = cast("InventoryManager", self.game_view.game_context.get_system("inventory"))
+            if inventory_manager:
+                logger.info("Calling emit_closed_event on inventory_manager")
+                inventory_manager.emit_closed_event(self.game_view.game_context)
         else:
             logger.info(
-                "Not calling trigger (flag=%s, hasattr=%s)",
+                "Not calling trigger (flag=%s, game_view=%s)",
                 trigger_post_inventory_dialog,
-                hasattr(self.game_view, "trigger_post_inventory_dialog"),
+                self._game_view is not None,
             )
 
     def show_load_game(self) -> None:
@@ -328,7 +334,8 @@ class ViewManager:
             return
 
         # Full load: no game view exists, load from auto-save
-        save_data = self.game_view.save_manager.load_auto_save()
+        save_manager = SaveManager()
+        save_data = save_manager.load_auto_save()
 
         if not save_data:
             logger.warning("Cannot continue: no game view or auto-save found")
@@ -385,16 +392,28 @@ class ViewManager:
             self.game_view.player_sprite.center_y = save_data.player_y
 
         # Restore all manager states using the centralized method
-        restored_objects, scene_states = self.game_view.save_manager.restore_all_state(
+        context = self.game_view.game_context
+        if not context:
+            logger.error("ViewManager: No GameContext after showing GameView")
+            return
+
+        save_manager = cast("SaveManager", context.get_system("save"))
+        if not save_manager:
+            logger.error("ViewManager: Save system not found in context")
+            return
+
+        restored_objects, scene_states = save_manager.restore_all_state(
             save_data,
-            self.game_view.npc_manager,
-            self.game_view.inventory_manager,
-            self.game_view.audio_manager,
-            self.game_view.script_manager,
+            cast("NPCManager", context.get_system("npc")),
+            cast("InventoryManager", context.get_system("inventory")),
+            cast("AudioManager", context.get_system("audio")),
+            cast("ScriptManager", context.get_system("script")),
         )
 
         # Update script manager's interacted_objects
-        self.game_view.script_manager.interacted_objects = restored_objects
+        script_manager = context.get_system("script")
+        if script_manager:
+            script_manager.interacted_objects = restored_objects
 
         # Restore scene state cache for NPC persistence across scene transitions
         if scene_states:

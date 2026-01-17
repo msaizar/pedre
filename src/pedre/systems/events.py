@@ -33,6 +33,8 @@ Example usage:
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from pedre.systems.event_registry import EventRegistry
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -42,220 +44,7 @@ class Event:
     """Base event class."""
 
 
-@dataclass
-class DialogClosedEvent(Event):
-    """Fired when a dialog is closed.
-
-    This event is published by the dialog manager when the player dismisses a dialog
-    window. It's commonly used to trigger scripts that should run after a conversation,
-    such as advancing the story or showing follow-up actions.
-
-    The event includes both the NPC name and their dialog level at the time the dialog
-    was shown, allowing scripts to trigger on specific conversation stages.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "dialog_closed",
-                "npc": "martin",
-                "dialog_level": 1
-            }
-        }
-
-    The trigger filters are optional:
-    - npc: Only trigger for specific NPC (omit to trigger for any NPC)
-    - dialog_level: Only trigger at specific dialog level (omit to trigger at any level)
-
-    Attributes:
-        npc_name: Name of the NPC whose dialog was closed.
-        dialog_level: Conversation level at the time dialog was shown.
-    """
-
-    npc_name: str
-    dialog_level: int
-
-
-@dataclass
-class DialogOpenedEvent(Event):
-    """Fired when a dialog is opened.
-
-    This event is published by the dialog manager when a dialog window is shown to
-    the player. It can be used to track when conversations begin or to coordinate
-    other systems with dialog display.
-
-    Note: This event is not currently used for script triggers, but is available
-    for programmatic event handling.
-
-    Attributes:
-        npc_name: Name of the NPC whose dialog was opened.
-        dialog_level: Current conversation level.
-    """
-
-    npc_name: str
-    dialog_level: int
-
-
-@dataclass
-class InventoryClosedEvent(Event):
-    """Fired when the inventory view is closed.
-
-    This event is published when the player closes the inventory screen. It can be
-    used to trigger scripts after the player has viewed their items, commonly in
-    tutorial sequences or quest chains.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "inventory_closed"
-            }
-        }
-
-    Attributes:
-        has_been_accessed: Whether inventory has been accessed before.
-    """
-
-    has_been_accessed: bool
-
-
-@dataclass
-class NPCInteractedEvent(Event):
-    """Fired when player interacts with an NPC.
-
-    This event is published when the player presses the interaction key while facing
-    an NPC. It triggers before any dialog is shown, making it useful for scripts that
-    need to run custom logic at the start of an NPC interaction.
-
-    The event is published even if the NPC has no dialog configured, allowing scripts
-    to handle the interaction completely.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "npc_interacted",
-                "npc": "martin"
-            }
-        }
-
-    The npc filter is optional:
-    - npc: Only trigger for specific NPC (omit to trigger for any NPC)
-
-    Attributes:
-        npc_name: Name of the NPC that was interacted with.
-        dialog_level: Current conversation level.
-    """
-
-    npc_name: str
-    dialog_level: int
-
-
-@dataclass
-class ObjectInteractedEvent(Event):
-    """Fired when player interacts with an interactive object.
-
-    This event is published when the player presses the interaction key while facing
-    an interactive object in the game world. Objects are tiles or sprites marked as
-    interactive in the map data.
-
-    The script manager tracks which objects have been interacted with, allowing
-    conditions to check if an object was previously activated.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "object_interacted",
-                "object_name": "treasure_chest"
-            }
-        }
-
-    The object_name filter is optional:
-    - object_name: Only trigger for specific object (omit to trigger for any object)
-
-    Attributes:
-        object_name: Name of the object that was interacted with.
-    """
-
-    object_name: str
-
-
-@dataclass
-class NPCMovementCompleteEvent(Event):
-    """Fired when an NPC completes movement to target.
-
-    This event is published by the NPC manager when an NPC finishes pathfinding and
-    arrives at their destination. It's useful for chaining actions that should occur
-    after an NPC reaches a specific location.
-
-    The event is emitted when both the NPC's path is empty and the is_moving flag
-    becomes False, ensuring movement is fully complete.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "npc_movement_complete",
-                "npc": "martin"
-            }
-        }
-
-    The npc filter is optional:
-    - npc: Only trigger for specific NPC (omit to trigger for any NPC)
-
-    Attributes:
-        npc_name: Name of the NPC that completed movement.
-    """
-
-    npc_name: str
-
-
-@dataclass
-class NPCAppearCompleteEvent(Event):
-    """Fired when an NPC completes appear animation.
-
-    This event is published by the NPC manager when an AnimatedNPC finishes its appear
-    animation. AnimatedNPCs play a special animation when they're revealed, and this
-    event signals that the animation has completed.
-
-    This event is typically used internally by wait actions (WaitForNPCsAppearAction)
-    rather than as a direct script trigger, but it's available for custom event handling.
-
-    Note: This event is not currently used for script triggers, but is available
-    for programmatic event handling.
-
-    Attributes:
-        npc_name: Name of the NPC that appeared.
-    """
-
-    npc_name: str
-
-
-@dataclass
-class NPCDisappearCompleteEvent(Event):
-    """Fired when an NPC completes disappear animation.
-
-    This event is published by the NPC manager when an AnimatedNPC finishes its disappear
-    animation. The disappear animation is triggered by the StartDisappearAnimationAction,
-    and this event signals when it's safe to perform cleanup or trigger follow-up actions.
-
-    The NPC sprite is automatically hidden after the animation completes, just before
-    this event is published.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "npc_disappear_complete",
-                "npc": "martin"
-            }
-        }
-
-    The npc filter is optional:
-    - npc: Only trigger for specific NPC (omit to trigger for any NPC)
-
-    Attributes:
-        npc_name: Name of the NPC that disappeared.
-    """
-
-    npc_name: str
-
-
+@EventRegistry.register("map_transition")
 @dataclass
 class MapTransitionEvent(Event):
     """Fired when transitioning to a new map.
@@ -278,35 +67,7 @@ class MapTransitionEvent(Event):
     to_map: str
 
 
-@dataclass
-class ScriptCompleteEvent(Event):
-    """Fired when a script completes execution.
-
-    This event is published by the script manager when a script's action sequence
-    finishes executing. It allows scripts to chain together, where one script waits
-    for another to complete before starting.
-
-    This is particularly useful for complex multi-stage sequences where different
-    scripts handle different phases of a cutscene or story event.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "script_complete",
-                "script": "intro_cutscene"
-            }
-        }
-
-    The script filter is optional:
-    - script: Only trigger when specific script completes (omit to trigger for any script)
-
-    Attributes:
-        script_name: Name of the script that completed.
-    """
-
-    script_name: str
-
-
+@EventRegistry.register("game_start")
 @dataclass
 class GameStartEvent(Event):
     """Fired when a new game starts (not on load).
@@ -330,6 +91,7 @@ class GameStartEvent(Event):
     """
 
 
+@EventRegistry.register("scene_start")
 @dataclass
 class SceneStartEvent(Event):
     """Fired when a new scene/map starts loading.
@@ -359,70 +121,6 @@ class SceneStartEvent(Event):
     """
 
     scene_name: str
-
-
-@dataclass
-class ItemAcquiredEvent(Event):
-    """Fired when player acquires an inventory item.
-
-    This event is published by the inventory manager when an item is added to the
-    player's inventory for the first time. It can be used to trigger congratulatory
-    messages, unlock new areas, or advance quest chains.
-
-    The event is only published when an item transitions from unacquired to acquired.
-    Attempting to acquire an already-owned item will not fire this event.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "item_acquired",
-                "item_id": "rusty_key"
-            }
-        }
-
-    The item_id filter is optional:
-    - item_id: Only trigger for specific item (omit to trigger for any item)
-
-    Attributes:
-        item_id: Unique identifier of the item that was acquired.
-        item_name: Display name of the item (for logging/debugging).
-    """
-
-    item_id: str
-    item_name: str
-
-
-@dataclass
-class PortalEnteredEvent(Event):
-    """Fired when player enters a portal zone.
-
-    This event is published by the portal manager when the player walks into a portal's
-    activation zone. Scripts can subscribe to this event to handle portal transitions,
-    including conditional checks, cutscenes, and map transitions.
-
-    Unlike the legacy portal system which handled transitions directly, this event-based
-    approach allows full flexibility through the script system. Scripts can check conditions,
-    play animations, show dialog, and ultimately use the change_scene action to transition.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "portal_entered",
-                "portal": "forest_gate"
-            },
-            "actions": [
-                {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
-            ]
-        }
-
-    The portal filter is optional:
-    - portal: Only trigger for specific portal name (omit to trigger for any portal)
-
-    Attributes:
-        portal_name: Name of the portal the player entered.
-    """
-
-    portal_name: str
 
 
 class EventBus:

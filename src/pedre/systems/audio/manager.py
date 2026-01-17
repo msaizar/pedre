@@ -48,18 +48,27 @@ Integration:
     - Responds to user settings for volume and enable/disable
 """
 
+from __future__ import annotations
+
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
 from pedre.constants import asset_path
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
+
+if TYPE_CHECKING:
+    from pedre.config import GameSettings
+    from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
 
-class AudioManager:
+@SystemRegistry.register
+class AudioManager(BaseSystem):
     """Manages background music and sound effects.
 
     The AudioManager is the central system for all audio playback in the game.
@@ -81,7 +90,12 @@ class AudioManager:
     - Maintains separate enabled states for music and SFX
     - Stores volume preferences independently for music and SFX
     - Manages cache lifecycle to balance memory and performance
+
+    This system has no dependencies on other systems.
     """
+
+    name: ClassVar[str] = "audio"
+    dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
         """Initialize the audio manager.
@@ -110,6 +124,29 @@ class AudioManager:
         # Track if music is enabled
         self.music_enabled = True
         self.sfx_enabled = True
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the audio system with game settings.
+
+        This method is called by the SystemLoader after all systems have been
+        instantiated. It configures volume levels based on GameSettings.
+
+        Args:
+            context: Game context (not used by AudioManager).
+            settings: Game configuration containing volume settings.
+        """
+        # AudioManager doesn't need context, but settings could be used
+        # for initial volume configuration if GameSettings had audio settings
+        logger.debug("AudioManager setup complete")
+
+    def cleanup(self) -> None:
+        """Clean up audio resources when the scene unloads.
+
+        Stops any playing music and clears caches to free memory.
+        """
+        self.stop_music()
+        self.clear_all_caches()
+        logger.debug("AudioManager cleanup complete")
 
     def play_music(self, filename: str, *, loop: bool = True, volume: float | None = None) -> bool:
         """Play background music.
@@ -489,6 +526,28 @@ class AudioManager:
             audio_manager.unmark_music_loading(filename)
         """
         self._music_loading.discard(filename)
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface).
+
+        This implements the BaseSystem interface. For backwards compatibility,
+        it delegates to to_dict().
+
+        Returns:
+            Dictionary with audio settings.
+        """
+        return self.to_dict()
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface).
+
+        This implements the BaseSystem interface. For backwards compatibility,
+        it delegates to from_dict().
+
+        Args:
+            state: Previously saved state dictionary.
+        """
+        self.from_dict(state)
 
     def to_dict(self) -> dict[str, bool | float]:
         """Convert audio settings to dictionary for save data serialization.

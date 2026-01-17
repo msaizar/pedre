@@ -48,13 +48,25 @@ Integration:
     - Used before drawing world objects in on_draw()
 """
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, Any, ClassVar
+
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     import arcade
 
+    from pedre.config import GameSettings
+    from pedre.systems.game_context import GameContext
 
-class CameraManager:
+logger = logging.getLogger(__name__)
+
+
+@SystemRegistry.register
+class CameraManager(BaseSystem):
     """Manages camera with smooth following and optional boundaries.
 
     The CameraManager wraps an Arcade Camera2D object and provides smooth
@@ -83,9 +95,12 @@ class CameraManager:
         - All positions are in world coordinates (pixels)
     """
 
+    name: ClassVar[str] = "camera"
+    dependencies: ClassVar[list[str]] = []
+
     def __init__(
         self,
-        camera: arcade.camera.Camera2D,
+        camera: arcade.camera.Camera2D | None = None,
         lerp_speed: float = 0.1,
         *,
         use_bounds: bool = False,
@@ -97,7 +112,8 @@ class CameraManager:
 
         Args:
             camera: The arcade Camera2D to manage. This is the camera that
-                will be positioned and used for rendering.
+                will be positioned and used for rendering. Can be None if
+                the camera will be set later via set_camera().
             lerp_speed: Speed of camera interpolation (0.0 to 1.0).
                 Higher values make the camera catch up faster. Default 0.1
                 provides a good balance between smooth and responsive.
@@ -111,10 +127,50 @@ class CameraManager:
             # Create more responsive camera
             camera_manager = CameraManager(camera, lerp_speed=0.2)
         """
-        self.camera = camera
+        self.camera: arcade.camera.Camera2D | None = camera
         self.lerp_speed = lerp_speed
         self.use_bounds = use_bounds
         self.bounds: tuple[float, float, float, float] | None = None  # (min_x, max_x, min_y, max_y)
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the camera system with game context and settings.
+
+        Args:
+            context: Game context providing access to other systems.
+            settings: Game configuration (not used by camera system).
+        """
+        logger.debug("CameraManager setup complete")
+
+    def cleanup(self) -> None:
+        """Clean up camera resources when the scene unloads."""
+        self.camera = None
+        self.bounds = None
+        self.use_bounds = False
+        logger.debug("CameraManager cleanup complete")
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface).
+
+        Camera state typically doesn't need to be saved as it follows the player,
+        but we save the lerp_speed in case it was modified during gameplay.
+        """
+        return {
+            "lerp_speed": self.lerp_speed,
+            "use_bounds": self.use_bounds,
+        }
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface)."""
+        self.lerp_speed = state.get("lerp_speed", 0.1)
+        self.use_bounds = state.get("use_bounds", False)
+
+    def set_camera(self, camera: arcade.camera.Camera2D) -> None:
+        """Set the camera to manage.
+
+        Args:
+            camera: The arcade Camera2D to manage.
+        """
+        self.camera = camera
 
     def set_bounds(
         self,
@@ -222,6 +278,9 @@ class CameraManager:
             distance in approximately 0.75 seconds, creating a smooth but
             responsive feel.
         """
+        if self.camera is None:
+            return
+
         current_x, current_y = self.camera.position
 
         # Apply bounds if enabled
@@ -270,6 +329,9 @@ class CameraManager:
             Use smooth_follow() for normal gameplay camera following.
             Use instant_follow() only when you want an immediate cut.
         """
+        if self.camera is None:
+            return
+
         # Apply bounds if enabled
         if self.use_bounds and self.bounds:
             min_x, max_x, min_y, max_y = self.bounds
@@ -344,4 +406,5 @@ class CameraManager:
             This is a thin wrapper around arcade.camera.Camera2D.use() for
             convenience and consistency with the manager pattern.
         """
-        self.camera.use()
+        if self.camera is not None:
+            self.camera.use()

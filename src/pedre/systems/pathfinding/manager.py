@@ -32,8 +32,8 @@ Integration with other systems:
 - Wall list is shared with the physics/collision system
 
 Example usage:
-    # Create pathfinding manager
-    pathfinding = PathfindingManager(tile_size=32)
+    # Get pathfinding manager from context
+    pathfinding = context.get_system("pathfinding")
     pathfinding.set_wall_list(wall_sprite_list)
 
     # Find path from pixel position to tile coordinates
@@ -54,15 +54,22 @@ Example usage:
 import logging
 from collections import deque
 from heapq import heappop, heappush
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar
+
+from pedre.systems.base import BaseSystem
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     import arcade
 
+    from pedre.config import GameSettings
+    from pedre.systems.game_context import GameContext
+
 logger = logging.getLogger(__name__)
 
 
-class PathfindingManager:
+@SystemRegistry.register
+class PathfindingManager(BaseSystem):
     """Manages pathfinding calculations using A* algorithm.
 
     The PathfindingManager provides efficient navigation for game entities across a
@@ -91,18 +98,58 @@ class PathfindingManager:
         wall_list: SpriteList containing all collision objects (walls, NPCs, etc.).
     """
 
-    def __init__(self, tile_size: int = 32) -> None:
-        """Initialize the pathfinding manager.
+    name: ClassVar[str] = "pathfinding"
+    dependencies: ClassVar[list[str]] = []
 
-        Creates a pathfinding manager for the given tile size. The wall_list must
+    def __init__(self) -> None:
+        """Initialize the pathfinding manager with default values.
+
+        Creates a pathfinding manager with default tile size. The wall_list must
         be set separately via set_wall_list() before pathfinding can be performed.
+        """
+        self.tile_size: int = 32
+        self.wall_list: arcade.SpriteList | None = None
+
+    def setup(self, context: GameContext, settings: GameSettings) -> None:
+        """Initialize the pathfinding system with game context and settings.
+
+        This method is called by the SystemLoader after all systems have been
+        instantiated. It configures the manager with tile size from settings.
 
         Args:
-            tile_size: Size of tiles in pixels (default 32). Must match the game's
-                      tile map configuration.
+            context: Game context providing access to other systems.
+            settings: Game configuration containing tile_size setting.
         """
-        self.tile_size = tile_size
-        self.wall_list: arcade.SpriteList | None = None
+        if hasattr(settings, "tile_size"):
+            self.tile_size = settings.tile_size
+        logger.debug("PathfindingManager setup complete (tile_size=%d)", self.tile_size)
+
+    def cleanup(self) -> None:
+        """Clean up pathfinding resources when the scene unloads.
+
+        Clears the wall list reference.
+        """
+        self.wall_list = None
+        logger.debug("PathfindingManager cleanup complete")
+
+    def get_state(self) -> dict[str, Any]:
+        """Return serializable state for saving.
+
+        Pathfinding has no persistent state to save.
+
+        Returns:
+            Empty dictionary as pathfinding state is transient.
+        """
+        return {}
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data.
+
+        Pathfinding has no persistent state to restore.
+
+        Args:
+            state: Previously saved state dictionary (unused).
+        """
 
     def set_wall_list(self, wall_list: arcade.SpriteList) -> None:
         """Set the wall list for collision detection.
