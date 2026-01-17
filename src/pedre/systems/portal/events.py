@@ -6,9 +6,11 @@ with portals in the game world.
 
 from dataclasses import dataclass
 
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
 
 
+@EventRegistry.register("portal_entered")
 @dataclass
 class PortalEnteredEvent(Event):
     """Fired when player enters a portal zone.

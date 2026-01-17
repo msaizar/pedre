@@ -33,6 +33,8 @@ Example usage:
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from pedre.systems.event_registry import EventRegistry
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -42,6 +44,7 @@ class Event:
     """Base event class."""
 
 
+@EventRegistry.register("map_transition")
 @dataclass
 class MapTransitionEvent(Event):
     """Fired when transitioning to a new map.
@@ -64,6 +67,7 @@ class MapTransitionEvent(Event):
     to_map: str
 
 
+@EventRegistry.register("game_start")
 @dataclass
 class GameStartEvent(Event):
     """Fired when a new game starts (not on load).
@@ -87,6 +91,7 @@ class GameStartEvent(Event):
     """
 
 
+@EventRegistry.register("scene_start")
 @dataclass
 class SceneStartEvent(Event):
     """Fired when a new scene/map starts loading.

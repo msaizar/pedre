@@ -2,9 +2,11 @@
 
 from dataclasses import dataclass
 
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
 
 
+@EventRegistry.register("dialog_closed")
 @dataclass
 class DialogClosedEvent(Event):
     """Fired when a dialog is closed.
@@ -38,6 +40,7 @@ class DialogClosedEvent(Event):
     dialog_level: int
 
 
+@EventRegistry.register("dialog_opened")
 @dataclass
 class DialogOpenedEvent(Event):
     """Fired when a dialog is opened.

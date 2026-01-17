@@ -65,26 +65,27 @@ from pedre.systems.actions import (
     ActionSequence,
 )
 from pedre.systems.base import BaseSystem
-from pedre.systems.dialog import DialogClosedEvent
-from pedre.systems.events import (
-    EventBus,
-    GameStartEvent,
-    MapTransitionEvent,
-    SceneStartEvent,
-)
-from pedre.systems.interaction import ObjectInteractedEvent
-from pedre.systems.inventory import InventoryClosedEvent, ItemAcquiredEvent
-from pedre.systems.npc import (
-    NPCInteractedEvent,
-    NPCMovementCompleteEvent,
-)
-from pedre.systems.portal import PortalEnteredEvent
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
+    from pedre.systems.dialog import DialogClosedEvent
+    from pedre.systems.events import (
+        EventBus,
+        GameStartEvent,
+        MapTransitionEvent,
+        SceneStartEvent,
+    )
     from pedre.systems.game_context import GameContext
+    from pedre.systems.interaction import ObjectInteractedEvent
+    from pedre.systems.inventory import InventoryClosedEvent, ItemAcquiredEvent
+    from pedre.systems.npc import (
+        NPCInteractedEvent,
+        NPCMovementCompleteEvent,
+    )
+    from pedre.systems.portal import PortalEnteredEvent
 
 logger = logging.getLogger(__name__)
 
@@ -401,22 +402,30 @@ class ScriptManager(BaseSystem):
 
         # Register handlers for all relevant events
 
-        handlers = {
-            GameStartEvent: self._on_game_start,
-            SceneStartEvent: self._on_scene_start,
-            DialogClosedEvent: self._on_dialog_closed,
-            NPCInteractedEvent: self._on_npc_interacted,
-            NPCMovementCompleteEvent: self._on_npc_movement_complete,
-            ObjectInteractedEvent: self._on_object_interacted,
-            PortalEnteredEvent: self._on_portal_entered,
-            ItemAcquiredEvent: self._on_item_acquired,
-            InventoryClosedEvent: self._on_inventory_closed,
-            MapTransitionEvent: self._on_map_transition,
-            ScriptCompleteEvent: self._on_script_complete,
+        # Register handlers for all relevant events via EventRegistry
+        # This avoids direct coupling to event classes while maintaining
+        # the ability to subscribe to them.
+
+        event_mapping = {
+            "game_start": self._on_game_start,
+            "scene_start": self._on_scene_start,
+            "dialog_closed": self._on_dialog_closed,
+            "npc_interacted": self._on_npc_interacted,
+            "npc_movement_complete": self._on_npc_movement_complete,
+            "object_interacted": self._on_object_interacted,
+            "portal_entered": self._on_portal_entered,
+            "item_acquired": self._on_item_acquired,
+            "inventory_closed": self._on_inventory_closed,
+            "map_transition": self._on_map_transition,
+            "script_complete": self._on_script_complete,
         }
 
-        for event_type, handler in handlers.items():
-            self.event_bus.subscribe(event_type, handler)
+        for event_name, handler in event_mapping.items():
+            event_class = EventRegistry.get(event_name)
+            if event_class:
+                self.event_bus.subscribe(event_class, handler)  # type: ignore[arg-type]
+            else:
+                logger.warning("ScriptManager: Event '%s' not registered in EventRegistry", event_name)
 
     def _load_script_file(self, script_path: str, npc_dialogs: dict[str, Any]) -> None:
         """Load scripts from JSON file.

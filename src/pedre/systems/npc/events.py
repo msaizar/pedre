@@ -2,9 +2,11 @@
 
 from dataclasses import dataclass
 
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
 
 
+@EventRegistry.register("npc_interacted")
 @dataclass
 class NPCInteractedEvent(Event):
     """Fired when player interacts with an NPC.
@@ -36,6 +38,7 @@ class NPCInteractedEvent(Event):
     dialog_level: int
 
 
+@EventRegistry.register("npc_movement_complete")
 @dataclass
 class NPCMovementCompleteEvent(Event):
     """Fired when an NPC completes movement to target.
@@ -86,6 +89,7 @@ class NPCAppearCompleteEvent(Event):
     npc_name: str
 
 
+@EventRegistry.register("npc_disappear_complete")
 @dataclass
 class NPCDisappearCompleteEvent(Event):
     """Fired when an NPC completes disappear animation.

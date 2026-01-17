@@ -7,9 +7,11 @@ or the inventory view being closed.
 
 from dataclasses import dataclass
 
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
 
 
+@EventRegistry.register("inventory_closed")
 @dataclass
 class InventoryClosedEvent(Event):
     """Fired when the inventory view is closed by the player.
@@ -32,6 +34,7 @@ class InventoryClosedEvent(Event):
     has_been_accessed: bool
 
 
+@EventRegistry.register("item_acquired")
 @dataclass
 class ItemAcquiredEvent(Event):
     """Fired when player acquires an inventory item.

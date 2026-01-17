@@ -2,9 +2,11 @@
 
 from dataclasses import dataclass
 
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
 
 
+@EventRegistry.register("object_interacted")
 @dataclass
 class ObjectInteractedEvent(Event):
     """Fired when player interacts with an interactive object.

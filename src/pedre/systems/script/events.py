@@ -2,9 +2,11 @@
 
 from dataclasses import dataclass
 
+from pedre.systems.event_registry import EventRegistry
 from pedre.systems.events import Event
 
 
+@EventRegistry.register("script_complete")
 @dataclass
 class ScriptCompleteEvent(Event):
     """Fired when a script completes execution.
