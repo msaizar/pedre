@@ -193,8 +193,9 @@ class ChangeSceneAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Trigger the scene transition."""
         if not self.executed:
-            if context.game_view is not None:
-                context.game_view.start_scene_transition(
+            scene_manager = context.get_system("scene")
+            if scene_manager:
+                scene_manager.request_transition(
                     self.target_map,
                     self.spawn_waypoint,
                 )
@@ -204,7 +205,7 @@ class ChangeSceneAction(Action):
                     self.spawn_waypoint or "default",
                 )
             else:
-                logger.warning("ChangeSceneAction: No game_view in context, cannot transition")
+                logger.warning("ChangeSceneAction: No scene_manager in context, cannot transition")
             self.executed = True
 
         return True

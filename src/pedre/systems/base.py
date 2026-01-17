@@ -107,17 +107,23 @@ class BaseSystem(ABC):
         """
 
     def on_draw(self, context: GameContext) -> None:  # noqa: B027
-        """Called during the draw phase of each frame.
+        """Called during the draw phase of each frame (world coordinates).
 
-        Override this method to render visual elements managed by this system.
-        This is called after update() and before the frame is presented.
+        Override this method to render visual elements managed by this system
+        in world coordinates (affected by camera).
 
         Args:
             context: Game context providing access to other systems.
+        """
 
-        Example:
-            def on_draw(self, context):
-                self.particle_emitter.draw()
+    def on_draw_ui(self, context: GameContext) -> None:  # noqa: B027
+        """Called during the draw phase of each frame (screen coordinates).
+
+        Override this method to render UI elements or overlays in screen coordinates
+        (not affected by camera).
+
+        Args:
+            context: Game context providing access to other systems.
         """
 
     def cleanup(self) -> None:  # noqa: B027
@@ -164,3 +170,33 @@ class BaseSystem(ABC):
                 self.current_weather = state.get("current_weather", "clear")
                 self.intensity = state.get("intensity", 0.0)
         """
+
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle key press events.
+
+        Override this method to handle keyboard input.
+
+        Args:
+            symbol: Arcade key constant for the pressed key.
+            modifiers: Bitfield of modifier keys held.
+            context: Game context providing access to other systems.
+
+        Returns:
+            True if the event was handled and should stop propagating, False otherwise.
+        """
+        return False
+
+    def on_key_release(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle key release events.
+
+        Override this method to handle keyboard input.
+
+        Args:
+            symbol: Arcade key constant for the released key.
+            modifiers: Bitfield of modifier keys held.
+            context: Game context providing access to other systems.
+
+        Returns:
+            True if the event was handled and should stop propagating, False otherwise.
+        """
+        return False

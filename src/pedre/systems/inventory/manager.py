@@ -66,7 +66,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from pedre.constants import asset_path
 from pedre.systems.base import BaseSystem
-from pedre.systems.inventory.events import ItemAcquiredEvent
+from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -611,6 +611,19 @@ class InventoryManager(BaseSystem):
         if not self.has_been_accessed:
             self.has_been_accessed = True
             logger.info("Inventory accessed for the first time")
+
+    def emit_closed_event(self, context: GameContext) -> None:
+        """Emit InventoryClosedEvent when inventory view closes.
+
+        This allows the script system to react when the player finishes browsing
+        their items.
+
+        Args:
+            context: Game context for accessing event bus.
+        """
+        if self.event_bus:
+            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.has_been_accessed))
+            logger.info("Published InventoryClosedEvent (accessed=%s)", self.has_been_accessed)
 
     def to_dict(self) -> dict[str, bool]:
         """Convert inventory state to dictionary for save data serialization.

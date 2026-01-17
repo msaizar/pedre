@@ -159,6 +159,10 @@ class DialogManager(BaseSystem):
         self.pages: list[DialogPage] = []
         self.current_page_index = 0
 
+        # Track current NPC for event emission
+        self.current_npc_name: str | None = None
+        self.current_dialog_level: int | None = None
+
         # Text reveal animation state
         self.revealed_chars = 0
         self.char_reveal_speed = 20  # characters per second
@@ -183,6 +187,39 @@ class DialogManager(BaseSystem):
         """
         logger.debug("DialogManager setup complete")
 
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle input for dialog advancement.
+
+        Args:
+            symbol: Arcade key constant.
+            modifiers: Modifier key bitfield.
+            context: Game context.
+
+        Returns:
+            True if dialog is showing and event was consumed.
+        """
+        if self.showing and symbol == arcade.key.SPACE:
+            closed = self.advance_page()
+            if closed and self.current_npc_name is not None:
+                # Emit DialogClosedEvent
+                if hasattr(context, "event_bus") and context.event_bus:
+                    from pedre.systems.dialog.events import DialogClosedEvent
+
+                    # Get actual current level from NPC manager if available
+                    current_level = self.current_dialog_level
+                    npc_manager = context.get_system("npc")
+                    if npc_manager and hasattr(npc_manager, "npcs"):
+                        npc_state = npc_manager.npcs.get(self.current_npc_name)
+                        if npc_state:
+                            current_level = npc_state.dialog_level
+
+                    context.event_bus.publish(
+                        DialogClosedEvent(npc_name=self.current_npc_name, dialog_level=current_level)
+                    )
+                    logger.debug("Published DialogClosedEvent for %s at level %d", self.current_npc_name, current_level)
+            return True
+        return False
+
     def cleanup(self) -> None:
         """Clean up dialog resources when the scene unloads.
 
@@ -195,7 +232,9 @@ class DialogManager(BaseSystem):
         self.instruction_text = None
         logger.debug("DialogManager cleanup complete")
 
-    def show_dialog(self, npc_name: str, text: list[str], *, instant: bool = False) -> None:
+    def show_dialog(
+        self, npc_name: str, text: list[str], *, instant: bool = False, dialog_level: int | None = None
+    ) -> None:
         """Show a dialog from an NPC.
 
         This method initiates a new dialog sequence, replacing any currently
@@ -217,13 +256,15 @@ class DialogManager(BaseSystem):
             instant: If True, text appears immediately without letter-by-letter reveal.
                 Useful for narration, system messages, or cutscenes where the reveal
                 animation would be distracting.
+            dialog_level: Optional dialog level for event tracking. Used when emitting
+                DialogClosedEvent.
 
         Example from code:
             dialog_manager.show_dialog("Martin", [
                 "Hello! I'm Martin, the village elder.",
                 "Welcome to our humble town.",
                 "Feel free to explore and talk to the other villagers!"
-            ])
+            ], dialog_level=0)
 
         Example from JSON config (assets/dialogs/casa_dialogs.json):
             {
@@ -238,11 +279,13 @@ class DialogManager(BaseSystem):
             }
 
             When player interacts with martin at dialog level 0, NPCManager
-            automatically calls: show_dialog("martin", ["Buenos días...", "Te hice..."])
+            automatically calls: show_dialog("martin", ["Buenos días...", "Te hice..."], dialog_level=0)
         """
         self.pages = self._create_pages(npc_name, text)
         self.current_page_index = 0
         self.showing = True
+        self.current_npc_name = npc_name
+        self.current_dialog_level = dialog_level
         self._reset_text_reveal()
 
         # If instant mode, immediately reveal all text
@@ -382,40 +425,19 @@ class DialogManager(BaseSystem):
             if self.revealed_chars >= len(current_page.text):
                 self.text_fully_revealed = True
 
-    def draw(self, window: arcade.Window) -> None:
-        """Draw the dialog overlay.
+    def on_draw_ui(self, context: GameContext) -> None:
+        """Draw the dialog overlay in screen coordinates.
 
-        This method renders the complete dialog UI on top of the game world.
-        It should be called every frame from the game view's draw loop.
-
-        The dialog UI consists of multiple layers:
-        1. Semi-transparent black overlay (dims the game world)
-        2. Dark blue-gray dialog box (centered horizontally, lower portion of screen)
-        3. White border around the dialog box
-        4. Yellow NPC name at the top of the box
-        5. White dialog text (multiline, wrapped to fit)
-        6. Page indicator (if multiple pages exist)
-        7. Context-sensitive instruction text (next page vs close)
-
-        Visual specifications:
-        - Dialog box: max 600px wide (or window width - 100px), 200px tall
-        - Box position: horizontally centered, vertically at 1/4 screen height
-        - Text padding: 20px on left/right
-        - NPC name: 20pt bold yellow, 30px from top
-        - Dialog text: 16pt white, centered vertically
-        - Page indicator: 10pt light gray, bottom-right corner
-        - Instructions: 12pt light gray, bottom-center
+        This method is called automatically by the system loader during the UI
+        draw phase. It renders the complete dialog UI on top of the game world.
 
         Args:
-            window: The game window providing dimensions for layout calculations.
-
-        Note:
-            Does nothing if no dialog is currently showing. This allows the draw
-            method to be called unconditionally every frame without performance impact.
+            context: Game context providing access to the window via game_view.
         """
-        if not self.showing:
+        if not self.showing or not context.game_view:
             return
 
+        window = context.game_view.window
         current_page = self.get_current_page()
         if not current_page:
             return

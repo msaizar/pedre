@@ -134,39 +134,33 @@ class InputManager(BaseSystem):
         """Restore state from save data (BaseSystem interface)."""
         self.movement_speed = state.get("movement_speed", 3.0)
 
-    def on_key_press(self, symbol: int) -> None:
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Register a key press event.
 
-        Called when the player presses a key. This should be wired up to the arcade window's
-        on_key_press callback. The key symbol is added to the internal set of pressed keys,
-        which will affect the movement vector returned by get_movement_vector() and the
-        result of is_key_pressed() queries.
-
-        Adding the same key multiple times (e.g., from key repeat events) has no effect
-        since the storage is a set.
-
         Args:
-            symbol: The arcade key constant for the pressed key (e.g., arcade.key.W,
-                   arcade.key.SPACE). These are integer constants defined in arcade.key.
+            symbol: The arcade key constant for the pressed key..
+            modifiers: Bitfield of modifier keys held.
+            context: Game context.
+
+        Returns:
+            False (allows other systems to process if needed, though typically input manager is low-level).
         """
         self.keys_pressed.add(symbol)
+        return False
 
-    def on_key_release(self, symbol: int) -> None:
+    def on_key_release(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Register a key release event.
 
-        Called when the player releases a key. This should be wired up to the arcade window's
-        on_key_release callback. The key symbol is removed from the internal set of pressed
-        keys, which will immediately affect movement calculations and key state queries.
-
-        Uses discard() instead of remove() so releasing an unpressed key has no effect
-        (no exception is raised). This handles edge cases where a key might be released
-        after the manager was cleared or if release events arrive out of order.
-
         Args:
-            symbol: The arcade key constant for the released key (e.g., arcade.key.W,
-                   arcade.key.SPACE). These are integer constants defined in arcade.key.
+            symbol: The arcade key constant for the released key.
+            modifiers: Bitfield of modifier keys held.
+            context: Game context.
+
+        Returns:
+            False.
         """
         self.keys_pressed.discard(symbol)
+        return False
 
     def get_movement_vector(self) -> tuple[float, float]:
         """Calculate normalized movement vector from currently pressed keys.

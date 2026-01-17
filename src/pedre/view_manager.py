@@ -52,7 +52,7 @@ Example usage:
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import arcade
 
@@ -63,7 +63,7 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems import GameSaveData
+    from pedre.systems import GameSaveData, InventoryManager
 
 logger = logging.getLogger(__name__)
 
@@ -243,26 +243,28 @@ class ViewManager:
         inventory view to notify scripts that the player checked their inventory.
 
         Args:
-            trigger_post_inventory_dialog: If True, calls trigger_post_inventory_dialog()
-                on the game view after showing it. This publishes an InventoryClosedEvent
-                for the script system.
+            trigger_post_inventory_dialog: If True, calls emit_closed_event()
+                on the inventory manager after showing it. This publishes an
+                InventoryClosedEvent for the script system.
 
         Side effects:
             - Shows game view via window.show_view()
             - Triggers game view's on_show_view() callback
-            - May call game_view.trigger_post_inventory_dialog() to publish event
+            - May call inventory_manager.emit_closed_event() to publish event
             - Logs transition details
         """
         logger.info("show_game called with trigger_post_inventory_dialog=%s", trigger_post_inventory_dialog)
         self.window.show_view(self.game_view)
-        if trigger_post_inventory_dialog and hasattr(self.game_view, "trigger_post_inventory_dialog"):
-            logger.info("Calling trigger_post_inventory_dialog on game_view")
-            self.game_view.trigger_post_inventory_dialog()
+        if trigger_post_inventory_dialog and self.game_view.game_context:
+            inventory_manager = cast("InventoryManager", self.game_view.game_context.get_system("inventory"))
+            if inventory_manager:
+                logger.info("Calling emit_closed_event on inventory_manager")
+                inventory_manager.emit_closed_event(self.game_view.game_context)
         else:
             logger.info(
-                "Not calling trigger (flag=%s, hasattr=%s)",
+                "Not calling trigger (flag=%s, game_view=%s)",
                 trigger_post_inventory_dialog,
-                hasattr(self.game_view, "trigger_post_inventory_dialog"),
+                self._game_view is not None,
             )
 
     def show_load_game(self) -> None:

@@ -77,6 +77,7 @@ class GameSettings:
             self.installed_systems = [
                 "pedre.systems.audio",
                 "pedre.systems.camera",
+                "pedre.systems.debug",
                 "pedre.systems.dialog",
                 "pedre.systems.input",
                 "pedre.systems.interaction",
@@ -86,6 +87,10 @@ class GameSettings:
                 "pedre.systems.pathfinding",
                 "pedre.systems.portal",
                 "pedre.systems.script",
+                "pedre.systems.player",
+                "pedre.systems.physics",
+                "pedre.systems.map",
+                "pedre.systems.scene",
                 # Future: add other systems here as they are migrated
                 # etc.
             ]

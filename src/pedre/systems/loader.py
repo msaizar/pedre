@@ -174,15 +174,28 @@ class SystemLoader:
             system.update(delta_time, context)
 
     def draw_all(self, context: GameContext) -> None:
-        """Call on_draw() on all systems.
+        """Call on_draw() on all systems (world coordinates).
 
-        This should be called during the draw phase of each frame.
+        This should be called during the draw phase of each frame,
+        while world camera is active.
 
         Args:
             context: Game context providing access to other systems.
         """
         for system in self._instances.values():
             system.on_draw(context)
+
+    def draw_ui_all(self, context: GameContext) -> None:
+        """Call on_draw_ui() on all systems (screen coordinates).
+
+        This should be called during the draw phase of each frame,
+        while screen camera is active.
+
+        Args:
+            context: Game context providing access to other systems.
+        """
+        for system in self._instances.values():
+            system.on_draw_ui(context)
 
     def cleanup_all(self) -> None:
         """Call cleanup() on all systems in reverse dependency order.
@@ -266,3 +279,41 @@ class SystemLoader:
             raise CircularDependencyError(msg)
 
         return result
+
+    def on_key_press_all(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Propagate key press events to all systems.
+
+        Iterates through systems in dependency order (or specific input order if needed).
+        If a system returns True, propagation stops.
+
+        Args:
+            symbol: Arcade key constant.
+            modifiers: Modifier key bitfield.
+            context: Game context.
+
+        Returns:
+            True if any system handled the event.
+        """
+        for name in reversed(self._load_order):
+            system = self._instances.get(name)
+            if system and system.on_key_press(symbol, modifiers, context):
+                logger.debug("Key press handled by system: %s", name)
+                return True
+        return False
+
+    def on_key_release_all(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Propagate key release events to all systems.
+
+        Args:
+            symbol: Arcade key constant.
+            modifiers: Modifier key bitfield.
+            context: Game context.
+
+        Returns:
+            True if any system handled the event.
+        """
+        for name in reversed(self._load_order):
+            system = self._instances.get(name)
+            if system and system.on_key_release(symbol, modifiers, context):
+                return True
+        return False

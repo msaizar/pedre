@@ -65,6 +65,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
 from pedre.systems.base import BaseSystem
 from pedre.systems.inventory import InventoryManager
@@ -430,6 +431,99 @@ class NPCManager(BaseSystem):
             )
 
         return None
+
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle interaction input for NPCs.
+
+        Args:
+            symbol: Arcade key constant.
+            modifiers: Modifier key bitfield.
+            context: Game context.
+
+        Returns:
+            True if interaction occurred.
+        """
+        if symbol == arcade.key.SPACE:
+            player_sprite = None
+            if hasattr(context, "game_view") and context.game_view:
+                player_sprite = context.game_view.player_sprite
+
+            if player_sprite:
+                # Check for nearby NPCs
+                # Note: InteractionManager is handled BEFORE NPCManager in SystemLoader order logic
+                # (or we should ensure it).
+                # SystemLoader loop handles systems in reverse dependency order.
+                # Map depends on Interaction, NPC, etc.
+                # BaseSystem dependencies:
+                # Interaction depends on nothing.
+                # NPC depends on Inventory (maybe?).
+
+                nearby = self.get_nearby_npc(player_sprite)
+                if nearby:
+                    _sprite, name, _dialog_level = nearby
+                    if self.interact_with_npc(name, context):
+                        return True
+        return False
+
+    def interact_with_npc(self, name: str, context: GameContext) -> bool:
+        """Trigger interaction with a specific NPC.
+
+        Args:
+            name: Name of the NPC to interact with.
+            context: GameContext for access to other systems.
+
+        Returns:
+            True if interaction started (dialog shown).
+        """
+        # Get NPC state
+        npc = self.get_npc_by_name(name)
+        if not npc:
+            return False
+
+        # Visual/Audio feedback
+        particle_manager = context.get_system("particle")
+        audio_manager = context.get_system("audio")
+        dialog_manager = context.get_system("dialog")
+
+        if particle_manager:
+            particle_manager.emit("sparkle", npc.sprite.center_x, npc.sprite.center_y, amount=10)
+
+        if audio_manager:
+            audio_manager.play_sfx("interact")
+
+        # Get dialog
+        current_scene = "default"  # Fallback
+        if hasattr(context, "game_view") and context.game_view and context.game_view.current_scene:
+            current_scene = context.game_view.current_scene
+
+        dialog_config = self.get_dialog_config(name, npc.dialog_level, current_scene)
+
+        dialog_data = self.get_dialog(name, npc.dialog_level, current_scene)
+        if not dialog_data:
+            return False
+
+        dialog_config, _ = dialog_data
+
+        if dialog_config and dialog_manager:
+            # Check conditions
+            if dialog_config.conditions:
+                if not self._check_dialog_conditions(dialog_config.conditions, name):
+                    # Condition failed
+                    if dialog_config.on_condition_fail:
+                        for action in dialog_config.on_condition_fail:
+                            if action.get("type") == "dialog":
+                                fail_text = action.get("text", [])
+                                speaker = action.get("speaker", name)
+                                dialog_manager.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
+                                return True
+                    return False
+
+            # Show dialog
+            dialog_manager.show_dialog(name, dialog_config.text, dialog_level=npc.dialog_level)
+
+            return True
+
+        return False
 
     def _check_dialog_conditions(self, conditions: list[dict[str, Any]], npc_name: str) -> bool:
         """Check if all dialog conditions are met.
@@ -841,3 +935,83 @@ class NPCManager(BaseSystem):
                 return
         """
         return any(npc.is_moving for npc in self.npcs.values())
+
+    def load_npcs_from_scene(
+        self,
+        scene: arcade.Scene,
+        settings: GameSettings,
+        wall_list: arcade.SpriteList | None = None,
+    ) -> None:
+        """Load NPCs from the scene, setting up animations.
+
+        Replaces static NPC sprites in the "NPCs" layer with AnimatedNPC instances
+        if configured in Tiled. Registers all NPCs with the manager.
+
+        Args:
+            scene: The arcade Scene containing an "NPCs" layer.
+            settings: Game settings for asset paths.
+            wall_list: Optional wall list to add visible NPCs to for collision.
+        """
+        if "NPCs" not in scene:
+            return
+
+        sprites = list(scene["NPCs"])  # Copy since we modify scene list
+
+        for sprite in sprites:
+            npc_name = None
+            if hasattr(sprite, "properties") and sprite.properties:
+                npc_name = sprite.properties.get("name")
+
+            if not npc_name:
+                continue
+
+            npc_name = npc_name.lower()
+
+            final_sprite = sprite
+
+            # Check if it needs to be animated
+            if "sprite_sheet" in sprite.properties:
+                sheet = sprite.properties["sprite_sheet"]
+                tile_size = sprite.properties.get("tile_size", 32)
+
+                # Extract animation props
+                anim_props = {}
+                for key, val in sprite.properties.items():
+                    if key.startswith(("idle_", "walk_")) and isinstance(val, int):
+                        anim_props[key] = val
+
+                try:
+                    path = asset_path(sheet, settings.assets_handle)
+                    animated_npc = AnimatedNPC(
+                        path,
+                        tile_size=tile_size,
+                        columns=12,
+                        scale=1.0,
+                        center_x=sprite.center_x,
+                        center_y=sprite.center_y,
+                        **anim_props,
+                    )
+
+                    # Copy other properties
+                    animated_npc.properties = sprite.properties
+                    animated_npc.visible = sprite.visible
+
+                    final_sprite = animated_npc
+
+                    # Replace in scene
+                    scene["NPCs"].remove(sprite)
+                    scene["NPCs"].append(final_sprite)
+
+                except Exception:
+                    logger.exception("Failed to create AnimatedNPC for %s", npc_name)
+
+            # Handle initial visibility
+            if hasattr(final_sprite, "properties") and final_sprite.properties.get("initially_hidden", False):
+                final_sprite.visible = False
+
+            # Register
+            self.register_npc(final_sprite, npc_name)
+
+            # Add to wall list if visible
+            if wall_list is not None and final_sprite.visible:
+                wall_list.append(final_sprite)

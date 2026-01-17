@@ -53,12 +53,12 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import arcade
+
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    import arcade
-
     from pedre.config import GameSettings
     from pedre.systems.dialog import DialogManager
     from pedre.systems.game_context import GameContext
@@ -172,6 +172,34 @@ class InteractionManager(BaseSystem):
         """
         self.interaction_distance = float(settings.interaction_manager_distance)
         logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
+
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle interaction input.
+
+        Args:
+            symbol: Arcade key constant.
+            modifiers: Modifier key bitfield.
+            context: Game context.
+
+        Returns:
+            True if interaction occurred.
+        """
+        if symbol == arcade.key.SPACE:
+            player_sprite = None
+            if hasattr(context, "game_view") and context.game_view:
+                player_sprite = context.game_view.player_sprite
+
+            if player_sprite:
+                # Interaction logic
+                # We need DialogManager if we want to show messages.
+                dialog_manager = context.get_system("dialog")
+
+                # Check for nearby objects
+                obj = self.get_nearby_object(player_sprite)
+                if obj:
+                    return self.handle_interaction(obj, dialog_manager)
+
+        return False
 
     def cleanup(self) -> None:
         """Clean up interaction resources when the scene unloads."""

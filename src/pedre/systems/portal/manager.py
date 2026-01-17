@@ -140,6 +140,11 @@ class PortalManager(BaseSystem):
     name: ClassVar[str] = "portal"
     dependencies: ClassVar[list[str]] = []
 
+    def update(self, delta_time: float, context: GameContext) -> None:
+        """Update portal system, checking for player entry."""
+        if context.player_sprite:
+            self.check_portals(context.player_sprite)
+
     def __init__(self) -> None:
         """Initialize portal manager with default values.
 
