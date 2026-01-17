@@ -54,52 +54,31 @@ Example usage:
     # - on_key_press/release() handle input
 """
 
-import json
 import logging
-from enum import Enum, auto
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, cast
 
 import arcade
 
-from pedre.constants import asset_path
 from pedre.systems import (
-    DialogManager,
     EventBus,
     GameContext,
-    SceneStateCache,
     SystemLoader,
 )
+from pedre.systems.scene import TransitionState
 
 # These imports are used for cast() type annotations only
 if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems import (
-        CameraManager,
-        MapManager,
-        PathfindingManager,
         SceneManager,
-        ScriptManager,
     )
-    from pedre.systems.npc import NPCDialogConfig, NPCManager
-    from pedre.types import SceneStateCacheDict
     from pedre.view_manager import ViewManager
 
 from pedre.systems.events import (
     GameStartEvent,
-    SceneStartEvent,
 )
 
 logger = logging.getLogger(__name__)
-
-
-class TransitionState(Enum):
-    """Enum for scene transition states."""
-
-    NONE = auto()  # No transition happening
-    FADING_OUT = auto()  # Fading out old scene
-    LOADING = auto()  # Loading new scene
-    FADING_IN = auto()  # Fading in new scene
 
 
 class GameView(arcade.View):
@@ -167,27 +146,6 @@ class GameView(arcade.View):
         initialized: Whether setup() has been called.
     """
 
-    # Class-level cache for per-scene dialog data (lazy loaded).
-    # Maps scene name to dialog data: scene_name -> npc_name -> dialog_level -> dialog_data
-    _dialog_cache: ClassVar[dict[str, dict[str, dict[int | str, NPCDialogConfig]]]] = {}
-
-    # Class-level cache for per-scene script JSON data (lazy loaded).
-    # Maps scene name to raw JSON data loaded from script files.
-    _script_cache: ClassVar[dict[str, dict[str, Any]]] = {}
-
-    # Class-level cache for NPC state per scene (persists across scene transitions).
-    # Stores NPC positions, visibility, and dialog levels for each visited scene.
-    _scene_state_cache: ClassVar[SceneStateCache] = SceneStateCache()
-
-    @classmethod
-    def restore_scene_state_cache(cls, scene_states: SceneStateCacheDict) -> None:
-        """Restore the scene state cache from saved data.
-
-        Args:
-            scene_states: Dictionary of scene states from a save file.
-        """
-        cls._scene_state_cache.from_dict(scene_states)
-
     def __init__(
         self,
         view_manager: ViewManager,
@@ -220,26 +178,8 @@ class GameView(arcade.View):
         # Event-driven scripting system (created early so it can be passed to context)
         self.event_bus = EventBus()
 
-        # Core systems that need direct fast access (affect control flow)
-        # All other systems accessed via self.game_context.get_system()
-        self.dialog_manager: DialogManager | None = None
-
-        # Sprite lists
-        self.player_sprite: arcade.Sprite | None = None
-        self.player_list: arcade.SpriteList | None = None
-        self.wall_list: arcade.SpriteList | None = None
-        self.npc_list: arcade.SpriteList | None = None
-
-        # Tile map
-        self.tile_map: arcade.TileMap | None = None
-        self.scene: arcade.Scene | None = None
-
         # Camera for scrolling
         self.camera: arcade.camera.Camera2D | None = None
-
-        # Track current NPC for post-dialog actions
-        self.current_npc_name: str = ""
-        self.current_npc_dialog_level: int = 0
 
         # Portal tracking
         self.spawn_waypoint: str | None = None
@@ -255,8 +195,10 @@ class GameView(arcade.View):
 
         # Load the initial map
         target_map = self.map_file or self.settings.initial_map
-        if target_map:
-            self.load_level(target_map, self.spawn_waypoint)
+        if target_map and self.game_context:
+            scene_manager = cast("SceneManager", self.game_context.get_system("scene"))
+            if scene_manager:
+                scene_manager.load_level(target_map, self.spawn_waypoint, self.game_context)
 
     def _init_systems(self) -> None:
         """Initialize all game systems (run once)."""
@@ -266,9 +208,6 @@ class GameView(arcade.View):
         # Initialize pluggable systems via SystemLoader
         self.system_loader = SystemLoader(self.settings)
         system_instances = self.system_loader.instantiate_all()
-
-        # Keep only core system references for fast access
-        self.dialog_manager = cast("DialogManager", system_instances.get("dialog"))
 
         # Initialize GameContext
         self.game_context = GameContext(
@@ -286,138 +225,6 @@ class GameView(arcade.View):
 
         # Setup all systems
         self.system_loader.setup_all(self.game_context)
-
-    def load_level(self, map_file: str, spawn_waypoint: str | None = None) -> None:
-        """Load a new level/map.
-
-        Args:
-            map_file: The .tmx map file.
-            spawn_waypoint: Waypoint to spawn at (optional).
-        """
-        logger.info("Loading level: %s (waypoint: %s)", map_file, spawn_waypoint)
-        self.map_file = map_file
-        self.spawn_waypoint = spawn_waypoint
-
-        # Ensure systems are initialized
-        if not hasattr(self, "system_loader") or not self.system_loader:
-            logger.warning("load_level called before init_systems, initializing now")
-            self._init_systems()
-
-        self.current_scene = map_file.replace(".tmx", "").lower()
-
-        # Update context
-        if self.game_context:
-            self.game_context.current_scene = self.current_scene
-
-        # Get managers
-        map_manager = cast("MapManager", self.game_context.get_system("map"))
-        npc_manager = cast("NPCManager", self.game_context.get_system("npc"))
-        script_manager = cast("ScriptManager", self.game_context.get_system("script"))
-
-        # Clean up old sprites
-        self.wall_list = arcade.SpriteList()
-        # Note: player_list is recreated below
-
-        # Load map via MapManager
-        if map_manager and self.settings and self.game_context:
-            map_manager.load_map(map_file, self.game_context, self.settings)
-
-            # Update View references from MapManager
-            self.tile_map = map_manager.tile_map
-            self.scene = map_manager.scene
-            self.wall_list = self.game_context.wall_list
-
-            # Sync NPC list
-            self.npc_list = arcade.SpriteList()
-            if self.scene and "NPCs" in self.scene:
-                for sprite in self.scene["NPCs"]:
-                    self.npc_list.append(sprite)
-                    # 애니메이션이 필요한지 확인
-                    if "sprite_sheet" in sprite.properties:
-                        # Constants and AnimatedNPC should ideally be at top-level
-                        # but leaving here to minimize logic changes if they are already here.
-
-                        sprite.properties["sprite_sheet"]
-                        # ... rest of sheet logic (assuming it follows)
-
-        # Player setup is triggered by MapManager calls (PlayerManager._spawn_player)
-        # Update local player sprite ref
-        if self.game_context and self.game_context.player_sprite:
-            self.player_sprite = self.game_context.player_sprite
-            self.player_list = arcade.SpriteList()
-            self.player_list.append(self.player_sprite)
-
-            # Setup Camera
-            camera_manager = cast("CameraManager", self.game_context.get_system("camera"))
-            if camera_manager:
-                self.camera = arcade.camera.Camera2D(
-                    position=(self.player_sprite.center_x, self.player_sprite.center_y)
-                )
-                camera_manager.set_camera(self.camera)
-                if self.tile_map:
-                    map_width = self.tile_map.width * self.tile_map.tile_width
-                    map_height = self.tile_map.height * self.tile_map.tile_height
-                    camera_manager.set_bounds(map_width, map_height, self.window.width, self.window.height)
-
-        # Scripts and Dialogs loading
-        # Load scene-specific dialog data from JSON (with per-scene caching)
-        if npc_manager and self.settings:
-            if self.current_scene in GameView._dialog_cache:
-                npc_manager.dialogs[self.current_scene] = GameView._dialog_cache[self.current_scene]
-            else:
-                try:
-                    scene_dialog_file = asset_path(
-                        f"dialogs/{self.current_scene}_dialogs.json", self.settings.assets_handle
-                    )
-                    if (
-                        npc_manager.load_dialogs_from_json(scene_dialog_file)
-                        and self.current_scene in npc_manager.dialogs
-                    ):
-                        GameView._dialog_cache[self.current_scene] = npc_manager.dialogs[self.current_scene]
-                except Exception:  # noqa: BLE001
-                    # No dialogs found or failed to load
-                    logger.debug("No dialogs found for scene %s", self.current_scene)
-
-        # Load Scripts
-        if script_manager and self.settings:
-            npc_dialogs_data = npc_manager.dialogs if npc_manager else {}
-
-            if self.current_scene in GameView._script_cache:
-                script_manager.load_scripts_from_data(GameView._script_cache[self.current_scene], npc_dialogs_data)
-            else:
-                try:
-                    scene_script_file = asset_path(
-                        f"scripts/{self.current_scene}_scripts.json", self.settings.assets_handle
-                    )
-                    script_manager.load_scripts(scene_script_file, npc_dialogs_data)
-                    # Cache
-                    with Path(scene_script_file).open() as f:
-                        GameView._script_cache[self.current_scene] = json.load(f)
-                except Exception:  # noqa: BLE001
-                    logger.debug("No scripts found for scene %s", self.current_scene)
-
-        # Restore Scene State
-        if (
-            self.map_file
-            and self._scene_state_cache.restore_scene_state(self.map_file, npc_manager, script_manager)
-            and self.wall_list
-            and npc_manager
-        ):
-            # Sync wall_list with NPC visibility after restore
-            for npc_state in npc_manager.npcs.values():
-                if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
-                    self.wall_list.remove(npc_state.sprite)
-                elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
-                    self.wall_list.append(npc_state.sprite)
-
-        # Configure pathfinding
-        pathfinding_manager = cast("PathfindingManager", self.game_context.get_system("pathfinding"))
-        if self.wall_list and pathfinding_manager:
-            pathfinding_manager.set_wall_list(self.wall_list)
-
-        # Publish Scene Start Event
-        if self.event_bus:
-            self.event_bus.publish(SceneStartEvent(self.current_scene))
 
     def on_show_view(self) -> None:
         """Called when this view becomes active (arcade lifecycle callback).
@@ -451,27 +258,16 @@ class GameView(arcade.View):
         if not self.game_context:
             return
 
-        # Check scene transition status
+        # Handle scene transitions
         scene_manager = cast("SceneManager", self.game_context.get_system("scene"))
-        if scene_manager and scene_manager.state != TransitionState.NONE:
+        if scene_manager and scene_manager.transition_state != TransitionState.NONE:
             scene_manager.update(delta_time, self.game_context)
-            # During transition, don't update other game logic
+            # During transition, skip other game logic
             return
 
         # Update ALL systems generically via system_loader
         if self.system_loader:
             self.system_loader.update_all(delta_time, self.game_context)
-
-    def on_draw(self) -> None:
-        """Render the game each frame (arcade lifecycle callback)."""
-        self.clear()
-
-        if self.camera:
-            self.camera.use()
-
-        # Draw the scene
-        if self.scene:
-            self.scene.draw()
 
         # Draw ALL systems (world coordinates) via system_loader
         if self.system_loader and self.game_context:
@@ -483,12 +279,6 @@ class GameView(arcade.View):
         # Draw ALL systems (screen coordinates) via system_loader
         if self.system_loader and self.game_context:
             self.system_loader.draw_ui_all(self.game_context)
-
-        # Draw transition overlay
-        if self.game_context:
-            scene_manager = cast("SceneManager", self.game_context.get_system("scene"))
-            if scene_manager:
-                scene_manager.draw_overlay()
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key presses (arcade lifecycle callback).
@@ -534,35 +324,25 @@ class GameView(arcade.View):
             - Resets all managers to empty state
             - Sets initialized = False
         """
-        # Get systems from context for cleanup operations
+        # Cache NPC and script state for this scene before clearing (for scene transitions)
+        scene_manager = self.game_context.get_system("scene") if self.game_context else None
+        map_manager = self.game_context.get_system("map") if self.game_context else None
         npc_manager = self.game_context.get_system("npc") if self.game_context else None
         script_manager = self.game_context.get_system("script") if self.game_context else None
 
-        # Cache NPC and script state for this scene before clearing (for scene transitions)
-        if self.map_file and npc_manager:
-            self._scene_state_cache.cache_scene_state(self.map_file, npc_manager, script_manager)
+        current_map = getattr(map_manager, "current_map", "") if map_manager else ""
+
+        if current_map and npc_manager and hasattr(scene_manager, "cache_scene_state"):
+            scene_manager.cache_scene_state(current_map, npc_manager, script_manager)
 
         # Cleanup ALL pluggable systems generically (includes AudioManager cleanup)
         if self.system_loader:
             self.system_loader.cleanup_all()
 
-        # Clear sprite lists
-        if self.player_list:
-            self.player_list.clear()
-        if self.wall_list:
-            self.wall_list.clear()
-        if self.npc_list:
-            self.npc_list.clear()
-
         # Clear references
-        self.player_sprite = None
         self.scene = None
         self.tile_map = None
         self.camera = None
-
-        # Close dialog (core system)
-        if self.dialog_manager:
-            self.dialog_manager.close_dialog()
 
         # Clear event bus
         self.event_bus.clear()

@@ -16,13 +16,18 @@ from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
+from pedre.systems import SceneStateCache
 from pedre.systems.base import BaseSystem
+from pedre.systems.events import SceneStartEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
+    from pedre.systems.npc import NPCManager
     from pedre.systems.portal.events import PortalEnteredEvent
+    from pedre.systems.script import ScriptManager
+    from pedre.types import SceneStateCacheDict
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +53,25 @@ class SceneManager(BaseSystem):
     """
 
     name: ClassVar[str] = "scene"
-    dependencies: ClassVar[list[str]] = ["map"]
+    dependencies: ClassVar[list[str]] = ["map", "npc", "script"]
+
+    # Class-level cache for NPC state per scene (persists across scene transitions).
+    _scene_state_cache: ClassVar[SceneStateCache] = SceneStateCache()
+
+    @classmethod
+    def restore_scene_state_cache(cls, scene_states: SceneStateCacheDict) -> None:
+        """Restore the scene state cache from saved data."""
+        cls._scene_state_cache.from_dict(scene_states)
+
+    @classmethod
+    def cache_scene_state(cls, scene_name: str, npc_manager: NPCManager, script_manager: ScriptManager) -> None:
+        """Cache NPC and script state for a scene."""
+        cls._scene_state_cache.cache_scene_state(scene_name, npc_manager, script_manager)
+
+    @classmethod
+    def get_scene_state_dict(cls) -> SceneStateCacheDict:
+        """Get the scene state cache as a dictionary."""
+        return cls._scene_state_cache.to_dict()
 
     def __init__(self) -> None:
         """Initialize the scene manager."""
@@ -63,10 +86,68 @@ class SceneManager(BaseSystem):
         self.pending_map_file: str | None = None
         self.pending_spawn_waypoint: str | None = None
 
+        self._settings: GameSettings | None = None
+
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize with context."""
+        self._settings = settings
         if context.current_scene:
             self.current_scene = context.current_scene
+
+    def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
+        """Central orchestration for loading a new map/level.
+
+        Args:
+            map_file: The .tmx filename.
+            spawn_waypoint: Optional waypoint to spawn at.
+            context: Game context.
+        """
+        if not self._settings:
+            logger.error("SceneManager: Settings not initialized, cannot load level")
+            return
+
+        logger.info("SceneManager: Loading level %s", map_file)
+        current_scene = map_file.replace(".tmx", "").lower()
+        self.current_scene = current_scene
+        context.update_scene(current_scene)
+
+        # 1. Load map (MapManager handles its own state and context update)
+        map_manager = context.get_system("map")
+        if map_manager and hasattr(map_manager, "load_map"):
+            map_manager.load_map(map_file, context, self._settings)
+
+        # 2. Load dialogs and scripts
+        npc_manager = context.get_system("npc")
+        script_manager = context.get_system("script")
+
+        npc_dialogs_data = {}
+        if npc_manager and hasattr(npc_manager, "load_scene_dialogs"):
+            npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene, self._settings)
+
+        if script_manager and hasattr(script_manager, "load_scene_scripts"):
+            script_manager.load_scene_scripts(current_scene, self._settings, npc_dialogs_data)
+
+        # 3. Restore scene state
+        if npc_manager and script_manager:
+            self._scene_state_cache.restore_scene_state(map_file, npc_manager, script_manager)
+
+            # Sync wall_list with NPC visibility after restore
+            if context.wall_list:
+                for npc_state in npc_manager.npcs.values():
+                    if not npc_state.sprite.visible and npc_state.sprite in context.wall_list:
+                        context.wall_list.remove(npc_state.sprite)
+                    elif npc_state.sprite.visible and npc_state.sprite not in context.wall_list:
+                        context.wall_list.append(npc_state.sprite)
+
+        # 4. Trigger spawn if waypoint provided
+        # (PlayerManager.spawn_player is already called by MapManager.load_map)
+        if spawn_waypoint and context.player_sprite:
+            player_manager = context.get_system("player")
+            if player_manager and hasattr(player_manager, "move_player_to_waypoint"):
+                player_manager.move_player_to_waypoint(spawn_waypoint, context)
+
+        # 5. Emit SceneStartEvent
+        context.event_bus.publish(SceneStartEvent(current_scene))
 
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map.

@@ -104,6 +104,11 @@ class MapManager(BaseSystem):
         if pathfinding and hasattr(pathfinding, "set_wall_list"):
             pathfinding.set_wall_list(wall_list)
 
+    def on_draw(self, context: GameContext) -> None:
+        """Draw the map scene."""
+        if self.scene:
+            self.scene.draw()
+
     def _load_waypoints(self, settings: GameSettings) -> None:
         """Load waypoints from object layer."""
         self.waypoints = {}

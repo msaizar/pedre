@@ -59,6 +59,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from pedre.constants import asset_path
 from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.actions import (
     ActionSequence,
@@ -167,6 +168,10 @@ class ScriptManager(BaseSystem):
     name: ClassVar[str] = "script"
     dependencies: ClassVar[list[str]] = []
 
+    # Class-level cache for per-scene script JSON data (lazy loaded).
+    # Maps scene name to raw JSON data loaded from script files.
+    _script_cache: ClassVar[dict[str, dict[str, Any]]] = {}
+
     def __init__(self) -> None:
         """Initialize script manager."""
         super().__init__()
@@ -247,6 +252,33 @@ class ScriptManager(BaseSystem):
             }
         """
         self._load_script_file(script_path, npc_dialogs)
+
+    def load_scene_scripts(
+        self, scene_name: str, settings: GameSettings, npc_dialogs_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Load and cache scripts for a specific scene.
+
+        Args:
+            scene_name: Name of the scene (map file without extension).
+            settings: Game settings for resolving asset paths.
+            npc_dialogs_data: NPC dialog data for resolving text references.
+
+        Returns:
+            The loaded script data for the scene.
+        """
+        if scene_name in self._script_cache:
+            self.load_scripts_from_data(self._script_cache[scene_name], npc_dialogs_data)
+        else:
+            try:
+                scene_script_file = asset_path(f"scripts/{scene_name}_scripts.json", settings.assets_handle)
+                self.load_scripts(scene_script_file, npc_dialogs_data)
+                # Cache raw data
+                with Path(scene_script_file).open() as f:
+                    self._script_cache[scene_name] = json.load(f)
+            except Exception:  # noqa: BLE001
+                logger.debug("No scripts found for scene %s", scene_name)
+
+        return self._script_cache.get(scene_name, {})
 
     def load_scripts_from_data(self, script_data: dict[str, Any], npc_dialogs: dict[str, Any]) -> None:
         """Load scripts from pre-loaded JSON data and register event triggers.

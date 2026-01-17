@@ -39,7 +39,10 @@ import arcade
 from pedre.systems import SaveManager
 
 if TYPE_CHECKING:
+    from pedre.systems import AudioManager, InventoryManager, ScriptManager
+    from pedre.systems.npc import NPCManager
     from pedre.view_manager import ViewManager
+from typing import cast
 
 
 class SaveGameView(arcade.View):
@@ -309,20 +312,32 @@ class SaveGameView(arcade.View):
 
         # Get game view to access current game state
         game_view = self.view_manager.game_view
-        if not game_view or not game_view.player_sprite or not game_view.map_file:
+        if not game_view or not game_view.game_context:
+            return
+
+        context = game_view.game_context
+        player_sprite = context.player_sprite
+        map_manager = context.get_system("map")
+
+        if (
+            not player_sprite
+            or not map_manager
+            or not hasattr(map_manager, "current_map")
+            or not map_manager.current_map
+        ):
             # No active game to save
             return
 
         # Save the game to the selected slot
         success = self.save_manager.save_game(
             slot=self.selected_slot,
-            player_x=game_view.player_sprite.center_x,
-            player_y=game_view.player_sprite.center_y,
-            current_map=game_view.map_file,
-            npc_manager=game_view.npc_manager,
-            inventory_manager=game_view.inventory_manager,
-            audio_manager=game_view.audio_manager,
-            script_manager=game_view.script_manager,
+            player_x=player_sprite.center_x,
+            player_y=player_sprite.center_y,
+            current_map=map_manager.current_map,
+            npc_manager=cast("NPCManager", context.get_system("npc")),
+            inventory_manager=cast("InventoryManager", context.get_system("inventory")),
+            audio_manager=cast("AudioManager", context.get_system("audio")),
+            script_manager=cast("ScriptManager", context.get_system("script")),
         )
 
         if success:

@@ -213,6 +213,10 @@ class NPCManager(BaseSystem):
     name: ClassVar[str] = "npc"
     dependencies: ClassVar[list[str]] = ["pathfinding"]
 
+    # Class-level cache for per-scene dialog data (lazy loaded).
+    # Maps scene name to dialog data: scene_name -> npc_name -> dialog_level -> dialog_data
+    _dialog_cache: ClassVar[dict[str, dict[str, dict[int | str, NPCDialogConfig]]]] = {}
+
     def __init__(self) -> None:
         """Initialize the NPC manager with default values.
 
@@ -276,6 +280,31 @@ class NPCManager(BaseSystem):
             dialogs: Dictionary mapping scenes to NPC names to dialog configs by conversation level.
         """
         self.dialogs = dialogs
+
+    def load_scene_dialogs(self, scene_name: str, settings: GameSettings) -> dict[str, Any]:
+        """Load and cache dialogs for a specific scene.
+
+        Args:
+            scene_name: Name of the scene (map file without extension).
+            settings: Game settings for resolving asset paths.
+
+        Returns:
+            The loaded dialog data for the scene.
+        """
+        if scene_name in self._dialog_cache:
+            self.dialogs[scene_name] = self._dialog_cache[scene_name]
+        else:
+            try:
+                scene_dialog_file = asset_path(f"dialogs/{scene_name}_dialogs.json", settings.assets_handle)
+                if self.load_dialogs_from_json(scene_dialog_file) and scene_name in self.dialogs:
+                    self._dialog_cache[scene_name] = self.dialogs[scene_name]
+                else:
+                    logger.debug("No dialogs found for scene %s", scene_name)
+            except Exception:  # noqa: BLE001
+                # No dialogs found or failed to load
+                logger.debug("No dialogs found for scene %s", scene_name)
+
+        return self.dialogs.get(scene_name, {})
 
     def load_dialogs_from_json(self, json_path: Path | str) -> bool:
         """Load NPC dialog configurations from a JSON file or directory.
