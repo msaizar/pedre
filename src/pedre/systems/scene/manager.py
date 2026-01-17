@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
@@ -22,6 +22,7 @@ from pedre.systems.registry import SystemRegistry
 if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
+    from pedre.systems.portal.events import PortalEnteredEvent
 
 logger = logging.getLogger(__name__)
 
@@ -175,9 +176,9 @@ class SceneManager(BaseSystem):
         )
 
 
-# Event handler for portal entry to trigger transition
-def event_handler(event: Any, context: GameContext) -> None:
-    # We need to listen to something?
-    # Actually PortalManager publishes `PortalEnteredEvent`.
-    # We can subscribe manually or use an annotation if we had one.
-    pass
+def event_handler(event: PortalEnteredEvent, context: GameContext) -> None:
+    """Handle portal entry events to trigger scene transitions.
+
+    This is a placeholder event handler for portal entry events.
+    The actual transition logic is handled by the script system.
+    """

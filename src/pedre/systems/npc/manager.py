@@ -506,17 +506,16 @@ class NPCManager(BaseSystem):
 
         if dialog_config and dialog_manager:
             # Check conditions
-            if dialog_config.conditions:
-                if not self._check_dialog_conditions(dialog_config.conditions, name):
-                    # Condition failed
-                    if dialog_config.on_condition_fail:
-                        for action in dialog_config.on_condition_fail:
-                            if action.get("type") == "dialog":
-                                fail_text = action.get("text", [])
-                                speaker = action.get("speaker", name)
-                                dialog_manager.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
-                                return True
-                    return False
+            if dialog_config.conditions and not self._check_dialog_conditions(dialog_config.conditions, name):
+                # Condition failed
+                if dialog_config.on_condition_fail:
+                    for action in dialog_config.on_condition_fail:
+                        if action.get("type") == "dialog":
+                            fail_text = action.get("text", [])
+                            speaker = action.get("speaker", name)
+                            dialog_manager.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
+                            return True
+                return False
 
             # Show dialog
             dialog_manager.show_dialog(name, dialog_config.text, dialog_level=npc.dialog_level)
@@ -975,10 +974,11 @@ class NPCManager(BaseSystem):
                 tile_size = sprite.properties.get("tile_size", 32)
 
                 # Extract animation props
-                anim_props = {}
-                for key, val in sprite.properties.items():
-                    if key.startswith(("idle_", "walk_")) and isinstance(val, int):
-                        anim_props[key] = val
+                anim_props = {
+                    key: val
+                    for key, val in sprite.properties.items()
+                    if key.startswith(("idle_", "walk_")) and isinstance(val, int)
+                }
 
                 try:
                     path = asset_path(sheet, settings.assets_handle)

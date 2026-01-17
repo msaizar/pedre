@@ -58,6 +58,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.systems.base import BaseSystem
+from pedre.systems.dialog.events import DialogClosedEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -200,23 +201,17 @@ class DialogManager(BaseSystem):
         """
         if self.showing and symbol == arcade.key.SPACE:
             closed = self.advance_page()
-            if closed and self.current_npc_name is not None:
-                # Emit DialogClosedEvent
-                if hasattr(context, "event_bus") and context.event_bus:
-                    from pedre.systems.dialog.events import DialogClosedEvent
+            if closed and self.current_npc_name is not None and hasattr(context, "event_bus") and context.event_bus:
+                # Get actual current level from NPC manager if available
+                current_level = self.current_dialog_level
+                npc_manager = context.get_system("npc")
+                if npc_manager and hasattr(npc_manager, "npcs"):
+                    npc_state = npc_manager.npcs.get(self.current_npc_name)
+                    if npc_state:
+                        current_level = npc_state.dialog_level
 
-                    # Get actual current level from NPC manager if available
-                    current_level = self.current_dialog_level
-                    npc_manager = context.get_system("npc")
-                    if npc_manager and hasattr(npc_manager, "npcs"):
-                        npc_state = npc_manager.npcs.get(self.current_npc_name)
-                        if npc_state:
-                            current_level = npc_state.dialog_level
-
-                    context.event_bus.publish(
-                        DialogClosedEvent(npc_name=self.current_npc_name, dialog_level=current_level)
-                    )
-                    logger.debug("Published DialogClosedEvent for %s at level %d", self.current_npc_name, current_level)
+                context.event_bus.publish(DialogClosedEvent(npc_name=self.current_npc_name, dialog_level=current_level))
+                logger.debug("Published DialogClosedEvent for %s at level %d", self.current_npc_name, current_level)
             return True
         return False
 

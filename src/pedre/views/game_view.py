@@ -247,9 +247,6 @@ class GameView(arcade.View):
         # Track if game has been initialized
         self.initialized: bool = False
 
-        # Text objects for UI (created on first draw)
-        self.instructions_text: arcade.Text | None = None
-
     def setup(self) -> None:
         """Set up the game. Called on first show or when resetting the game state."""
         # Ensure systems are initialized
@@ -379,7 +376,7 @@ class GameView(arcade.View):
                         GameView._dialog_cache[self.current_scene] = npc_manager.dialogs[self.current_scene]
                 except Exception:  # noqa: BLE001
                     # No dialogs found or failed to load
-                    pass
+                    logger.debug("No dialogs found for scene %s", self.current_scene)
 
         # Load Scripts
         if script_manager and self.settings:
@@ -397,7 +394,7 @@ class GameView(arcade.View):
                     with Path(scene_script_file).open() as f:
                         GameView._script_cache[self.current_scene] = json.load(f)
                 except Exception:  # noqa: BLE001
-                    pass
+                    logger.debug("No scripts found for scene %s", self.current_scene)
 
         # Restore Scene State
         if (
@@ -483,23 +480,6 @@ class GameView(arcade.View):
         # Draw UI in screen coordinates
         arcade.camera.Camera2D().use()
 
-        # Create instructions text if not already created
-        if self.instructions_text is None:
-            instructions = (
-                "Arrow keys to move | SPACE to interact | I for inventory\n"
-                "ESC to menu | Shift+D debug | F5 save | F9 load"
-            )
-            self.instructions_text = arcade.Text(
-                instructions,
-                10,
-                10,
-                arcade.color.WHITE,
-                font_size=12,
-            )
-
-        # Draw instructions
-        self.instructions_text.draw()
-
         # Draw ALL systems (screen coordinates) via system_loader
         if self.system_loader and self.game_context:
             self.system_loader.draw_ui_all(self.game_context)
@@ -523,35 +503,6 @@ class GameView(arcade.View):
         if self.system_loader.on_key_press_all(symbol, modifiers, self.game_context):
             return True
 
-        # Global GameView Hotkeys
-
-        # Menu / Pause
-        if symbol == arcade.key.ESCAPE:
-            # Check blockers first
-            dialog_manager = self.game_context.get_system("dialog")
-            if dialog_manager and dialog_manager.showing:
-                # Dialog should have handled ESC if it closes it?
-                # Usually Escape opens menu, but if dialog is open, maybe close dialog or ignore?
-                # Current logic allowed ESC to open menu even if dialog showing, but let's check blockers.
-                pass
-
-            # Pause game (preserve game view for quick resume)
-            self.view_manager.show_menu(from_game_pause=True)
-            return True
-
-            # Quick save
-        if symbol == arcade.key.F5:
-            self.quick_save()
-            return True
-        # Quick load
-        if symbol == arcade.key.F9:
-            self.quick_load()
-            return True
-        # Inventory
-        if symbol == arcade.key.I:
-            self.view_manager.show_inventory()
-            return True
-
         return None
 
     def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
@@ -559,112 +510,6 @@ class GameView(arcade.View):
         if self.system_loader and self.game_context:
             self.system_loader.on_key_release_all(symbol, modifiers, self.game_context)
         return None
-
-    def quick_save(self) -> None:
-        """Quick save game state to auto-save slot (triggered by F5).
-
-        Saves current player position, map, NPC dialog levels, and inventory to the
-        auto-save slot. Plays a save sound effect on success.
-
-        Side effects:
-            - Writes save file to disk
-            - Plays save.wav sound effect on success
-            - Logs save status
-        """
-        if not self.player_sprite or not self.map_file or not self.game_context:
-            return
-
-        # Get systems for save
-        save_manager = self.game_context.get_system("save")
-        npc_manager = self.game_context.get_system("npc")
-        inventory_manager = self.game_context.get_system("inventory")
-        audio_manager = self.game_context.get_system("audio")
-        script_manager = self.game_context.get_system("script")
-
-        if not save_manager:
-            logger.warning("Quick save failed: save_manager not available")
-            return
-
-        success = save_manager.auto_save(
-            player_x=self.player_sprite.center_x,
-            player_y=self.player_sprite.center_y,
-            current_map=self.map_file,
-            npc_manager=npc_manager,
-            inventory_manager=inventory_manager,
-            audio_manager=audio_manager,
-            script_manager=script_manager,
-        )
-
-        if success:
-            if audio_manager:
-                audio_manager.play_sfx("save.wav")
-            logger.info("Quick save completed")
-        else:
-            logger.warning("Quick save failed")
-
-    def quick_load(self) -> None:
-        """Quick load game state from auto-save slot (triggered by F9).
-
-        Loads player position, map, NPC dialog levels, and inventory from the auto-save
-        file. If the saved map differs from current, reloads the map. Plays a load sound
-        effect on success.
-
-        Side effects:
-            - May reload map via setup() if map changed
-            - Updates player position
-            - Restores NPC dialog levels
-            - Restores inventory contents
-            - Plays load.wav sound effect on success
-            - Logs load status and timestamp
-        """
-        if not self.game_context:
-            logger.warning("Quick load failed: no game context")
-            return
-
-        # Get systems for load
-        save_manager = self.game_context.get_system("save")
-        if not save_manager:
-            logger.warning("Quick load failed: save_manager not available")
-            return
-
-        save_data = save_manager.load_auto_save()
-
-        if not save_data:
-            logger.warning("No auto-save found")
-            return
-
-        # Reload the map if different
-        if save_data.current_map != self.map_file:
-            self.map_file = save_data.current_map
-            self.setup()
-
-        # Restore player position
-        if self.player_sprite:
-            self.player_sprite.center_x = save_data.player_x
-            self.player_sprite.center_y = save_data.player_y
-
-        # Get systems for state restore
-        npc_manager = self.game_context.get_system("npc")
-        inventory_manager = self.game_context.get_system("inventory")
-        audio_manager = self.game_context.get_system("audio")
-        script_manager = self.game_context.get_system("script")
-
-        # Restore all manager states using the convenience method
-        restored_objects, scene_states = save_manager.restore_all_state(
-            save_data, npc_manager, inventory_manager, audio_manager, script_manager
-        )
-
-        # Update script manager's interacted_objects
-        if script_manager:
-            script_manager.interacted_objects = restored_objects
-
-        # Restore scene state cache for NPC persistence across scene transitions
-        if scene_states:
-            self._scene_state_cache.from_dict(scene_states)
-
-        if audio_manager:
-            audio_manager.play_sfx("load.wav")
-        logger.info("Quick load completed from %s", save_data.save_timestamp)
 
     def cleanup(self) -> None:
         """Clean up resources when transitioning away from this view.
@@ -692,26 +537,10 @@ class GameView(arcade.View):
         # Get systems from context for cleanup operations
         npc_manager = self.game_context.get_system("npc") if self.game_context else None
         script_manager = self.game_context.get_system("script") if self.game_context else None
-        save_manager = self.game_context.get_system("save") if self.game_context else None
-        inventory_manager = self.game_context.get_system("inventory") if self.game_context else None
-        audio_manager = self.game_context.get_system("audio") if self.game_context else None
 
         # Cache NPC and script state for this scene before clearing (for scene transitions)
         if self.map_file and npc_manager:
             self._scene_state_cache.cache_scene_state(self.map_file, npc_manager, script_manager)
-
-        # Auto-save on cleanup (includes cached scene states for persistence)
-        if self.player_sprite and self.map_file and save_manager:
-            save_manager.auto_save(
-                player_x=self.player_sprite.center_x,
-                player_y=self.player_sprite.center_y,
-                current_map=self.map_file,
-                npc_manager=npc_manager,
-                inventory_manager=inventory_manager,
-                audio_manager=audio_manager,
-                script_manager=script_manager,
-                scene_states=self._scene_state_cache.to_dict(),
-            )
 
         # Cleanup ALL pluggable systems generically (includes AudioManager cleanup)
         if self.system_loader:

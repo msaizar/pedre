@@ -86,6 +86,7 @@ class GameSettings:
                 "pedre.systems.particle",
                 "pedre.systems.pathfinding",
                 "pedre.systems.portal",
+                "pedre.systems.save",
                 "pedre.systems.script",
                 "pedre.systems.player",
                 "pedre.systems.physics",

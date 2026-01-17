@@ -146,6 +146,13 @@ class InputManager(BaseSystem):
             False (allows other systems to process if needed, though typically input manager is low-level).
         """
         self.keys_pressed.add(symbol)
+
+        # Handle Pause Menu
+        # Handle Pause Menu
+        if symbol == arcade.key.ESCAPE and context.game_view and context.game_view.view_manager:
+            context.game_view.view_manager.show_menu(from_game_pause=True)
+            return True
+
         return False
 
     def on_key_release(self, symbol: int, modifiers: int, context: GameContext) -> bool:

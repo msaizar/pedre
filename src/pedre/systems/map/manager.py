@@ -50,6 +50,7 @@ class MapManager(BaseSystem):
         self.tile_map: arcade.TileMap | None = None
         self.scene: arcade.Scene | None = None
         self.waypoints: dict[str, tuple[float, float]] = {}
+        self.current_map: str = ""
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize map manager (no map loaded yet)."""
@@ -64,6 +65,7 @@ class MapManager(BaseSystem):
         """
         map_path = asset_path(f"maps/{map_file}", settings.assets_handle)
         logger.info("Loading map: %s", map_path)
+        self.current_map = map_file
 
         # 1. Load TileMap and Scene
         self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
@@ -128,12 +130,11 @@ class MapManager(BaseSystem):
         if not npc_manager:
             return
 
-        if self.scene and "NPCs" in self.scene:
+        if self.scene and "NPCs" in self.scene and hasattr(npc_manager, "load_npcs_from_scene"):
             # We need to convert static sprites to AnimatedNPCs if they have properties
             # Currently GameView._setup_animated_npcs did this.
             # We should move that logic to NPCManager.load_npcs_from_scene(scene, settings)
-            if hasattr(npc_manager, "load_npcs_from_scene"):
-                npc_manager.load_npcs_from_scene(self.scene, settings, context.wall_list)
+            npc_manager.load_npcs_from_scene(self.scene, settings, context.wall_list)
 
         # Also ensure visible NPCs are in the wall_list
         # The load_npcs_from_scene method should handle adding to wall_list if needed (collision).

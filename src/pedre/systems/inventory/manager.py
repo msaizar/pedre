@@ -64,6 +64,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import arcade
+
 from pedre.constants import asset_path
 from pedre.systems.base import BaseSystem
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
@@ -230,6 +232,13 @@ class InventoryManager(BaseSystem):
         self.items.clear()
         self.has_been_accessed = False
         logger.debug("InventoryManager cleanup complete")
+
+    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+        """Handle key presses for inventory."""
+        if symbol == arcade.key.I and context.game_view and context.game_view.view_manager:
+            context.game_view.view_manager.show_inventory()
+            return True
+        return False
 
     def get_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BaseSystem interface)."""

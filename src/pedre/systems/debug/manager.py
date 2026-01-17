@@ -1,3 +1,5 @@
+"""Debug manager for rendering debug overlays."""
+
 import logging
 from typing import TYPE_CHECKING, ClassVar, cast
 
@@ -26,6 +28,7 @@ class DebugManager(BaseSystem):
     dependencies: ClassVar[list[str]] = ["npc"]
 
     def __init__(self) -> None:
+        """Initialize the debug manager with default state."""
         self.debug_mode = False
         self.debug_text_objects: list[arcade.Text] = []
         self.settings: GameSettings | None = None
