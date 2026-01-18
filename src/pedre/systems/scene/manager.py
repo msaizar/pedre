@@ -121,6 +121,13 @@ class SceneManager(BaseSystem):
             logger.error("SceneManager: Settings not initialized, cannot load level")
             return
 
+        # Cache current scene state before transitioning
+        npc_manager = cast("NPCManager", context.get_system("npc"))
+        script_manager = cast("ScriptManager", context.get_system("script"))
+        interaction_manager = cast("InteractionManager", context.get_system("interaction"))
+        if npc_manager and script_manager:
+            self.cache_scene_state(self.current_scene, npc_manager, script_manager, interaction_manager)
+
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
         self.current_scene = current_scene
@@ -133,14 +140,10 @@ class SceneManager(BaseSystem):
             game_view.spawn_waypoint = spawn_waypoint
             logger.debug("SceneManager: Set game_view.spawn_waypoint to '%s'", spawn_waypoint)
 
-        # 1. Load map
+        # Load map
         map_manager = cast("MapManager", context.get_system("map"))
         if map_manager and hasattr(map_manager, "load_map"):
             map_manager.load_map(map_file, context, self._settings)
-
-        # 2. Load dialogs and scripts
-        npc_manager = cast("NPCManager", context.get_system("npc"))
-        script_manager = cast("ScriptManager", context.get_system("script"))
 
         npc_dialogs_data = {}
         if npc_manager and hasattr(npc_manager, "load_scene_dialogs"):
@@ -149,10 +152,9 @@ class SceneManager(BaseSystem):
         if script_manager and hasattr(script_manager, "load_scene_scripts"):
             script_manager.load_scene_scripts(current_scene, self._settings, npc_dialogs_data)
 
-        # 3. Restore scene state
-        interaction_manager = cast("InteractionManager", context.get_system("interaction"))
+        # Restore scene state
         if npc_manager and script_manager:
-            self._scene_state_cache.restore_scene_state(map_file, npc_manager, script_manager, interaction_manager)
+            self._scene_state_cache.restore_scene_state(current_scene, npc_manager, script_manager, interaction_manager)
 
             # Sync wall_list with NPC visibility after restore
             if context.wall_list:
@@ -162,9 +164,7 @@ class SceneManager(BaseSystem):
                     elif npc_state.sprite.visible and npc_state.sprite not in context.wall_list:
                         context.wall_list.append(npc_state.sprite)
 
-        # 4. Trigger spawn if waypoint provided
-        # (PlayerManager.spawn_player is already called by MapManager.load_map)
-        # 5. Emit SceneStartEvent
+        # Emit SceneStartEvent
         context.event_bus.publish(SceneStartEvent(current_scene))
 
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
