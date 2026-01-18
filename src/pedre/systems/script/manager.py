@@ -103,7 +103,9 @@ class Script:
         scene: Optional scene name where this script can run.
         run_once: If True, script only executes once per game session.
         actions: List of action dictionaries to execute in sequence.
-        has_run: Tracks if this script has already executed (for run_once).
+        on_condition_fail: Optional actions to execute when conditions fail.
+        has_run: Tracks if this script has started (for run_once prevention).
+        completed: Tracks if this script has fully completed all actions.
     """
 
     trigger: dict[str, Any] | None = None
@@ -111,7 +113,9 @@ class Script:
     scene: str | None = None
     run_once: bool = False
     actions: list[dict[str, Any]] = field(default_factory=list)
+    on_condition_fail: list[dict[str, Any]] = field(default_factory=list)
     has_run: bool = False
+    completed: bool = False
 
 
 @SystemRegistry.register
@@ -177,6 +181,7 @@ class ScriptManager(BaseSystem):
         self.scripts: dict[str, Script] = {}
         self.active_sequences: list[tuple[str, ActionSequence]] = []
         self._pending_script_checks: list[str] = []  # Scripts to check conditions for after current update
+        self._subscribed_events: set[str] = set()  # Track subscribed event types to avoid duplicates
         self.context: GameContext | None = None
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
@@ -199,6 +204,7 @@ class ScriptManager(BaseSystem):
         self.event_bus = None
         self.scripts.clear()
         self.active_sequences.clear()
+        self._subscribed_events.clear()
         super().cleanup()
 
     def get_state(self) -> dict[str, Any]:
@@ -286,6 +292,7 @@ class ScriptManager(BaseSystem):
             npc_dialogs: Dictionary of NPC dialog data.
         """
         self._parse_scripts(script_data, npc_dialogs)
+        self._register_event_handlers()
 
     def update(self, delta_time: float, context: GameContext) -> None:
         """Update all active action sequences.
@@ -306,6 +313,9 @@ class ScriptManager(BaseSystem):
             if sequence.execute(self.context):
                 completed_sequences.append(i)
                 logger.debug("ScriptManager: Script '%s' completed", script_name)
+                # Mark script as completed
+                if script_name in self.scripts:
+                    self.scripts[script_name].completed = True
                 # Publish completion event for chaining
                 if self.event_bus:
                     self.event_bus.publish(ScriptCompleteEvent(script_name))
@@ -378,13 +388,18 @@ class ScriptManager(BaseSystem):
                 required_events.add(script.trigger["event"])
 
         # Subscribe to all required events using the generic handler
+        # Skip events we've already subscribed to avoid duplicate handlers
         for event_name in required_events:
+            if event_name in self._subscribed_events:
+                continue
+
             event_class = EventRegistry.get(event_name)
             if not event_class:
                 logger.warning("ScriptManager: Event '%s' in script trigger is not registered", event_name)
                 continue
 
             self.event_bus.subscribe(event_class, self._on_generic_event)  # type: ignore[arg-type]
+            self._subscribed_events.add(event_name)
             logger.debug("ScriptManager: Subscribed to '%s' for script triggers", event_name)
 
     def _on_generic_event(self, event: Event) -> None:
@@ -426,6 +441,7 @@ class ScriptManager(BaseSystem):
                 script_data = json.load(f)
 
             self._parse_scripts(script_data, npc_dialogs)
+            self._register_event_handlers()
             logger.info("ScriptManager: Loaded %d scripts from %s", len(self.scripts), script_path)
 
         except Exception:
@@ -445,6 +461,7 @@ class ScriptManager(BaseSystem):
                 scene=script_def.get("scene"),
                 run_once=script_def.get("run_once", False),
                 actions=script_def.get("actions", []),
+                on_condition_fail=script_def.get("on_condition_fail", []),
             )
 
             # Process actions to resolve text_from references
@@ -520,12 +537,21 @@ class ScriptManager(BaseSystem):
             script_name: Name of the script being executed.
             script: Script object to execute.
         """
+        self._execute_actions(script_name, script.actions)
+
+    def _execute_actions(self, sequence_name: str, action_data_list: list[dict[str, Any]]) -> None:
+        """Execute a list of actions as a sequence.
+
+        Args:
+            sequence_name: Name for the sequence (for logging).
+            action_data_list: List of action dictionaries to execute.
+        """
         if not self.context:
             return
 
         # Parse actions into Action objects
         actions = []
-        for action_data in script.actions:
+        for action_data in action_data_list:
             action = ActionRegistry.parse(action_data)
             if action:
                 actions.append(action)
@@ -534,10 +560,10 @@ class ScriptManager(BaseSystem):
 
         if actions:
             sequence = ActionSequence(actions)
-            self.active_sequences.append((script_name, sequence))
-            logger.info("ScriptManager: Executing script '%s' with %d actions", script_name, len(actions))
+            self.active_sequences.append((sequence_name, sequence))
+            logger.info("ScriptManager: Executing '%s' with %d actions", sequence_name, len(actions))
         else:
-            logger.warning("ScriptManager: Script '%s' has no valid actions", script_name)
+            logger.warning("ScriptManager: '%s' has no valid actions", sequence_name)
 
     def _process_pending_checks(self) -> None:
         """Process scripts that were queued for deferred condition checking."""
@@ -576,14 +602,23 @@ class ScriptManager(BaseSystem):
                 if script.run_once and script.has_run:
                     continue
 
-                # Check conditions - defer to next frame if some systems might not be ready
+                # Check conditions
                 if self._check_conditions(script.conditions):
                     self._execute_script(script_name, script)
                     if script.run_once:
                         script.has_run = True
-                # Queue for deferred checking to avoid race conditions
-                elif script_name not in self._pending_script_checks:
-                    self._pending_script_checks.append(script_name)
+                elif script.on_condition_fail:
+                    # Conditions failed - execute on_condition_fail actions
+                    logger.debug(
+                        "ScriptManager: Script '%s' conditions failed, executing on_condition_fail",
+                        script_name,
+                    )
+                    self._execute_actions(f"{script_name}_fail", script.on_condition_fail)
+                else:
+                    logger.debug(
+                        "ScriptManager: Script '%s' conditions failed, no on_condition_fail defined",
+                        script_name,
+                    )
 
     def _trigger_matches_event(self, trigger: dict[str, Any], event_type: str, event_data: dict[str, Any]) -> bool:
         """Check if a script trigger matches an event.
@@ -609,21 +644,52 @@ class ScriptManager(BaseSystem):
         return True
 
     def get_completed_scripts(self) -> list[str]:
-        """Get names of all scripts that have run once and completed.
+        """Get names of all scripts that have fully completed.
 
         Returns:
-            List of script names.
+            List of script names that have completed all actions.
         """
-        return [name for name, script in self.scripts.items() if script.has_run]
+        return [name for name, script in self.scripts.items() if script.completed]
 
     def restore_completed_scripts(self, completed_scripts: list[str]) -> None:
         """Restore completed state for scripts.
 
         Args:
-            completed_scripts: List of script names to mark as having run.
+            completed_scripts: List of script names to mark as completed.
         """
         for name in completed_scripts:
             if name in self.scripts:
-                self.scripts[name].has_run = True
+                self.scripts[name].completed = True
+                self.scripts[name].has_run = True  # Also mark as run for run_once
             else:
                 logger.warning("ScriptManager: Cannot restore unknown script: %s", name)
+
+
+@ConditionRegistry.register("script_completed")
+def check_script_completed(condition: dict[str, Any], context: GameContext) -> bool:
+    """Check if a specific script has fully completed all its actions.
+
+    Condition format:
+        {"check": "script_completed", "script": "script_name"}
+
+    Args:
+        condition: Condition data with "script" key.
+        context: Game context for system access.
+
+    Returns:
+        True if the script has completed all actions, False otherwise.
+    """
+    script_manager = cast("ScriptManager", context.get_system("script"))
+    if not script_manager:
+        return False
+
+    script_name = condition.get("script", "")
+    if not script_name:
+        logger.warning("script_completed condition missing 'script' field")
+        return False
+
+    script = script_manager.scripts.get(script_name)
+    if not script:
+        return False
+
+    return script.completed

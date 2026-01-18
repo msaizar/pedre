@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from pedre.systems.interaction import InteractionManager
     from pedre.systems.map import MapManager
     from pedre.systems.npc import NPCManager
-    from pedre.systems.player import PlayerManager
     from pedre.systems.portal.events import PortalEnteredEvent
     from pedre.systems.script import ScriptManager
     from pedre.types import SceneStateCacheDict
@@ -127,6 +126,13 @@ class SceneManager(BaseSystem):
         self.current_scene = current_scene
         context.update_scene(current_scene)
 
+        # Set spawn_waypoint on game_view BEFORE loading map, so PlayerManager.spawn_player()
+        # can use it to spawn the player at the correct position directly
+        game_view = context.game_view
+        if game_view and spawn_waypoint:
+            game_view.spawn_waypoint = spawn_waypoint
+            logger.debug("SceneManager: Set game_view.spawn_waypoint to '%s'", spawn_waypoint)
+
         # 1. Load map
         map_manager = cast("MapManager", context.get_system("map"))
         if map_manager and hasattr(map_manager, "load_map"):
@@ -158,11 +164,6 @@ class SceneManager(BaseSystem):
 
         # 4. Trigger spawn if waypoint provided
         # (PlayerManager.spawn_player is already called by MapManager.load_map)
-        if spawn_waypoint and context.player_sprite:
-            player_manager = cast("PlayerManager", context.get_system("player"))
-            if player_manager and hasattr(player_manager, "move_player_to_waypoint"):
-                player_manager.move_player_to_waypoint(spawn_waypoint, context)
-
         # 5. Emit SceneStartEvent
         context.event_bus.publish(SceneStartEvent(current_scene))
 
@@ -239,24 +240,22 @@ class SceneManager(BaseSystem):
         if not self.pending_map_file:
             return
 
-        game_view = context.game_view
-        if not game_view:
-            logger.error("SceneManager: No GameView in context, cannot switch map")
-            return
-
         # Use the pending data
         map_file = self.pending_map_file
         waypoint = self.pending_spawn_waypoint
 
-        if hasattr(game_view, "load_level"):
-            game_view.load_level(map_file, waypoint)
+        logger.debug(
+            "SceneManager._perform_map_switch: map_file=%s, waypoint=%s",
+            map_file,
+            waypoint,
+        )
 
-        # Update current scene tracker
-        self.current_scene = map_file.replace(".tmx", "").lower()
-
-        # Clear pending
+        # Clear pending before loading to avoid re-entry issues
         self.pending_map_file = None
         self.pending_spawn_waypoint = None
+
+        # Load the level through our own load_level method
+        self.load_level(map_file, waypoint, context)
 
     def draw_overlay(self) -> None:
         """Draw the transition overlay (called from UI phase)."""

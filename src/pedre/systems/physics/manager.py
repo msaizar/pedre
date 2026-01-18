@@ -37,15 +37,19 @@ class PhysicsManager(BaseSystem):
     def __init__(self) -> None:
         """Initialize the physics manager."""
         self.physics_engine: arcade.PhysicsEngineSimple | None = None
+        self._needs_recreate: bool = True
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize physics engine."""
         self._create_engine(context)
 
+    def invalidate(self) -> None:
+        """Mark physics engine for recreation on next update."""
+        self._needs_recreate = True
+
     def update(self, delta_time: float, context: GameContext) -> None:
         """Update physics simulation."""
-        # Ensure engine is created (in case setup ran before player was ready, though dependency should prevent that)
-        if not self.physics_engine and context.player_sprite and context.wall_list:
+        if self._needs_recreate and context.player_sprite and context.wall_list:
             self._create_engine(context)
 
         if self.physics_engine:
@@ -54,4 +58,5 @@ class PhysicsManager(BaseSystem):
     def _create_engine(self, context: GameContext) -> None:
         if context.player_sprite and context.wall_list:
             self.physics_engine = arcade.PhysicsEngineSimple(context.player_sprite, context.wall_list)
+            self._needs_recreate = False
             logger.debug("Physics engine initialized")

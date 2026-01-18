@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.actions import Action, WaitForConditionAction
 
 if TYPE_CHECKING:
+    from pedre.systems.dialog import DialogManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -58,9 +59,13 @@ class DialogAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Show dialog if not already showing."""
         if not self.started:
-            context.dialog_manager.show_dialog(self.speaker, self.text, instant=self.instant)
+            dialog_manager = cast("DialogManager", context.get_system("dialog"))
+            if dialog_manager:
+                dialog_manager.show_dialog(self.speaker, self.text, instant=self.instant)
+                logger.debug("DialogAction: Showing dialog from %s", self.speaker)
+            else:
+                logger.warning("DialogAction: No dialog manager available")
             self.started = True
-            logger.debug("DialogAction: Showing dialog from %s", self.speaker)
 
         # Action completes immediately, dialog system handles display
         return True
@@ -104,7 +109,12 @@ class WaitForDialogCloseAction(WaitForConditionAction):
 
     def __init__(self) -> None:
         """Initialize dialog wait action."""
-        super().__init__(lambda ctx: not ctx.dialog_manager.showing, "Dialog closed")
+
+        def check_dialog_closed(ctx: GameContext) -> bool:
+            dialog_manager = cast("DialogManager", ctx.get_system("dialog"))
+            return dialog_manager is None or not dialog_manager.showing
+
+        super().__init__(check_dialog_closed, "Dialog closed")
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:  # noqa: ARG003

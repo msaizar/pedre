@@ -83,7 +83,6 @@ if TYPE_CHECKING:
     from pedre.systems import AudioManager, DialogManager, ParticleManager
     from pedre.systems.events import EventBus
     from pedre.systems.game_context import GameContext
-    from pedre.views.game_view import GameView
 
 logger = logging.getLogger(__name__)
 
@@ -483,21 +482,17 @@ class NPCManager(BaseSystem):
             True if interaction occurred.
         """
         if symbol == arcade.key.SPACE:
-            player_sprite = None
-            if hasattr(context, "game_view") and context.game_view:
-                player_sprite = context.game_view.player_sprite
+            player_sprite = context.player_sprite
 
             if player_sprite:
-                # Check for nearby NPCs
-                # Note: InteractionManager is handled BEFORE NPCManager in SystemLoader order logic
-                # (or we should ensure it).
-                # SystemLoader loop handles systems in reverse dependency order.
-                # Map depends on Interaction, NPC, etc.
-                # BaseSystem dependencies:
-                # Interaction depends on nothing.
-                # NPC depends on Inventory (maybe?).
-
                 nearby = self.get_nearby_npc(player_sprite)
+                logger.debug(
+                    "NPCManager: SPACE pressed, player at (%.1f, %.1f), npcs=%d, nearby=%s",
+                    player_sprite.center_x,
+                    player_sprite.center_y,
+                    len(self.npcs),
+                    nearby[1] if nearby else None,
+                )
                 if nearby:
                     _sprite, name, _dialog_level = nearby
                     if self.interact_with_npc(name, context):
@@ -531,10 +526,7 @@ class NPCManager(BaseSystem):
             audio_manager.play_sfx("interact")
 
         # Get dialog
-        current_scene = "default"  # Fallback
-        if hasattr(context, "game_view") and context.game_view and hasattr(context.game_view, "current_scene"):
-            game_view = cast("GameView", context.game_view)
-            current_scene = game_view.current_scene
+        current_scene = context.current_scene or "default"
 
         dialog_data = self.get_dialog(name, npc.dialog_level, current_scene)
         if not dialog_data:
@@ -1021,83 +1013,93 @@ class NPCManager(BaseSystem):
         """
         return any(npc.is_moving for npc in self.npcs.values())
 
-    def load_npcs_from_scene(
+    def load_npcs_from_objects(
         self,
-        scene: arcade.Scene,
+        npc_objects: list,
+        scene: arcade.Scene | None,
         settings: GameSettings,
         wall_list: arcade.SpriteList | None = None,
     ) -> None:
-        """Load NPCs from the scene, setting up animations.
+        """Load NPCs from Tiled object layer (like Player, Portals, etc.).
 
-        Replaces static NPC sprites in the "NPCs" layer with AnimatedNPC instances
-        if configured in Tiled. Registers all NPCs with the manager.
+        Creates AnimatedNPC instances from object layer data and adds them to the scene.
 
         Args:
-            scene: The arcade Scene containing an "NPCs" layer.
+            npc_objects: List of Tiled objects from tile_map.object_lists["NPCs"].
+            scene: The arcade Scene to add NPC sprites to.
             settings: Game settings for asset paths.
             wall_list: Optional wall list to add visible NPCs to for collision.
         """
-        if "NPCs" not in scene:
-            return
+        # Create NPCs sprite list for the scene if needed
+        npc_sprite_list = arcade.SpriteList()
 
-        sprites = list(scene["NPCs"])  # Copy since we modify scene list
+        for npc_obj in npc_objects:
+            if not npc_obj.properties:
+                continue
 
-        for sprite in sprites:
-            npc_name = None
-            if hasattr(sprite, "properties") and sprite.properties:
-                npc_name = sprite.properties.get("name")
-
+            npc_name = npc_obj.properties.get("name")
             if not npc_name:
                 continue
 
             npc_name = npc_name.lower()
 
-            final_sprite = sprite
+            # Get position from object shape
+            spawn_x = float(npc_obj.shape[0])
+            spawn_y = float(npc_obj.shape[1])
 
-            # Check if it needs to be animated
-            if "sprite_sheet" in sprite.properties:
-                sheet = sprite.properties["sprite_sheet"]
-                tile_size = sprite.properties.get("tile_size", 32)
+            # Get sprite sheet properties
+            sprite_sheet = npc_obj.properties.get("sprite_sheet")
+            tile_size = npc_obj.properties.get("tile_size", 32)
 
-                # Extract animation props
-                anim_props = {
-                    key: val
-                    for key, val in sprite.properties.items()
-                    if key.startswith(("idle_", "walk_")) and isinstance(val, int)
-                }
+            if not sprite_sheet:
+                logger.warning("NPC %s missing 'sprite_sheet' property", npc_name)
+                continue
 
-                try:
-                    path = asset_path(sheet, settings.assets_handle)
-                    animated_npc = AnimatedNPC(
-                        path,
-                        tile_size=tile_size,
-                        columns=12,
-                        scale=1.0,
-                        center_x=sprite.center_x,
-                        center_y=sprite.center_y,
-                        **anim_props,
-                    )
+            sprite_sheet_path = asset_path(sprite_sheet, settings.assets_handle)
 
-                    # Copy other properties
-                    animated_npc.properties = sprite.properties
-                    animated_npc.visible = sprite.visible
+            # Extract animation props
+            anim_props = {
+                key: val
+                for key, val in npc_obj.properties.items()
+                if key.startswith(("idle_", "walk_")) and isinstance(val, int)
+            }
 
-                    final_sprite = animated_npc
+            try:
+                animated_npc = AnimatedNPC(
+                    sprite_sheet_path,
+                    tile_size=tile_size,
+                    columns=12,
+                    scale=1.0,
+                    center_x=spawn_x,
+                    center_y=spawn_y,
+                    **anim_props,
+                )
 
-                    # Replace in scene
-                    scene["NPCs"].remove(sprite)
-                    scene["NPCs"].append(final_sprite)
+                # Store properties for later use
+                animated_npc.properties = npc_obj.properties
 
-                except Exception:
-                    logger.exception("Failed to create AnimatedNPC for %s", npc_name)
+                # Handle initial visibility
+                if npc_obj.properties.get("initially_hidden", False):
+                    animated_npc.visible = False
 
-            # Handle initial visibility
-            if hasattr(final_sprite, "properties") and final_sprite.properties.get("initially_hidden", False):
-                final_sprite.visible = False
+                # Register with manager
+                self.register_npc(animated_npc, npc_name)
 
-            # Register
-            self.register_npc(final_sprite, npc_name)
+                # Add to sprite list
+                npc_sprite_list.append(animated_npc)
 
-            # Add to wall list if visible
-            if wall_list is not None and final_sprite.visible:
-                wall_list.append(final_sprite)
+                # Add to wall list if visible
+                if wall_list is not None and animated_npc.visible:
+                    wall_list.append(animated_npc)
+
+                logger.debug("Loaded NPC %s at (%.1f, %.1f)", npc_name, spawn_x, spawn_y)
+
+            except Exception:
+                logger.exception("Failed to create AnimatedNPC for %s", npc_name)
+
+        # Add NPCs layer to scene
+        if scene is not None and len(npc_sprite_list) > 0:
+            if "NPCs" in scene:
+                scene.remove_sprite_list_by_name("NPCs")
+            scene.add_sprite_list("NPCs", sprite_list=npc_sprite_list)
+            logger.info("Added %d NPCs to scene", len(npc_sprite_list))

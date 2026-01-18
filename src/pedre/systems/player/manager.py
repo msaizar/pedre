@@ -120,16 +120,39 @@ class PlayerManager(BaseSystem):
         spawn_x = float(player_obj.shape[0])
         spawn_y = float(player_obj.shape[1])
 
-        # Check for portal spawn override
-        spawn_at_portal = player_obj.properties.get("spawn_at_portal", False)
+        # Check for portal spawn override (defaults to True)
+        spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
+        logger.debug(
+            "PlayerManager: spawn_at_portal=%s, game_view.spawn_waypoint=%s",
+            spawn_at_portal,
+            game_view.spawn_waypoint,
+        )
         if spawn_at_portal and game_view.spawn_waypoint:
             waypoints = context.waypoints
+            logger.debug(
+                "PlayerManager: Available waypoints: %s",
+                list(waypoints.keys()),
+            )
             if game_view.spawn_waypoint in waypoints:
                 tile_x, tile_y = waypoints[game_view.spawn_waypoint]
                 spawn_x = tile_x * settings.tile_size + settings.tile_size / 2
                 spawn_y = tile_y * settings.tile_size + settings.tile_size / 2
+                logger.debug(
+                    "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
+                    game_view.spawn_waypoint,
+                    tile_x,
+                    tile_y,
+                    spawn_x,
+                    spawn_y,
+                    settings.tile_size,
+                )
                 # Clear the spawn waypoint
                 game_view.spawn_waypoint = None
+            else:
+                logger.warning(
+                    "PlayerManager: Waypoint '%s' not found in available waypoints",
+                    game_view.spawn_waypoint,
+                )
 
         # Get sprite sheet properties
         sprite_sheet = player_obj.properties.get("sprite_sheet")

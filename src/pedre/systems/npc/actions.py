@@ -458,7 +458,7 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
         return cls(npc_names=data.get("npcs", []))
 
 
-@ActionRegistry.register("wait_npcs_disappear")
+@ActionRegistry.register("wait_for_npcs_disappear")
 class WaitForNPCsDisappearAction(WaitForConditionAction):
     """Wait for multiple NPCs to complete their disappear animations.
 
@@ -477,7 +477,7 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
     Example usage in a disappear sequence:
         [
             {"type": "start_disappear_animation", "npcs": ["martin", "yema"]},
-            {"type": "wait_npcs_disappear", "npcs": ["martin", "yema"]},
+            {"type": "wait_for_npcs_disappear", "npcs": ["martin", "yema"]},
             {"type": "change_scene", "target_map": "Forest.tmx"}
         ]
     """

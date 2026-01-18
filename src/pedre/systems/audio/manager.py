@@ -374,6 +374,10 @@ class AudioManager(BaseSystem):
 
             logger.debug("Playing SFX: %s", sound_name)
 
+        except FileNotFoundError:
+            # Missing sound files are optional - just log debug and continue
+            logger.debug("SFX file not found: %s", sound_name)
+            return False
         except Exception:
             logger.exception("Failed to play SFX")
             return False

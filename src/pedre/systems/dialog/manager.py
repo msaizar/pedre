@@ -148,7 +148,9 @@ class DialogManager(BaseSystem):
     """
 
     name: ClassVar[str] = "dialog"
-    dependencies: ClassVar[list[str]] = []
+    # Depends on npc/interaction so dialog is loaded later and
+    # processed first in reversed order (to consume SPACE when showing)
+    dependencies: ClassVar[list[str]] = ["npc", "interaction"]
 
     def __init__(self) -> None:
         """Initialize the dialog manager.

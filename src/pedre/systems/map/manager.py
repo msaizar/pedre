@@ -18,7 +18,7 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
-    from pedre.systems import PortalManager
+    from pedre.systems import CameraManager, PortalManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -100,10 +100,18 @@ class MapManager(BaseSystem):
         if player_manager and hasattr(player_manager, "spawn_player"):
             player_manager.spawn_player(context, settings)
 
-        # 6. Update Pathfinding (needs new wall list)
+        # 6. Invalidate physics engine so it recreates with new player/walls
+        physics_manager = context.get_system("physics")
+        if physics_manager and hasattr(physics_manager, "invalidate"):
+            physics_manager.invalidate()
+
+        # 7. Update Pathfinding (needs new wall list)
         pathfinding = context.get_system("pathfinding")
         if pathfinding and hasattr(pathfinding, "set_wall_list"):
             pathfinding.set_wall_list(wall_list)
+
+        # 8. Setup camera with map bounds
+        self._setup_camera(context, settings)
 
     def on_draw(self, context: GameContext) -> None:
         """Draw the map scene."""
@@ -127,23 +135,27 @@ class MapManager(BaseSystem):
                 tile_x = int(x // settings.tile_size)
                 tile_y = int(y // settings.tile_size)
                 self.waypoints[waypoint.name] = (tile_x, tile_y)
+                logger.debug(
+                    "MapManager: Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
+                    waypoint.name,
+                    x,
+                    y,
+                    tile_x,
+                    tile_y,
+                )
 
     def _load_npcs(self, context: GameContext, settings: GameSettings) -> None:
         """Load NPCs from map and register with NPCManager."""
-        # This logic should ideally be in NPCManager, but MapManager orchestrates it.
-        # We can pass the object layer or scene to NPCManager.
         npc_manager = context.get_system("npc")
         if not npc_manager:
             return
 
-        if self.scene and "NPCs" in self.scene and hasattr(npc_manager, "load_npcs_from_scene"):
-            # We need to convert static sprites to AnimatedNPCs if they have properties
-            # Currently GameView._setup_animated_npcs did this.
-            # We should move that logic to NPCManager.load_npcs_from_scene(scene, settings)
-            npc_manager.load_npcs_from_scene(self.scene, settings, context.wall_list)
-
-        # Also ensure visible NPCs are in the wall_list
-        # The load_npcs_from_scene method should handle adding to wall_list if needed (collision).
+        # Try loading from object layer first (like Player, Portals, etc.)
+        if self.tile_map and hasattr(npc_manager, "load_npcs_from_objects"):
+            npc_layer = self.tile_map.object_lists.get("NPCs")
+            if npc_layer:
+                npc_manager.load_npcs_from_objects(npc_layer, self.scene, settings, context.wall_list)
+                return
 
     def _load_portals(self, context: GameContext) -> None:
         """Load portals from map and register with PortalManager."""
@@ -206,3 +218,28 @@ class MapManager(BaseSystem):
 
                 if name:
                     interaction_manager.register_object(sprite, name.lower())
+
+    def _setup_camera(self, context: GameContext, settings: GameSettings) -> None:
+        """Setup camera with map bounds after loading."""
+        camera_manager = cast("CameraManager", context.get_system("camera"))
+        if not camera_manager or not self.tile_map:
+            return
+
+        # Create camera positioned at player (or map center if no player)
+        player_sprite = context.player_sprite
+        if player_sprite:
+            initial_pos = (player_sprite.center_x, player_sprite.center_y)
+        else:
+            # Center of map
+            map_width = self.tile_map.width * self.tile_map.tile_width
+            map_height = self.tile_map.height * self.tile_map.tile_height
+            initial_pos = (map_width / 2, map_height / 2)
+
+        camera = arcade.camera.Camera2D(position=initial_pos)
+        camera_manager.set_camera(camera)
+
+        # Set bounds based on map size
+        map_width = self.tile_map.width * self.tile_map.tile_width
+        map_height = self.tile_map.height * self.tile_map.tile_height
+        window = arcade.get_window()
+        camera_manager.set_bounds(map_width, map_height, window.width, window.height)
