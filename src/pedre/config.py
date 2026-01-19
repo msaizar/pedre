@@ -72,6 +72,11 @@ class GameSettings:
     # Users can add custom caches by appending to this list
     installed_caches: list[str] | None = None
 
+    # Pluggable save providers configuration
+    # Uses same interface as cache providers but for save file persistence
+    # Users can add custom save providers by appending to this list
+    installed_saves: list[str] | None = None
+
     def __post_init__(self) -> None:
         """Initialize mutable defaults."""
         if self.menu_music_files is None:
@@ -105,4 +110,14 @@ class GameSettings:
                 "pedre.systems.npc.cache",
                 "pedre.systems.script.cache",
                 "pedre.systems.interaction.cache",
+            ]
+
+        if self.installed_saves is None:
+            # Default installed saves - includes all built-in save providers
+            self.installed_saves = [
+                "pedre.systems.npc.cache",
+                "pedre.systems.script.cache",
+                "pedre.systems.interaction.cache",
+                "pedre.systems.audio.cache",
+                "pedre.systems.inventory.cache",
             ]
