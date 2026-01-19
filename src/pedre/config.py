@@ -115,9 +115,9 @@ class GameSettings:
         if self.installed_saves is None:
             # Default installed saves - includes all built-in save providers
             self.installed_saves = [
-                "pedre.systems.npc.cache",
-                "pedre.systems.script.cache",
-                "pedre.systems.interaction.cache",
-                "pedre.systems.audio.cache",
-                "pedre.systems.inventory.cache",
+                "pedre.systems.npc.save",
+                "pedre.systems.script.save",
+                "pedre.systems.interaction.save",
+                "pedre.systems.audio.save",
+                "pedre.systems.inventory.save",
             ]

@@ -1,4 +1,4 @@
-"""Audio cache provider for persisting audio settings."""
+"""Audio save provider for persisting audio settings."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from pedre.caches.base import BaseCacheProvider
-from pedre.caches.registry import CacheRegistry
+from pedre.saves.base import BaseSaveProvider
+from pedre.saves.registry import SaveRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.audio import AudioManager
@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AudioState:
     """State for audio settings.
-
-    Audio settings are global (not per-scene), so we store a single state.
 
     Attributes:
         music_volume: Music volume level (0.0 to 1.0).
@@ -54,23 +52,19 @@ class AudioState:
         )
 
 
-@CacheRegistry.register
-class AudioCacheProvider(BaseCacheProvider):
-    """Cache provider for audio settings persistence.
-
-    Audio settings are global (not per-scene), so this cache stores
-    a single state rather than per-scene states.
-    """
+@SaveRegistry.register
+class AudioSaveProvider(BaseSaveProvider):
+    """Save provider for audio settings persistence."""
 
     name: ClassVar[str] = "audio"
     priority: ClassVar[int] = 130
 
     def __init__(self) -> None:
-        """Initialize the audio cache provider."""
+        """Initialize the audio save provider."""
         self._state: AudioState | None = None
 
-    def cache(self, scene_name: str, context: GameContext) -> None:
-        """Cache audio settings (ignores scene_name since audio is global)."""
+    def gather(self, context: GameContext) -> None:
+        """Gather audio settings from the audio manager."""
         audio_manager = cast("AudioManager | None", context.get_system("audio"))
         if not audio_manager:
             return
@@ -81,10 +75,10 @@ class AudioCacheProvider(BaseCacheProvider):
             music_enabled=audio_manager.music_enabled,
             sfx_enabled=audio_manager.sfx_enabled,
         )
-        logger.debug("Cached audio settings")
+        logger.debug("Gathered audio settings")
 
-    def restore(self, scene_name: str, context: GameContext) -> bool:
-        """Restore audio settings (ignores scene_name since audio is global)."""
+    def restore(self, context: GameContext) -> bool:
+        """Restore audio settings to the audio manager."""
         if not self._state:
             return False
 
@@ -101,13 +95,13 @@ class AudioCacheProvider(BaseCacheProvider):
         return True
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize audio cache state for save files."""
+        """Serialize audio state for save files."""
         if self._state:
             return self._state.to_dict()
         return {}
 
     def from_dict(self, data: dict[str, Any]) -> None:
-        """Restore audio cache state from save file data."""
+        """Restore audio state from save file data."""
         if data:
             self._state = AudioState.from_dict(data)
         else:
@@ -116,7 +110,3 @@ class AudioCacheProvider(BaseCacheProvider):
     def clear(self) -> None:
         """Clear cached audio state."""
         self._state = None
-
-    def has_cached_state(self, scene_name: str) -> bool:
-        """Check if audio state is cached (ignores scene_name)."""
-        return self._state is not None

@@ -1,4 +1,4 @@
-"""Inventory cache provider for persisting inventory state."""
+"""Inventory save provider for persisting inventory state."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from pedre.caches.base import BaseCacheProvider
-from pedre.caches.registry import CacheRegistry
+from pedre.saves.base import BaseSaveProvider
+from pedre.saves.registry import SaveRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
@@ -19,8 +19,6 @@ logger = logging.getLogger(__name__)
 @dataclass
 class InventoryState:
     """State for inventory.
-
-    Inventory is global (not per-scene), so we store a single state.
 
     Attributes:
         items: Dictionary mapping item IDs to acquired status.
@@ -46,23 +44,19 @@ class InventoryState:
         )
 
 
-@CacheRegistry.register
-class InventoryCacheProvider(BaseCacheProvider):
-    """Cache provider for inventory state persistence.
-
-    Inventory is global (not per-scene), so this cache stores
-    a single state rather than per-scene states.
-    """
+@SaveRegistry.register
+class InventorySaveProvider(BaseSaveProvider):
+    """Save provider for inventory state persistence."""
 
     name: ClassVar[str] = "inventory"
     priority: ClassVar[int] = 140
 
     def __init__(self) -> None:
-        """Initialize the inventory cache provider."""
+        """Initialize the inventory save provider."""
         self._state: InventoryState | None = None
 
-    def cache(self, scene_name: str, context: GameContext) -> None:
-        """Cache inventory state (ignores scene_name since inventory is global)."""
+    def gather(self, context: GameContext) -> None:
+        """Gather inventory state from the inventory manager."""
         inventory_manager = cast("InventoryManager | None", context.get_system("inventory"))
         if not inventory_manager:
             return
@@ -71,10 +65,10 @@ class InventoryCacheProvider(BaseCacheProvider):
             items=inventory_manager.to_dict(),
             has_been_accessed=inventory_manager.has_been_accessed,
         )
-        logger.debug("Cached inventory state with %d items", len(self._state.items))
+        logger.debug("Gathered inventory state with %d items", len(self._state.items))
 
-    def restore(self, scene_name: str, context: GameContext) -> bool:
-        """Restore inventory state (ignores scene_name since inventory is global)."""
+    def restore(self, context: GameContext) -> bool:
+        """Restore inventory state to the inventory manager."""
         if not self._state:
             return False
 
@@ -89,13 +83,13 @@ class InventoryCacheProvider(BaseCacheProvider):
         return True
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize inventory cache state for save files."""
+        """Serialize inventory state for save files."""
         if self._state:
             return self._state.to_dict()
         return {}
 
     def from_dict(self, data: dict[str, Any]) -> None:
-        """Restore inventory cache state from save file data."""
+        """Restore inventory state from save file data."""
         if data:
             self._state = InventoryState.from_dict(data)
         else:
@@ -104,7 +98,3 @@ class InventoryCacheProvider(BaseCacheProvider):
     def clear(self) -> None:
         """Clear cached inventory state."""
         self._state = None
-
-    def has_cached_state(self, scene_name: str) -> bool:
-        """Check if inventory state is cached (ignores scene_name)."""
-        return self._state is not None

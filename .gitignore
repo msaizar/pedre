@@ -87,5 +87,4 @@ venv.bak/
 
 # PyPI configuration file
 .pypirc
-
-saves/
+saves/*.json
