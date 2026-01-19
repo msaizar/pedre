@@ -74,7 +74,7 @@ class MapManager(BaseSystem):
 
         # 2. Extract collision layers
         wall_list = arcade.SpriteList()
-        collision_layer_names = ["Walls", "Collision", "Objects"]
+        collision_layer_names = ["Walls", "Collision", "Objects", "Buildings"]
         if self.scene:
             for layer_name in collision_layer_names:
                 if layer_name in self.scene:
