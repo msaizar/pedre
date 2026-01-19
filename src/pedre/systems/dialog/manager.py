@@ -289,8 +289,9 @@ class DialogManager(BaseSystem):
                 }
             }
 
-            When player interacts with martin at dialog level 0, NPCManager
-            automatically calls: show_dialog("Martin", ["Buenos días...", "Te hice..."], dialog_level=0, npc_key="martin")
+            When player interacts with martin at dialog level 0, NPCManager automatically calls:
+
+            show_dialog("Martin", ["Buenos días...", "Te hice..."], dialog_level=0, npc_key="martin")
         """
         self.pages = self._create_pages(npc_name, text)
         self.current_page_index = 0
