@@ -99,42 +99,6 @@ class GameStartEvent(Event):
         return {}
 
 
-@EventRegistry.register("scene_start")
-@dataclass
-class SceneStartEvent(Event):
-    """Fired when a new scene/map starts loading.
-
-    This event is published by the game view after a map is loaded and all systems
-    are initialized. It fires on every map transition and when starting a new game,
-    making it useful for scene-specific initialization, cutscenes, or gameplay that
-    should trigger each time a particular scene is entered.
-
-    Unlike GameStartEvent which only fires once for new games, SceneStartEvent fires
-    every time setup() completes, whether from a new game, loading a save, or
-    transitioning through a portal.
-
-    Script trigger example:
-        {
-            "trigger": {
-                "event": "scene_start",
-                "scene": "forest"
-            }
-        }
-
-    The scene filter is optional:
-    - scene: Only trigger for specific scene name (omit to trigger for any scene)
-
-    Attributes:
-        scene_name: Name of the scene/map that just started (e.g., "casa", "forest").
-    """
-
-    scene_name: str
-
-    def get_script_data(self) -> dict[str, Any]:
-        """Get data for script triggers."""
-        return {"scene": self.scene_name}
-
-
 class EventBus:
     """Central event bus for publish/subscribe event handling.
 

@@ -16,9 +16,9 @@ from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
-from pedre.events import SceneStartEvent
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
+from pedre.systems.scene.events import SceneStartEvent
 
 if TYPE_CHECKING:
     from typing import Any
