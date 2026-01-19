@@ -17,12 +17,14 @@ Dialog Configuration:
         {
             "npc_name": {
                 "0": {
+                    "name": "Display Name",
                     "text": [
                         "First page of dialog",
                         "Second page of dialog"
                     ]
                 },
                 "1": {
+                    "name": "Display Name",
                     "text": ["Next dialog level"],
                     "conditions": [
                         {
@@ -33,13 +35,16 @@ Dialog Configuration:
                     "on_condition_fail": [
                         {
                             "type": "dialog",
-                            "speaker": "NPC Name",
+                            "speaker": "Display Name",
                             "text": ["Alternative text if condition fails"]
                         }
                     ]
                 }
             }
         }
+
+    The "name" field is optional - if provided, it will be displayed as the speaker name
+    in the dialog box instead of the NPC's key name (e.g., "Merchant" instead of "merchant").
 
 Example usage from code:
     dialog_manager.show_dialog("Martin", [
@@ -230,7 +235,13 @@ class DialogManager(BaseSystem):
         logger.debug("DialogManager cleanup complete")
 
     def show_dialog(
-        self, npc_name: str, text: list[str], *, instant: bool = False, dialog_level: int | None = None
+        self,
+        npc_name: str,
+        text: list[str],
+        *,
+        instant: bool = False,
+        dialog_level: int | None = None,
+        npc_key: str | None = None,
     ) -> None:
         """Show a dialog from an NPC.
 
@@ -255,6 +266,9 @@ class DialogManager(BaseSystem):
                 animation would be distracting.
             dialog_level: Optional dialog level for event tracking. Used when emitting
                 DialogClosedEvent.
+            npc_key: Optional NPC key name for event tracking. If provided, this is used
+                in DialogClosedEvent instead of npc_name. Use this when the display name
+                differs from the NPC's key name in the dialog system.
 
         Example from code:
             dialog_manager.show_dialog("Martin", [
@@ -276,12 +290,12 @@ class DialogManager(BaseSystem):
             }
 
             When player interacts with martin at dialog level 0, NPCManager
-            automatically calls: show_dialog("martin", ["Buenos días...", "Te hice..."], dialog_level=0)
+            automatically calls: show_dialog("Martin", ["Buenos días...", "Te hice..."], dialog_level=0, npc_key="martin")
         """
         self.pages = self._create_pages(npc_name, text)
         self.current_page_index = 0
         self.showing = True
-        self.current_npc_name = npc_name
+        self.current_npc_name = npc_key or npc_name
         self.current_dialog_level = dialog_level
         self._reset_text_reveal()
 

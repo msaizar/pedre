@@ -145,6 +145,9 @@ class NPCDialogConfig:
     Attributes:
         text: List of dialog text pages to display. Each string is one page that the player
              advances through. Example: ["Hello there!", "Welcome to my shop."]
+        name: Optional display name for the speaker. If provided, this name is shown in the
+             dialog box instead of the NPC's key name. Useful for proper capitalization or
+             titles (e.g., "Merchant" instead of "merchant").
         conditions: Optional list of condition dictionaries that must ALL be true for this
                    dialog to display. Each condition has a "check" type and expected values.
                    Common checks: "npc_dialog_level", "inventory_accessed", "object_interacted".
@@ -156,12 +159,17 @@ class NPCDialogConfig:
 
     Example JSON:
         {
-            "martin": {
+            "merchant": {
+                "0": {
+                    "name": "Merchant",
+                    "text": ["Welcome to my shop!"]
+                },
                 "1": {
+                    "name": "Merchant",
                     "text": ["You're back! Did you check your inventory?"],
                     "conditions": [{"check": "inventory_accessed", "equals": true}],
                     "on_condition_fail": [
-                        {"type": "dialog", "speaker": "martin", "text": ["Please check your inventory first!"]}
+                        {"type": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
                     ]
                 }
             }
@@ -169,6 +177,7 @@ class NPCDialogConfig:
     """
 
     text: list[str]
+    name: str | None = None
     conditions: list[dict[str, Any]] | None = None
     on_condition_fail: list[dict[str, Any]] | None = None  # List of actions to execute if conditions fail
 
@@ -393,6 +402,7 @@ class NPCManager(BaseSystem):
                     # Create dialog config
                     self.dialogs[scene][npc_name][level] = NPCDialogConfig(
                         text=dialog_data["text"],
+                        name=dialog_data.get("name"),
                         conditions=dialog_data.get("conditions"),
                         on_condition_fail=dialog_data.get("on_condition_fail"),
                     )
@@ -547,8 +557,9 @@ class NPCManager(BaseSystem):
                             return True
                 return False
 
-            # Show dialog
-            dialog_manager.show_dialog(name, dialog_config.text, dialog_level=npc.dialog_level)
+            # Show dialog - use display name from config if available, otherwise use NPC key name
+            display_name = dialog_config.name or name
+            dialog_manager.show_dialog(display_name, dialog_config.text, dialog_level=npc.dialog_level, npc_key=name)
             self.mark_npc_as_interacted(name)
 
             return True
