@@ -84,6 +84,7 @@ class BaseSaveProvider(ABC):
             data: Dictionary with serialized state from save file.
         """
 
+    @abstractmethod
     def clear(self) -> None:
         """Clear any cached state.
 

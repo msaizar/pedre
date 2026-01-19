@@ -166,9 +166,7 @@ class NPCSaveProvider(BaseSaveProvider):
         """Serialize NPC state for save files."""
         result: dict[str, dict[str, dict[str, float | bool | int]]] = {}
         for scene_name, scene_state in self._scene_states.items():
-            result[scene_name] = {
-                npc_name: npc_state.to_dict() for npc_name, npc_state in scene_state.items()
-            }
+            result[scene_name] = {npc_name: npc_state.to_dict() for npc_name, npc_state in scene_state.items()}
         return result
 
     def from_dict(self, data: dict[str, Any]) -> None:
