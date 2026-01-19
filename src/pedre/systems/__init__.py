@@ -20,7 +20,6 @@ from pedre.systems.inventory import (
     WaitForInventoryAccessAction,
 )
 from pedre.systems.loader import CircularDependencyError, MissingDependencyError, SystemLoader
-from pedre.systems.map import MapManager
 from pedre.systems.npc import NPCDialogConfig, NPCManager, NPCState
 from pedre.systems.particle import EmitParticlesAction, Particle, ParticleManager
 from pedre.systems.pathfinding import PathfindingManager
@@ -54,7 +53,6 @@ __all__ = [
     "InventoryItem",
     "InventoryManager",
     "ItemAcquiredEvent",
-    "MapManager",
     "MissingDependencyError",
     "NPCDialogConfig",
     "NPCManager",

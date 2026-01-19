@@ -65,7 +65,6 @@ if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems.audio import AudioManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.map import MapManager
     from pedre.systems.scene import SceneManager
 
 logger = logging.getLogger(__name__)
@@ -204,8 +203,8 @@ class SaveManager(BaseSystem):
         if not context.game_view or not context.player_sprite:
             return
 
-        map_manager = context.get_system("map")
-        if not map_manager or not hasattr(map_manager, "current_map"):
+        scene_manager = context.get_system("scene")
+        if not scene_manager or not hasattr(scene_manager, "current_map"):
             return
 
         success = self.auto_save(context)
@@ -229,13 +228,12 @@ class SaveManager(BaseSystem):
             return
 
         # Reload map if different
-        map_manager = cast("MapManager | None", context.get_system("map"))
+        scene_manager = cast("SceneManager | None", context.get_system("scene"))
         current_map = ""
-        if map_manager and hasattr(map_manager, "current_map"):
-            current_map = map_manager.current_map
+        if scene_manager and hasattr(scene_manager, "current_map"):
+            current_map = scene_manager.current_map
 
         if save_data.current_map != current_map:
-            scene_manager = cast("SceneManager | None", context.get_system("scene"))
             if scene_manager and hasattr(scene_manager, "load_level"):
                 scene_manager.load_level(save_data.current_map, None, context)
             else:
@@ -283,9 +281,9 @@ class SaveManager(BaseSystem):
             logger.error("No player sprite in context")
             return False
 
-        map_manager = cast("MapManager | None", context.get_system("map"))
-        if not map_manager or not hasattr(map_manager, "current_map"):
-            logger.error("MapManager not available")
+        scene_manager = cast("SceneManager | None", context.get_system("scene"))
+        if not scene_manager or not hasattr(scene_manager, "current_map"):
+            logger.error("SceneManager not available")
             return False
 
         try:
@@ -297,7 +295,7 @@ class SaveManager(BaseSystem):
             save_data = GameSaveData(
                 player_x=context.player_sprite.center_x,
                 player_y=context.player_sprite.center_y,
-                current_map=map_manager.current_map,
+                current_map=scene_manager.current_map,
                 save_states=save_states,
                 save_timestamp=datetime.now(UTC).timestamp(),
             )

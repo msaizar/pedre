@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.systems import DialogManager, InputManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.map import MapManager
+    from pedre.systems.scene import SceneManager
 
 logger = logging.getLogger(__name__)
 
@@ -100,12 +100,12 @@ class PlayerManager(BaseSystem):
     def spawn_player(self, context: GameContext, settings: GameSettings) -> None:
         """Spawn player based on map data."""
         game_view = context.game_view
-        map_manager = cast("MapManager", context.get_system("map"))
-        if not map_manager or not map_manager.tile_map:
+        scene_manager = cast("SceneManager", context.get_system("scene"))
+        if not scene_manager or not scene_manager.tile_map:
             logger.warning("No tile map available for player spawning")
             return
 
-        tile_map = map_manager.tile_map
+        tile_map = scene_manager.tile_map
 
         # Get Player object layer
         player_layer = tile_map.object_lists.get("Player")
@@ -182,10 +182,10 @@ class PlayerManager(BaseSystem):
         self.player_list.append(self.player_sprite)
 
         # Add to scene
-        if map_manager.scene:
-            if "Player" in map_manager.scene:
-                map_manager.scene.remove_sprite_list_by_name("Player")
-            map_manager.scene.add_sprite_list("Player", sprite_list=self.player_list)
+        if scene_manager.arcade_scene:
+            if "Player" in scene_manager.arcade_scene:
+                scene_manager.arcade_scene.remove_sprite_list_by_name("Player")
+            scene_manager.arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
 
         # Update context
         context.update_player(self.player_sprite)

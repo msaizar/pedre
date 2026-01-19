@@ -100,7 +100,6 @@ class GameSettings:
                 "pedre.systems.script",
                 "pedre.systems.player",
                 "pedre.systems.physics",
-                "pedre.systems.map",
                 "pedre.systems.scene",
             ]
 

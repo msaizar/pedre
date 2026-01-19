@@ -360,8 +360,7 @@ class GameView(arcade.View):
         """
         # Cache state for this scene before clearing (for scene transitions)
         scene_manager = cast("SceneManager", self.game_context.get_system("scene")) if self.game_context else None
-        map_manager = self.game_context.get_system("map") if self.game_context else None
-        current_map = getattr(map_manager, "current_map", "") if map_manager else ""
+        current_map = getattr(scene_manager, "current_map", "") if scene_manager else ""
 
         if current_map and scene_manager and self.game_context:
             cache_loader = scene_manager.get_cache_loader()

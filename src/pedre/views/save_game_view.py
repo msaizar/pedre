@@ -39,8 +39,7 @@ import arcade
 from pedre.systems import SaveManager
 
 if TYPE_CHECKING:
-    from pedre.systems import AudioManager, InventoryManager, MapManager, ScriptManager
-    from pedre.systems.npc import NPCManager
+    from pedre.systems.scene import SceneManager
     from pedre.view_manager import ViewManager
 from typing import cast
 
@@ -317,28 +316,19 @@ class SaveGameView(arcade.View):
 
         context = game_view.game_context
         player_sprite = context.player_sprite
-        map_manager = cast("MapManager", context.get_system("map"))
+        scene_manager = cast("SceneManager", context.get_system("scene"))
 
         if (
             not player_sprite
-            or not map_manager
-            or not hasattr(map_manager, "current_map")
-            or not map_manager.current_map
+            or not scene_manager
+            or not hasattr(scene_manager, "current_map")
+            or not scene_manager.current_map
         ):
             # No active game to save
             return
 
-        # Save the game to the selected slot
-        success = self.save_manager.save_game(
-            slot=self.selected_slot,
-            player_x=player_sprite.center_x,
-            player_y=player_sprite.center_y,
-            current_map=map_manager.current_map,
-            npc_manager=cast("NPCManager", context.get_system("npc")),
-            inventory_manager=cast("InventoryManager", context.get_system("inventory")),
-            audio_manager=cast("AudioManager", context.get_system("audio")),
-            script_manager=cast("ScriptManager", context.get_system("script")),
-        )
+        # Save the game to the selected slot (uses pluggable save providers)
+        success = self.save_manager.save_game(slot=self.selected_slot, context=context)
 
         if success:
             # Return to pause menu after successful save

@@ -87,11 +87,11 @@ class NPCSaveProvider(BaseSaveProvider):
         if not npc_manager:
             return
 
-        # Get current scene name from map manager
-        map_manager = context.get_system("map")
+        # Get current scene name from scene manager
+        scene_manager = context.get_system("scene")
         scene_name = ""
-        if map_manager and hasattr(map_manager, "current_map"):
-            scene_name = map_manager.current_map
+        if scene_manager and hasattr(scene_manager, "current_map"):
+            scene_name = scene_manager.current_map
 
         if not scene_name:
             return
@@ -125,11 +125,11 @@ class NPCSaveProvider(BaseSaveProvider):
         if not npc_manager:
             return False
 
-        # Get current scene name from map manager
-        map_manager = context.get_system("map")
+        # Get current scene name from scene manager
+        scene_manager = context.get_system("scene")
         scene_name = ""
-        if map_manager and hasattr(map_manager, "current_map"):
-            scene_name = map_manager.current_map
+        if scene_manager and hasattr(scene_manager, "current_map"):
+            scene_name = scene_manager.current_map
 
         if not scene_name:
             return False
