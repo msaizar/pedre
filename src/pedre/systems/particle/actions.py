@@ -9,8 +9,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Self, cast
 
-from pedre.systems.action_registry import ActionRegistry
-from pedre.systems.actions import Action
+from pedre.actions import Action
+from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
     from pedre.systems import NPCManager, ParticleManager

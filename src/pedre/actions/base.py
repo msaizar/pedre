@@ -6,7 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Self
 
-from pedre.systems.action_registry import ActionRegistry
+from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Callable

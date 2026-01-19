@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Self
 
-from pedre.systems.action_registry import ActionRegistry
-from pedre.systems.actions import Action
+from pedre.actions import Action
+from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext

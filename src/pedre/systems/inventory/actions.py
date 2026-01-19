@@ -7,8 +7,8 @@ such as acquiring items or waiting for inventory access.
 import logging
 from typing import TYPE_CHECKING, Any
 
-from pedre.systems.action_registry import ActionRegistry
-from pedre.systems.actions import Action, WaitForConditionAction
+from pedre.actions import Action, WaitForConditionAction
+from pedre.actions.registry import ActionRegistry
 from pedre.systems.inventory.manager import InventoryManager
 
 if TYPE_CHECKING:

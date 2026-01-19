@@ -59,12 +59,10 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
+from pedre.actions import ActionSequence
+from pedre.actions.registry import ActionRegistry
 from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
-from pedre.systems.action_registry import ActionRegistry
-from pedre.systems.actions import (
-    ActionSequence,
-)
 from pedre.systems.base import BaseSystem
 from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.registry import SystemRegistry

@@ -1,8 +1,8 @@
 """Game systems for managing different aspects of gameplay."""
 
+from pedre.actions.registry import ActionRegistry
 from pedre.events import EventBus
 from pedre.events.registry import EventRegistry
-from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.audio import AudioManager
 from pedre.systems.base import BaseSystem
 from pedre.systems.camera import CameraManager

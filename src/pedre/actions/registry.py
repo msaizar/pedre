@@ -53,7 +53,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from pedre.systems.actions import Action
+    from pedre.actions import Action
 
 logger = logging.getLogger(__name__)
 

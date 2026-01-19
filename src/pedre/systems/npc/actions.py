@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Self, cast
 
+from pedre.actions import Action, WaitForConditionAction
+from pedre.actions.registry import ActionRegistry
 from pedre.sprites import AnimatedNPC
-from pedre.systems.action_registry import ActionRegistry
-from pedre.systems.actions import Action, WaitForConditionAction
 
 if TYPE_CHECKING:
     from pedre.systems import DialogManager, NPCManager, ParticleManager
