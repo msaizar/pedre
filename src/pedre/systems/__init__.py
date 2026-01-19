@@ -23,7 +23,7 @@ from pedre.systems.loader import CircularDependencyError, MissingDependencyError
 from pedre.systems.map import MapManager
 from pedre.systems.npc import NPCDialogConfig, NPCManager, NPCState
 from pedre.systems.particle import EmitParticlesAction, Particle, ParticleManager
-from pedre.systems.pathfinding import PathfindingManager  # Now from pathfinding/
+from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.physics import PhysicsManager
 from pedre.systems.player import PlayerManager
 from pedre.systems.portal import Portal, PortalEnteredEvent, PortalManager
