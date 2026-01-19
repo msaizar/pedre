@@ -73,9 +73,6 @@ if TYPE_CHECKING:
     )
     from pedre.view_manager import ViewManager
 
-from pedre.events import (
-    GameStartEvent,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -274,10 +271,6 @@ class GameView(arcade.View):
         if not self.initialized:
             self.setup()
             self.initialized = True
-
-            # Publish game start event to trigger intro script
-            if self.event_bus:
-                self.event_bus.publish(GameStartEvent())
 
     def on_update(self, delta_time: float) -> None:
         """Update game logic each frame (arcade lifecycle callback).

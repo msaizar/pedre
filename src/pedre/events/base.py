@@ -31,9 +31,7 @@ Example usage:
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
-
-from pedre.events.registry import EventRegistry
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -42,61 +40,6 @@ if TYPE_CHECKING:
 @dataclass
 class Event:
     """Base event class."""
-
-
-@EventRegistry.register("map_transition")
-@dataclass
-class MapTransitionEvent(Event):
-    """Fired when transitioning to a new map.
-
-    This event is published when the player transitions between different maps or scenes
-    in the game world. It provides information about both the origin and destination maps.
-
-    This event can be used to trigger cutscenes, initialize map-specific state, or clean
-    up resources from the previous map.
-
-    Note: This event is not currently used for script triggers, but is available
-    for programmatic event handling.
-
-    Attributes:
-        from_map: Name of the map being left.
-        to_map: Name of the map being entered.
-    """
-
-    from_map: str
-    to_map: str
-
-    def get_script_data(self) -> dict[str, Any]:
-        """Get data for script triggers."""
-        return {"from_map": self.from_map, "to_map": self.to_map}
-
-
-@EventRegistry.register("game_start")
-@dataclass
-class GameStartEvent(Event):
-    """Fired when a new game starts (not on load).
-
-    This event is published by the game view when a fresh game is initialized
-    (not when loading from a save). It's useful for triggering intro sequences,
-    initial dialogs, or one-time setup that should only happen on new games.
-
-    The event is only published once per new game, and run_once scripts triggered
-    by this event won't fire again when loading a save that already completed them.
-
-    Script trigger example:
-        {
-            "run_once": true,
-            "trigger": {
-                "event": "game_start"
-            }
-        }
-
-    Note: This event has no attributes - it simply signals that a new game has begun.
-    """
-
-    def get_script_data(self) -> dict[str, Any]:
-        """Get data for script triggers."""
-        return {}
 
 
 class EventBus:

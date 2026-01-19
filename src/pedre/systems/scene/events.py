@@ -20,10 +20,6 @@ class SceneStartEvent(Event):
     making it useful for scene-specific initialization, cutscenes, or gameplay that
     should trigger each time a particular scene is entered.
 
-    Unlike GameStartEvent which only fires once for new games, SceneStartEvent fires
-    every time setup() completes, whether from a new game, loading a save, or
-    transitioning through a portal.
-
     Script trigger example:
         {
             "trigger": {
