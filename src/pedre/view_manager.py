@@ -402,7 +402,7 @@ class ViewManager:
             logger.error("ViewManager: Save system not found in context")
             return
 
-        restored_objects, scene_states = save_manager.restore_all_state(
+        restored_objects, cache_states = save_manager.restore_all_state(
             save_data,
             cast("NPCManager", context.get_system("npc")),
             cast("InventoryManager", context.get_system("inventory")),
@@ -415,11 +415,11 @@ class ViewManager:
             context.interacted_objects.clear()
             context.interacted_objects.update(restored_objects)
 
-        # Restore scene state cache for NPC persistence across scene transitions
-        if scene_states:
+        # Restore cache state for persistence across scene transitions
+        if cache_states:
             scene_manager = cast("SceneManager", context.get_system("scene"))
             if scene_manager:
-                scene_manager.restore_scene_state_cache(scene_states)
+                scene_manager.restore_cache_state(cache_states)
 
     def exit_game(self) -> None:
         """Close the game window and exit the application.

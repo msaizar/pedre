@@ -17,14 +17,8 @@ Key responsibilities:
 
 System architecture:
 The GameView orchestrates multiple manager classes that handle specific subsystems:
-- DialogManager: Shows and manages dialog boxes
-- NPCManager: Tracks NPC state, dialog levels, and movement
-- InputManager: Processes keyboard input for movement
 - ScriptManager: Executes scripted sequences from JSON
-- PortalManager: Handles map transitions via portals
-- InteractionManager: Manages interactive objects
 - AudioManager: Plays music and sound effects
-- ParticleManager: Renders visual effects
 - SaveManager: Handles game state persistence
 - CameraManager: Smooth camera following
 
@@ -72,9 +66,7 @@ if TYPE_CHECKING:
     from pedre.systems import (
         AudioManager,
         CameraManager,
-        InteractionManager,
         InventoryManager,
-        NPCManager,
         SaveManager,
         SceneManager,
         ScriptManager,
@@ -210,11 +202,6 @@ class GameView(arcade.View):
         return cast("AudioManager", self.game_context.get_system("audio")) if self.game_context else None
 
     @property
-    def npc_manager(self) -> NPCManager | None:
-        """Expose npc_manager from game_context."""
-        return cast("NPCManager", self.game_context.get_system("npc")) if self.game_context else None
-
-    @property
     def inventory_manager(self) -> InventoryManager | None:
         """Expose inventory_manager from game_context."""
         return cast("InventoryManager", self.game_context.get_system("inventory")) if self.game_context else None
@@ -228,11 +215,6 @@ class GameView(arcade.View):
     def scene_manager(self) -> SceneManager | None:
         """Expose scene_manager from game_context."""
         return cast("SceneManager", self.game_context.get_system("scene")) if self.game_context else None
-
-    @property
-    def interaction_manager(self) -> InteractionManager | None:
-        """Expose interaction_manager from game_context."""
-        return cast("InteractionManager", self.game_context.get_system("interaction")) if self.game_context else None
 
     def setup(self) -> None:
         """Set up the game. Called on first show or when resetting the game state."""
@@ -371,37 +353,27 @@ class GameView(arcade.View):
         to another view (menu, inventory, etc.).
 
         Cleanup process:
-        1. Auto-save game state
-        2. Stop background music
-        3. Clear all sprite lists
-        4. Clear sprite references
-        5. Close dialog
-        6. Clear all managers (NPCs, interactions, portals, particles, scripts, events)
-        7. Reset initialized flag so game will set up again on next show
+            - Stop background music
+            - Clear all sprite lists
+            - Clear sprite references
+            - Clear all managers
+            - Reset initialized flag so game will set up again on next show
 
         Side effects:
-            - Writes auto-save file
             - Stops audio playback
             - Clears all sprite lists and references
             - Resets all managers to empty state
             - Sets initialized = False
         """
-        # Cache NPC and script state for this scene before clearing (for scene transitions)
+        # Cache state for this scene before clearing (for scene transitions)
         scene_manager = cast("SceneManager", self.game_context.get_system("scene")) if self.game_context else None
         map_manager = self.game_context.get_system("map") if self.game_context else None
-        npc_manager = self.game_context.get_system("npc") if self.game_context else None
-        script_manager = self.game_context.get_system("script") if self.game_context else None
-
         current_map = getattr(map_manager, "current_map", "") if map_manager else ""
 
-        if current_map and npc_manager and hasattr(scene_manager, "cache_scene_state"):
-            interaction_manager = self.game_context.get_system("interaction") if self.game_context else None
-            scene_manager.cache_scene_state(
-                current_map,
-                cast("NPCManager", npc_manager),
-                cast("ScriptManager", script_manager),
-                cast("InteractionManager", interaction_manager),
-            )
+        if current_map and scene_manager and self.game_context:
+            cache_loader = scene_manager.get_cache_loader()
+            if cache_loader:
+                cache_loader.cache_all(current_map, self.game_context)
 
         # Cleanup ALL pluggable systems generically (includes AudioManager cleanup)
         if self.system_loader:

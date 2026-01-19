@@ -19,17 +19,17 @@ import arcade
 from pedre.systems.base import BaseSystem
 from pedre.systems.events import SceneStartEvent
 from pedre.systems.registry import SystemRegistry
-from pedre.systems.scene_state import SceneStateCache
 
 if TYPE_CHECKING:
+    from typing import Any
+
+    from pedre.caches.loader import CacheLoader
     from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
-    from pedre.systems.interaction import InteractionManager
     from pedre.systems.map import MapManager
     from pedre.systems.npc import NPCManager
     from pedre.systems.portal.events import PortalEnteredEvent
     from pedre.systems.script import ScriptManager
-    from pedre.types import SceneStateCacheDict
 
 logger = logging.getLogger(__name__)
 
@@ -57,36 +57,39 @@ class SceneManager(BaseSystem):
     name: ClassVar[str] = "scene"
     dependencies: ClassVar[list[str]] = ["map", "npc", "script"]
 
-    # Class-level cache for NPC state per scene (persists across scene transitions).
-    _scene_state_cache: ClassVar[SceneStateCache] = SceneStateCache()
+    # Class-level cache loader (persists across scene transitions)
+    _cache_loader: ClassVar[CacheLoader | None] = None
 
     @classmethod
-    def restore_scene_state_cache(cls, scene_states: SceneStateCacheDict) -> None:
-        """Restore the scene state cache from saved data."""
-        cls._scene_state_cache.from_dict(scene_states)
-
-    @classmethod
-    def cache_scene_state(
-        cls,
-        scene_name: str,
-        npc_manager: NPCManager,
-        script_manager: ScriptManager,
-        interaction_manager: InteractionManager | None = None,
-    ) -> None:
-        """Cache NPC and script state for a scene.
+    def init_cache_loader(cls, cache_loader: CacheLoader) -> None:
+        """Initialize the cache loader.
 
         Args:
-            scene_name: The name of the scene to cache.
-            npc_manager: The NPC manager containing current NPC states.
-            script_manager: The script manager containing current script states.
-            interaction_manager: Optional interaction manager containing current interaction states.
+            cache_loader: The CacheLoader instance to use for caching.
         """
-        cls._scene_state_cache.cache_scene_state(scene_name, npc_manager, script_manager, interaction_manager)
+        cls._cache_loader = cache_loader
 
     @classmethod
-    def get_scene_state_dict(cls) -> SceneStateCacheDict:
-        """Get the scene state cache as a dictionary."""
-        return cls._scene_state_cache.to_dict()
+    def get_cache_loader(cls) -> CacheLoader | None:
+        """Get the cache loader instance."""
+        return cls._cache_loader
+
+    @classmethod
+    def restore_cache_state(cls, cache_states: dict[str, Any]) -> None:
+        """Restore the cache state from saved data.
+
+        Args:
+            cache_states: Dictionary mapping cache names to their serialized state.
+        """
+        if cls._cache_loader:
+            cls._cache_loader.from_dict(cache_states)
+
+    @classmethod
+    def get_cache_state_dict(cls) -> dict[str, Any]:
+        """Get the cache state as a dictionary for saving."""
+        if cls._cache_loader:
+            return cls._cache_loader.to_dict()
+        return {}
 
     def __init__(self) -> None:
         """Initialize the scene manager."""
@@ -122,11 +125,8 @@ class SceneManager(BaseSystem):
             return
 
         # Cache current scene state before transitioning
-        npc_manager = cast("NPCManager", context.get_system("npc"))
-        script_manager = cast("ScriptManager", context.get_system("script"))
-        interaction_manager = cast("InteractionManager", context.get_system("interaction"))
-        if npc_manager and script_manager:
-            self.cache_scene_state(self.current_scene, npc_manager, script_manager, interaction_manager)
+        if self._cache_loader:
+            self._cache_loader.cache_all(self.current_scene, context)
 
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
@@ -145,6 +145,10 @@ class SceneManager(BaseSystem):
         if map_manager and hasattr(map_manager, "load_map"):
             map_manager.load_map(map_file, context, self._settings)
 
+        # Get NPC and script managers for scene loading
+        npc_manager = cast("NPCManager | None", context.get_system("npc"))
+        script_manager = cast("ScriptManager | None", context.get_system("script"))
+
         npc_dialogs_data = {}
         if npc_manager and hasattr(npc_manager, "load_scene_dialogs"):
             npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene, self._settings)
@@ -152,12 +156,12 @@ class SceneManager(BaseSystem):
         if script_manager and hasattr(script_manager, "load_scene_scripts"):
             script_manager.load_scene_scripts(current_scene, self._settings, npc_dialogs_data)
 
-        # Restore scene state
-        if npc_manager and script_manager:
-            self._scene_state_cache.restore_scene_state(current_scene, npc_manager, script_manager, interaction_manager)
+        # Restore scene state using cache loader
+        if self._cache_loader:
+            self._cache_loader.restore_all(current_scene, context)
 
             # Sync wall_list with NPC visibility after restore
-            if context.wall_list:
+            if npc_manager and context.wall_list:
                 for npc_state in npc_manager.npcs.values():
                     if not npc_state.sprite.visible and npc_state.sprite in context.wall_list:
                         context.wall_list.remove(npc_state.sprite)

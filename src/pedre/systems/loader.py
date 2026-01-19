@@ -35,6 +35,7 @@ import importlib
 import logging
 from typing import TYPE_CHECKING
 
+from pedre.caches.loader import CacheLoader
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -91,6 +92,7 @@ class SystemLoader:
         self.settings = settings
         self._instances: dict[str, BaseSystem] = {}
         self._load_order: list[str] = []
+        self._cache_loader: CacheLoader | None = None
 
     def load_modules(self) -> None:
         """Import all configured system modules to trigger registration.
@@ -155,6 +157,16 @@ class SystemLoader:
         Args:
             context: Game context providing access to other systems.
         """
+        # Initialize and set up the cache loader before systems
+        self._cache_loader = CacheLoader(self.settings)
+        self._cache_loader.instantiate_all()
+
+        # Initialize SceneManager with the cache loader
+        # Import here to avoid circular dependency
+        from pedre.systems.scene import SceneManager  # noqa: PLC0415
+
+        SceneManager.init_cache_loader(self._cache_loader)
+
         for name in self._load_order:
             system = self._instances.get(name)
             if system:

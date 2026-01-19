@@ -101,6 +101,8 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from pedre.config import GameSettings
     from pedre.systems.audio import AudioManager
     from pedre.systems.game_context import GameContext
@@ -110,7 +112,6 @@ if TYPE_CHECKING:
     from pedre.systems.npc import NPCManager
     from pedre.systems.scene import SceneManager
     from pedre.systems.script import ScriptManager
-    from pedre.types import SceneStateCacheDict
 
 logger = logging.getLogger(__name__)
 
@@ -155,9 +156,9 @@ class GameSaveData:
                           Used for dialog conditions and puzzle state tracking.
         completed_scripts: Optional list of run_once script names that have completed.
                           Scripts in this list won't trigger again. None if no scripts completed.
-        scene_states: Optional dictionary storing NPC states per scene for persistence across
-                     scene transitions. Maps scene names to NPC states (position, visibility,
-                     dialog level). None if no scenes have been visited yet.
+        cache_states: Optional dictionary storing all cache provider states for persistence across
+                     scene transitions. Maps cache provider names to their serialized state.
+                     None if no cache state exists yet.
         save_timestamp: Unix timestamp when save was created (seconds since epoch).
         save_version: Save format version string for future compatibility.
     """
@@ -182,8 +183,8 @@ class GameSaveData:
     interacted_objects: list[str] | None = None
     completed_scripts: list[str] | None = None
 
-    # Scene state cache (NPC states per scene for persistence across transitions)
-    scene_states: SceneStateCacheDict | None = None
+    # Cache states (all cache providers, replaces scene_states)
+    cache_states: dict[str, Any] | None = None
 
     # Metadata
     save_timestamp: float = 0.0
@@ -311,9 +312,9 @@ class SaveManager(BaseSystem):
         interaction_manager = cast("InteractionManager", context.get_system("interaction"))
         scene_manager = cast("SceneManager", context.get_system("scene"))
 
-        scene_states = None
-        if scene_manager and hasattr(scene_manager, "get_scene_state_dict"):
-            scene_states = cast("SceneManager", scene_manager).get_scene_state_dict()
+        cache_states = None
+        if scene_manager and hasattr(scene_manager, "get_cache_state_dict"):
+            cache_states = cast("SceneManager", scene_manager).get_cache_state_dict()
 
         success = self.auto_save(
             player_x=context.player_sprite.center_x,
@@ -324,7 +325,7 @@ class SaveManager(BaseSystem):
             audio_manager=audio_manager,
             script_manager=script_manager,
             interaction_manager=interaction_manager,
-            scene_states=scene_states,
+            cache_states=cache_states,
         )
 
         if success:
@@ -369,7 +370,7 @@ class SaveManager(BaseSystem):
                 return
 
         # Restore positions and levels
-        _interacted_objects, scene_states = self.restore_all_state(
+        _interacted_objects, cache_states = self.restore_all_state(
             save_data,
             npc_manager=npc_manager,
             inventory_manager=inventory_manager,
@@ -378,9 +379,9 @@ class SaveManager(BaseSystem):
             interaction_manager=interaction_manager,
         )
 
-        # Restore scene states to cache
-        if scene_manager and hasattr(scene_manager, "restore_scene_state_cache") and scene_states:
-            cast("SceneManager", scene_manager).restore_scene_state_cache(scene_states)
+        # Restore cache states
+        if scene_manager and hasattr(scene_manager, "restore_cache_state") and cache_states:
+            cast("SceneManager", scene_manager).restore_cache_state(cache_states)
 
         # Reposition player
         if context.player_sprite:
@@ -403,7 +404,7 @@ class SaveManager(BaseSystem):
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
         interaction_manager: InteractionManager | None = None,
-        scene_states: SceneStateCacheDict | None = None,
+        cache_states: dict[str, Any] | None = None,
     ) -> bool:
         """Save game to a slot.
 
@@ -445,8 +446,8 @@ class SaveManager(BaseSystem):
                            If None, interacted_objects and completed_scripts will be saved as None.
             interaction_manager: Optional interaction manager with interacted objects.
                                 If None, interacted_objects will be saved as None.
-            scene_states: Optional dictionary of per-scene NPC states from SceneStateCache.
-                         If None, scene_states will be saved as None.
+            cache_states: Optional dictionary of cache provider states from CacheLoader.
+                         If None, cache_states will be saved as None.
 
         Returns:
             True if save succeeded and file was written, False if any error occurred.
@@ -483,7 +484,7 @@ class SaveManager(BaseSystem):
                 audio_settings=audio_settings,
                 interacted_objects=interacted_objects_list,
                 completed_scripts=completed_scripts,
-                scene_states=scene_states,
+                cache_states=cache_states,
                 save_timestamp=datetime.now(UTC).timestamp(),
             )
 
@@ -687,7 +688,7 @@ class SaveManager(BaseSystem):
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
         interaction_manager: InteractionManager | None = None,
-        scene_states: SceneStateCacheDict | None = None,
+        cache_states: dict[str, Any] | None = None,
     ) -> bool:
         """Auto-save to a special auto-save slot.
 
@@ -717,7 +718,7 @@ class SaveManager(BaseSystem):
             audio_manager: Optional audio manager with volume and enable/disable settings.
             script_manager: Optional script manager with interacted_objects and completed scripts.
             interaction_manager: Optional interaction manager with interacted objects.
-            scene_states: Optional dictionary of per-scene NPC states from SceneStateCache.
+            cache_states: Optional dictionary of cache provider states from CacheLoader.
 
         Returns:
             True if auto-save succeeded, False if it failed.
@@ -733,7 +734,7 @@ class SaveManager(BaseSystem):
             audio_manager,
             script_manager,
             interaction_manager,
-            scene_states,
+            cache_states,
         )
 
     def load_auto_save(self) -> GameSaveData | None:
@@ -767,7 +768,7 @@ class SaveManager(BaseSystem):
         audio_manager: AudioManager | None = None,
         script_manager: ScriptManager | None = None,
         interaction_manager: InteractionManager | None = None,
-    ) -> tuple[set[str], SceneStateCacheDict | None]:
+    ) -> tuple[set[str], dict[str, Any] | None]:
         """Restore all manager states from save data.
 
         Convenience method that applies loaded save data to all game managers.
@@ -782,7 +783,7 @@ class SaveManager(BaseSystem):
         - Audio settings via audio_manager.from_dict()
         - Completed scripts via script_manager.restore_completed_scripts()
         - Interacted objects set (returned for game to use)
-        - Scene states (returned for game to restore to SceneStateCache)
+        - Cache states (returned for game to restore to CacheLoader)
 
         Args:
             save_data: The GameSaveData object loaded from a save file.
@@ -793,21 +794,21 @@ class SaveManager(BaseSystem):
             interaction_manager: Optional interaction manager to restore interaction states into.
 
         Returns:
-            Tuple of (interacted_objects set, scene_states dict or None).
-            The scene_states should be passed to SceneStateCache.from_dict().
+            Tuple of (interacted_objects set, cache_states dict or None).
+            The cache_states should be passed to CacheLoader.from_dict().
 
         Example:
             # Load and restore a save
             save_data = save_manager.load_game(slot=1)
             if save_data:
-                interacted_objects, scene_states = save_manager.restore_all_state(
+                interacted_objects, cache_states = save_manager.restore_all_state(
                     save_data,
                     npc_manager,
                     inventory_manager,
                     audio_manager
                 )
-                if scene_states:
-                    scene_state_cache.from_dict(scene_states)
+                if cache_states:
+                    cache_loader.from_dict(cache_states)
                 # Now all managers have their state restored
         """
         # Restore NPC dialog levels
@@ -838,7 +839,7 @@ class SaveManager(BaseSystem):
         interacted_objects = set(save_data.interacted_objects) if save_data.interacted_objects else set()
 
         logger.info("Restored all manager states from save data")
-        return interacted_objects, save_data.scene_states
+        return interacted_objects, save_data.cache_states
 
     def _get_save_path(self, slot: int) -> Path:
         """Get the file path for a save slot.

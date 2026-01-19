@@ -30,7 +30,6 @@ from pedre.systems.portal import Portal, PortalEnteredEvent, PortalManager
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.save import GameSaveData, SaveManager
 from pedre.systems.scene import SceneManager
-from pedre.systems.scene_state import SceneStateCache
 from pedre.systems.script import Script, ScriptCompleteEvent, ScriptManager
 
 __all__ = [
@@ -70,7 +69,6 @@ __all__ = [
     "PortalManager",
     "SaveManager",
     "SceneManager",
-    "SceneStateCache",
     "Script",
     "ScriptCompleteEvent",
     "ScriptManager",

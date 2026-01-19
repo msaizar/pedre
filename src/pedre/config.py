@@ -67,6 +67,11 @@ class GameSettings:
     # Users can add custom systems by appending to this list
     installed_systems: list[str] | None = None
 
+    # Pluggable cache providers configuration
+    # List of module paths to import, which will register their cache providers
+    # Users can add custom caches by appending to this list
+    installed_caches: list[str] | None = None
+
     def __post_init__(self) -> None:
         """Initialize mutable defaults."""
         if self.menu_music_files is None:
@@ -92,6 +97,12 @@ class GameSettings:
                 "pedre.systems.physics",
                 "pedre.systems.map",
                 "pedre.systems.scene",
-                # Future: add other systems here as they are migrated
-                # etc.
+            ]
+
+        if self.installed_caches is None:
+            # Default installed caches - includes all built-in cache providers
+            self.installed_caches = [
+                "pedre.systems.npc.cache",
+                "pedre.systems.script.cache",
+                "pedre.systems.interaction.cache",
             ]
