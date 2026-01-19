@@ -44,8 +44,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import arcade
 
+    from pedre.events import EventBus
     from pedre.systems.base import BaseSystem
-    from pedre.systems.events import EventBus
     from pedre.views.game_view import GameView
 
 

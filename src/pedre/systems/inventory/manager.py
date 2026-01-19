@@ -76,7 +76,7 @@ if TYPE_CHECKING:
     from typing import Any
 
     from pedre.config import GameSettings
-    from pedre.systems.events import EventBus
+    from pedre.events import EventBus
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)

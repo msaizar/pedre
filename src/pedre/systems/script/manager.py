@@ -60,19 +60,19 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from pedre.constants import asset_path
+from pedre.events.registry import EventRegistry
 from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.actions import (
     ActionSequence,
 )
 from pedre.systems.base import BaseSystem
 from pedre.systems.condition_registry import ConditionRegistry
-from pedre.systems.event_registry import EventRegistry
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
-    from pedre.systems.events import (
+    from pedre.events import (
         Event,
         EventBus,
     )

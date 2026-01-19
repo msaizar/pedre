@@ -1,13 +1,13 @@
 """Game systems for managing different aspects of gameplay."""
 
+from pedre.events import EventBus
+from pedre.events.registry import EventRegistry
 from pedre.systems.action_registry import ActionRegistry
 from pedre.systems.audio import AudioManager
 from pedre.systems.base import BaseSystem
 from pedre.systems.camera import CameraManager
 from pedre.systems.debug import DebugManager
 from pedre.systems.dialog import DialogManager, DialogPage
-from pedre.systems.event_registry import EventRegistry
-from pedre.systems.events import EventBus
 from pedre.systems.game_context import GameContext
 from pedre.systems.input import InputManager
 from pedre.systems.interaction import InteractionManager, InteractiveObject

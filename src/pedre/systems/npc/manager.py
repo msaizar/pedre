@@ -80,8 +80,8 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
+    from pedre.events import EventBus
     from pedre.systems import AudioManager, DialogManager, ParticleManager
-    from pedre.systems.events import EventBus
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)

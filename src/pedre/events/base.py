@@ -33,7 +33,7 @@ Example usage:
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from pedre.systems.event_registry import EventRegistry
+from pedre.events.registry import EventRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Callable

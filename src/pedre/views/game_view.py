@@ -73,7 +73,7 @@ if TYPE_CHECKING:
     )
     from pedre.view_manager import ViewManager
 
-from pedre.systems.events import (
+from pedre.events import (
     GameStartEvent,
 )
 

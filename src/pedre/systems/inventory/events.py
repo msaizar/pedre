@@ -8,8 +8,8 @@ or the inventory view being closed.
 from dataclasses import dataclass
 from typing import Any
 
-from pedre.systems.event_registry import EventRegistry
-from pedre.systems.events import Event
+from pedre.events import Event
+from pedre.events.registry import EventRegistry
 
 
 @EventRegistry.register("inventory_closed")
