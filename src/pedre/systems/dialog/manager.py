@@ -213,7 +213,7 @@ class DialogManager(BaseSystem):
                         current_level = npc_state.dialog_level
 
                 context.event_bus.publish(DialogClosedEvent(npc_name=self.current_npc_name, dialog_level=current_level))
-                logger.debug("Published DialogClosedEvent for %s at level %d", self.current_npc_name, current_level)
+                logger.debug("Published DialogClosedEvent for %s at level %s", self.current_npc_name, current_level)
             return True
         return False
 
