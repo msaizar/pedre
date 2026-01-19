@@ -66,9 +66,9 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conditions.registry import ConditionRegistry
 from pedre.constants import asset_path
 from pedre.systems.base import BaseSystem
-from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.registry import SystemRegistry
 

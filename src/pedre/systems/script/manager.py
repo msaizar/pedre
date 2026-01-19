@@ -61,10 +61,10 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from pedre.actions import ActionSequence
 from pedre.actions.registry import ActionRegistry
+from pedre.conditions.registry import ConditionRegistry
 from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
 from pedre.systems.base import BaseSystem
-from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.script.events import ScriptCompleteEvent
 

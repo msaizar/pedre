@@ -55,8 +55,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conditions.registry import ConditionRegistry
 from pedre.systems.base import BaseSystem
-from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:

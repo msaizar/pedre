@@ -65,10 +65,10 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
+from pedre.conditions.registry import ConditionRegistry
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
 from pedre.systems.base import BaseSystem
-from pedre.systems.condition_registry import ConditionRegistry
 from pedre.systems.inventory import InventoryManager
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
