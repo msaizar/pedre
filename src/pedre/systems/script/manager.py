@@ -661,33 +661,3 @@ class ScriptManager(BaseSystem):
                 self.scripts[name].has_run = True  # Also mark as run for run_once
             else:
                 logger.warning("ScriptManager: Cannot restore unknown script: %s", name)
-
-
-@ConditionRegistry.register("script_completed")
-def check_script_completed(condition: dict[str, Any], context: GameContext) -> bool:
-    """Check if a specific script has fully completed all its actions.
-
-    Condition format:
-        {"check": "script_completed", "script": "script_name"}
-
-    Args:
-        condition: Condition data with "script" key.
-        context: Game context for system access.
-
-    Returns:
-        True if the script has completed all actions, False otherwise.
-    """
-    script_manager = cast("ScriptManager", context.get_system("script"))
-    if not script_manager:
-        return False
-
-    script_name = condition.get("script", "")
-    if not script_name:
-        logger.warning("script_completed condition missing 'script' field")
-        return False
-
-    script = script_manager.scripts.get(script_name)
-    if not script:
-        return False
-
-    return script.completed

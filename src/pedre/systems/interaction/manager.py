@@ -55,7 +55,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
-from pedre.conditions.registry import ConditionRegistry
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
@@ -405,19 +404,6 @@ class InteractionManager(BaseSystem):
             True if the object has been interacted with, False otherwise.
         """
         return object_name in self.interacted_objects
-
-    @ConditionRegistry.register("object_interacted")
-    @staticmethod
-    def _check_object_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
-        """Check if an object has been interacted with."""
-        interaction = context.get_system("interaction")
-        if not interaction:
-            return False
-        object_name = condition_data.get("object")
-        expected = condition_data.get("equals", True)
-        if not object_name:
-            return False
-        return interaction.has_interacted_with(object_name) == expected
 
     def _handle_message(self, obj: InteractiveObject, dialog_manager: DialogManager | None) -> bool:
         """Handle showing a message dialog to the player.
