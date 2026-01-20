@@ -29,7 +29,6 @@ if TYPE_CHECKING:
     from pedre.systems import CameraManager, PortalManager
     from pedre.systems.game_context import GameContext
     from pedre.systems.npc import NPCManager
-    from pedre.systems.portal.events import PortalEnteredEvent
     from pedre.systems.script import ScriptManager
 
 logger = logging.getLogger(__name__)
@@ -481,11 +480,3 @@ class SceneManager(BaseSystem):
             window.height,
             (0, 0, 0, alpha),
         )
-
-
-def event_handler(event: PortalEnteredEvent, context: GameContext) -> None:
-    """Handle portal entry events to trigger scene transitions.
-
-    This is a placeholder event handler for portal entry events.
-    The actual transition logic is handled by the script system.
-    """
