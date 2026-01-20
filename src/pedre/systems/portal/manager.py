@@ -70,13 +70,13 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import arcade
+
 from pedre.systems.base import BaseSystem
 from pedre.systems.portal.events import PortalEnteredEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    import arcade
-
     from pedre.config import GameSettings
     from pedre.events import EventBus
     from pedre.systems.game_context import GameContext
@@ -172,6 +172,50 @@ class PortalManager(BaseSystem):
             self.interaction_distance = settings.portal_interaction_distance
 
         logger.debug("PortalManager setup complete (interaction_distance=%.1f)", self.interaction_distance)
+
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+        context: GameContext,
+        settings: GameSettings,
+    ) -> None:
+        """Load portals from Tiled map object layer."""
+        self.clear()  # Clear old portals
+
+        portal_layer = tile_map.object_lists.get("Portals")
+        if not portal_layer:
+            logger.debug("No Portals layer found in map")
+            return
+
+        for portal in portal_layer:
+            if not portal.name or not portal.properties or not portal.shape:
+                continue
+
+            # Extract shape geometry
+            xs: list[float] = []
+            ys: list[float] = []
+
+            if isinstance(portal.shape, (list, tuple)) and len(portal.shape) > 0:
+                first_elem = portal.shape[0]
+                if isinstance(first_elem, (tuple, list)):
+                    for p in portal.shape:
+                        xs.append(float(p[0]))
+                        ys.append(float(p[1]))
+                else:
+                    xs.append(float(portal.shape[0]))
+                    ys.append(float(portal.shape[1]))
+            else:
+                continue
+
+            # Create sprite for portal trigger zone
+            sprite = arcade.Sprite()
+            sprite.center_x = (min(xs) + max(xs)) / 2
+            sprite.center_y = (min(ys) + max(ys)) / 2
+            sprite.width = max(xs) - min(xs)
+            sprite.height = max(ys) - min(ys)
+
+            self.register_portal(sprite=sprite, name=portal.name)
 
     def cleanup(self) -> None:
         """Clean up portal resources when the scene unloads.

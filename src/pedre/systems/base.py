@@ -27,6 +27,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
+    import arcade
+
     from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
@@ -89,7 +91,49 @@ class BaseSystem(ABC):
                 self.event_bus.subscribe(SceneStartEvent, self._on_scene_start)
         """
 
-    def update(self, delta_time: float, context: GameContext) -> None:  # noqa: B027
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+        context: GameContext,
+        settings: GameSettings,
+    ) -> None:
+        """Load system-specific data from Tiled map (optional hook).
+
+        This method is called after the tile map and arcade scene have been
+        loaded but before physics initialization. Systems should extract their
+        data from the Tiled map and register/configure their entities.
+
+        Call order:
+        1. SceneManager loads tile_map and arcade_scene
+        2. SceneManager extracts collision layers into context.wall_list
+        3. load_from_tiled() called on all systems in dependency order
+           - WaypointManager populates context.waypoints
+           - PortalManager registers portals
+           - InteractionManager registers interactive objects
+           - PlayerManager creates player sprite (uses waypoints)
+           - NPCManager creates NPC sprites (depends on player)
+        4. Physics setup, pathfinding setup, camera setup
+
+        Args:
+            tile_map: Loaded arcade.TileMap instance.
+            arcade_scene: arcade.Scene created from tile_map.
+            context: GameContext with wall_list already populated.
+            settings: GameSettings for resolving asset paths.
+
+        Example:
+            def load_from_tiled(self, tile_map, arcade_scene, context, settings):
+                portal_layer = tile_map.object_lists.get("Portals")
+                if not portal_layer:
+                    return
+
+                for portal_obj in portal_layer:
+                    sprite = self._create_sprite_from_tiled(portal_obj)
+                    self.register_portal(sprite, portal_obj.name)
+        """
+        return
+
+    def update(self, delta_time: float, context: GameContext) -> None:
         """Called every frame during the game loop.
 
         Override this method to implement per-frame logic such as animations,
@@ -105,8 +149,9 @@ class BaseSystem(ABC):
                 if self.animation_timer > self.frame_duration:
                     self.advance_frame()
         """
+        return
 
-    def on_draw(self, context: GameContext) -> None:  # noqa: B027
+    def on_draw(self, context: GameContext) -> None:
         """Called during the draw phase of each frame (world coordinates).
 
         Override this method to render visual elements managed by this system
@@ -115,8 +160,9 @@ class BaseSystem(ABC):
         Args:
             context: Game context providing access to other systems.
         """
+        return
 
-    def on_draw_ui(self, context: GameContext) -> None:  # noqa: B027
+    def on_draw_ui(self, context: GameContext) -> None:
         """Called during the draw phase of each frame (screen coordinates).
 
         Override this method to render UI elements or overlays in screen coordinates
@@ -125,8 +171,9 @@ class BaseSystem(ABC):
         Args:
             context: Game context providing access to other systems.
         """
+        return
 
-    def cleanup(self) -> None:  # noqa: B027
+    def cleanup(self) -> None:
         """Called when the scene unloads or the game exits.
 
         Override this method to release resources, unsubscribe from events,
@@ -137,6 +184,7 @@ class BaseSystem(ABC):
                 self.event_bus.unsubscribe(SceneStartEvent, self._on_scene_start)
                 self.sound_cache.clear()
         """
+        return
 
     def get_state(self) -> dict[str, Any]:
         """Return serializable state for saving.
@@ -156,7 +204,7 @@ class BaseSystem(ABC):
         """
         return {}
 
-    def restore_state(self, state: dict[str, Any]) -> None:  # noqa: B027
+    def restore_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data.
 
         Override this method to restore the system's state from a previously
@@ -170,6 +218,7 @@ class BaseSystem(ABC):
                 self.current_weather = state.get("current_weather", "clear")
                 self.intensity = state.get("intensity", 0.0)
         """
+        return
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle key press events.

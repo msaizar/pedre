@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from pedre.caches.loader import CacheLoader
     from pedre.config import GameSettings
-    from pedre.systems import CameraManager, PortalManager
+    from pedre.systems import CameraManager
     from pedre.systems.game_context import GameContext
     from pedre.systems.npc import NPCManager
     from pedre.systems.script import ScriptManager
@@ -68,7 +68,7 @@ class SceneManager(BaseSystem):
     """
 
     name: ClassVar[str] = "scene"
-    dependencies: ClassVar[list[str]] = ["npc", "portal", "interaction", "player", "script"]
+    dependencies: ClassVar[list[str]] = ["waypoint", "npc", "portal", "interaction", "player", "script"]
 
     # Class-level cache loader (persists across scene transitions)
     _cache_loader: ClassVar[CacheLoader | None] = None
@@ -204,147 +204,50 @@ class SceneManager(BaseSystem):
         self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
         self.arcade_scene = arcade.Scene.from_tilemap(self.tile_map)
 
-        # 2. Extract collision layers
-        wall_list = arcade.SpriteList()
-        collision_layer_names = ["Walls", "Collision", "Objects", "Buildings"]
-        if self.arcade_scene:
-            for layer_name in collision_layer_names:
-                if layer_name in self.arcade_scene:
-                    for sprite in self.arcade_scene[layer_name]:
-                        wall_list.append(sprite)
-
-        # Update context with wall list (needed by physics, pathfinding)
+        # 2. Extract collision layers (foundation for other systems)
+        wall_list = self._extract_collision_layers(self.arcade_scene)
         context.wall_list = wall_list
 
-        # 3. Load other components
-        self._load_waypoints(settings)
-        context.waypoints = self.waypoints
+        # 3. Let systems load their Tiled data (in dependency order)
+        # This includes waypoints, portals, interactions, player, NPCs
+        self._load_systems_from_tiled(context, settings)
 
-        # 4. Delegate to other systems
-        self._load_npcs(context, settings)
-        self._load_portals(context)
-        self._load_interactive_objects(context)
-
-        # 5. Let PlayerManager spawn player using new map data
-        # Note: PlayerManager.setup() might have run earlier with no map.
-        # We need to trigger player spawn now that map is loaded.
-        player_manager = context.get_system("player")
-        if player_manager and hasattr(player_manager, "spawn_player"):
-            player_manager.spawn_player(context, settings)
-
-        # 6. Invalidate physics engine so it recreates with new player/walls
+        # 4. Invalidate physics engine (needs new player/walls)
         physics_manager = context.get_system("physics")
         if physics_manager and hasattr(physics_manager, "invalidate"):
             physics_manager.invalidate()
 
-        # 7. Update Pathfinding (needs new wall list)
+        # 5. Update pathfinding (needs new wall list)
         pathfinding = context.get_system("pathfinding")
         if pathfinding and hasattr(pathfinding, "set_wall_list"):
             pathfinding.set_wall_list(wall_list)
 
-        # 8. Setup camera with map bounds
+        # 6. Setup camera with map bounds
         self._setup_camera(context, settings)
 
-    def _load_waypoints(self, settings: GameSettings) -> None:
-        """Load waypoints from object layer."""
-        self.waypoints = {}
-        if not self.tile_map:
-            return
+    def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
+        """Extract collision layers into a wall list."""
+        wall_list = arcade.SpriteList()
+        collision_layer_names = ["Walls", "Collision", "Objects", "Buildings"]
+        if arcade_scene:
+            for layer_name in collision_layer_names:
+                if layer_name in arcade_scene:
+                    for sprite in arcade_scene[layer_name]:
+                        wall_list.append(sprite)
+        return wall_list
 
-        waypoint_layer = self.tile_map.object_lists.get("Waypoints")
-        if not waypoint_layer:
-            return
-
-        for waypoint in waypoint_layer:
-            if waypoint.name:
-                x = float(waypoint.shape[0])
-                y = float(waypoint.shape[1])
-                tile_x = int(x // settings.tile_size)
-                tile_y = int(y // settings.tile_size)
-                self.waypoints[waypoint.name] = (tile_x, tile_y)
-                logger.debug(
-                    "SceneManager: Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
-                    waypoint.name,
-                    x,
-                    y,
-                    tile_x,
-                    tile_y,
+    def _load_systems_from_tiled(self, context: GameContext, settings: GameSettings) -> None:
+        """Call load_from_tiled() on all systems that implement it."""
+        # Iterate through all systems (already in dependency order)
+        for system in context.systems.values():
+            if hasattr(system, "load_from_tiled"):
+                system.load_from_tiled(
+                    self.tile_map,
+                    self.arcade_scene,
+                    context,
+                    settings,
                 )
-
-    def _load_npcs(self, context: GameContext, settings: GameSettings) -> None:
-        """Load NPCs from map and register with NPCManager."""
-        npc_manager = context.get_system("npc")
-        if not npc_manager:
-            return
-
-        # Try loading from object layer first (like Player, Portals, etc.)
-        if self.tile_map and hasattr(npc_manager, "load_npcs_from_objects"):
-            npc_layer = self.tile_map.object_lists.get("NPCs")
-            if npc_layer:
-                npc_manager.load_npcs_from_objects(npc_layer, self.arcade_scene, settings, context.wall_list)
-                return
-
-    def _load_portals(self, context: GameContext) -> None:
-        """Load portals from map and register with PortalManager."""
-        portal_manager = context.get_system("portal")
-        if not portal_manager or not self.tile_map:
-            return
-
-        portal_manager.clear()  # Clear old portals
-
-        portal_layer = self.tile_map.object_lists.get("Portals")
-        if not portal_layer:
-            return
-
-        for portal in portal_layer:
-            if not portal.name or not portal.properties or not portal.shape:
-                continue
-
-            # Extract shape logic (same as GameView)
-            xs: list[float] = []
-            ys: list[float] = []
-
-            if isinstance(portal.shape, (list, tuple)) and len(portal.shape) > 0:
-                first_elem = portal.shape[0]
-                if isinstance(first_elem, (tuple, list)):
-                    for p in portal.shape:
-                        # the shape p is (x, y)
-                        xs.append(float(p[0]))
-                        ys.append(float(p[1]))
-                else:
-                    xs.append(float(portal.shape[0]))
-                    ys.append(float(portal.shape[1]))
-            else:
-                continue
-
-            sprite = arcade.Sprite()
-            sprite.center_x = (min(xs) + max(xs)) / 2
-            sprite.center_y = (min(ys) + max(ys)) / 2
-            sprite.width = max(xs) - min(xs)
-            sprite.height = max(ys) - min(ys)
-
-            cast("PortalManager", portal_manager).register_portal(sprite=sprite, name=portal.name)
-
-    def _load_interactive_objects(self, context: GameContext) -> None:
-        """Register interactive objects from 'Interactive' layer."""
-        interaction_manager = context.get_system("interaction")
-        if not interaction_manager or not self.arcade_scene:
-            return
-
-        interaction_manager.clear()
-
-        if "Interactive" in self.arcade_scene:
-            for sprite in self.arcade_scene["Interactive"]:
-                # Get name logic (same as GameView)
-                name = None
-                if hasattr(sprite, "properties") and sprite.properties:
-                    name = sprite.properties.get("name")
-
-                if not name and hasattr(sprite, "name"):
-                    name = sprite.name
-
-                if name:
-                    interaction_manager.register_object(sprite, name.lower())
+                logger.debug("Loaded Tiled data for system: %s", system.name)
 
     def _setup_camera(self, context: GameContext, settings: GameSettings) -> None:
         """Setup camera with map bounds after loading."""

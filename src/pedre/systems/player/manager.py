@@ -38,7 +38,7 @@ class PlayerManager(BaseSystem):
     """
 
     name: ClassVar[str] = "player"
-    dependencies: ClassVar[list[str]] = ["input"]
+    dependencies: ClassVar[list[str]] = ["input", "waypoint"]
 
     def __init__(self) -> None:
         """Initialize the player manager."""
@@ -46,11 +46,102 @@ class PlayerManager(BaseSystem):
         self.player_list: arcade.SpriteList | None = None
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
-        """Initialize player system for the current scene.
+        """Initialize player system for the current scene."""
 
-        Spawns the player if a map is loaded and contains player data.
-        """
-        self.spawn_player(context, settings)
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+        context: GameContext,
+        settings: GameSettings,
+    ) -> None:
+        """Load player from Tiled map object layer."""
+        game_view = context.game_view
+
+        # Get Player object layer
+        player_layer = tile_map.object_lists.get("Player")
+        if not player_layer:
+            logger.warning("No 'Player' object layer found in map")
+            return
+
+        # Use first player object
+        player_obj = player_layer[0]
+
+        # Determine spawn position
+        spawn_x = float(player_obj.shape[0])
+        spawn_y = float(player_obj.shape[1])
+
+        # Check for portal spawn override (defaults to True)
+        spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
+        logger.debug(
+            "PlayerManager: spawn_at_portal=%s, game_view.spawn_waypoint=%s",
+            spawn_at_portal,
+            game_view.spawn_waypoint if game_view else None,
+        )
+        if spawn_at_portal and game_view and game_view.spawn_waypoint:
+            waypoints = context.waypoints
+            logger.debug(
+                "PlayerManager: Available waypoints: %s",
+                list(waypoints.keys()) if waypoints else [],
+            )
+            if waypoints and game_view.spawn_waypoint in waypoints:
+                tile_x, tile_y = waypoints[game_view.spawn_waypoint]
+                spawn_x = tile_x * settings.tile_size + settings.tile_size / 2
+                spawn_y = tile_y * settings.tile_size + settings.tile_size / 2
+                logger.debug(
+                    "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
+                    game_view.spawn_waypoint,
+                    tile_x,
+                    tile_y,
+                    spawn_x,
+                    spawn_y,
+                    settings.tile_size,
+                )
+                # Clear the spawn waypoint
+                game_view.spawn_waypoint = None
+            else:
+                logger.warning(
+                    "PlayerManager: Waypoint '%s' not found in available waypoints",
+                    game_view.spawn_waypoint if game_view else None,
+                )
+
+        # Get sprite sheet properties
+        sprite_sheet = player_obj.properties.get("sprite_sheet")
+        tile_size = player_obj.properties.get("tile_size")
+
+        if not sprite_sheet or not tile_size:
+            logger.error("Player object missing 'sprite_sheet' or 'tile_size' properties")
+            return
+
+        sprite_sheet_path = asset_path(sprite_sheet, settings.assets_handle)
+
+        # Helper to extract animation props
+        anim_props = self._get_animation_properties(player_obj.properties)
+
+        # Create sprite
+        self.player_sprite = AnimatedPlayer(
+            sprite_sheet_path,
+            tile_size=tile_size,
+            columns=12,
+            scale=1.0,
+            center_x=spawn_x,
+            center_y=spawn_y,
+            **anim_props,
+        )
+
+        self.player_list = arcade.SpriteList()
+        self.player_list.append(self.player_sprite)
+
+        # Add to scene
+        if arcade_scene:
+            if "Player" in arcade_scene:
+                arcade_scene.remove_sprite_list_by_name("Player")
+            arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
+
+        # Update context
+        context.update_player(self.player_sprite)
+
+        logger.info("Player loaded at (%.1f, %.1f)", spawn_x, spawn_y)
 
     def update(self, delta_time: float, context: GameContext) -> None:
         """Update player movement and animation."""

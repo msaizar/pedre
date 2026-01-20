@@ -281,6 +281,27 @@ class NPCManager(BaseSystem):
 
         logger.debug("NPCManager setup complete")
 
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+        context: GameContext,
+        settings: GameSettings,
+    ) -> None:
+        """Load NPCs from Tiled object layer."""
+        npc_layer = tile_map.object_lists.get("NPCs")
+        if not npc_layer:
+            logger.debug("No NPCs layer found in map")
+            return
+
+        # Use existing method
+        self.load_npcs_from_objects(
+            npc_layer,
+            arcade_scene,
+            settings,
+            context.wall_list,
+        )
+
     def cleanup(self) -> None:
         """Clean up NPC resources when the scene unloads.
 

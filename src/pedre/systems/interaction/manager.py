@@ -175,6 +175,34 @@ class InteractionManager(BaseSystem):
         self.interacted_objects = context.interacted_objects
         logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
 
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+        context: GameContext,
+        settings: GameSettings,
+    ) -> None:
+        """Load interactive objects from Tiled scene layer."""
+        self.clear()
+
+        if "Interactive" not in arcade_scene:
+            logger.debug("No Interactive layer found in map")
+            return
+
+        for sprite in arcade_scene["Interactive"]:
+            # Extract name from properties or sprite.name
+            name = None
+            if hasattr(sprite, "properties") and sprite.properties:
+                name = sprite.properties.get("name")
+
+            if not name and hasattr(sprite, "name"):
+                name = sprite.name
+
+            if name:
+                # Get properties for interaction type
+                properties = sprite.properties if hasattr(sprite, "properties") else {}
+                self.register_object(sprite, name.lower(), properties)
+
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle interaction input.
 
@@ -205,7 +233,7 @@ class InteractionManager(BaseSystem):
 
     def cleanup(self) -> None:
         """Clean up interaction resources when the scene unloads."""
-        self.interactive_objects.clear()
+        self.clear()
         logger.debug("InteractionManager cleanup complete")
 
     def get_state(self) -> dict[str, Any]:
