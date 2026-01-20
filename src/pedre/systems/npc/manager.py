@@ -65,6 +65,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
+from pedre.conditions.registry import ConditionRegistry
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
 from pedre.systems.base import BaseSystem
@@ -558,31 +559,31 @@ class NPCManager(BaseSystem):
         # Get dialog
         current_scene = context.current_scene or "default"
 
-        dialog_data = self.get_dialog(name, npc.dialog_level, current_scene)
+        dialog_data = self.get_dialog(name, npc.dialog_level, current_scene, context)
         if not dialog_data:
             return False
 
-        dialog_config, _ = dialog_data
+        dialog_config, on_condition_fail = dialog_data
 
-        if dialog_config and dialog_manager:
-            # Check conditions
-            if dialog_config.conditions and not self._check_dialog_conditions(dialog_config.conditions, name):
-                # Condition failed
-                if dialog_config.on_condition_fail:
-                    for action in dialog_config.on_condition_fail:
-                        if action.get("type") == "dialog":
-                            fail_text = action.get("text", [])
-                            speaker = action.get("speaker", name)
-                            dialog_manager.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
-                            return True
+        if dialog_manager:
+            # If conditions failed, execute on_condition_fail actions
+            if on_condition_fail:
+                for action in on_condition_fail:
+                    if action.get("type") == "dialog":
+                        fail_text = action.get("text", [])
+                        speaker = action.get("speaker", name)
+                        dialog_manager.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
+                        return True
                 return False
 
             # Show dialog - use display name from config if available, otherwise use NPC key name
-            display_name = dialog_config.name or name
-            dialog_manager.show_dialog(display_name, dialog_config.text, dialog_level=npc.dialog_level, npc_key=name)
-            self.mark_npc_as_interacted(name)
-
-            return True
+            if dialog_config:
+                display_name = dialog_config.name or name
+                dialog_manager.show_dialog(
+                    display_name, dialog_config.text, dialog_level=npc.dialog_level, npc_key=name
+                )
+                self.mark_npc_as_interacted(name)
+                return True
 
         return False
 
@@ -606,52 +607,30 @@ class NPCManager(BaseSystem):
         """
         return npc_name in self.interacted_npcs
 
-    def _check_dialog_conditions(self, conditions: list[dict[str, Any]], npc_name: str) -> bool:
-        """Check if all dialog conditions are met.
+    def _check_dialog_conditions(self, conditions: list[dict[str, Any]], context: GameContext) -> bool:
+        """Check if all dialog conditions are met using ConditionRegistry.
 
         Args:
             conditions: List of condition dictionaries.
-            npc_name: Name of the NPC for level checks.
+            context: Game context for accessing systems.
 
         Returns:
             True if all conditions are met.
         """
         for condition in conditions:
             check_type = condition.get("check")
+            if not check_type:
+                logger.warning("NPCManager: Condition missing 'check' field")
+                return False
 
-            if check_type == "npc_dialog_level":
-                expected_level = condition.get("equals")
-                npc_state = self.npcs.get(npc_name)
-                if not npc_state or npc_state.dialog_level != expected_level:
-                    return False
-
-            elif check_type == "inventory_accessed":
-                expected = condition.get("equals", True)
-                if not self.inventory_manager or self.inventory_manager.has_been_accessed != expected:
-                    return False
-
-            elif check_type == "object_interacted":
-                object_name = condition.get("object", "")
-                expected = condition.get("equals", True)
-                was_interacted = object_name in self.interacted_objects
-                logger.debug(
-                    "Checking object_interacted: object=%s, expected=%s, was_interacted=%s, interacted_objects=%s",
-                    object_name,
-                    expected,
-                    was_interacted,
-                    self.interacted_objects,
-                )
-                if was_interacted != expected:
-                    return False
-
-            else:
-                logger.warning("Unknown condition type: %s", check_type)
+            # Delegate to ConditionRegistry
+            if not ConditionRegistry.check(check_type, condition, context):
                 return False
 
         return True
 
     def get_dialog(
-        self, npc_name: str, dialog_level: int, scene: str = "default"
+        self, npc_name: str, dialog_level: int, scene: str = "default", context: GameContext | None = None
     ) -> tuple[NPCDialogConfig | None, list[dict[str, Any]] | None]:
         """Get dialog for an NPC at a specific conversation level in a scene.
 
@@ -659,6 +638,7 @@ class NPCManager(BaseSystem):
             npc_name: The NPC name.
             dialog_level: The conversation level.
             scene: The current scene name (defaults to "default" for backwards compatibility).
+            context: Game context for checking conditions. If None, conditions are not checked.
 
         Returns:
             Tuple of (dialog_config, on_condition_fail_actions):
@@ -680,10 +660,10 @@ class NPCManager(BaseSystem):
         if dialog_level in available_dialogs:
             exact_match = available_dialogs[dialog_level]
             if exact_match.conditions:
-                if self._check_dialog_conditions(exact_match.conditions, npc_name):
+                if context and self._check_dialog_conditions(exact_match.conditions, context):
                     # Conditions met, return the dialog
                     return exact_match, None
-                # Conditions failed, return on_condition_fail actions
+                # Conditions failed or no context, return on_condition_fail actions
                 logger.debug("Dialog condition failed for %s level %d", npc_name, dialog_level)
                 return None, exact_match.on_condition_fail
             # No conditions, return the dialog
@@ -699,7 +679,7 @@ class NPCManager(BaseSystem):
 
             # Check if this dialog's conditions are met
             if dialog_config.conditions:
-                if self._check_dialog_conditions(dialog_config.conditions, npc_name):
+                if context and self._check_dialog_conditions(dialog_config.conditions, context):
                     candidates.append((state, dialog_config))
             else:
                 # No conditions means always available
