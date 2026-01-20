@@ -444,12 +444,12 @@ class DialogManager(BaseSystem):
         draw phase. It renders the complete dialog UI on top of the game world.
 
         Args:
-            context: Game context providing access to the window via game_view.
+            context: Game context providing access to the window.
         """
-        if not self.showing or not context.game_view:
+        if not self.showing:
             return
 
-        window = context.game_view.window
+        window = context.window
         current_page = self.get_current_page()
         if not current_page:
             return

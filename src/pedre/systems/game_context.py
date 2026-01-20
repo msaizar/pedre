@@ -69,22 +69,26 @@ class GameContext:
     Attributes:
         event_bus: Publish/subscribe event system for decoupled communication.
         wall_list: SpriteList of collidable objects for physics.
+        window: Reference to the arcade Window instance.
         player_sprite: Reference to the player's sprite (or None if not spawned).
-        game_view: Reference to the main game view (for accessing view-specific features).
         current_scene: Name of the currently loaded map/scene.
         waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
         interacted_objects: Set of object names that the player has interacted with.
+        next_spawn_waypoint: Waypoint name for next spawn (portal transitions).
+        game_view: (Deprecated) Reference to game view - will be removed.
     """
 
     def __init__(
         self,
         event_bus: EventBus,
         wall_list: arcade.SpriteList,
+        window: arcade.Window,
         player_sprite: arcade.Sprite | None = None,
-        game_view: GameView | None = None,
         current_scene: str = "",
         waypoints: dict[str, tuple[int, int]] | None = None,
         interacted_objects: set[str] | None = None,
+        next_spawn_waypoint: str | None = None,
+        game_view: GameView | None = None,
     ) -> None:
         """Initialize game context with game state.
 
@@ -97,24 +101,32 @@ class GameContext:
                       Actions can publish events to trigger scripts or notify other systems.
             wall_list: Arcade SpriteList containing all collidable objects (walls, NPCs, etc).
                       Used for collision detection and pathfinding calculations.
+            window: Reference to the arcade Window instance. Used by systems that need
+                   to access window properties (size, rendering context, etc).
             player_sprite: Reference to the player's sprite. May be None if player hasn't
                          spawned yet. Updated via update_player() when player is created.
-            game_view: Reference to the main GameView instance. Some actions need this to
-                      access view-specific features like scene transitions.
             current_scene: Name of the currently loaded map/scene (e.g., "town", "forest").
                          Used to track which map is active for conditional logic.
             waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
                       NPCs use these to navigate to named locations.
             interacted_objects: Set of object names that the player has interacted with.
                               Used by scripts and conditions to track object state.
+            next_spawn_waypoint: Waypoint name for next spawn (set by SceneManager for
+                               portal transitions). Read by PlayerManager and cleared after use.
+            game_view: (Deprecated) Reference to the main GameView instance. Will be removed in
+                      future refactoring. Systems should not depend on this.
         """
         self.event_bus = event_bus
         self.wall_list = wall_list
+        self.window = window
         self.player_sprite = player_sprite
-        self.game_view = game_view
         self.current_scene = current_scene
         self.waypoints = waypoints or {}
         self.interacted_objects = interacted_objects or set()
+        self.next_spawn_waypoint = next_spawn_waypoint
+
+        # Deprecated: game_view reference (kept temporarily for compatibility)
+        self.game_view = game_view
 
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}

@@ -200,7 +200,7 @@ class SaveManager(BaseSystem):
 
     def _handle_quick_save(self, context: GameContext) -> None:
         """Perform a quick save using current context state."""
-        if not context.game_view or not context.player_sprite:
+        if not context.player_sprite:
             return
 
         scene_manager = context.get_system("scene")
@@ -219,9 +219,7 @@ class SaveManager(BaseSystem):
 
     def _handle_quick_load(self, context: GameContext) -> None:
         """Perform a quick load from auto-save."""
-        if not context.game_view:
-            return
-
+        # Note: game_view check removed - quick load handled by ViewManager.load_game()
         save_data = self.load_auto_save()
         if not save_data:
             logger.warning("No auto-save found for quick load")

@@ -67,6 +67,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.constants import asset_path
+from pedre.events import ShowInventoryEvent
 from pedre.systems.base import BaseSystem
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.registry import SystemRegistry
@@ -231,9 +232,9 @@ class InventoryManager(BaseSystem):
         logger.debug("InventoryManager cleanup complete")
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
-        """Handle key presses for inventory."""
-        if symbol == arcade.key.I and context.game_view and context.game_view.view_manager:
-            context.game_view.view_manager.show_inventory()
+        """Handle key presses for inventory - publish event to show inventory view."""
+        if symbol == arcade.key.I:
+            context.event_bus.publish(ShowInventoryEvent())
             return True
         return False
 

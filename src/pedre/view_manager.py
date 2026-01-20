@@ -56,7 +56,8 @@ from typing import TYPE_CHECKING, cast
 
 import arcade
 
-from pedre.systems import SaveManager
+from pedre.events import ShowInventoryEvent, ShowLoadGameEvent, ShowMenuEvent, ShowSaveGameEvent
+from pedre.systems import EventBus, GameContext, SaveManager
 from pedre.views.game_view import GameView
 from pedre.views.inventory_view import InventoryView
 from pedre.views.load_game_view import LoadGameView
@@ -97,13 +98,34 @@ class ViewManager:
     def __init__(self, window: arcade.Window) -> None:
         """Initialize the view manager.
 
-        Creates the view manager with a reference to the game window. All view
-        instances start as None and are created lazily when first accessed.
+        Creates the view manager with a reference to the game window, along with
+        the centralized event bus and game context that outlive individual views.
+        All view instances start as None and are created lazily when first accessed.
 
         Args:
             window: Arcade Window instance for showing views.
         """
         self.window = window
+
+        # Create event bus (outlives individual views)
+        self.event_bus = EventBus()
+
+        # Create game context (outlives individual views)
+        self.game_context = GameContext(
+            event_bus=self.event_bus,
+            wall_list=arcade.SpriteList(),
+            window=self.window,
+            player_sprite=None,
+            current_scene="default",
+            waypoints={},
+            interacted_objects=set(),
+        )
+
+        # Subscribe to view transition events
+        self.event_bus.subscribe(ShowMenuEvent, self._on_show_menu_event)
+        self.event_bus.subscribe(ShowInventoryEvent, self._on_show_inventory_event)
+        self.event_bus.subscribe(ShowSaveGameEvent, self._on_show_save_game_event)
+        self.event_bus.subscribe(ShowLoadGameEvent, self._on_show_load_game_event)
 
         # Lazy-loaded views
         self._menu_view: MenuView | None = None
@@ -145,7 +167,7 @@ class ViewManager:
             - May create and cache GameView instance on first access
         """
         if self._game_view is None:
-            self._game_view = GameView(self)
+            self._game_view = GameView(self, game_context=self.game_context)
         return self._game_view
 
     def has_game_view(self) -> bool:
@@ -381,7 +403,7 @@ class ViewManager:
             self._game_view = None
 
         # Create new game view with the saved map
-        self._game_view = GameView(self, map_file=save_data.current_map)
+        self._game_view = GameView(self, map_file=save_data.current_map, game_context=self.game_context)
 
         # Show the game view
         self.window.show_view(self.game_view)
@@ -436,3 +458,47 @@ class ViewManager:
             self._game_view.cleanup()
 
         arcade.close_window()
+
+    def _on_show_menu_event(self, event: ShowMenuEvent) -> None:
+        """Handle ShowMenuEvent by transitioning to menu view.
+
+        Event handler that responds to ShowMenuEvent published by game systems.
+        Delegates to show_menu() with the appropriate parameters.
+
+        Args:
+            event: ShowMenuEvent containing transition parameters.
+        """
+        self.show_menu(from_game_pause=event.from_game_pause)
+
+    def _on_show_inventory_event(self, event: ShowInventoryEvent) -> None:
+        """Handle ShowInventoryEvent by transitioning to inventory view.
+
+        Event handler that responds to ShowInventoryEvent published by game systems.
+        Delegates to show_inventory().
+
+        Args:
+            event: ShowInventoryEvent (no parameters needed).
+        """
+        self.show_inventory()
+
+    def _on_show_save_game_event(self, event: ShowSaveGameEvent) -> None:
+        """Handle ShowSaveGameEvent by transitioning to save game view.
+
+        Event handler that responds to ShowSaveGameEvent published by game systems.
+        Delegates to show_save_game().
+
+        Args:
+            event: ShowSaveGameEvent (no parameters needed).
+        """
+        self.show_save_game()
+
+    def _on_show_load_game_event(self, event: ShowLoadGameEvent) -> None:
+        """Handle ShowLoadGameEvent by transitioning to load game view.
+
+        Event handler that responds to ShowLoadGameEvent published by game systems.
+        Delegates to show_load_game().
+
+        Args:
+            event: ShowLoadGameEvent (no parameters needed).
+        """
+        self.show_load_game()

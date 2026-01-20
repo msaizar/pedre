@@ -215,9 +215,7 @@ class InteractionManager(BaseSystem):
             True if interaction occurred.
         """
         if symbol == arcade.key.SPACE:
-            player_sprite = None
-            if hasattr(context, "game_view") and context.game_view:
-                player_sprite = context.game_view.player_sprite
+            player_sprite = context.player_sprite
 
             if player_sprite:
                 # Interaction logic

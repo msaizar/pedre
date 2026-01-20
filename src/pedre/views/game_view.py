@@ -54,7 +54,6 @@ from typing import TYPE_CHECKING, cast
 import arcade
 
 from pedre.systems import (
-    EventBus,
     GameContext,
     SystemLoader,
 )
@@ -148,6 +147,7 @@ class GameView(arcade.View):
         map_file: str | None = None,
         *,
         settings: GameSettings | None = None,
+        game_context: GameContext | None = None,
     ) -> None:
         """Initialize the game view.
 
@@ -161,6 +161,7 @@ class GameView(arcade.View):
             view_manager: ViewManager instance for handling view transitions (menu, inventory, etc.).
             map_file: Name of the Tiled .tmx file to load from assets/maps/. If None, uses INITIAL_MAP from config.
             settings: Game settings. If None, will be retrieved from window.
+            game_context: GameContext instance (shared across views). If None, will be retrieved from view_manager.
         """
         super().__init__()
         self.view_manager = view_manager
@@ -169,15 +170,14 @@ class GameView(arcade.View):
 
         # Game systems (will be loaded by SystemLoader)
         self.system_loader: SystemLoader | None = None
-        self.game_context: GameContext | None = None
 
-        # Event-driven scripting system (created early so it can be passed to context)
-        self.event_bus = EventBus()
+        # Game context (shared across views, owned by ViewManager)
+        self.game_context = game_context or view_manager.game_context
 
         # Camera for scrolling
         self.camera: arcade.camera.Camera2D | None = None
 
-        # Portal tracking
+        # Portal tracking (deprecated - now using context.next_spawn_waypoint)
         self.spawn_waypoint: str | None = None
 
         # Track if game has been initialized
@@ -235,22 +235,16 @@ class GameView(arcade.View):
         self.system_loader = SystemLoader(self.settings)
         system_instances = self.system_loader.instantiate_all()
 
-        # Initialize GameContext
-        self.game_context = GameContext(
-            event_bus=self.event_bus,
-            wall_list=arcade.SpriteList(),
-            player_sprite=None,
-            game_view=self,
-            current_scene="default",
-            waypoints={},
-            interacted_objects=set(),
-        )
+        # Update game_context reference (set game_view now that we have the instance)
+        if self.game_context:
+            self.game_context.game_view = self
 
-        for name, system in system_instances.items():
-            self.game_context.register_system(name, system)
+            # Register all systems with the context
+            for name, system in system_instances.items():
+                self.game_context.register_system(name, system)
 
-        # Setup all systems
-        self.system_loader.setup_all(self.game_context)
+            # Setup all systems
+            self.system_loader.setup_all(self.game_context)
 
     def on_show_view(self) -> None:
         """Called when this view becomes active (arcade lifecycle callback).

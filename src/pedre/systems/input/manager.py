@@ -49,6 +49,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.events import ShowMenuEvent
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
@@ -147,10 +148,9 @@ class InputManager(BaseSystem):
         """
         self.keys_pressed.add(symbol)
 
-        # Handle Pause Menu
-        # Handle Pause Menu
-        if symbol == arcade.key.ESCAPE and context.game_view and context.game_view.view_manager:
-            context.game_view.view_manager.show_menu(from_game_pause=True)
+        # Handle Pause Menu - publish event instead of calling view_manager directly
+        if symbol == arcade.key.ESCAPE:
+            context.event_bus.publish(ShowMenuEvent(from_game_pause=True))
             return True
 
         return False

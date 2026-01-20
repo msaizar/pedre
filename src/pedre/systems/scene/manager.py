@@ -152,12 +152,11 @@ class SceneManager(BaseSystem):
         self.current_scene = current_scene
         context.update_scene(current_scene)
 
-        # Set spawn_waypoint on game_view BEFORE loading map, so PlayerManager.spawn_player()
+        # Set next_spawn_waypoint in context BEFORE loading map, so PlayerManager.spawn_player()
         # can use it to spawn the player at the correct position directly
-        game_view = context.game_view
-        if game_view and spawn_waypoint:
-            game_view.spawn_waypoint = spawn_waypoint
-            logger.debug("SceneManager: Set game_view.spawn_waypoint to '%s'", spawn_waypoint)
+        if spawn_waypoint:
+            context.next_spawn_waypoint = spawn_waypoint
+            logger.debug("SceneManager: Set context.next_spawn_waypoint to '%s'", spawn_waypoint)
 
         # Load map
         self._load_map(map_file, context, self._settings)

@@ -56,8 +56,6 @@ class PlayerManager(BaseSystem):
         settings: GameSettings,
     ) -> None:
         """Load player from Tiled map object layer."""
-        game_view = context.game_view
-
         # Get Player object layer
         player_layer = tile_map.object_lists.get("Player")
         if not player_layer:
@@ -74,23 +72,23 @@ class PlayerManager(BaseSystem):
         # Check for portal spawn override (defaults to True)
         spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
         logger.debug(
-            "PlayerManager: spawn_at_portal=%s, game_view.spawn_waypoint=%s",
+            "PlayerManager: spawn_at_portal=%s, context.next_spawn_waypoint=%s",
             spawn_at_portal,
-            game_view.spawn_waypoint if game_view else None,
+            context.next_spawn_waypoint,
         )
-        if spawn_at_portal and game_view and game_view.spawn_waypoint:
+        if spawn_at_portal and context.next_spawn_waypoint:
             waypoints = context.waypoints
             logger.debug(
                 "PlayerManager: Available waypoints: %s",
                 list(waypoints.keys()) if waypoints else [],
             )
-            if waypoints and game_view.spawn_waypoint in waypoints:
-                tile_x, tile_y = waypoints[game_view.spawn_waypoint]
+            if waypoints and context.next_spawn_waypoint in waypoints:
+                tile_x, tile_y = waypoints[context.next_spawn_waypoint]
                 spawn_x = tile_x * settings.tile_size + settings.tile_size / 2
                 spawn_y = tile_y * settings.tile_size + settings.tile_size / 2
                 logger.debug(
                     "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
-                    game_view.spawn_waypoint,
+                    context.next_spawn_waypoint,
                     tile_x,
                     tile_y,
                     spawn_x,
@@ -98,11 +96,11 @@ class PlayerManager(BaseSystem):
                     settings.tile_size,
                 )
                 # Clear the spawn waypoint
-                game_view.spawn_waypoint = None
+                context.next_spawn_waypoint = None
             else:
                 logger.warning(
                     "PlayerManager: Waypoint '%s' not found in available waypoints",
-                    game_view.spawn_waypoint if game_view else None,
+                    context.next_spawn_waypoint,
                 )
 
         # Get sprite sheet properties
@@ -190,7 +188,6 @@ class PlayerManager(BaseSystem):
 
     def spawn_player(self, context: GameContext, settings: GameSettings) -> None:
         """Spawn player based on map data."""
-        game_view = context.game_view
         scene_manager = cast("SceneManager", context.get_system("scene"))
         if not scene_manager or not scene_manager.tile_map:
             logger.warning("No tile map available for player spawning")
@@ -214,23 +211,23 @@ class PlayerManager(BaseSystem):
         # Check for portal spawn override (defaults to True)
         spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
         logger.debug(
-            "PlayerManager: spawn_at_portal=%s, game_view.spawn_waypoint=%s",
+            "PlayerManager: spawn_at_portal=%s, context.next_spawn_waypoint=%s",
             spawn_at_portal,
-            game_view.spawn_waypoint,
+            context.next_spawn_waypoint,
         )
-        if spawn_at_portal and game_view.spawn_waypoint:
+        if spawn_at_portal and context.next_spawn_waypoint:
             waypoints = context.waypoints
             logger.debug(
                 "PlayerManager: Available waypoints: %s",
                 list(waypoints.keys()),
             )
-            if game_view.spawn_waypoint in waypoints:
-                tile_x, tile_y = waypoints[game_view.spawn_waypoint]
+            if context.next_spawn_waypoint in waypoints:
+                tile_x, tile_y = waypoints[context.next_spawn_waypoint]
                 spawn_x = tile_x * settings.tile_size + settings.tile_size / 2
                 spawn_y = tile_y * settings.tile_size + settings.tile_size / 2
                 logger.debug(
                     "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
-                    game_view.spawn_waypoint,
+                    context.next_spawn_waypoint,
                     tile_x,
                     tile_y,
                     spawn_x,
@@ -238,11 +235,11 @@ class PlayerManager(BaseSystem):
                     settings.tile_size,
                 )
                 # Clear the spawn waypoint
-                game_view.spawn_waypoint = None
+                context.next_spawn_waypoint = None
             else:
                 logger.warning(
                     "PlayerManager: Waypoint '%s' not found in available waypoints",
-                    game_view.spawn_waypoint,
+                    context.next_spawn_waypoint,
                 )
 
         # Get sprite sheet properties
