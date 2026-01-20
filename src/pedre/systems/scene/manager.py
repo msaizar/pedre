@@ -239,7 +239,7 @@ class SceneManager(BaseSystem):
     def _load_systems_from_tiled(self, context: GameContext, settings: GameSettings) -> None:
         """Call load_from_tiled() on all systems that implement it."""
         # Iterate through all systems (already in dependency order)
-        for system in context.systems.values():
+        for system in context.get_systems().values():
             if hasattr(system, "load_from_tiled"):
                 system.load_from_tiled(
                     self.tile_map,

@@ -212,3 +212,7 @@ class GameContext:
                 weather.set_rain(intensity=0.7)
         """
         return self._systems.get(name)
+
+    def get_systems(self) -> dict[str, BaseSystem]:
+        """Get all registered systems."""
+        return self._systems

@@ -98,6 +98,7 @@ class GameSettings:
                 "pedre.systems.portal",
                 "pedre.systems.save",
                 "pedre.systems.script",
+                "pedre.systems.waypoint",
                 "pedre.systems.player",
                 "pedre.systems.physics",
                 "pedre.systems.scene",
