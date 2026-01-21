@@ -52,10 +52,12 @@ Example usage:
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import arcade
 
+from pedre.events import ShowInventoryEvent, ShowLoadGameEvent, ShowMenuEvent, ShowSaveGameEvent
+from pedre.systems import EventBus, GameContext, SaveManager, SystemLoader
 from pedre.views.game_view import GameView
 from pedre.views.inventory_view import InventoryView
 from pedre.views.load_game_view import LoadGameView
@@ -63,7 +65,7 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems import GameSaveData
+    from pedre.systems import GameSaveData, InventoryManager, SceneManager
 
 logger = logging.getLogger(__name__)
 
@@ -95,13 +97,46 @@ class ViewManager:
     def __init__(self, window: arcade.Window) -> None:
         """Initialize the view manager.
 
-        Creates the view manager with a reference to the game window. All view
-        instances start as None and are created lazily when first accessed.
+        Creates the view manager with a reference to the game window, along with
+        the centralized event bus and game context that outlive individual views.
+        All view instances start as None and are created lazily when first accessed.
 
         Args:
             window: Arcade Window instance for showing views.
         """
         self.window = window
+
+        # Create event bus (outlives individual views)
+        self.event_bus = EventBus()
+
+        # Create game context (outlives individual views)
+        self.game_context = GameContext(
+            event_bus=self.event_bus,
+            wall_list=arcade.SpriteList(),
+            window=self.window,
+            player_sprite=None,
+            current_scene="default",
+            waypoints={},
+            interacted_objects=set(),
+        )
+        self.system_loader = SystemLoader(self.window.settings)
+        system_instances = self.system_loader.instantiate_all()
+
+        # Update game_context reference (set game_view now that we have the instance)
+        self.game_context.game_view = self
+
+        # Register all systems with the context
+        for name, system in system_instances.items():
+            self.game_context.register_system(name, system)
+
+        # Setup all systems
+        self.system_loader.setup_all(self.game_context)
+
+        # Subscribe to view transition events
+        self.event_bus.subscribe(ShowMenuEvent, self._on_show_menu_event)
+        self.event_bus.subscribe(ShowInventoryEvent, self._on_show_inventory_event)
+        self.event_bus.subscribe(ShowSaveGameEvent, self._on_show_save_game_event)
+        self.event_bus.subscribe(ShowLoadGameEvent, self._on_show_load_game_event)
 
         # Lazy-loaded views
         self._menu_view: MenuView | None = None
@@ -209,8 +244,10 @@ class ViewManager:
             - May create and cache InventoryView instance on first access
             - Returns None if game view hasn't been created yet
         """
-        if self._inventory_view is None and self._game_view is not None:
-            self._inventory_view = InventoryView(self, self._game_view.inventory_manager)
+        if self._inventory_view is None and self._game_view is not None and self.game_context:
+            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
+            if inventory_manager:
+                self._inventory_view = InventoryView(self, inventory_manager)
         return self._inventory_view  # type: ignore[return-value]
 
     def show_menu(self, *, from_game_pause: bool = False) -> None:
@@ -243,27 +280,49 @@ class ViewManager:
         inventory view to notify scripts that the player checked their inventory.
 
         Args:
-            trigger_post_inventory_dialog: If True, calls trigger_post_inventory_dialog()
-                on the game view after showing it. This publishes an InventoryClosedEvent
-                for the script system.
+            trigger_post_inventory_dialog: If True, calls emit_closed_event()
+                on the inventory manager after showing it. This publishes an
+                InventoryClosedEvent for the script system.
 
         Side effects:
             - Shows game view via window.show_view()
             - Triggers game view's on_show_view() callback
-            - May call game_view.trigger_post_inventory_dialog() to publish event
+            - May call inventory_manager.emit_closed_event() to publish event
             - Logs transition details
         """
         logger.info("show_game called with trigger_post_inventory_dialog=%s", trigger_post_inventory_dialog)
         self.window.show_view(self.game_view)
-        if trigger_post_inventory_dialog and hasattr(self.game_view, "trigger_post_inventory_dialog"):
-            logger.info("Calling trigger_post_inventory_dialog on game_view")
-            self.game_view.trigger_post_inventory_dialog()
+        if trigger_post_inventory_dialog and self.game_context:
+            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
+            if inventory_manager:
+                logger.info("Calling emit_closed_event on inventory_manager")
+                inventory_manager.emit_closed_event(self.game_context)
         else:
             logger.info(
-                "Not calling trigger (flag=%s, hasattr=%s)",
+                "Not calling trigger (flag=%s, game_view=%s)",
                 trigger_post_inventory_dialog,
-                hasattr(self.game_view, "trigger_post_inventory_dialog"),
+                self._game_view is not None,
             )
+
+    def start_new_game(self) -> None:
+        """Start a new game with fresh state.
+
+        Cleans up and discards any existing game view to ensure a fresh start.
+        This is different from show_game() which reuses the cached game view,
+        preserving state when returning from inventory or resuming from pause.
+
+        Side effects:
+            - Calls cleanup() on existing game view if it exists
+            - Sets _game_view to None to force recreation
+            - Shows fresh game view via show_game()
+        """
+        # Clean up and discard old game view if it exists
+        if self._game_view is not None:
+            self._game_view.cleanup()
+            self._game_view = None
+
+        # Show fresh game view (will create new instance via property)
+        self.show_game()
 
     def show_load_game(self) -> None:
         """Switch to the load game view.
@@ -328,7 +387,12 @@ class ViewManager:
             return
 
         # Full load: no game view exists, load from auto-save
-        save_data = self.game_view.save_manager.load_auto_save()
+        save_manager = cast("SaveManager", self.game_context.get_system("save"))
+        if not save_manager:
+            logger.error("Save system not available")
+            return
+
+        save_data = save_manager.load_auto_save()
 
         if not save_data:
             logger.warning("Cannot continue: no game view or auto-save found")
@@ -380,25 +444,29 @@ class ViewManager:
         self.window.show_view(self.game_view)
 
         # Restore player position
-        if self.game_view.player_sprite:
-            self.game_view.player_sprite.center_x = save_data.player_x
-            self.game_view.player_sprite.center_y = save_data.player_y
+        if self.game_context.player_sprite:
+            self.game_context.player_sprite.center_x = save_data.player_x
+            self.game_context.player_sprite.center_y = save_data.player_y
 
         # Restore all manager states using the centralized method
-        restored_objects, scene_states = self.game_view.save_manager.restore_all_state(
-            save_data,
-            self.game_view.npc_manager,
-            self.game_view.inventory_manager,
-            self.game_view.audio_manager,
-            self.game_view.script_manager,
-        )
+        context = self.game_context
+        if not context:
+            logger.error("ViewManager: No GameContext after showing GameView")
+            return
 
-        # Update script manager's interacted_objects
-        self.game_view.script_manager.interacted_objects = restored_objects
+        save_manager = cast("SaveManager", context.get_system("save"))
+        if not save_manager:
+            logger.error("ViewManager: Save system not found in context")
+            return
 
-        # Restore scene state cache for NPC persistence across scene transitions
-        if scene_states:
-            GameView.restore_scene_state_cache(scene_states)
+        # Restore all state from save data
+        save_manager.restore_game_data(save_data, context)
+
+        # Restore cache state for persistence across scene transitions
+        if "_scene_caches" in save_data.save_states:
+            scene_manager = cast("SceneManager", context.get_system("scene"))
+            if scene_manager:
+                scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
 
     def exit_game(self) -> None:
         """Close the game window and exit the application.
@@ -415,3 +483,47 @@ class ViewManager:
             self._game_view.cleanup()
 
         arcade.close_window()
+
+    def _on_show_menu_event(self, event: ShowMenuEvent) -> None:
+        """Handle ShowMenuEvent by transitioning to menu view.
+
+        Event handler that responds to ShowMenuEvent published by game systems.
+        Delegates to show_menu() with the appropriate parameters.
+
+        Args:
+            event: ShowMenuEvent containing transition parameters.
+        """
+        self.show_menu(from_game_pause=event.from_game_pause)
+
+    def _on_show_inventory_event(self, event: ShowInventoryEvent) -> None:
+        """Handle ShowInventoryEvent by transitioning to inventory view.
+
+        Event handler that responds to ShowInventoryEvent published by game systems.
+        Delegates to show_inventory().
+
+        Args:
+            event: ShowInventoryEvent (no parameters needed).
+        """
+        self.show_inventory()
+
+    def _on_show_save_game_event(self, event: ShowSaveGameEvent) -> None:
+        """Handle ShowSaveGameEvent by transitioning to save game view.
+
+        Event handler that responds to ShowSaveGameEvent published by game systems.
+        Delegates to show_save_game().
+
+        Args:
+            event: ShowSaveGameEvent (no parameters needed).
+        """
+        self.show_save_game()
+
+    def _on_show_load_game_event(self, event: ShowLoadGameEvent) -> None:
+        """Handle ShowLoadGameEvent by transitioning to load game view.
+
+        Event handler that responds to ShowLoadGameEvent published by game systems.
+        Delegates to show_load_game().
+
+        Args:
+            event: ShowLoadGameEvent (no parameters needed).
+        """
+        self.show_load_game()

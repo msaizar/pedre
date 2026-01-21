@@ -50,7 +50,9 @@ from pedre.types import MenuOption
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
+    from pedre.systems import AudioManager, SaveManager
     from pedre.view_manager import ViewManager
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -325,7 +327,7 @@ class MenuView(arcade.View):
         if self.selected_option == MenuOption.CONTINUE:
             self.view_manager.continue_game()
         elif self.selected_option == MenuOption.NEW_GAME:
-            self.view_manager.show_game()
+            self.view_manager.start_new_game()
         elif self.selected_option == MenuOption.SAVE_GAME:
             self.view_manager.show_save_game()
         elif self.selected_option == MenuOption.LOAD_GAME:
@@ -356,9 +358,8 @@ class MenuView(arcade.View):
         has_autosave = False
         if has_game_view:
             # If game view exists, check for auto-save through it
-            game_view = self.view_manager.game_view
-            if hasattr(game_view, "save_manager"):
-                has_autosave = game_view.save_manager.save_exists(slot=0)
+            save_manager = cast("SaveManager", self.view_manager.game_context.get_system("save"))
+            has_autosave = save_manager.save_exists(slot=0)
 
         # Enable Continue if either condition is met
         can_continue = has_game_view or has_autosave
@@ -434,7 +435,9 @@ class MenuView(arcade.View):
                 if not game_view or not hasattr(game_view, "audio_manager"):
                     return
 
-                audio_manager = game_view.audio_manager
+                audio_manager = cast("AudioManager", game_view.audio_manager)
+                if not audio_manager:
+                    return
 
                 def load_music_file(music_file: str) -> None:
                     """Load a single music file (internal worker function).

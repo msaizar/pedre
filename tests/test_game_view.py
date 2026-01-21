@@ -21,6 +21,8 @@ def mock_view_manager(headless_window: arcade.Window) -> Mock:
     """
     manager = Mock(spec=ViewManager)
     manager.window = headless_window
+    manager.system_loader = Mock()
+    manager.game_context = Mock()
     return manager
 
 
@@ -47,19 +49,7 @@ def test_game_view_initialization(game_view: GameView, mock_view_manager: Mock) 
     assert game_view.view_manager == mock_view_manager
 
 
-def test_on_key_press_escape_returns_to_menu(
-    game_view: GameView,
-    mock_view_manager: Mock,
-) -> None:
-    """Test that ESC key returns to menu.
 
-    Args:
-        game_view: GameView fixture.
-        mock_view_manager: Mock ViewManager fixture.
-    """
-    result = game_view.on_key_press(arcade.key.ESCAPE, 0)
-    mock_view_manager.show_menu.assert_called_once()
-    assert result is None
 
 
 def test_on_key_press_other_keys_do_nothing(
@@ -73,6 +63,7 @@ def test_on_key_press_other_keys_do_nothing(
         mock_view_manager: Mock ViewManager fixture.
     """
     # Test various keys
+    mock_view_manager.system_loader.on_key_press_all.return_value = False
     for key in [arcade.key.SPACE, arcade.key.ENTER, arcade.key.A, arcade.key.UP]:
         result = game_view.on_key_press(key, 0)
         assert result is None

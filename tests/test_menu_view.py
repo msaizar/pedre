@@ -158,7 +158,7 @@ def test_on_key_press_enter_new_game(
     """
     menu_view.selected_option = MenuOption.NEW_GAME
     menu_view.on_key_press(arcade.key.ENTER, 0)
-    mock_view_manager.show_game.assert_called_once()
+    mock_view_manager.start_new_game.assert_called_once()
 
 
 def test_on_key_press_enter_exit(menu_view: MenuView, mock_view_manager: Mock) -> None:
@@ -205,7 +205,7 @@ def test_on_key_press_return_key_works(
     """
     menu_view.selected_option = MenuOption.NEW_GAME
     menu_view.on_key_press(arcade.key.RETURN, 0)
-    mock_view_manager.show_game.assert_called_once()
+    mock_view_manager.start_new_game.assert_called_once()
 
 
 def test_execute_selection_new_game(menu_view: MenuView, mock_view_manager: Mock) -> None:
@@ -217,7 +217,7 @@ def test_execute_selection_new_game(menu_view: MenuView, mock_view_manager: Mock
     """
     menu_view.selected_option = MenuOption.NEW_GAME
     menu_view._execute_selection()
-    mock_view_manager.show_game.assert_called_once()
+    mock_view_manager.start_new_game.assert_called_once()
 
 
 def test_execute_selection_exit(menu_view: MenuView, mock_view_manager: Mock) -> None:
