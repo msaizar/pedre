@@ -327,7 +327,7 @@ class MenuView(arcade.View):
         if self.selected_option == MenuOption.CONTINUE:
             self.view_manager.continue_game()
         elif self.selected_option == MenuOption.NEW_GAME:
-            self.view_manager.show_game()
+            self.view_manager.start_new_game()
         elif self.selected_option == MenuOption.SAVE_GAME:
             self.view_manager.show_save_game()
         elif self.selected_option == MenuOption.LOAD_GAME:

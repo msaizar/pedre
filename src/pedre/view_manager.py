@@ -304,6 +304,26 @@ class ViewManager:
                 self._game_view is not None,
             )
 
+    def start_new_game(self) -> None:
+        """Start a new game with fresh state.
+
+        Cleans up and discards any existing game view to ensure a fresh start.
+        This is different from show_game() which reuses the cached game view,
+        preserving state when returning from inventory or resuming from pause.
+
+        Side effects:
+            - Calls cleanup() on existing game view if it exists
+            - Sets _game_view to None to force recreation
+            - Shows fresh game view via show_game()
+        """
+        # Clean up and discard old game view if it exists
+        if self._game_view is not None:
+            self._game_view.cleanup()
+            self._game_view = None
+
+        # Show fresh game view (will create new instance via property)
+        self.show_game()
+
     def show_load_game(self) -> None:
         """Switch to the load game view.
 
