@@ -24,9 +24,9 @@ from pedre.systems.scene.events import SceneStartEvent
 if TYPE_CHECKING:
     from typing import Any
 
-    from pedre.caches.loader import CacheLoader
     from pedre.config import GameSettings
     from pedre.systems import CameraManager
+    from pedre.systems.cache_manager import CacheManager
     from pedre.systems.game_context import GameContext
     from pedre.systems.npc import NPCManager
     from pedre.systems.script import ScriptManager
@@ -70,22 +70,22 @@ class SceneManager(BaseSystem):
     name: ClassVar[str] = "scene"
     dependencies: ClassVar[list[str]] = ["waypoint", "npc", "portal", "interaction", "player", "script"]
 
-    # Class-level cache loader (persists across scene transitions)
-    _cache_loader: ClassVar[CacheLoader | None] = None
+    # Class-level cache manager (persists across scene transitions)
+    _cache_manager: ClassVar[CacheManager | None] = None
 
     @classmethod
-    def init_cache_loader(cls, cache_loader: CacheLoader) -> None:
-        """Initialize the cache loader.
+    def init_cache_manager(cls, cache_manager: CacheManager) -> None:
+        """Initialize the cache manager.
 
         Args:
-            cache_loader: The CacheLoader instance to use for caching.
+            cache_manager: The CacheManager instance to use for caching.
         """
-        cls._cache_loader = cache_loader
+        cls._cache_manager = cache_manager
 
     @classmethod
-    def get_cache_loader(cls) -> CacheLoader | None:
-        """Get the cache loader instance."""
-        return cls._cache_loader
+    def get_cache_manager(cls) -> CacheManager | None:
+        """Get the cache manager instance."""
+        return cls._cache_manager
 
     @classmethod
     def restore_cache_state(cls, cache_states: dict[str, Any]) -> None:
@@ -94,14 +94,14 @@ class SceneManager(BaseSystem):
         Args:
             cache_states: Dictionary mapping cache names to their serialized state.
         """
-        if cls._cache_loader:
-            cls._cache_loader.from_dict(cache_states)
+        if cls._cache_manager:
+            cls._cache_manager.from_dict(cache_states)
 
     @classmethod
     def get_cache_state_dict(cls) -> dict[str, Any]:
         """Get the cache state as a dictionary for saving."""
-        if cls._cache_loader:
-            return cls._cache_loader.to_dict()
+        if cls._cache_manager:
+            return cls._cache_manager.to_dict()
         return {}
 
     def __init__(self) -> None:
@@ -144,8 +144,8 @@ class SceneManager(BaseSystem):
             return
 
         # Cache current scene state before transitioning
-        if self._cache_loader:
-            self._cache_loader.cache_all(self.current_scene, context)
+        if self._cache_manager:
+            self._cache_manager.cache_scene(self.current_scene, context)
 
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
@@ -172,9 +172,9 @@ class SceneManager(BaseSystem):
         if script_manager and hasattr(script_manager, "load_scene_scripts"):
             script_manager.load_scene_scripts(current_scene, self._settings, npc_dialogs_data)
 
-        # Restore scene state using cache loader
-        if self._cache_loader:
-            self._cache_loader.restore_all(current_scene, context)
+        # Restore scene state using cache manager
+        if self._cache_manager:
+            self._cache_manager.restore_scene(current_scene, context)
 
             # Sync wall_list with NPC visibility after restore
             if npc_manager and context.wall_list:

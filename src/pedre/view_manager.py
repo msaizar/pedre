@@ -65,8 +65,7 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems import AudioManager, GameSaveData, InventoryManager, SceneManager, ScriptManager
-    from pedre.systems.npc import NPCManager
+    from pedre.systems import GameSaveData, InventoryManager, SceneManager
 
 logger = logging.getLogger(__name__)
 
@@ -409,12 +408,12 @@ class ViewManager:
         self.window.show_view(self.game_view)
 
         # Restore player position
-        if self.game_view.player_sprite:
-            self.game_view.player_sprite.center_x = save_data.player_x
-            self.game_view.player_sprite.center_y = save_data.player_y
+        if self.game_context.player_sprite:
+            self.game_context.player_sprite.center_x = save_data.player_x
+            self.game_context.player_sprite.center_y = save_data.player_y
 
         # Restore all manager states using the centralized method
-        context = self.game_view.game_context
+        context = self.game_context
         if not context:
             logger.error("ViewManager: No GameContext after showing GameView")
             return
@@ -424,24 +423,14 @@ class ViewManager:
             logger.error("ViewManager: Save system not found in context")
             return
 
-        restored_objects, cache_states = save_manager.restore_all_state(
-            save_data,
-            cast("NPCManager", context.get_system("npc")),
-            cast("InventoryManager", context.get_system("inventory")),
-            cast("AudioManager", context.get_system("audio")),
-            cast("ScriptManager", context.get_system("script")),
-        )
-
-        # Update game context's interacted_objects
-        if context:
-            context.interacted_objects.clear()
-            context.interacted_objects.update(restored_objects)
+        # Restore all state from save data
+        save_manager.restore_state(save_data, context)
 
         # Restore cache state for persistence across scene transitions
-        if cache_states:
+        if "_scene_caches" in save_data.save_states:
             scene_manager = cast("SceneManager", context.get_system("scene"))
             if scene_manager:
-                scene_manager.restore_cache_state(cache_states)
+                scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
 
     def exit_game(self) -> None:
         """Close the game window and exit the application.

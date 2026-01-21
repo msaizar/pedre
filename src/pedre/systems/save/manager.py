@@ -57,7 +57,6 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
-from pedre.saves.loader import SaveLoader
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
@@ -145,7 +144,6 @@ class SaveManager(BaseSystem):
         saves_dir: Path to directory containing save files.
         current_slot: Most recently used save slot number, or None if no saves yet.
         settings: Game settings for resolving asset paths.
-        save_loader: SaveLoader instance for managing save providers.
     """
 
     name: ClassVar[str] = "save"
@@ -166,18 +164,14 @@ class SaveManager(BaseSystem):
 
         self.current_slot: int | None = None
         self.settings: GameSettings | None = None
-        self.save_loader: SaveLoader | None = None
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize the save system with settings."""
         self.settings = settings
-        self.save_loader = SaveLoader(settings)
-        self.save_loader.instantiate_all()
 
     def cleanup(self) -> None:
         """Clean up save system resources."""
         self.settings = None
-        self.save_loader = None
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle quick save/load hotkeys.
@@ -271,10 +265,6 @@ class SaveManager(BaseSystem):
         Returns:
             True if save succeeded and file was written, False if any error occurred.
         """
-        if not self.save_loader:
-            logger.error("SaveLoader not initialized")
-            return False
-
         if not context.player_sprite:
             logger.error("No player sprite in context")
             return False
@@ -285,9 +275,20 @@ class SaveManager(BaseSystem):
             return False
 
         try:
-            # Gather state from all save providers
-            self.save_loader.gather_state(context)
-            save_states = self.save_loader.to_dict()
+            # Gather state from all systems
+            save_states: dict[str, Any] = {}
+            for system in context.get_systems().values():
+                state = system.get_save_state()
+                if state:
+                    save_states[system.name] = state
+                    logger.debug("Gathered save state from system: %s", system.name)
+
+            # Also include cache manager state
+            scene_manager = cast("SceneManager | None", context.get_system("scene"))
+            if scene_manager:
+                cache_state = scene_manager.get_cache_state_dict()
+                if cache_state:
+                    save_states["_scene_caches"] = cache_state
 
             # Create save data
             save_data = GameSaveData(
@@ -352,13 +353,18 @@ class SaveManager(BaseSystem):
             save_data: The GameSaveData object loaded from a save file.
             context: Game context for accessing managers.
         """
-        if not self.save_loader:
-            logger.error("SaveLoader not initialized")
-            return
+        # Restore cache manager state first
+        if "_scene_caches" in save_data.save_states:
+            scene_manager = cast("SceneManager | None", context.get_system("scene"))
+            if scene_manager:
+                scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
+                logger.debug("Restored cache manager state")
 
-        # Restore state to all save providers
-        self.save_loader.from_dict(save_data.save_states)
-        self.save_loader.restore_state(context)
+        # Restore each system's state
+        for system in context.get_systems().values():
+            if system.name in save_data.save_states:
+                system.restore_save_state(save_data.save_states[system.name])
+                logger.debug("Restored save state to system: %s", system.name)
 
         logger.info("Restored all state from save data")
 

@@ -249,3 +249,85 @@ class BaseSystem(ABC):
             True if the event was handled and should stop propagating, False otherwise.
         """
         return False
+
+    def get_save_state(self) -> dict[str, Any]:
+        """Return serializable state for saving to disk.
+
+        Override this method to persist state across game sessions. The returned
+        dictionary must be JSON-serializable (strings, numbers, booleans, lists, dicts).
+
+        Returns:
+            Dictionary containing the system's saveable state. Default returns empty dict.
+
+        Example:
+            def get_save_state(self):
+                return {
+                    "current_track": self.current_track,
+                    "volume": self.volume,
+                }
+        """
+        return {}
+
+    def restore_save_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save file.
+
+        Override this method to restore the system's state from a previously
+        saved dictionary. This is called after setup() when loading a saved game.
+
+        Args:
+            state: Previously saved state dictionary from get_save_state().
+
+        Example:
+            def restore_save_state(self, state):
+                self.current_track = state.get("current_track", "")
+                self.volume = state.get("volume", 1.0)
+        """
+        return
+
+    def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
+        """Return state to cache during scene transitions.
+
+        Override this method to persist state when leaving a scene. The state
+        will be restored when returning to the same scene.
+
+        By default, this delegates to get_save_state() since most systems
+        don't need scene-specific caching behavior.
+
+        Args:
+            scene_name: Name of the scene being left.
+
+        Returns:
+            Dictionary containing the system's cacheable state for this scene.
+
+        Example:
+            def cache_scene_state(self, scene_name):
+                # Cache NPC positions per scene
+                return {
+                    npc_name: {"x": npc.x, "y": npc.y}
+                    for npc_name, npc in self.npcs.items()
+                }
+        """
+        return self.get_save_state()
+
+    def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
+        """Restore cached state when returning to a scene.
+
+        Override this method to restore scene-specific cached state. This is
+        called after load_from_tiled() when entering a previously visited scene.
+
+        By default, this delegates to restore_save_state() since most systems
+        don't need scene-specific restoration behavior.
+
+        Args:
+            scene_name: Name of the scene being entered.
+            state: Previously cached state from cache_scene_state().
+
+        Example:
+            def restore_scene_state(self, scene_name, state):
+                # Restore NPC positions
+                for npc_name, npc_state in state.items():
+                    if npc := self.npcs.get(npc_name):
+                        npc.x = npc_state["x"]
+                        npc.y = npc_state["y"]
+        """
+        self.restore_save_state(state)

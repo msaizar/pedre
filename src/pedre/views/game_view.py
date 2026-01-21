@@ -61,14 +61,9 @@ from pedre.systems.scene import TransitionState
 
 # These imports are used for cast() type annotations only
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems import (
-        AudioManager,
         CameraManager,
-        InventoryManager,
-        SaveManager,
         SceneManager,
-        ScriptManager,
     )
     from pedre.view_manager import ViewManager
 
@@ -108,35 +103,10 @@ class GameView(arcade.View):
         map_file: Current Tiled map filename (e.g., "Casa.tmx").
         debug_mode: Whether to display debug overlays (NPC positions, etc.).
 
-        Game systems (managers):
-        dialog_manager: Manages dialog display and pagination.
-        pathfinding_manager: Handles NPC A* pathfinding.
-        inventory_manager: Tracks player's inventory.
-        event_bus: Pub/sub system for game events.
-        script_manager: Loads and executes scripted sequences.
-        npc_manager: Manages NPC state, dialogs, and movement.
-        interaction_manager: Handles interactive objects.
-        portal_manager: Manages map transitions via portals.
-        camera_manager: Smooth camera following.
-        save_manager: Game state persistence.
-        audio_manager: Music and sound effects.
-        particle_manager: Visual effects.
         game_context: Bundle of managers passed to scripts.
 
-        Sprite lists and rendering:
-        player_sprite: The player's AnimatedPlayer sprite.
-        player_list: Arcade sprite list containing player.
-        wall_list: All collidable sprites (walls + solid NPCs).
-        npc_list: All NPC sprites.
-        tile_map: Loaded Tiled map data.
-        scene: Arcade Scene generated from tile map.
-        physics_engine: Simple physics for player collision.
-        camera: 2D camera for scrolling.
 
         State tracking:
-        current_npc_name: Name of NPC currently in dialog.
-        current_npc_dialog_level: Dialog level when dialog was opened.
-        current_scene: Scene name (lowercase map file without .tmx).
         spawn_waypoint: Waypoint to spawn at (set by portals).
         initialized: Whether setup() has been called.
     """
@@ -145,8 +115,6 @@ class GameView(arcade.View):
         self,
         view_manager: ViewManager,
         map_file: str | None = None,
-        *,
-        settings: GameSettings | None = None,
         game_context: GameContext | None = None,
     ) -> None:
         """Initialize the game view.
@@ -160,13 +128,11 @@ class GameView(arcade.View):
         Args:
             view_manager: ViewManager instance for handling view transitions (menu, inventory, etc.).
             map_file: Name of the Tiled .tmx file to load from assets/maps/. If None, uses INITIAL_MAP from config.
-            settings: Game settings. If None, will be retrieved from window.
             game_context: GameContext instance (shared across views). If None, will be retrieved from view_manager.
         """
         super().__init__()
         self.view_manager = view_manager
         self.map_file = map_file
-        self.settings = settings
 
         # Game systems (will be loaded by SystemLoader)
         self.system_loader: SystemLoader | None = None
@@ -174,44 +140,11 @@ class GameView(arcade.View):
         # Game context (shared across views, owned by ViewManager)
         self.game_context = game_context or view_manager.game_context
 
-        # Camera for scrolling
-        self.camera: arcade.camera.Camera2D | None = None
-
         # Portal tracking (deprecated - now using context.next_spawn_waypoint)
         self.spawn_waypoint: str | None = None
 
         # Track if game has been initialized
         self.initialized: bool = False
-
-    @property
-    def player_sprite(self) -> arcade.Sprite | None:
-        """Expose player_sprite from game_context."""
-        return self.game_context.player_sprite if self.game_context else None
-
-    @property
-    def save_manager(self) -> SaveManager | None:
-        """Expose save_manager from game_context."""
-        return cast("SaveManager", self.game_context.get_system("save")) if self.game_context else None
-
-    @property
-    def audio_manager(self) -> AudioManager | None:
-        """Expose audio_manager from game_context."""
-        return cast("AudioManager", self.game_context.get_system("audio")) if self.game_context else None
-
-    @property
-    def inventory_manager(self) -> InventoryManager | None:
-        """Expose inventory_manager from game_context."""
-        return cast("InventoryManager", self.game_context.get_system("inventory")) if self.game_context else None
-
-    @property
-    def script_manager(self) -> ScriptManager | None:
-        """Expose script_manager from game_context."""
-        return cast("ScriptManager", self.game_context.get_system("script")) if self.game_context else None
-
-    @property
-    def scene_manager(self) -> SceneManager | None:
-        """Expose scene_manager from game_context."""
-        return cast("SceneManager", self.game_context.get_system("scene")) if self.game_context else None
 
     def setup(self) -> None:
         """Set up the game. Called on first show or when resetting the game state."""
@@ -220,7 +153,7 @@ class GameView(arcade.View):
             self._init_systems()
 
         # Load the initial map
-        target_map = self.map_file or self.settings.initial_map
+        target_map = self.map_file or self.window.settings.initial_map
         if target_map and self.game_context:
             scene_manager = cast("SceneManager", self.game_context.get_system("scene"))
             if scene_manager:
@@ -228,11 +161,8 @@ class GameView(arcade.View):
 
     def _init_systems(self) -> None:
         """Initialize all game systems (run once)."""
-        if self.settings is None:
-            self.settings = self.window.settings
-
         # Initialize pluggable systems via SystemLoader
-        self.system_loader = SystemLoader(self.settings)
+        self.system_loader = SystemLoader(self.window.settings)
         system_instances = self.system_loader.instantiate_all()
 
         # Update game_context reference (set game_view now that we have the instance)
@@ -357,21 +287,16 @@ class GameView(arcade.View):
         current_map = getattr(scene_manager, "current_map", "") if scene_manager else ""
 
         if current_map and scene_manager and self.game_context:
-            cache_loader = scene_manager.get_cache_loader()
-            if cache_loader:
-                cache_loader.cache_all(current_map, self.game_context)
+            cache_manager = scene_manager.get_cache_manager()
+            if cache_manager:
+                cache_manager.cache_scene(current_map, self.game_context)
 
         # Cleanup ALL pluggable systems generically (includes AudioManager cleanup)
         if self.system_loader:
             self.system_loader.cleanup_all()
 
-        # Clear references
-        self.scene = None
-        self.tile_map = None
-        self.camera = None
-
         # Clear event bus
-        self.event_bus.clear()
+        self.game_context.event_bus.clear()
 
         # Reset initialization flag so game will be set up again on next show
         self.initialized = False

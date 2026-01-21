@@ -881,62 +881,6 @@ class NPCManager(BaseSystem):
             }
         return positions
 
-    def get_state(self) -> dict[str, Any]:
-        """Return serializable state for saving (BaseSystem interface).
-
-        Returns:
-            Dictionary with NPC dialog levels and positions.
-        """
-        return {
-            "npc_dialog_levels": {name: npc.dialog_level for name, npc in self.npcs.items()},
-            "npc_positions": self.get_npc_positions(),
-        }
-
-    def restore_state(self, state: dict[str, Any]) -> None:
-        """Restore state from save data (BaseSystem interface).
-
-        Args:
-            state: Previously saved state dictionary.
-        """
-        if "npc_dialog_levels" in state:
-            self._restore_dialog_levels(state["npc_dialog_levels"])
-        if "npc_positions" in state:
-            self._restore_positions(state["npc_positions"])
-
-    def restore_positions(self, npc_positions: dict[str, dict[str, float | bool]]) -> None:
-        """Restore NPC positions and visibility from save data.
-
-        Args:
-            npc_positions: Dictionary mapping NPC names to position and visibility data.
-        """
-        self._restore_positions(npc_positions)
-
-    def _restore_dialog_levels(self, npc_dialog_levels: dict[str, int]) -> None:
-        """Restore NPC dialog levels from save data.
-
-        Updates the dialog_level for each NPC based on saved state. This is called
-        when loading a save file to restore conversation progression. NPCs not present
-        in the save data retain their current dialog level (typically 0 for new NPCs).
-
-        Args:
-            npc_dialog_levels: Dictionary mapping NPC names to their saved dialog levels.
-                Example: {"martin": 2, "shopkeeper": 1, "guard": 0}
-
-        Example:
-            # After loading save data
-            save_data = save_manager.load_game(slot=1)
-            if save_data:
-                npc_manager._restore_dialog_levels(save_data.npc_dialog_levels)
-                # All NPCs now have their conversation progress restored
-        """
-        for npc_name, dialog_level in npc_dialog_levels.items():
-            npc = self.npcs.get(npc_name)
-            if npc:
-                npc.dialog_level = dialog_level
-                logger.debug("Restored %s dialog level to %d", npc_name, dialog_level)
-            else:
-                logger.warning("Cannot restore dialog level for unknown NPC: %s", npc_name)
-
     def _restore_positions(self, npc_positions: dict[str, dict[str, float | bool]]) -> None:
         """Restore NPC positions and visibility from save data.
 
@@ -1087,3 +1031,57 @@ class NPCManager(BaseSystem):
                 scene.remove_sprite_list_by_name("NPCs")
             scene.add_sprite_list("NPCs", sprite_list=npc_sprite_list)
             logger.info("Added %d NPCs to scene", len(npc_sprite_list))
+
+    def get_save_state(self) -> dict[str, Any]:
+        """Return serializable state for saving NPC data.
+
+        Saves NPC positions, visibility, dialog levels, and animation flags.
+
+        Returns:
+            Dictionary mapping NPC names to their state dictionaries.
+        """
+        state: dict[str, Any] = {}
+        for npc_name, npc in self.npcs.items():
+            npc_state: dict[str, Any] = {
+                "x": npc.sprite.center_x,
+                "y": npc.sprite.center_y,
+                "visible": npc.sprite.visible,
+                "dialog_level": npc.dialog_level,
+            }
+
+            # Save animation flags for AnimatedNPC sprites
+            if isinstance(npc.sprite, AnimatedNPC):
+                npc_state["appear_complete"] = npc.sprite.appear_complete
+                npc_state["disappear_complete"] = npc.sprite.disappear_complete
+                npc_state["interact_complete"] = npc.sprite.interact_complete
+
+            state[npc_name] = npc_state
+
+        return state
+
+    def restore_save_state(self, state: dict[str, Any]) -> None:
+        """Restore NPC state from save data.
+
+        Restores NPC positions, visibility, dialog levels, and animation flags.
+
+        Args:
+            state: Previously saved state from get_save_state().
+        """
+        for npc_name, npc_state in state.items():
+            npc = self.npcs.get(npc_name)
+            if not npc:
+                continue
+
+            # Restore position and visibility
+            npc.sprite.center_x = npc_state.get("x", npc.sprite.center_x)
+            npc.sprite.center_y = npc_state.get("y", npc.sprite.center_y)
+            npc.sprite.visible = npc_state.get("visible", True)
+            npc.dialog_level = npc_state.get("dialog_level", 0)
+
+            # Restore animation flags for AnimatedNPC sprites
+            if isinstance(npc.sprite, AnimatedNPC):
+                npc.sprite.appear_complete = npc_state.get("appear_complete", False)
+                npc.sprite.disappear_complete = npc_state.get("disappear_complete", False)
+                npc.sprite.interact_complete = npc_state.get("interact_complete", False)
+
+        logger.info("Restored state for %d NPCs", len(state))

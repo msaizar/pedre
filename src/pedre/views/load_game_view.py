@@ -35,8 +35,6 @@ from typing import TYPE_CHECKING
 
 import arcade
 
-from pedre.systems import SaveManager
-
 if TYPE_CHECKING:
     from pedre.view_manager import ViewManager
 
@@ -69,7 +67,7 @@ class LoadGameView(arcade.View):
         """
         super().__init__()
         self.view_manager = view_manager
-        self.save_manager = SaveManager()
+        self.save_manager = self.view_manager.game_context.get_system("save")
         self.selected_slot = 1  # Slots 1-3, plus 0 for back
         self.save_info: dict[int, dict | None] = {}
 

@@ -10,16 +10,12 @@ supporting message dialogs, toggle states, and other interactive behaviors confi
 via Tiled map properties.
 """
 
-from pedre.systems.interaction.cache import InteractionCacheProvider
 from pedre.systems.interaction.conditions import check_object_interacted
 from pedre.systems.interaction.events import ObjectInteractedEvent
 from pedre.systems.interaction.manager import InteractionManager, InteractiveObject
-from pedre.systems.interaction.save import InteractionSaveProvider
 
 __all__ = [
-    "InteractionCacheProvider",
     "InteractionManager",
-    "InteractionSaveProvider",
     "InteractiveObject",
     "ObjectInteractedEvent",
     "check_object_interacted",

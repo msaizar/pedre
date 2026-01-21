@@ -14,14 +14,12 @@ from pedre.systems.inventory.actions import AcquireItemAction, WaitForInventoryA
 from pedre.systems.inventory.conditions import check_inventory_accessed
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.inventory.manager import InventoryItem, InventoryManager
-from pedre.systems.inventory.save import InventorySaveProvider
 
 __all__ = [
     "AcquireItemAction",
     "InventoryClosedEvent",
     "InventoryItem",
     "InventoryManager",
-    "InventorySaveProvider",
     "ItemAcquiredEvent",
     "WaitForInventoryAccessAction",
     "check_inventory_accessed",
