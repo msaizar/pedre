@@ -387,7 +387,11 @@ class ViewManager:
             return
 
         # Full load: no game view exists, load from auto-save
-        save_manager = SaveManager()
+        save_manager = cast("SaveManager", self.game_context.get_system("save"))
+        if not save_manager:
+            logger.error("Save system not available")
+            return
+
         save_data = save_manager.load_auto_save()
 
         if not save_data:

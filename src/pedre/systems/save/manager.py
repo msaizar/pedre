@@ -157,7 +157,7 @@ class SaveManager(BaseSystem):
         """
         if saves_dir is None:
             # Default to saves/ directory in project root
-            saves_dir = Path(__file__).parent.parent.parent.parent / "saves"
+            saves_dir = Path.cwd() / "saves"
 
         self.saves_dir = saves_dir
         self.saves_dir.mkdir(exist_ok=True)
