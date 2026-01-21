@@ -312,6 +312,13 @@ class NPCManager(BaseSystem):
         self.dialogs.clear()
         logger.debug("NPCManager cleanup complete")
 
+    def reset(self) -> None:
+        """Reset NPC system for new game."""
+        self.npcs.clear()
+        self.dialogs.clear()
+        self.interacted_npcs.clear()
+        logger.debug("NPCManager reset complete")
+
     def load_dialogs(self, dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]]) -> None:
         """Load NPC dialog configurations.
 

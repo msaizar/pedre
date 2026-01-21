@@ -131,6 +131,16 @@ class SceneManager(BaseSystem):
         if context.current_scene:
             self.current_scene = context.current_scene
 
+    def reset(self) -> None:
+        """Reset scene manager state for new game."""
+        self.current_scene = "default"
+        self.current_map = ""
+        self.transition_state = TransitionState.NONE
+        self.transition_alpha = 0.0
+        self.pending_map_file = None
+        self.pending_spawn_waypoint = None
+        logger.debug("SceneManager reset complete")
+
     def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
         """Central orchestration for loading a new map/level.
 

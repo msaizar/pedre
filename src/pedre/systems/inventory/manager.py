@@ -231,6 +231,12 @@ class InventoryManager(BaseSystem):
         self.has_been_accessed = False
         logger.debug("InventoryManager cleanup complete")
 
+    def reset(self) -> None:
+        """Reset inventory state for new game."""
+        self.items.clear()
+        self.has_been_accessed = False
+        logger.debug("InventoryManager reset complete")
+
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle key presses for inventory - publish event to show inventory view."""
         if symbol == arcade.key.I:

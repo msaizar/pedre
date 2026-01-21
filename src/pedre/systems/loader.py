@@ -221,6 +221,34 @@ class SystemLoader:
                 system.cleanup()
                 logger.debug("Cleaned up system: %s", name)
 
+    def reset_all(self, context: GameContext) -> None:
+        """Call reset() on all systems to prepare for a new game session.
+
+        This clears transient state (items, NPCs, flags) but keeps system wiring intact.
+        Also resets the GameContext state.
+
+        Args:
+            context: The game context to reset.
+        """
+        # Reset context state
+        context.interacted_objects.clear()
+        context.current_scene = ""
+        context.player_sprite = None
+        context.waypoints.clear()
+        if context.wall_list:
+            context.wall_list.clear()
+
+        # Clear key persistence cache
+        if self._cache_manager:
+            self._cache_manager.clear()
+
+        # Reset all systems
+        for name in self._load_order:
+            system = self._instances.get(name)
+            if system:
+                system.reset()
+                logger.debug("Reset system: %s", name)
+
     def get_system(self, name: str) -> BaseSystem | None:
         """Get a system instance by name.
 

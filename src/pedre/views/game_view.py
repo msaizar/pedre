@@ -256,8 +256,8 @@ class GameView(arcade.View):
             if cache_manager:
                 cache_manager.cache_scene(current_map, self.view_manager.game_context)
 
-        # Cleanup ALL pluggable systems generically (includes AudioManager cleanup)
-        self.view_manager.system_loader.cleanup_all()
+        # Reset ALL pluggable systems generically (clears session state but keeps wiring)
+        self.view_manager.system_loader.reset_all(self.view_manager.game_context)
 
         # Reset initialization flag so game will be set up again on next show
         self.initialized = False

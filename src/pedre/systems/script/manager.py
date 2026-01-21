@@ -205,6 +205,20 @@ class ScriptManager(BaseSystem):
         self._subscribed_events.clear()
         super().cleanup()
 
+    def reset(self) -> None:
+        """Reset script system for new game.
+
+        Clears all scripts and active sequences while preserving system wiring.
+        """
+        if self.event_bus:
+            # Unregister all event handlers (script triggers)
+            # We will re-register them when loading scripts for the new game
+            self.event_bus.unregister_all(self)
+
+        self.scripts.clear()
+        self.active_sequences.clear()
+        self._subscribed_events.clear()
+
     def get_state(self) -> dict[str, Any]:
         """Get script system state for saving.
 
@@ -378,7 +392,6 @@ class ScriptManager(BaseSystem):
         """Register event handlers for all events triggered by loaded scripts."""
         if not self.event_bus:
             return
-
         # Identify all unique events required by loaded scripts
         required_events = set()
         for script in self.scripts.values():

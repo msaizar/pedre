@@ -186,6 +186,15 @@ class BaseSystem(ABC):
         """
         return
 
+    def reset(self) -> None:
+        """Reset system state for a new game session.
+
+        Override this method to clear transient gameplay state (items, flags, etc.)
+        while preserving persistent wiring (event bus, references).
+        This is called when starting a new game.
+        """
+        return
+
     def get_state(self) -> dict[str, Any]:
         """Return serializable state for saving.
 

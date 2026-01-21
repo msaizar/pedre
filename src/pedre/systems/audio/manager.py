@@ -148,6 +148,11 @@ class AudioManager(BaseSystem):
         self.clear_all_caches()
         logger.debug("AudioManager cleanup complete")
 
+    def reset(self) -> None:
+        """Reset audio system for new game (stop music, keep cache)."""
+        self.stop_music()
+        logger.debug("AudioManager reset complete")
+
     def play_music(self, filename: str, *, loop: bool = True, volume: float | None = None) -> bool:
         """Play background music.
 
