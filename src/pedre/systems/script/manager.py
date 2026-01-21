@@ -219,23 +219,41 @@ class ScriptManager(BaseSystem):
         self.active_sequences.clear()
         self._subscribed_events.clear()
 
-    def get_state(self) -> dict[str, Any]:
-        """Get script system state for saving.
+    def get_save_state(self) -> dict[str, Any]:
+        """Return serializable state for saving to disk.
 
-        Returns:
-            Dictionary containing current script system state.
+        Saves lists of completed scripts and run-once scripts that have executed.
+        Note: Active running scripts are NOT saved and will restart on load.
         """
         return {
-            "active_scripts": [name for name, _ in self.active_sequences],
+            "completed_scripts": [name for name, script in self.scripts.items() if script.completed],
+            "run_once_scripts": [name for name, script in self.scripts.items() if script.has_run],
         }
 
-    def restore_state(self, state: dict[str, Any]) -> None:
-        """Restore script system state from saved data.
+    def restore_save_state(self, state: dict[str, Any]) -> None:
+        """Restore script system state from save file.
 
-        Args:
-            state: Dictionary containing saved script system state.
+        Restores completion flags and run-once history.
         """
-        # Note: active_scripts are not restored as they should restart on load
+        # Restore completed scripts
+        if "completed_scripts" in state:
+            for name in state["completed_scripts"]:
+                if name in self.scripts:
+                    self.scripts[name].completed = True
+                else:
+                    # We might load a save that has completion data for a script
+                    # that isn't loaded yet (e.g. from another scene).
+                    # Ideally we'd store this separately, but for now we warn/ignore
+                    # or better: we can't easily set it on a script object that doesn't exist.
+                    # However, since scripts are usually loaded per-scene or globally,
+                    # we only care about scripts currently in memory.
+                    pass
+
+        # Restore run-once history (critical for not re-running one-time events)
+        if "run_once_scripts" in state:
+            for name in state["run_once_scripts"]:
+                if name in self.scripts:
+                    self.scripts[name].has_run = True
 
     def load_scripts(self, script_path: str, npc_dialogs: dict[str, Any]) -> None:
         """Load scripts from JSON file and register event triggers.
