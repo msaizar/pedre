@@ -211,7 +211,7 @@ class DialogManager(BaseSystem):
             closed = self.advance_page()
             if closed and self.current_npc_name is not None and hasattr(context, "event_bus") and context.event_bus:
                 # Get actual current level from NPC manager if available
-                current_level = self.current_dialog_level
+                current_level = self.current_dialog_level or 0
                 npc_manager = cast("NPCManager", context.get_system("npc"))
                 if npc_manager and hasattr(npc_manager, "npcs"):
                     npc_state = npc_manager.npcs.get(self.current_npc_name)

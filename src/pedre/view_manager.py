@@ -456,7 +456,7 @@ class ViewManager:
             return
 
         # Restore all state from save data
-        save_manager.restore_state(save_data, context)
+        save_manager.restore_game_data(save_data, context)
 
         # Restore cache state for persistence across scene transitions
         if "_scene_caches" in save_data.save_states:

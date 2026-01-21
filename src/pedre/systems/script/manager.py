@@ -70,10 +70,7 @@ from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
-    from pedre.events import (
-        Event,
-        EventBus,
-    )
+    from pedre.events import Event, EventBus
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -427,7 +424,9 @@ class ScriptManager(BaseSystem):
                 logger.warning("ScriptManager: Event '%s' in script trigger is not registered", event_name)
                 continue
 
-            self.event_bus.subscribe(event_class, self._on_generic_event)  # type: ignore[arg-type]
+            # Cast to proper type after None check - EventRegistry returns type | None
+            event_type = cast("type[Event]", event_class)
+            self.event_bus.subscribe(event_type, self._on_generic_event)
             self._subscribed_events.add(event_name)
             logger.debug("ScriptManager: Subscribed to '%s' for script triggers", event_name)
 
@@ -624,7 +623,7 @@ class ScriptManager(BaseSystem):
             # Check if trigger matches this event
             if self._trigger_matches_event(script.trigger, event_type, event_data):
                 # Check scene restriction
-                if script.scene and script.scene != self.context.current_scene:
+                if script.scene and self.context and script.scene != self.context.current_scene:
                     continue
 
                 # Check run_once restriction

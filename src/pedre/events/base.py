@@ -31,10 +31,12 @@ Example usage:
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+E = TypeVar("E", bound="Event")
 
 
 @dataclass
@@ -80,9 +82,9 @@ class EventBus:
 
         Creates an empty event bus with no registered listeners.
         """
-        self.listeners: dict[type[Event], list[Callable[[Event], None]]] = {}
+        self.listeners: dict[type[Event], list[Callable[[Any], None]]] = {}
 
-    def subscribe(self, event_type: type[Event], handler: Callable[[Event], None]) -> None:
+    def subscribe(self, event_type: type[E], handler: Callable[[E], None]) -> None:
         """Subscribe a handler to an event type.
 
         Registers a callback function to be invoked whenever an event of the specified
@@ -107,7 +109,7 @@ class EventBus:
             self.listeners[event_type] = []
         self.listeners[event_type].append(handler)
 
-    def unsubscribe(self, event_type: type[Event], handler: Callable[[Event], None]) -> None:
+    def unsubscribe(self, event_type: type[E], handler: Callable[[E], None]) -> None:
         """Unsubscribe a handler from an event type.
 
         Removes a previously registered handler from the event type's listener list.

@@ -249,7 +249,8 @@ class SceneManager(BaseSystem):
         """Call load_from_tiled() on all systems that implement it."""
         # Iterate through all systems (already in dependency order)
         for system in context.get_systems().values():
-            if hasattr(system, "load_from_tiled"):
+            # Only call if system has load_from_tiled and both tile_map and arcade_scene are loaded
+            if hasattr(system, "load_from_tiled") and self.tile_map is not None and self.arcade_scene is not None:
                 system.load_from_tiled(
                     self.tile_map,
                     self.arcade_scene,

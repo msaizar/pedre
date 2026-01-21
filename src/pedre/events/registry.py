@@ -42,7 +42,7 @@ class EventRegistry:
             The decorator function.
         """
 
-        def decorator(event_class: T) -> T:
+        def decorator(event_class: type[T]) -> type[T]:
             if name in cls._events:
                 logger.warning(
                     "Event '%s' is being re-registered (was %s, now %s)",

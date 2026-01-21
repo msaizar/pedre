@@ -200,8 +200,9 @@ class PortalManager(BaseSystem):
                 first_elem = portal.shape[0]
                 if isinstance(first_elem, (tuple, list)):
                     for p in portal.shape:
-                        xs.append(float(p[0]))
-                        ys.append(float(p[1]))
+                        if isinstance(p, (tuple, list)) and len(p) >= 2:
+                            xs.append(float(p[0]))
+                            ys.append(float(p[1]))
                 else:
                     xs.append(float(portal.shape[0]))
                     ys.append(float(portal.shape[1]))

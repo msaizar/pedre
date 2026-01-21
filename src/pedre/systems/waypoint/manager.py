@@ -53,20 +53,32 @@ class WaypointManager(BaseSystem):
             return
 
         for waypoint in waypoint_layer:
-            if waypoint.name:
-                x = float(waypoint.shape[0])
-                y = float(waypoint.shape[1])
-                tile_x = int(x // settings.tile_size)
-                tile_y = int(y // settings.tile_size)
-                self.waypoints[waypoint.name] = (tile_x, tile_y)
-                logger.debug(
-                    "Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
-                    waypoint.name,
-                    x,
-                    y,
-                    tile_x,
-                    tile_y,
-                )
+            # Ensure shape is a list/tuple of coordinates with at least 2 elements
+            if (
+                waypoint.name
+                and waypoint.shape
+                and isinstance(waypoint.shape, (list, tuple))
+                and len(waypoint.shape) >= 2
+            ):
+                # For waypoints, shape should be [x, y] coordinates
+                shape_x = waypoint.shape[0]
+                shape_y = waypoint.shape[1]
+
+                # Extract numeric values
+                if isinstance(shape_x, (int, float)) and isinstance(shape_y, (int, float)):
+                    x = float(shape_x)
+                    y = float(shape_y)
+                    tile_x = int(x // settings.tile_size)
+                    tile_y = int(y // settings.tile_size)
+                    self.waypoints[waypoint.name] = (tile_x, tile_y)
+                    logger.debug(
+                        "Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
+                        waypoint.name,
+                        x,
+                        y,
+                        tile_x,
+                        tile_y,
+                    )
 
         # Update context for backward compatibility
         context.waypoints = self.waypoints

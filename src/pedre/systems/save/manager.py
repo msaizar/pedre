@@ -45,7 +45,7 @@ Example usage:
     # Load from slot 1
     save_data = save_manager.load_game(slot=1)
     if save_data:
-        save_manager.restore_state(save_data, context)
+        save_manager.restore_game_data(save_data, context)
 """
 
 import json
@@ -233,7 +233,7 @@ class SaveManager(BaseSystem):
                 return
 
         # Restore state from save providers
-        self.restore_state(save_data, context)
+        self.restore_game_data(save_data, context)
 
         # Reposition player
         if context.player_sprite:
@@ -284,11 +284,9 @@ class SaveManager(BaseSystem):
                     logger.debug("Gathered save state from system: %s", system.name)
 
             # Also include cache manager state
-            scene_manager = cast("SceneManager | None", context.get_system("scene"))
-            if scene_manager:
-                cache_state = scene_manager.get_cache_state_dict()
-                if cache_state:
-                    save_states["_scene_caches"] = cache_state
+            cache_state = scene_manager.get_cache_state_dict()
+            if cache_state:
+                save_states["_scene_caches"] = cache_state
 
             # Create save data
             save_data = GameSaveData(
@@ -346,7 +344,7 @@ class SaveManager(BaseSystem):
             logger.info("Game loaded from slot %d", slot)
             return save_data
 
-    def restore_state(self, save_data: GameSaveData, context: GameContext) -> None:
+    def restore_game_data(self, save_data: GameSaveData, context: GameContext) -> None:
         """Restore all state from save data to save providers.
 
         Args:
