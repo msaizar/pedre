@@ -22,7 +22,7 @@ Quick start:
         run_game(settings)
 """
 
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 from pedre.config import GameSettings
 from pedre.helpers import run_game
