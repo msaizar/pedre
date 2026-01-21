@@ -259,8 +259,5 @@ class GameView(arcade.View):
         # Cleanup ALL pluggable systems generically (includes AudioManager cleanup)
         self.view_manager.system_loader.cleanup_all()
 
-        # Clear event bus
-        self.view_manager.game_context.event_bus.clear()
-
         # Reset initialization flag so game will be set up again on next show
         self.initialized = False
