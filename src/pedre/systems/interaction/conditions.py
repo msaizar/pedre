@@ -1,17 +1,18 @@
 """Conditions module for interaction."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pedre.conditions.registry import ConditionRegistry
 
 if TYPE_CHECKING:
+    from pedre.systems import InteractionManager
     from pedre.systems.game_context import GameContext
 
 
 @ConditionRegistry.register("object_interacted")
 def check_object_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if an object has been interacted with."""
-    interaction = context.get_system("interaction")
+    interaction = cast("InteractionManager", context.get_system("interaction"))
     if not interaction:
         return False
     object_name = condition_data.get("object")

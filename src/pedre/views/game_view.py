@@ -53,10 +53,6 @@ from typing import TYPE_CHECKING, cast
 
 import arcade
 
-from pedre.systems import (
-    GameContext,
-    SystemLoader,
-)
 from pedre.systems.scene import TransitionState
 
 # These imports are used for cast() type annotations only
@@ -103,9 +99,6 @@ class GameView(arcade.View):
         map_file: Current Tiled map filename (e.g., "Casa.tmx").
         debug_mode: Whether to display debug overlays (NPC positions, etc.).
 
-        game_context: Bundle of managers passed to scripts.
-
-
         State tracking:
         spawn_waypoint: Waypoint to spawn at (set by portals).
         initialized: Whether setup() has been called.
@@ -115,7 +108,6 @@ class GameView(arcade.View):
         self,
         view_manager: ViewManager,
         map_file: str | None = None,
-        game_context: GameContext | None = None,
     ) -> None:
         """Initialize the game view.
 
@@ -128,17 +120,10 @@ class GameView(arcade.View):
         Args:
             view_manager: ViewManager instance for handling view transitions (menu, inventory, etc.).
             map_file: Name of the Tiled .tmx file to load from assets/maps/. If None, uses INITIAL_MAP from config.
-            game_context: GameContext instance (shared across views). If None, will be retrieved from view_manager.
         """
         super().__init__()
         self.view_manager = view_manager
         self.map_file = map_file
-
-        # Game systems (will be loaded by SystemLoader)
-        self.system_loader: SystemLoader | None = None
-
-        # Game context (shared across views, owned by ViewManager)
-        self.game_context = game_context or view_manager.game_context
 
         # Portal tracking (deprecated - now using context.next_spawn_waypoint)
         self.spawn_waypoint: str | None = None
@@ -148,33 +133,12 @@ class GameView(arcade.View):
 
     def setup(self) -> None:
         """Set up the game. Called on first show or when resetting the game state."""
-        # Ensure systems are initialized
-        if not hasattr(self, "system_loader") or not self.system_loader:
-            self._init_systems()
-
         # Load the initial map
         target_map = self.map_file or self.window.settings.initial_map
-        if target_map and self.game_context:
-            scene_manager = cast("SceneManager", self.game_context.get_system("scene"))
+        if target_map and self.view_manager.game_context:
+            scene_manager = cast("SceneManager", self.view_manager.game_context.get_system("scene"))
             if scene_manager:
-                scene_manager.load_level(target_map, self.spawn_waypoint, self.game_context)
-
-    def _init_systems(self) -> None:
-        """Initialize all game systems (run once)."""
-        # Initialize pluggable systems via SystemLoader
-        self.system_loader = SystemLoader(self.window.settings)
-        system_instances = self.system_loader.instantiate_all()
-
-        # Update game_context reference (set game_view now that we have the instance)
-        if self.game_context:
-            self.game_context.game_view = self
-
-            # Register all systems with the context
-            for name, system in system_instances.items():
-                self.game_context.register_system(name, system)
-
-            # Setup all systems
-            self.system_loader.setup_all(self.game_context)
+                scene_manager.load_level(target_map, self.spawn_waypoint, self.view_manager.game_context)
 
     def on_show_view(self) -> None:
         """Called when this view becomes active (arcade lifecycle callback).
@@ -201,19 +165,18 @@ class GameView(arcade.View):
 
         Called automatically by arcade each frame. Updates all game systems in order.
         """
-        if not self.game_context:
+        if not self.view_manager.game_context:
             return
 
         # Handle scene transitions
-        scene_manager = cast("SceneManager", self.game_context.get_system("scene"))
+        scene_manager = cast("SceneManager", self.view_manager.game_context.get_system("scene"))
         if scene_manager and scene_manager.transition_state != TransitionState.NONE:
-            scene_manager.update(delta_time, self.game_context)
+            scene_manager.update(delta_time, self.view_manager.game_context)
             # During transition, skip other game logic
             return
 
         # Update ALL systems generically via system_loader
-        if self.system_loader:
-            self.system_loader.update_all(delta_time, self.game_context)
+        self.view_manager.system_loader.update_all(delta_time, self.view_manager.game_context)
 
     def on_draw(self) -> None:
         """Render the game world (arcade lifecycle callback).
@@ -222,24 +185,22 @@ class GameView(arcade.View):
         """
         self.clear()
 
-        if not self.game_context:
+        if not self.view_manager.game_context:
             return
 
         # Activate game camera for world rendering
-        camera_manager = cast("CameraManager", self.game_context.get_system("camera"))
+        camera_manager = cast("CameraManager", self.view_manager.game_context.get_system("camera"))
         if camera_manager:
             camera_manager.use()
 
         # Draw ALL systems (world coordinates) via system_loader
-        if self.system_loader:
-            self.system_loader.draw_all(self.game_context)
+        self.view_manager.system_loader.draw_all(self.view_manager.game_context)
 
         # Draw UI in screen coordinates
         arcade.camera.Camera2D().use()
 
         # Draw ALL systems (screen coordinates) via system_loader
-        if self.system_loader:
-            self.system_loader.draw_ui_all(self.game_context)
+        self.view_manager.system_loader.draw_ui_all(self.view_manager.game_context)
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key presses (arcade lifecycle callback).
@@ -247,19 +208,19 @@ class GameView(arcade.View):
         Processes keyboard input. Most input handling is delegated to specific systems
         via the SystemLoader. This view handles global hotkeys (like menus).
         """
-        if not self.system_loader or not self.game_context:
+        if not self.view_manager.system_loader or not self.view_manager.game_context:
             return None
 
         # Delegate to systems first (e.g., Dialog might consume input)
-        if self.system_loader.on_key_press_all(symbol, modifiers, self.game_context):
+        if self.view_manager.system_loader.on_key_press_all(symbol, modifiers, self.view_manager.game_context):
             return True
 
         return None
 
     def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key releases (arcade lifecycle callback)."""
-        if self.system_loader and self.game_context:
-            self.system_loader.on_key_release_all(symbol, modifiers, self.game_context)
+        if self.view_manager.system_loader and self.view_manager.game_context:
+            self.view_manager.system_loader.on_key_release_all(symbol, modifiers, self.view_manager.game_context)
         return None
 
     def cleanup(self) -> None:
@@ -283,20 +244,23 @@ class GameView(arcade.View):
             - Sets initialized = False
         """
         # Cache state for this scene before clearing (for scene transitions)
-        scene_manager = cast("SceneManager", self.game_context.get_system("scene")) if self.game_context else None
+        scene_manager = (
+            cast("SceneManager", self.view_manager.game_context.get_system("scene"))
+            if self.view_manager.game_context
+            else None
+        )
         current_map = getattr(scene_manager, "current_map", "") if scene_manager else ""
 
-        if current_map and scene_manager and self.game_context:
+        if current_map and scene_manager and self.view_manager.game_context:
             cache_manager = scene_manager.get_cache_manager()
             if cache_manager:
-                cache_manager.cache_scene(current_map, self.game_context)
+                cache_manager.cache_scene(current_map, self.view_manager.game_context)
 
         # Cleanup ALL pluggable systems generically (includes AudioManager cleanup)
-        if self.system_loader:
-            self.system_loader.cleanup_all()
+        self.view_manager.system_loader.cleanup_all()
 
         # Clear event bus
-        self.game_context.event_bus.clear()
+        self.view_manager.game_context.event_bus.clear()
 
         # Reset initialization flag so game will be set up again on next show
         self.initialized = False

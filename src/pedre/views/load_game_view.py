@@ -31,11 +31,12 @@ Example usage:
     view_manager.show_load_game()
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import arcade
 
 if TYPE_CHECKING:
+    from pedre.systems import SaveManager
     from pedre.view_manager import ViewManager
 
 
@@ -67,7 +68,7 @@ class LoadGameView(arcade.View):
         """
         super().__init__()
         self.view_manager = view_manager
-        self.save_manager = self.view_manager.game_context.get_system("save")
+        self.save_manager = cast("SaveManager", self.view_manager.game_context.get_system("save"))
         self.selected_slot = 1  # Slots 1-3, plus 0 for back
         self.save_info: dict[int, dict | None] = {}
 

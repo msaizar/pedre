@@ -50,7 +50,7 @@ from pedre.types import MenuOption
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
-    from pedre.systems import AudioManager
+    from pedre.systems import AudioManager, SaveManager
     from pedre.view_manager import ViewManager
 from typing import cast
 
@@ -358,7 +358,7 @@ class MenuView(arcade.View):
         has_autosave = False
         if has_game_view:
             # If game view exists, check for auto-save through it
-            save_manager = self.view_manager.game_context.get_system("save")
+            save_manager = cast("SaveManager", self.view_manager.game_context.get_system("save"))
             has_autosave = save_manager.save_exists(slot=0)
 
         # Enable Continue if either condition is met

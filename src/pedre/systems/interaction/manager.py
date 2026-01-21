@@ -51,7 +51,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
@@ -220,7 +220,7 @@ class InteractionManager(BaseSystem):
             if player_sprite:
                 # Interaction logic
                 # We need DialogManager if we want to show messages.
-                dialog_manager = context.get_system("dialog")
+                dialog_manager = cast("DialogManager", context.get_system("dialog"))
 
                 # Check for nearby objects
                 obj = self.get_nearby_object(player_sprite)

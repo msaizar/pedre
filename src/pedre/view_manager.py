@@ -57,7 +57,7 @@ from typing import TYPE_CHECKING, cast
 import arcade
 
 from pedre.events import ShowInventoryEvent, ShowLoadGameEvent, ShowMenuEvent, ShowSaveGameEvent
-from pedre.systems import EventBus, GameContext, SaveManager
+from pedre.systems import EventBus, GameContext, SaveManager, SystemLoader
 from pedre.views.game_view import GameView
 from pedre.views.inventory_view import InventoryView
 from pedre.views.load_game_view import LoadGameView
@@ -119,6 +119,18 @@ class ViewManager:
             waypoints={},
             interacted_objects=set(),
         )
+        self.system_loader = SystemLoader(self.window.settings)
+        system_instances = self.system_loader.instantiate_all()
+
+        # Update game_context reference (set game_view now that we have the instance)
+        self.game_context.game_view = self
+
+        # Register all systems with the context
+        for name, system in system_instances.items():
+            self.game_context.register_system(name, system)
+
+        # Setup all systems
+        self.system_loader.setup_all(self.game_context)
 
         # Subscribe to view transition events
         self.event_bus.subscribe(ShowMenuEvent, self._on_show_menu_event)
@@ -166,7 +178,7 @@ class ViewManager:
             - May create and cache GameView instance on first access
         """
         if self._game_view is None:
-            self._game_view = GameView(self, game_context=self.game_context)
+            self._game_view = GameView(self)
         return self._game_view
 
     def has_game_view(self) -> bool:
@@ -232,8 +244,8 @@ class ViewManager:
             - May create and cache InventoryView instance on first access
             - Returns None if game view hasn't been created yet
         """
-        if self._inventory_view is None and self._game_view is not None and self._game_view.game_context:
-            inventory_manager = cast("InventoryManager", self._game_view.game_context.get_system("inventory"))
+        if self._inventory_view is None and self._game_view is not None and self.game_context:
+            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
             if inventory_manager:
                 self._inventory_view = InventoryView(self, inventory_manager)
         return self._inventory_view  # type: ignore[return-value]
@@ -280,11 +292,11 @@ class ViewManager:
         """
         logger.info("show_game called with trigger_post_inventory_dialog=%s", trigger_post_inventory_dialog)
         self.window.show_view(self.game_view)
-        if trigger_post_inventory_dialog and self.game_view.game_context:
-            inventory_manager = cast("InventoryManager", self.game_view.game_context.get_system("inventory"))
+        if trigger_post_inventory_dialog and self.game_context:
+            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
             if inventory_manager:
                 logger.info("Calling emit_closed_event on inventory_manager")
-                inventory_manager.emit_closed_event(self.game_view.game_context)
+                inventory_manager.emit_closed_event(self.game_context)
         else:
             logger.info(
                 "Not calling trigger (flag=%s, game_view=%s)",
@@ -402,7 +414,7 @@ class ViewManager:
             self._game_view = None
 
         # Create new game view with the saved map
-        self._game_view = GameView(self, map_file=save_data.current_map, game_context=self.game_context)
+        self._game_view = GameView(self, map_file=save_data.current_map)
 
         # Show the game view
         self.window.show_view(self.game_view)

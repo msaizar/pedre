@@ -36,9 +36,8 @@ from typing import TYPE_CHECKING
 
 import arcade
 
-from pedre.systems import SaveManager
-
 if TYPE_CHECKING:
+    from pedre.systems.save import SaveManager
     from pedre.systems.scene import SceneManager
     from pedre.view_manager import ViewManager
 from typing import cast
@@ -72,10 +71,9 @@ class SaveGameView(arcade.View):
         """
         super().__init__()
         self.view_manager = view_manager
-        self.save_manager = SaveManager()
         self.selected_slot = 1  # Default to slot 1
         self.save_info: dict[int, dict | None] = {}
-
+        self.save_manager = cast("SaveManager", self.view_manager.game_context.get_system("save"))
         # Text objects (created on first draw)
         self.title_text: arcade.Text | None = None
         self.slot_text_objects: list[arcade.Text] = []
@@ -310,11 +308,10 @@ class SaveGameView(arcade.View):
             return
 
         # Get game view to access current game state
-        game_view = self.view_manager.game_view
-        if not game_view or not game_view.game_context:
+        if not self.view_manager.game_context:
             return
 
-        context = game_view.game_context
+        context = self.view_manager.game_context
         player_sprite = context.player_sprite
         scene_manager = cast("SceneManager", context.get_system("scene"))
 

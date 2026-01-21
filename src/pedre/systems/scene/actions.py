@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
+    from pedre.systems import SceneManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ class ChangeSceneAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Trigger the scene transition."""
         if not self.executed:
-            scene_manager = context.get_system("scene")
+            scene_manager = cast("SceneManager", context.get_system("scene"))
             if scene_manager:
                 scene_manager.request_transition(
                     self.target_map,

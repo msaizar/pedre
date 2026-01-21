@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from typing import Any
 
     from pedre.config import GameSettings
-    from pedre.systems import CameraManager
+    from pedre.systems import CameraManager, PathfindingManager, PhysicsManager
     from pedre.systems.cache_manager import CacheManager
     from pedre.systems.game_context import GameContext
     from pedre.systems.npc import NPCManager
@@ -212,12 +212,12 @@ class SceneManager(BaseSystem):
         self._load_systems_from_tiled(context, settings)
 
         # 4. Invalidate physics engine (needs new player/walls)
-        physics_manager = context.get_system("physics")
+        physics_manager = cast("PhysicsManager", context.get_system("physics"))
         if physics_manager and hasattr(physics_manager, "invalidate"):
             physics_manager.invalidate()
 
         # 5. Update pathfinding (needs new wall list)
-        pathfinding = context.get_system("pathfinding")
+        pathfinding = cast("PathfindingManager", context.get_system("pathfinding"))
         if pathfinding and hasattr(pathfinding, "set_wall_list"):
             pathfinding.set_wall_list(wall_list)
 
