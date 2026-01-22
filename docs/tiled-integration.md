@@ -94,6 +94,26 @@ Paint your solid obstacles here:
 
 The framework automatically treats all tiles in this layer as solid collision objects.
 
+#### Objects Layer
+
+```text
+Name: Objects
+Type: Tile Layer
+Purpose: Collidable objects (optional)
+```
+
+Use this for smaller collidable objects like furniture, rocks, or signposts.
+
+#### Buildings Layer
+
+```text
+Name: Buildings
+Type: Tile Layer
+Purpose: Collidable building structures (optional)
+```
+
+Use this for larger structures.
+
 #### Collision Layer (Optional)
 
 ```text
@@ -159,6 +179,8 @@ The order matters for rendering! From bottom to top:
 ```text
 Floor            (bottom - drawn first)
 Walls
+Objects
+Buildings
 Collision
 NPCs
 Interactive

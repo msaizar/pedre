@@ -24,6 +24,7 @@ view_manager = ViewManager(window)
 - `continue_game()` - Resume or load auto-save
 - `load_game(save_data: GameSaveData)` - Load game from save data
 - `exit_game()` - Close window and exit
+- `load_map(map_name: str, spawn_waypoint: str | None = None)` - Request map load via SceneManager
 
 **Properties:**
 
@@ -163,7 +164,32 @@ dialog_manager = DialogManager(game_context)
 - `next_page()` - Advance to next dialog page
 - `close_dialog()` - Close dialog box
 - `is_active() -> bool` - Check if dialog is showing
-- `draw()` - Render dialog box
+- `on_draw_ui(context: GameContext)` - Render dialog box
+
+### SystemLoader
+
+Initializes and manages all game systems.
+
+```python
+from pedre.systems import SystemLoader
+
+loader = SystemLoader(context, settings)
+loader.load_systems()
+```
+
+### SceneManager
+
+Manages scene transitions and map loading.
+
+```python
+from pedre.systems import SceneManager
+# Accessed via context.get_system("scene")
+```
+
+**Methods:**
+
+- `request_transition(map_file: str, spawn_waypoint: str | None = None)` - Request smooth transition
+- `load_level(map_file: str, spawn_waypoint: str | None, context: GameContext)` - Load map immediately
 
 ### InventoryManager
 
@@ -233,7 +259,7 @@ audio_manager = AudioManager(game_context)
 **Methods:**
 
 - `play_music(filename: str, volume: float = 1.0, loop: bool = True)` - Play background music
-- `stop_music()` - Stop current music
+- `stop_music(fade_duration: float = 1.0)` - Stop current music
 - `play_sound(filename: str, volume: float = 1.0)` - Play sound effect
 - `set_music_volume(volume: float)` - Adjust music volume
 - `get_state() -> dict` - Get current audio state
@@ -287,8 +313,9 @@ camera_manager = CameraManager(window_width, window_height)
 **Methods:**
 
 - `update(player_x: float, player_y: float)` - Center on player
-- `apply()` - Apply camera transformation
+- `use()` - Activate camera for rendering
 - `set_bounds(min_x: float, min_y: float, max_x: float, max_y: float)` - Limit camera area
+- `smooth_follow(target_x: float, target_y: float)` - Smoothly follow target position
 
 ### PortalManager
 
