@@ -109,8 +109,6 @@ my-rpg/
 
 **Note:** You'll need a player sprite sheet at `assets/images/characters/player.png`. The framework expects a sprite sheet with animation frames arranged in rows (idle, walk, etc.). Adjust the frame counts and row indices to match your sprite sheet layout.
 
-**Spawn Behavior:** By default (`spawn_at_portal: false`), the player spawns at this object's position. Set `spawn_at_portal: true` if you want the player to only spawn at portal waypoints (useful for maps that are always entered via portals).
-
 ## Step 3: Create a Simple Game
 
 Create a new file `main.py` in your project root:
@@ -203,6 +201,7 @@ Save your NPC sprite sheet as `assets/images/characters/merchant.png`.
       - `walk_down_row` (int): `5`
       - `walk_right_frames` (int): `6`
       - `walk_right_row` (int): `6`
+      - `spawn_at_portal` (bool): `false`
 
 6. Save the map
 
