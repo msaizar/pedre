@@ -6,6 +6,22 @@ This documentation provides detailed information about each manager/system in th
 
 The Pedre framework follows a manager-based architecture where each system encapsulates specific functionality. Systems communicate through an event bus for loose coupling and maintainability.
 
+## Core Infrastructure
+
+### [SystemLoader](loader.md)
+Handles dynamic loading, initialization (setup), and lifecycle management (reset, cleanup) of all game systems.
+
+### [GameContext](game_context.md)
+Central registry providing systems with access to shared game state (event bus, player, scene, wall list) and other systems.
+
+## Extensibility
+
+### [Actions](actions.md)
+How to create and register custom script actions using `ActionRegistry`.
+
+### [Events](events.md)
+How to define and register custom events using `EventRegistry`.
+
 ## Core Systems
 
 ### [DialogManager](dialog.md)
@@ -96,6 +112,15 @@ Smooth camera following with optional bounds. Controls viewport positioning and 
 - Smooth transitions
 - Boundary constraints
 - Configurable smoothing
+
+### [SceneManager](scene.md)
+Manages map loading and scene transitions. Handles the lifecycle of Tiled maps and connects game systems to the current level.
+
+**Key Features:**
+- Map loading (.tmx)
+- Smooth visual transitions (fade in/out)
+- Waypoint spawning
+- Collision layer extraction
 
 ### [PathfindingManager](pathfinding.md)
 A* pathfinding for NPC navigation. Enables intelligent movement around obstacles.

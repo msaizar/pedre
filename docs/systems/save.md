@@ -4,7 +4,7 @@ Handles game state persistence with auto-save and manual save slots.
 
 ## Location
 
-`src/pedre/systems/save.py`
+`src/pedre/systems/save/manager.py`
 
 ## Initialization
 
@@ -88,20 +88,25 @@ Delete a save file.
 save_manager.delete_save("slot_2")
 ```
 
-### `list_saves() -> list[str]`
+### `get_save_info(slot: int) -> dict | None`
 
-Get list of available save slots.
+Get basic metadata for a save slot without fully loading it.
+
+**Parameters:**
+
+- `slot` - Save slot number
 
 **Returns:**
 
-- List of save slot identifiers
+- Dictionary with save metadata (timestamp, version, map) if file exists
+- `None` if slot doesn't exist or error
 
 **Example:**
 
 ```python
-saves = save_manager.list_saves()
-for slot in saves:
-    print(f"Found save: {slot}")
+info = save_manager.get_save_info(1)
+if info:
+    print(f"Slot 1 saved at: {info['date_string']}")
 ```
 
 ## Save File Format

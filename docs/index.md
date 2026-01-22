@@ -54,6 +54,22 @@ if __name__ == "__main__":
     run_game(settings)
 ```
 
+### Manager Coordination
+
+The framework uses `SystemLoader` to initialize systems and `GameContext` to pass them to actions and other systems:
+
+```python
+from pedre.systems.loader import SystemLoader
+
+# Loader handles initialization and dependency injection
+loader = SystemLoader(settings)
+loader.setup_all(context)
+
+# Systems access each other via context
+def update(self, delta_time, context):
+    audio = context.get_system("audio")
+```
+
 ## Documentation Overview
 
 <div class="grid cards" markdown>

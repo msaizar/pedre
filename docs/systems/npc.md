@@ -4,7 +4,7 @@ Manages NPC state, movement, pathfinding, and interactions.
 
 ## Location
 
-`src/pedre/systems/npc.py`
+`src/pedre/systems/npc/manager.py`
 
 ## Initialization
 

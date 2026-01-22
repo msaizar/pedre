@@ -4,7 +4,7 @@ Manages interactive objects that players can interact with.
 
 ## Location
 
-`src/pedre/systems/interaction.py`
+`src/pedre/systems/interaction/manager.py`
 
 ## Initialization
 

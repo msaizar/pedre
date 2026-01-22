@@ -4,7 +4,7 @@ Manages dialog display with multi-page support and pagination.
 
 ## Location
 
-`src/pedre/systems/dialog.py`
+`src/pedre/systems/dialog/manager.py`
 
 ## Initialization
 
@@ -88,21 +88,19 @@ if key == arcade.key.ESCAPE:
     dialog_manager.close_dialog()
 ```
 
-### `draw(window: arcade.Window) -> None`
+### `on_draw_ui(context: GameContext) -> None`
 
-Draw the dialog overlay (call in your view's `on_draw()`).
+Draw the dialog overlay (called automatically by system loader).
 
 **Parameters:**
 
-- `window` - The game window
+- `context` - The GameContext
 
 **Example:**
 
 ```python
-def on_draw(self):
-    self.scene.draw()
-    # Draw dialog on top
-    self.dialog_manager.draw(self.window)
+# Typically called automatically, but can be manual:
+dialog_manager.on_draw_ui(game_context)
 ```
 
 ## Properties

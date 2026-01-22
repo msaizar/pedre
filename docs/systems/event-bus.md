@@ -4,7 +4,7 @@ Publish-subscribe event system for loose coupling.
 
 ## Location
 
-`src/pedre/systems/events.py`
+`src/pedre/systems/events/base.py`
 
 ## Initialization
 

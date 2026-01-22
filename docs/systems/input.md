@@ -4,7 +4,7 @@ Keyboard input handling and movement vector calculation.
 
 ## Location
 
-`src/pedre/systems/input.py`
+`src/pedre/systems/input/manager.py`
 
 ## Initialization
 
@@ -16,24 +16,19 @@ input_manager = InputManager()
 
 ## Key Methods
 
-### `update_key_state(key: int, pressed: bool) -> None`
+### `on_key_press(symbol: int, modifiers: int, context: GameContext) -> bool`
 
-Update the state of a key.
+Register a key press event.
 
 **Parameters:**
 
-- `key` - Arcade key constant (e.g., `arcade.key.UP`)
-- `pressed` - `True` if pressed, `False` if released
+- `symbol` - Arcade key constant (e.g., `arcade.key.UP`)
+- `modifiers` - Modifier keys bitfield
+- `context` - The GameContext
 
-**Example:**
+### `on_key_release(symbol: int, modifiers: int, context: GameContext) -> bool`
 
-```python
-def on_key_press(self, key, modifiers):
-    self.input_manager.update_key_state(key, True)
-
-def on_key_release(self, key, modifiers):
-    self.input_manager.update_key_state(key, False)
-```
+Register a key release event.
 
 ### `get_movement_vector() -> tuple[float, float]`
 
