@@ -49,9 +49,6 @@ def test_game_view_initialization(game_view: GameView, mock_view_manager: Mock) 
     assert game_view.view_manager == mock_view_manager
 
 
-
-
-
 def test_on_key_press_other_keys_do_nothing(
     game_view: GameView,
     mock_view_manager: Mock,
