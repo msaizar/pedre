@@ -4,7 +4,7 @@ Event-driven scripting system for cutscenes and interactive sequences.
 
 ## Location
 
-`src/pedre/systems/script.py`
+`src/pedre/systems/script/manager.py`
 
 ## Initialization
 
@@ -50,19 +50,24 @@ def on_update(self, delta_time):
     self.script_manager.update(delta_time, self.game_context)
 ```
 
-### `reset_script(script_name: str) -> None`
+### `trigger_script(script_name: str, manual_trigger: bool = False) -> bool`
 
-Reset a script to allow it to run again.
+Manually trigger a script by name.
 
 **Parameters:**
 
-- `script_name` - Name of the script to reset
+- `script_name` - Name of script to trigger
+- `manual_trigger` - If True, bypass scene and run_once checks (default: False)
+
+**Returns:**
+
+- `True` if script triggered, `False` if not found or conditions failed.
 
 **Example:**
 
 ```python
-# Allow a "run_once" script to execute again
-script_manager.reset_script("first_meeting")
+# Force trigger a script
+script_manager.trigger_script("cutscene_intro", manual_trigger=True)
 ```
 
 ## Script JSON Format

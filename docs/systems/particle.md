@@ -4,7 +4,7 @@ Visual effects and particle systems.
 
 ## Location
 
-`src/pedre/systems/particle.py`
+`src/pedre/systems/particle/manager.py`
 
 ## Initialization
 
@@ -16,27 +16,21 @@ particle_manager = ParticleManager()
 
 ## Key Methods
 
-### `emit_particles(x: float, y: float, effect: str = "sparkle", duration: float = 1.0) -> None`
+### `emit_sparkles(x: float, y: float, count: int = 15, color: tuple = (255, 255, 100)) -> None`
 
-Spawn particles at a location.
+Emit sparkle particles for interactions.
 
-**Parameters:**
+### `emit_hearts(x: float, y: float, count: int = 10, color: tuple = (255, 105, 180)) -> None`
 
-- `x`, `y` - Position to spawn particles
-- `effect` - Effect type (e.g., "sparkle", "smoke", "stars")
-- `duration` - How long particles last in seconds
+Emit heart particles for affection/romance.
 
-**Example:**
+### `emit_burst(x: float, y: float, count: int = 20, color: tuple = (255, 200, 0)) -> None`
 
-```python
-# Sparkle effect when collecting item
-particle_manager.emit_particles(
-    x=item.center_x,
-    y=item.center_y,
-    effect="sparkle",
-    duration=2.0
-)
-```
+Emit a burst of particles for dramatic events.
+
+### `emit_trail(x: float, y: float, count: int = 3, color: tuple = (200, 200, 255)) -> None`
+
+Emit subtle trail particles for movement.
 
 ### `update(delta_time: float) -> None`
 

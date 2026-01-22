@@ -4,7 +4,7 @@ Handles map transitions through an event-driven system integrated with the scrip
 
 ## Location
 
-`src/pedre/systems/portal.py`
+`src/pedre/systems/portal/manager.py`
 
 ## Overview
 

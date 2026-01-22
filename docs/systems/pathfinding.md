@@ -4,7 +4,7 @@ A* pathfinding for NPC navigation.
 
 ## Location
 
-`src/pedre/systems/pathfinding.py`
+`src/pedre/systems/pathfinding/manager.py`
 
 ## Initialization
 
@@ -19,29 +19,30 @@ pathfinding_manager = PathfindingManager(
 
 ## Key Methods
 
-### `find_path(start: tuple[float, float], end: tuple[float, float]) -> list[tuple[float, float]]`
+### `find_path(start_x: float, start_y: float, end_tile_x: int, end_tile_y: int) -> deque[tuple[float, float]]`
 
-Find a path between two points.
+Find a path between a pixel position and a target tile.
 
 **Parameters:**
 
-- `start` - (x, y) starting position
-- `end` - (x, y) destination position
+- `start_x`, `start_y` - Starting pixel position
+- `end_tile_x`, `end_tile_y` - Target tile coordinates
 
 **Returns:**
 
-- List of (x, y) waypoints from start to end
-- Empty list if no path found
+- Deque of (x, y) pixel positions (waypoints)
+- Empty deque if no path found
 
 **Example:**
 
 ```python
 path = pathfinding_manager.find_path(
-    start=(npc.center_x, npc.center_y),
-    end=(target_x, target_y)
+    start_x=npc.center_x,
+    start_y=npc.center_y,
+    end_tile_x=10,
+    end_tile_y=15
 )
-if path:
-    # Move NPC along path
-    for waypoint in path:
-        move_to(waypoint)
+while path:
+    next_point = path.popleft()
+    # Move to next_point
 ```

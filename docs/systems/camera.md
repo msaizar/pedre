@@ -4,7 +4,7 @@ Smooth camera following with optional bounds.
 
 ## Location
 
-`src/pedre/systems/camera.py`
+`src/pedre/systems/camera/manager.py`
 
 ## Initialization
 
@@ -19,18 +19,19 @@ camera_manager = CameraManager(
 
 ## Key Methods
 
-### `follow_sprite(sprite: arcade.Sprite) -> None`
+### `smooth_follow(target_x: float, target_y: float) -> None`
 
-Set the camera to follow a sprite.
+Smoothly move camera towards target position.
 
 **Parameters:**
 
-- `sprite` - Sprite to follow (usually the player)
+- `target_x` - Target X coordinate (e.g. player.center_x)
+- `target_y` - Target Y coordinate (e.g. player.center_y)
 
 **Example:**
 
 ```python
-camera_manager.follow_sprite(self.player)
+camera_manager.smooth_follow(player.center_x, player.center_y)
 ```
 
 ### `set_bounds(min_x: float, min_y: float, max_x: float, max_y: float) -> None`
@@ -54,13 +55,20 @@ camera_manager.set_bounds(
 )
 ```
 
-### `update(delta_time: float) -> None`
+### `use() -> None`
 
-Update camera position (call every frame).
+Activate this camera for rendering. Call this before drawing world objects.
 
-**Parameters:**
+**Example:**
 
-- `delta_time` - Time since last update in seconds
+```python
+camera_manager.use()
+# Draw world objects...
+```
+
+### `shake(intensity: float = 10.0, duration: float = 0.5) -> None`
+
+(Placeholder) Add camera shake effect. Currently not implemented.
 
 **Example:**
 

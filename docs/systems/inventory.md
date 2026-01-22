@@ -4,7 +4,7 @@ Manages item collection and categorization.
 
 ## Location
 
-`src/pedre/systems/inventory.py`
+`src/pedre/systems/inventory/manager.py`
 
 ## Initialization
 

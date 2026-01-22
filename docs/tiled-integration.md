@@ -94,6 +94,26 @@ Paint your solid obstacles here:
 
 The framework automatically treats all tiles in this layer as solid collision objects.
 
+#### Objects Layer
+
+```text
+Name: Objects
+Type: Tile Layer
+Purpose: Collidable objects (optional)
+```
+
+Use this for smaller collidable objects like furniture, rocks, or signposts.
+
+#### Buildings Layer
+
+```text
+Name: Buildings
+Type: Tile Layer
+Purpose: Collidable building structures (optional)
+```
+
+Use this for larger structures.
+
 #### Collision Layer (Optional)
 
 ```text
@@ -159,6 +179,8 @@ The order matters for rendering! From bottom to top:
 ```text
 Floor            (bottom - drawn first)
 Walls
+Objects
+Buildings
 Collision
 NPCs
 Interactive
@@ -215,12 +237,11 @@ The Player object must be placed as a **Point object** in the "Player" object la
 
 **Portal Spawning (Optional):**
 
-To make the player spawn at portal waypoints instead of the Player object position:
+To make the player spawn at the Player object position instead of portal waypoints:
 
 1. Select the Player object in Tiled
-2. Add custom property: `spawn_at_portal` (boolean) = `true`
-3. When entering maps via portals, player will spawn at the target waypoint
-4. If no portal waypoint exists, falls back to Player object position
+2. Add custom property: `spawn_at_portal` (boolean) = `false`
+3. When entering maps via portals, player will spawn at the object position
 
 ### Portal Waypoints
 
@@ -346,6 +367,7 @@ The player automatically collides with:
 
 - Tiles in the **Walls** layer
 - Tiles in the **Collision** layer
+- Tiles in the **Buildings** layer
 - NPCs (unless they're removed from collision with scripts)
 
 The physics engine uses `arcade.PhysicsEngineSimple` for player-wall collision detection.
@@ -406,7 +428,6 @@ Player Object Layer:
       walk_left_row: 6
       walk_right_frames: 6
       walk_right_row: 7
-      spawn_at_portal: true
 
 Waypoints Layer:
   - Point named "from_village" at (100, 200)

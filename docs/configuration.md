@@ -129,6 +129,11 @@ Main menu appearance and behavior.
 | `menu_spacing` | int | 50 | Vertical spacing between menu options |
 | `menu_background_image` | string | "" | Path to background image (relative to assets handle) |
 | `menu_music_files` | list[string] | [] | List of music files to play randomly in menu |
+| `menu_text_continue` | string | "Continue" | Text for Continue option |
+| `menu_text_new_game` | string | "New Game" | Text for New Game option |
+| `menu_text_save_game` | string | "Save Game" | Text for Save Game option |
+| `menu_text_load_game` | string | "Load Game" | Text for Load Game option |
+| `menu_text_exit` | string | "Exit" | Text for Exit option |
 
 **Example:**
 
@@ -209,6 +214,7 @@ Core game settings.
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
 | `initial_map` | string | "map.tmx" | Initial Tiled map file to load |
+| `installed_systems` | list[string] | None | List of system modules to load (defaults to all core systems) |
 
 **Example:**
 

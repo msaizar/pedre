@@ -522,8 +522,49 @@ logging.basicConfig(level=logging.DEBUG)
 
 Look for condition check messages in console output.
 
-## Next Steps
+## Creating Custom Conditions
 
-- Learn about [Actions](actions.md) to see what happens when conditions are met
-- Explore [Advanced Patterns](advanced.md) for complex conditional sequences
-- Browse [Examples](examples.md) for practical conditional script examples
+ Pedre supports adding custom condition logic using the `ConditionRegistry`.
+
+ ### 1. Define the Checker Function
+
+ Create a function that initiates the check. It receives the condition parameters (from JSON) and the `GameContext`.
+
+ ```python
+ from typing import Any
+ from pedre.systems.game_context import GameContext
+ from pedre.conditions.registry import ConditionRegistry
+
+ @ConditionRegistry.register("is_weather")
+ def check_weather(data: dict[str, Any], context: GameContext) -> bool:
+     required_weather = data.get("weather")
+
+     weather_system = context.get_system("weather")
+     if not weather_system:
+         return False
+
+     return weather_system.current_weather == required_weather
+ ```
+
+ ### 2. Use in Scripts
+
+ ```json
+ {
+   "trigger": {
+     "event": "npc_interacted",
+     "npc": "farmer"
+   },
+   "conditions": [
+     {
+       "check": "is_weather",
+       "weather": "rain"
+     }
+   ]
+ }
+ ```
+
+ ## Next Steps
+
+ - Learn about [Actions](../systems/actions.md) to see what happens when conditions are met
+ - Explore [Advanced Patterns](advanced.md) for complex conditional sequences
+ - Browse [Examples](examples.md) for practical conditional script examples

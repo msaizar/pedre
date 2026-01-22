@@ -4,7 +4,7 @@ Manages background music and sound effects with caching.
 
 ## Location
 
-`src/pedre/systems/audio.py`
+`src/pedre/systems/audio/manager.py`
 
 ## Initialization
 
@@ -34,14 +34,18 @@ Play background music.
 audio_manager.play_music("village_theme.ogg", loop=True)
 ```
 
-### `stop_music() -> None`
+### `stop_music(fade_duration: float = 1.0) -> None`
 
-Stop the currently playing music.
+Stop the currently playing music with a fade out effect.
+
+**Parameters:**
+
+- `fade_duration` - Duration of fade out in seconds (default: 1.0)
 
 **Example:**
 
 ```python
-audio_manager.stop_music()
+audio_manager.stop_music(fade_duration=2.0)
 ```
 
 ### `play_sound(filename: str) -> None`
