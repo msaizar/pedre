@@ -534,7 +534,7 @@ class InventoryManager(BaseSystem):
         if not item.image_path:
             return None
 
-        return asset_path(f"images/{item.image_path}")
+        return asset_path(f"{item.image_path}")
 
     def get_icon_path(self, item: InventoryItem) -> str | None:
         """Get the full absolute path to an item's icon/thumbnail image file.
