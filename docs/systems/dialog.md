@@ -16,7 +16,7 @@ dialog_manager = DialogManager()
 
 ## Key Methods
 
-### `show_dialog(npc_name: str, text: list[str]) -> None`
+### `show_dialog(npc_name: str, text: list[str], *, instant: bool = False, auto_close: bool = False) -> None`
 
 Display a dialog from an NPC.
 
@@ -24,10 +24,13 @@ Display a dialog from an NPC.
 
 - `npc_name` - Name of the NPC speaking
 - `text` - List of dialog text strings, one per page
+- `instant` - If True, text appears immediately without letter-by-letter reveal (default: False)
+- `auto_close` - If True, dialog automatically closes after configured duration (default: False)
 
 **Example:**
 
 ```python
+# Manual dialog that player must advance
 dialog_manager.show_dialog(
     npc_name="Merchant",
     text=[
@@ -35,6 +38,13 @@ dialog_manager.show_dialog(
         "Take a look around.",
         "I have the finest wares in town!"
     ]
+)
+
+# Auto-closing dialog for cutscenes
+dialog_manager.show_dialog(
+    npc_name="Narrator",
+    text=["The adventure begins..."],
+    auto_close=True
 )
 ```
 

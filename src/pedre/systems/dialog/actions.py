@@ -41,19 +41,38 @@ class DialogAction(Action):
             "text": ["The world fades to black..."],
             "instant": true
         }
+
+        # With auto-close for cutscenes
+        {
+            "type": "dialog",
+            "speaker": "Narrator",
+            "text": ["The adventure begins..."],
+            "auto_close": true
+        }
     """
 
-    def __init__(self, speaker: str, text: list[str], *, instant: bool = False) -> None:
+    def __init__(
+        self,
+        speaker: str,
+        text: list[str],
+        *,
+        instant: bool = False,
+        auto_close: bool | None = None,
+    ) -> None:
         """Initialize dialog action.
 
         Args:
             speaker: Name of the character speaking.
             text: List of dialog pages to show.
             instant: If True, text appears immediately without letter-by-letter reveal.
+            auto_close: If True, dialog automatically closes after configured duration.
+                If False, player must manually close. If None (default), uses the default
+                from GameSettings.dialog_auto_close_default.
         """
         self.speaker = speaker
         self.text = text
         self.instant = instant
+        self.auto_close = auto_close
         self.started = False
 
     def execute(self, context: GameContext) -> bool:
@@ -61,7 +80,7 @@ class DialogAction(Action):
         if not self.started:
             dialog_manager = cast("DialogManager", context.get_system("dialog"))
             if dialog_manager:
-                dialog_manager.show_dialog(self.speaker, self.text, instant=self.instant)
+                dialog_manager.show_dialog(self.speaker, self.text, instant=self.instant, auto_close=self.auto_close)
                 logger.debug("DialogAction: Showing dialog from %s", self.speaker)
             else:
                 logger.warning("DialogAction: No dialog manager available")
@@ -85,6 +104,7 @@ class DialogAction(Action):
             speaker=data.get("speaker", ""),
             text=data.get("text", []),
             instant=data.get("instant", False),
+            auto_close=data.get("auto_close"),  # None if not specified, uses settings default
         )
 
 

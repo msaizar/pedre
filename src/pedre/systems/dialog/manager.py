@@ -178,6 +178,10 @@ class DialogManager(BaseSystem):
         self.char_timer = 0.0
         self.text_fully_revealed = False
 
+        # Auto-close state
+        self.auto_close_enabled = False
+        self.auto_close_timer = 0.0
+
         # Text objects for dialog (created on first draw)
         self.npc_name_text: arcade.Text | None = None
         self.dialog_text: arcade.Text | None = None
@@ -186,6 +190,7 @@ class DialogManager(BaseSystem):
 
         # Game context for event publishing
         self.context: GameContext | None = None
+        self.settings: GameSettings | None = None
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize the dialog system with game settings.
@@ -195,9 +200,10 @@ class DialogManager(BaseSystem):
 
         Args:
             context: Game context for accessing the event bus.
-            settings: Game configuration (not used by DialogManager).
+            settings: Game configuration for auto-close duration.
         """
         self.context = context
+        self.settings = settings
         logger.debug("DialogManager setup complete")
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
@@ -245,6 +251,7 @@ class DialogManager(BaseSystem):
         text: list[str],
         *,
         instant: bool = False,
+        auto_close: bool | None = None,
         dialog_level: int | None = None,
         npc_key: str | None = None,
     ) -> None:
@@ -269,6 +276,10 @@ class DialogManager(BaseSystem):
             instant: If True, text appears immediately without letter-by-letter reveal.
                 Useful for narration, system messages, or cutscenes where the reveal
                 animation would be distracting.
+            auto_close: If True, dialog automatically closes after configured duration.
+                If False, player must manually close. If None, uses the default from
+                GameSettings.dialog_auto_close_default. Useful for cutscenes and
+                scripted sequences. The timer starts after text is fully revealed.
             dialog_level: Optional dialog level for event tracking. Used when emitting
                 DialogClosedEvent.
             npc_key: Optional NPC key name for event tracking. If provided, this is used
@@ -303,6 +314,12 @@ class DialogManager(BaseSystem):
         self.showing = True
         self.current_npc_name = npc_key or npc_name
         self.current_dialog_level = dialog_level
+        # Use default from settings if auto_close not explicitly specified
+        if auto_close is None:
+            self.auto_close_enabled = self.settings.dialog_auto_close_default if self.settings else False
+        else:
+            self.auto_close_enabled = auto_close
+        self.auto_close_timer = 0.0
         self._reset_text_reveal()
 
         # Publish DialogOpenedEvent
@@ -339,6 +356,8 @@ class DialogManager(BaseSystem):
         self.showing = False
         self.pages = []
         self.current_page_index = 0
+        self.auto_close_enabled = False
+        self.auto_close_timer = 0.0
 
     def advance_page(self) -> bool:
         """Advance to the next page or close dialog if on last page.
@@ -370,6 +389,7 @@ class DialogManager(BaseSystem):
         if self.current_page_index < len(self.pages) - 1:
             self.current_page_index += 1
             self._reset_text_reveal()
+            self.auto_close_timer = 0.0  # Reset timer for new page
             return False
         # Last page, close dialog
         self.close_dialog()
@@ -429,32 +449,64 @@ class DialogManager(BaseSystem):
             self.text_fully_revealed = True
 
     def update(self, delta_time: float, context: GameContext) -> None:
-        """Update the dialog text reveal animation.
+        """Update the dialog text reveal animation and auto-close timer.
 
         This method should be called every frame with the time elapsed since
         the last frame. It progressively reveals characters in the current
-        dialog page at a rate controlled by char_reveal_speed.
+        dialog page at a rate controlled by char_reveal_speed, and handles
+        auto-close countdown when enabled.
 
         Args:
             delta_time: Time elapsed since last update, in seconds.
             context: Game context (not used by DialogManager).
         """
-        if not self.showing or self.text_fully_revealed:
+        if not self.showing:
             return
 
         current_page = self.get_current_page()
         if not current_page:
             return
 
-        self.char_timer += delta_time
-        chars_to_reveal = int(self.char_timer * self.char_reveal_speed)
+        # Handle text reveal animation
+        if not self.text_fully_revealed:
+            self.char_timer += delta_time
+            chars_to_reveal = int(self.char_timer * self.char_reveal_speed)
 
-        if chars_to_reveal > 0:
-            self.char_timer -= chars_to_reveal / self.char_reveal_speed
-            self.revealed_chars = min(self.revealed_chars + chars_to_reveal, len(current_page.text))
+            if chars_to_reveal > 0:
+                self.char_timer -= chars_to_reveal / self.char_reveal_speed
+                self.revealed_chars = min(self.revealed_chars + chars_to_reveal, len(current_page.text))
 
-            if self.revealed_chars >= len(current_page.text):
-                self.text_fully_revealed = True
+                if self.revealed_chars >= len(current_page.text):
+                    self.text_fully_revealed = True
+
+        # Handle auto-close countdown
+        if self.auto_close_enabled and self.text_fully_revealed and self.settings:
+            self.auto_close_timer += delta_time
+            if self.auto_close_timer >= self.settings.dialog_auto_close_duration:
+                closed = self.advance_page()
+                if (
+                    closed
+                    and self.current_npc_name
+                    and self.context
+                    and hasattr(self.context, "event_bus")
+                    and self.context.event_bus
+                ):
+                    # Publish DialogClosedEvent (similar to on_key_press)
+                    current_level = self.current_dialog_level or 0
+                    npc_manager = cast("NPCManager", self.context.get_system("npc"))
+                    if npc_manager and hasattr(npc_manager, "npcs"):
+                        npc_state = npc_manager.npcs.get(self.current_npc_name)
+                        if npc_state:
+                            current_level = npc_state.dialog_level
+
+                    self.context.event_bus.publish(
+                        DialogClosedEvent(npc_name=self.current_npc_name, dialog_level=current_level)
+                    )
+                    logger.debug(
+                        "Auto-closed dialog for %s at level %s",
+                        self.current_npc_name,
+                        current_level,
+                    )
 
     def on_draw_ui(self, context: GameContext) -> None:
         """Draw the dialog overlay in screen coordinates.

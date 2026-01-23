@@ -21,8 +21,10 @@ class TestDialogManager(unittest.TestCase):
         self.mock_event_bus = MagicMock()
         self.mock_context.event_bus = self.mock_event_bus
 
-        # Create mock settings
+        # Create mock settings with dialog_auto_close_duration
         self.mock_settings = MagicMock()
+        self.mock_settings.dialog_auto_close_default = False
+        self.mock_settings.dialog_auto_close_duration = 0.5
 
         # Setup manager with mocks
         self.manager.setup(self.mock_context, self.mock_settings)
@@ -169,6 +171,183 @@ class TestDialogManager(unittest.TestCase):
 
         # Verify dialog is showing
         assert manager_no_bus.showing is True
+
+    def test_show_dialog_with_auto_close_sets_state(self) -> None:
+        """Test that show_dialog with auto_close=True sets state correctly."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
+
+        assert self.manager.auto_close_enabled is True
+        assert self.manager.auto_close_timer == 0.0
+        assert self.manager.showing is True
+
+    def test_show_dialog_without_auto_close(self) -> None:
+        """Test that show_dialog with auto_close=False (default) doesn't enable auto-close."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], dialog_level=0)
+
+        assert self.manager.auto_close_enabled is False
+        assert self.manager.auto_close_timer == 0.0
+
+    def test_auto_close_timer_increments_after_text_revealed(self) -> None:
+        """Test that auto-close timer increments after text is fully revealed."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
+
+        # Reveal text completely
+        self.manager.speed_up_text()
+
+        # Update with delta time
+        self.manager.update(0.1, self.mock_context)
+
+        assert self.manager.auto_close_timer > 0.0
+
+    def test_auto_close_timer_does_not_increment_while_revealing(self) -> None:
+        """Test that auto-close timer doesn't increment while text is revealing."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
+
+        # Don't reveal text, just update
+        self.manager.update(0.1, self.mock_context)
+
+        # Timer should not have started yet
+        assert self.manager.auto_close_timer == 0.0
+
+    def test_dialog_auto_closes_after_duration(self) -> None:
+        """Test that dialog automatically closes after configured duration."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
+
+        # Reveal text completely
+        self.manager.speed_up_text()
+
+        # Reset mock to clear the DialogOpenedEvent call
+        self.mock_event_bus.reset_mock()
+
+        # Update with enough time to trigger auto-close (0.5s default)
+        self.manager.update(0.6, self.mock_context)
+
+        # Dialog should be closed
+        assert self.manager.showing is False
+
+        # Should have published DialogClosedEvent
+        self.mock_event_bus.publish.assert_called_once()
+        published_event = self.mock_event_bus.publish.call_args[0][0]
+        assert isinstance(published_event, DialogClosedEvent)
+
+    def test_auto_close_multi_page_dialog(self) -> None:
+        """Test that auto-close works with multi-page dialogs."""
+        self.manager.show_dialog("TestNPC", ["Page 1", "Page 2"], auto_close=True, dialog_level=0)
+
+        # Reveal page 1 completely
+        self.manager.speed_up_text()
+
+        # Reset mock to clear the DialogOpenedEvent call
+        self.mock_event_bus.reset_mock()
+
+        # Update with enough time to trigger auto-close
+        self.manager.update(0.6, self.mock_context)
+
+        # Should have advanced to page 2
+        assert self.manager.showing is True
+        assert self.manager.current_page_index == 1
+
+        # Timer should be reset for new page
+        assert self.manager.auto_close_timer == 0.0
+
+        # Reveal page 2
+        self.manager.speed_up_text()
+
+        # Update again to auto-close
+        self.manager.update(0.6, self.mock_context)
+
+        # Now dialog should be closed
+        assert self.manager.showing is False
+
+        # Should have published DialogClosedEvent
+        self.mock_event_bus.publish.assert_called_once()
+
+    def test_auto_close_does_not_trigger_when_disabled(self) -> None:
+        """Test that auto-close doesn't trigger when auto_close=False."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=False, dialog_level=0)
+
+        # Reveal text completely
+        self.manager.speed_up_text()
+
+        # Reset mock to clear the DialogOpenedEvent call
+        self.mock_event_bus.reset_mock()
+
+        # Update with enough time that would trigger auto-close
+        self.manager.update(1.0, self.mock_context)
+
+        # Dialog should still be showing
+        assert self.manager.showing is True
+
+        # Should not have published DialogClosedEvent
+        self.mock_event_bus.publish.assert_not_called()
+
+    def test_close_dialog_resets_auto_close_state(self) -> None:
+        """Test that close_dialog resets auto-close state."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
+
+        self.manager.speed_up_text()
+        self.manager.update(0.2, self.mock_context)
+
+        assert self.manager.auto_close_timer > 0.0
+
+        self.manager.close_dialog()
+
+        assert self.manager.auto_close_enabled is False
+        assert self.manager.auto_close_timer == 0.0
+
+    def test_advance_page_resets_auto_close_timer(self) -> None:
+        """Test that advancing pages resets the auto-close timer."""
+        self.manager.show_dialog("TestNPC", ["Page 1", "Page 2"], auto_close=True, dialog_level=0)
+
+        # Reveal and build up timer
+        self.manager.speed_up_text()
+        self.manager.update(0.3, self.mock_context)
+
+        timer_value = self.manager.auto_close_timer
+        assert timer_value > 0.0
+
+        # Manually advance (simulate the auto-close advancing)
+        self.manager.advance_page()
+
+        # Timer should be reset
+        assert self.manager.auto_close_timer == 0.0
+
+    def test_auto_close_uses_settings_default_when_none(self) -> None:
+        """Test that auto_close=None uses settings default (False)."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=None, dialog_level=0)
+
+        # With default False, auto_close should be disabled
+        assert self.manager.auto_close_enabled is False
+
+    def test_auto_close_uses_settings_default_when_true(self) -> None:
+        """Test that auto_close=None uses settings default when set to True."""
+        # Change settings default to True
+        self.mock_settings.dialog_auto_close_default = True
+
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=None, dialog_level=0)
+
+        # Should use settings default (True)
+        assert self.manager.auto_close_enabled is True
+
+    def test_auto_close_explicit_false_overrides_settings_default(self) -> None:
+        """Test that explicit auto_close=False overrides settings default."""
+        # Change settings default to True
+        self.mock_settings.dialog_auto_close_default = True
+
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=False, dialog_level=0)
+
+        # Explicit False should override settings
+        assert self.manager.auto_close_enabled is False
+
+    def test_auto_close_explicit_true_overrides_settings_default(self) -> None:
+        """Test that explicit auto_close=True overrides settings default."""
+        # Settings default is False
+        self.mock_settings.dialog_auto_close_default = False
+
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
+
+        # Explicit True should override settings
+        assert self.manager.auto_close_enabled is True
 
 
 if __name__ == "__main__":

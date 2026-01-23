@@ -62,6 +62,10 @@ class GameSettings:
     inventory_box_border_width: int = 3
     inventory_background_image: str = ""
 
+    # Dialog settings
+    dialog_auto_close_default: bool = False  # default auto-close behavior for dialogs
+    dialog_auto_close_duration: float = 0.5  # seconds after text fully revealed
+
     # Pluggable systems configuration (like Django's INSTALLED_APPS)
     # List of module paths to import, which will register their systems
     # Users can add custom systems by appending to this list

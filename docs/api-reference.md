@@ -160,7 +160,9 @@ dialog_manager = DialogManager(game_context)
 
 **Methods:**
 
-- `show_dialog(speaker: str, pages: list[str])` - Display dialog
+- `show_dialog(speaker: str, pages: list[str], *, instant: bool = False, auto_close: bool = False)` - Display dialog
+  - `instant`: If True, text appears immediately without letter-by-letter reveal
+  - `auto_close`: If True, dialog automatically closes after configured duration (useful for cutscenes)
 - `next_page()` - Advance to next dialog page
 - `close_dialog()` - Close dialog box
 - `is_active() -> bool` - Check if dialog is showing
@@ -432,7 +434,8 @@ settings = GameSettings(
     inventory_grid_cols=10,
     inventory_grid_rows=4,
     inventory_box_size=30,
-    inventory_box_spacing=5
+    inventory_box_spacing=5,
+    dialog_auto_close_duration=0.5  # seconds to wait after text reveal before auto-closing
 )
 ```
 
