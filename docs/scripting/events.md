@@ -59,6 +59,46 @@ Triggered when the player interacts with an NPC (presses SPACE nearby).
 - Shop interactions
 - Triggering cutscenes
 
+### dialog_opened
+
+Triggered when a dialog window is opened and shown to the player.
+
+**Available Trigger Fields:**
+
+- `npc` - Which NPC's dialog was opened
+- `dialog_level` - Dialog level being shown (optional)
+
+**Example:**
+
+```json
+{
+  "dialog_begins": {
+    "scene": "village",
+    "trigger": {
+      "event": "dialog_opened",
+      "npc": "merchant",
+      "dialog_level": 0
+    },
+    "actions": [
+      {
+        "type": "play_sfx",
+        "file": "dialog_open.wav"
+      },
+      {
+        "type": "pause_music"
+      }
+    ]
+  }
+}
+```
+
+**Use Cases:**
+
+- Playing sound effects when conversations start
+- Pausing background music during important dialogs
+- Triggering visual effects or UI changes
+- Tracking conversation metrics or analytics
+
 ### dialog_closed
 
 Triggered when a dialog window is closed.
