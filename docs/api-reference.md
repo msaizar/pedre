@@ -245,6 +245,9 @@ script_manager = ScriptManager(game_context, scripts_path="scripts.json")
 - `play_sfx` - Play sound effect
 - `wait` - Pause execution
 - `set_dialog_level` - Update NPC dialog progress
+- `follow_player` - Camera follows player
+- `follow_npc` - Camera follows NPC
+- `stop_camera_follow` - Stop camera following
 
 ### AudioManager
 

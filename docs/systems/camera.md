@@ -77,3 +77,77 @@ def on_update(self, delta_time):
     self.camera_manager.update(delta_time)
     self.camera_manager.camera.use()  # Activate camera
 ```
+
+## Camera Actions
+
+The camera system provides script actions for camera control during cutscenes and gameplay.
+
+### `follow_player`
+
+Make camera follow player sprite continuously.
+
+**Parameters:**
+
+- `smooth` (bool, optional) - Use smooth interpolation (default: true)
+
+**Example:**
+
+```json
+{
+    "type": "follow_player"
+}
+```
+
+### `follow_npc`
+
+Make camera follow a specific NPC sprite continuously.
+
+**Parameters:**
+
+- `npc` (string, required) - Name of NPC to follow
+- `smooth` (bool, optional) - Use smooth interpolation (default: true)
+
+**Example:**
+
+```json
+{
+    "type": "follow_npc",
+    "npc": "martin"
+}
+```
+
+### `stop_camera_follow`
+
+Stop camera following, keep at current position.
+
+**Example:**
+
+```json
+{
+    "type": "stop_camera_follow"
+}
+```
+
+### Common Patterns
+
+**Cutscene focusing on NPC:**
+
+```json
+[
+    {"type": "follow_npc", "npc": "boss"},
+    {"type": "dialog", "speaker": "boss", "text": ["You cannot defeat me!"]},
+    {"type": "wait_for_dialog_close"},
+    {"type": "follow_player"}
+]
+```
+
+**Static camera shot:**
+
+```json
+[
+    {"type": "stop_camera_follow"},
+    {"type": "dialog", "speaker": "narrator", "text": ["Meanwhile..."]},
+    {"type": "wait_for_dialog_close"},
+    {"type": "follow_player"}
+]
+```

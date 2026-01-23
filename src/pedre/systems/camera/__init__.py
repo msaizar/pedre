@@ -8,8 +8,16 @@ boundary constraints to prevent showing areas outside the map, and instant
 teleportation for scene transitions.
 """
 
+from pedre.systems.camera.actions import (
+    FollowNPCAction,
+    FollowPlayerAction,
+    StopCameraFollowAction,
+)
 from pedre.systems.camera.manager import CameraManager
 
 __all__ = [
     "CameraManager",
+    "FollowNPCAction",
+    "FollowPlayerAction",
+    "StopCameraFollowAction",
 ]

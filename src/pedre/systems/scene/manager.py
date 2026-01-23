@@ -284,6 +284,9 @@ class SceneManager(BaseSystem):
         window = arcade.get_window()
         camera_manager.set_bounds(map_width, map_height, window.width, window.height)
 
+        # Apply camera following configuration from map properties
+        camera_manager.apply_follow_config(context)
+
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map.
 
