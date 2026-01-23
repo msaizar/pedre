@@ -561,7 +561,7 @@ class InventoryManager(BaseSystem):
         if not item.icon_path:
             return None
 
-        return asset_path(f"images/{item.icon_path}")
+        return asset_path(f"{item.icon_path}")
 
     def get_acquired_count(self, category: str | None = None) -> int:
         """Get the count of items the player has acquired.
