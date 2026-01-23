@@ -82,16 +82,26 @@ class DebugManager(BaseSystem):
             player_tile_x = int(context.player_sprite.center_x / tile_size)
             player_tile_y = int(context.player_sprite.center_y / tile_size)
             debug_lines.append((f"Player: tile ({player_tile_x}, {player_tile_y})", arcade.color.GREEN))
-
+            player_x = int(context.player_sprite.center_x)
+            player_y = int(context.player_sprite.center_y)
+            debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
         # Collect NPC positions
         npc_manager = cast("NPCManager", context.get_system("npc"))
         if npc_manager:
             for npc_name, npc_state in npc_manager.npcs.items():
                 if npc_state.sprite and npc_state.sprite.visible:
-                    tile_x = int(npc_state.sprite.center_x / tile_size)
-                    tile_y = int(npc_state.sprite.center_y / tile_size)
+                    npc_tile_x = int(npc_state.sprite.center_x / tile_size)
+                    npc_tile_y = int(npc_state.sprite.center_y / tile_size)
+                    npc_x = int(npc_state.sprite.center_x)
+                    npc_y = int(npc_state.sprite.center_y)
                     debug_lines.append(
-                        (f"{npc_name}: tile ({tile_x}, {tile_y}) level {npc_state.dialog_level}", arcade.color.YELLOW)
+                        (
+                            f"{npc_name}: tile ({npc_tile_x}, {npc_tile_y}) level {npc_state.dialog_level}",
+                            arcade.color.YELLOW,
+                        )
+                    )
+                    debug_lines.append(
+                        (f"{npc_name}: coords ({npc_x}, {npc_y}) level {npc_state.dialog_level}", arcade.color.YELLOW)
                     )
 
         # Create or update text objects
