@@ -151,7 +151,7 @@ class InventoryView(arcade.View):
         self.inventory_manager.mark_as_accessed()
 
         # Get only acquired items for grid display
-        self.all_items = self.inventory_manager.get_acquired_items(category="photo")
+        self.all_items = self.inventory_manager.get_acquired_items()
         self.selected_row = 0
         self.selected_col = 0
         self.viewing_photo = False
