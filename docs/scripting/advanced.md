@@ -300,8 +300,7 @@ Track quest progress through dialog levels and object interactions.
       {
         "type": "emit_particles",
         "particle_type": "burst",
-        "x": 400,
-        "y": 300
+        "npc": "elder"
       }
     ]
   }

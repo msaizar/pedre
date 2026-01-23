@@ -128,7 +128,7 @@ script_manager.trigger_script("cutscene_intro", manual_trigger=True)
 | `reveal_npcs` | `npc_names` (array) | Make NPCs visible |
 | `start_disappear_animation` | `npcs` (array) | Play disappear animation and remove from walls |
 | `set_current_npc` | `npc_name` | Set context NPC |
-| `emit_particles` | `x`, `y`, `duration` | Spawn particles |
+| `emit_particles` | `particle_type`, `npc`/`player`/`interactive_object` | Spawn particles |
 | `play_sfx` | `audio_file` | Play sound effect |
 | `play_music` | `audio_file` | Play background music |
 | `wait_for_dialog_close` | - | Pause until dialog closes |

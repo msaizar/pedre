@@ -444,8 +444,7 @@ Add to `assets/scripts/forest_scripts.json`:
       {
         "type": "emit_particles",
         "particle_type": "sparkles",
-        "x": 500,
-        "y": 400
+        "interactive_object": "treasure_chest"
       }
     ]
   }
