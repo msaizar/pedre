@@ -624,3 +624,59 @@ class AudioManager(BaseSystem):
             self.sfx_enabled = bool(data["sfx_enabled"])
 
         logger.debug("Restored audio settings from save data")
+
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+        context: GameContext,
+        settings: GameSettings,
+    ) -> None:
+        """Load and play background music from Tiled map property.
+
+        Automatically starts playing music if a 'music' property is set on the
+        Tiled map. The music will loop continuously until the scene changes or
+        music is stopped.
+
+        Map Property Configuration in Tiled:
+            1. Click on the map name in Layers panel (deselect any layers)
+            2. Open Properties panel (View → Properties)
+            3. Add 'music' property (string type)
+            4. Set value to filename relative to assets/audio/music/
+
+        Example:
+            music: "peaceful_village.ogg"
+
+        Args:
+            tile_map: Loaded TileMap with properties.
+            arcade_scene: Scene created from tile_map (unused).
+            context: GameContext (unused).
+            settings: GameSettings (unused - paths handled by play_music).
+        """
+        # Check if tile_map has properties attribute (defensive)
+        if not hasattr(tile_map, "properties") or tile_map.properties is None:
+            logger.debug("TileMap does not have properties attribute")
+            return
+
+        # Get the music property from the map
+        music_filename = tile_map.properties.get("music") if isinstance(tile_map.properties, dict) else None
+
+        # Validate the property exists and is valid
+        if not music_filename:
+            logger.debug("No 'music' property found on map")
+            return
+
+        if not isinstance(music_filename, str) or not music_filename.strip():
+            logger.warning("Invalid 'music' property value: %s", music_filename)
+            return
+
+        # Play the music (loop=True for continuous background music)
+        logger.info("Loading music from map property: %s", music_filename)
+        success = self.play_music(music_filename, loop=True)
+
+        if success:
+            logger.debug("Successfully started map music: %s", music_filename)
+        else:
+            # play_music returns False if music_enabled=False or error
+            # Error logging is handled by play_music, so just log debug message
+            logger.debug("Music did not start (may be disabled or file missing): %s", music_filename)
