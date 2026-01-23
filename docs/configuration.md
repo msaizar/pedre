@@ -32,6 +32,8 @@ settings = GameSettings(
     inventory_box_spacing=5,
     inventory_box_border_width=1,
     inventory_background_image="",
+    dialog_auto_close_default=False,
+    dialog_auto_close_duration=0.5,
     assets_handle="game_assets",
     initial_map="start.tmx"
 )
@@ -185,6 +187,31 @@ settings = GameSettings(
 - Total inventory capacity = `inventory_grid_cols` × `inventory_grid_rows`
 - `inventory_background_image` is optional; leave empty for default background
 
+### Dialog Settings
+
+Dialog system behavior and timing.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `dialog_auto_close_default` | bool | False | Default auto-close behavior for dialogs when not explicitly specified |
+| `dialog_auto_close_duration` | float | 0.5 | Seconds to wait after text is fully revealed before auto-closing |
+
+**Example:**
+
+```python
+settings = GameSettings(
+    dialog_auto_close_default=False,
+    dialog_auto_close_duration=1.0
+)
+```
+
+**Notes:**
+
+- `dialog_auto_close_default` controls whether dialogs auto-close by default (when `auto_close` parameter is not specified)
+- `dialog_auto_close_duration` only applies when auto-close is enabled for a dialog
+- The timer starts after the text reveal animation completes
+- Useful for cutscenes where you want dialogs to automatically advance
+
 ### Asset Settings
 
 Asset management configuration.
@@ -293,6 +320,10 @@ settings = GameSettings(
     inventory_box_border_width=2,
     inventory_background_image="images/ui/inventory.png",
 
+    # Dialog settings
+    dialog_auto_close_default=False,
+    dialog_auto_close_duration=0.5,
+
     # Asset settings
     assets_handle="mystic_quest_assets",
 
@@ -333,6 +364,8 @@ inventory_box_size: int = 100
 inventory_box_spacing: int = 15
 inventory_box_border_width: int = 3
 inventory_background_image: str = ""
+dialog_auto_close_default: bool = False
+dialog_auto_close_duration: float = 0.5
 ```
 
 ## See Also
