@@ -120,7 +120,7 @@ class ParticleManager(BaseSystem):
     """
 
     name: ClassVar[str] = "particle"
-    dependencies: ClassVar[list[str]] = []
+    dependencies: ClassVar[list[str]] = ["scene"]
 
     def __init__(self) -> None:
         """Initialize the particle manager.
