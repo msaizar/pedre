@@ -51,7 +51,7 @@ Integration:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
@@ -61,6 +61,7 @@ if TYPE_CHECKING:
 
     from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
+    from pedre.systems.npc import NPCManager
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,9 @@ class CameraManager(BaseSystem):
         self.lerp_speed = lerp_speed
         self.use_bounds = use_bounds
         self.bounds: tuple[float, float, float, float] | None = None  # (min_x, max_x, min_y, max_y)
+        self.follow_mode: str | None = None  # None, "player", "npc"
+        self.follow_target_npc: str | None = None
+        self.follow_smooth: bool = True
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize the camera system with game context and settings.
@@ -146,6 +150,8 @@ class CameraManager(BaseSystem):
         self.camera = None
         self.bounds = None
         self.use_bounds = False
+        self.follow_mode = None
+        self.follow_target_npc = None
         logger.debug("CameraManager cleanup complete")
 
     def get_state(self) -> dict[str, Any]:
@@ -157,12 +163,18 @@ class CameraManager(BaseSystem):
         return {
             "lerp_speed": self.lerp_speed,
             "use_bounds": self.use_bounds,
+            "follow_mode": self.follow_mode,
+            "follow_target_npc": self.follow_target_npc,
+            "follow_smooth": self.follow_smooth,
         }
 
     def restore_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data (BaseSystem interface)."""
         self.lerp_speed = state.get("lerp_speed", 0.1)
         self.use_bounds = state.get("use_bounds", False)
+        self.follow_mode = state.get("follow_mode")
+        self.follow_target_npc = state.get("follow_target_npc")
+        self.follow_smooth = state.get("follow_smooth", True)
 
     def set_camera(self, camera: arcade.camera.Camera2D) -> None:
         """Set the camera to manage.
@@ -339,6 +351,60 @@ class CameraManager(BaseSystem):
             target_y = max(min_y, min(max_y, target_y))
 
         self.camera.position = (target_x, target_y)
+
+    def set_follow_player(self, *, smooth: bool = True) -> None:
+        """Set camera to follow the player.
+
+        Args:
+            smooth: If True, use smooth_follow. If False, use instant_follow.
+        """
+        self.follow_mode = "player"
+        self.follow_target_npc = None
+        self.follow_smooth = smooth
+        logger.debug("Camera set to follow player (smooth=%s)", smooth)
+
+    def set_follow_npc(self, npc_name: str, *, smooth: bool = True) -> None:
+        """Set camera to follow a specific NPC.
+
+        Args:
+            npc_name: Name of the NPC to follow.
+            smooth: If True, use smooth_follow. If False, use instant_follow.
+        """
+        self.follow_mode = "npc"
+        self.follow_target_npc = npc_name
+        self.follow_smooth = smooth
+        logger.debug("Camera set to follow NPC '%s' (smooth=%s)", npc_name, smooth)
+
+    def stop_follow(self) -> None:
+        """Stop camera following, keeping it at current position."""
+        self.follow_mode = None
+        self.follow_target_npc = None
+        logger.debug("Camera following stopped")
+
+    def update(self, delta_time: float, context: GameContext) -> None:
+        """Update camera position based on follow mode.
+
+        Called automatically every frame by SystemLoader.
+
+        Args:
+            delta_time: Time since last update (unused).
+            context: Game context with player and systems.
+        """
+        if self.follow_mode == "player":
+            if context.player_sprite:
+                if self.follow_smooth:
+                    self.smooth_follow(context.player_sprite.center_x, context.player_sprite.center_y)
+                else:
+                    self.instant_follow(context.player_sprite.center_x, context.player_sprite.center_y)
+        elif self.follow_mode == "npc":
+            npc_manager = cast("NPCManager", context.get_system("npc"))
+            if npc_manager and self.follow_target_npc:
+                npc_state = npc_manager.get_npc_by_name(self.follow_target_npc)
+                if npc_state:
+                    if self.follow_smooth:
+                        self.smooth_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
+                    else:
+                        self.instant_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
 
     def shake(self, intensity: float = 10.0, duration: float = 0.5) -> None:
         """Add camera shake effect (for future implementation).
