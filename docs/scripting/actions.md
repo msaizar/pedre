@@ -32,6 +32,8 @@ Display dialog with a speaker and text.
 
 - `speaker` (string) - Speaker name to display
 - `text` (array of strings) - Dialog text pages
+- `instant` (boolean, optional) - If true, text appears immediately without letter-by-letter reveal (default: false)
+- `auto_close` (boolean, optional) - If true, dialog automatically closes after configured duration (default: false)
 
 **Example:**
 
@@ -43,16 +45,29 @@ Display dialog with a speaker and text.
 }
 ```
 
+**With auto-close for cutscenes:**
+
+```json
+{
+  "type": "dialog",
+  "speaker": "Narrator",
+  "text": ["The story begins..."],
+  "auto_close": true
+}
+```
+
 **Details:**
 
 - Each string in the `text` array is a separate page
-- Player presses a key to advance to next page
+- When `auto_close` is false (default), player presses a key to advance to next page
+- When `auto_close` is true, dialog automatically advances and closes after the configured duration (see `dialog_auto_close_duration` in GameSettings)
+- The auto-close timer starts after text is fully revealed
 - Dialog window automatically sizes to fit text
 
 **Use Cases:**
 
-- NPC conversations
-- Story narration
+- NPC conversations (manual advance)
+- Story narration (auto-close for cutscenes)
 - Tutorial messages
 - Quest instructions
 
