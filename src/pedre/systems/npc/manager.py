@@ -698,7 +698,7 @@ class NPCManager(BaseSystem):
         if numeric_candidates:
             numeric_candidates.sort(key=lambda x: x[0], reverse=True)
             for state, dialog_config in numeric_candidates:
-                if state <= dialog_level:  # type: ignore[operator]
+                if state <= dialog_level:
                     return dialog_config, None
 
         # Last resort: return first candidate

@@ -96,7 +96,7 @@ class AcquireItemAction(Action):
             inventory_manager = context.get_system("inventory")
             if inventory_manager and isinstance(inventory_manager, InventoryManager):
                 # Use acquire_item method directly since inventory manager is BaseSystem
-                inventory_manager.acquire_item(self.item_id)  # type: ignore[attr-defined]
+                inventory_manager.acquire_item(self.item_id)
             self.started = True
             logger.debug("AcquireItemAction: Acquired item %s", self.item_id)
 
