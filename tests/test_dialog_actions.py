@@ -16,7 +16,7 @@ class TestDialogAction(unittest.TestCase):
         assert action.speaker == "TestNPC"
         assert action.text == ["Hello!"]
         assert action.instant is False
-        assert action.auto_close is False
+        assert action.auto_close is None  # None means use settings default
         assert action.started is False
 
     def test_init_with_instant(self) -> None:
@@ -24,14 +24,21 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"], instant=True)
 
         assert action.instant is True
-        assert action.auto_close is False
+        assert action.auto_close is None  # None means use settings default
 
-    def test_init_with_auto_close(self) -> None:
+    def test_init_with_auto_close_true(self) -> None:
         """Test DialogAction initialization with auto_close=True."""
         action = DialogAction("TestNPC", ["Hello!"], auto_close=True)
 
         assert action.instant is False
         assert action.auto_close is True
+
+    def test_init_with_auto_close_false(self) -> None:
+        """Test DialogAction initialization with auto_close=False."""
+        action = DialogAction("TestNPC", ["Hello!"], auto_close=False)
+
+        assert action.instant is False
+        assert action.auto_close is False
 
     def test_init_with_both_flags(self) -> None:
         """Test DialogAction initialization with both instant and auto_close."""
@@ -48,7 +55,7 @@ class TestDialogAction(unittest.TestCase):
         assert action.speaker == "Merchant"
         assert action.text == ["Welcome!"]
         assert action.instant is False
-        assert action.auto_close is False
+        assert action.auto_close is None  # None means use settings default
 
     def test_from_dict_with_instant(self) -> None:
         """Test creating DialogAction from dict with instant=true."""
@@ -57,9 +64,9 @@ class TestDialogAction(unittest.TestCase):
 
         assert action.speaker == "Narrator"
         assert action.instant is True
-        assert action.auto_close is False
+        assert action.auto_close is None  # None means use settings default
 
-    def test_from_dict_with_auto_close(self) -> None:
+    def test_from_dict_with_auto_close_true(self) -> None:
         """Test creating DialogAction from dict with auto_close=true."""
         data = {
             "speaker": "Narrator",
@@ -70,6 +77,19 @@ class TestDialogAction(unittest.TestCase):
 
         assert action.speaker == "Narrator"
         assert action.auto_close is True
+        assert action.instant is False
+
+    def test_from_dict_with_auto_close_false(self) -> None:
+        """Test creating DialogAction from dict with auto_close=false."""
+        data = {
+            "speaker": "Narrator",
+            "text": ["This will not auto-close..."],
+            "auto_close": False,
+        }
+        action = DialogAction.from_dict(data)
+
+        assert action.speaker == "Narrator"
+        assert action.auto_close is False
         assert action.instant is False
 
     def test_from_dict_with_both_flags(self) -> None:
@@ -95,7 +115,7 @@ class TestDialogAction(unittest.TestCase):
         result = action.execute(context)
 
         assert result is True
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=False)
+        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=None)
         assert action.started is True
 
     def test_execute_passes_instant_flag(self) -> None:
@@ -107,7 +127,7 @@ class TestDialogAction(unittest.TestCase):
 
         action.execute(context)
 
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=False)
+        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=None)
 
     def test_execute_passes_auto_close_flag(self) -> None:
         """Test that execute passes auto_close flag to DialogManager."""

@@ -51,7 +51,14 @@ class DialogAction(Action):
         }
     """
 
-    def __init__(self, speaker: str, text: list[str], *, instant: bool = False, auto_close: bool = False) -> None:
+    def __init__(
+        self,
+        speaker: str,
+        text: list[str],
+        *,
+        instant: bool = False,
+        auto_close: bool | None = None,
+    ) -> None:
         """Initialize dialog action.
 
         Args:
@@ -59,6 +66,8 @@ class DialogAction(Action):
             text: List of dialog pages to show.
             instant: If True, text appears immediately without letter-by-letter reveal.
             auto_close: If True, dialog automatically closes after configured duration.
+                If False, player must manually close. If None (default), uses the default
+                from GameSettings.dialog_auto_close_default.
         """
         self.speaker = speaker
         self.text = text
@@ -95,7 +104,7 @@ class DialogAction(Action):
             speaker=data.get("speaker", ""),
             text=data.get("text", []),
             instant=data.get("instant", False),
-            auto_close=data.get("auto_close", False),
+            auto_close=data.get("auto_close"),  # None if not specified, uses settings default
         )
 
 

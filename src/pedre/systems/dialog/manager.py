@@ -251,7 +251,7 @@ class DialogManager(BaseSystem):
         text: list[str],
         *,
         instant: bool = False,
-        auto_close: bool = False,
+        auto_close: bool | None = None,
         dialog_level: int | None = None,
         npc_key: str | None = None,
     ) -> None:
@@ -277,8 +277,9 @@ class DialogManager(BaseSystem):
                 Useful for narration, system messages, or cutscenes where the reveal
                 animation would be distracting.
             auto_close: If True, dialog automatically closes after configured duration.
-                Useful for cutscenes and scripted sequences. The timer starts after text
-                is fully revealed.
+                If False, player must manually close. If None, uses the default from
+                GameSettings.dialog_auto_close_default. Useful for cutscenes and
+                scripted sequences. The timer starts after text is fully revealed.
             dialog_level: Optional dialog level for event tracking. Used when emitting
                 DialogClosedEvent.
             npc_key: Optional NPC key name for event tracking. If provided, this is used
@@ -313,7 +314,11 @@ class DialogManager(BaseSystem):
         self.showing = True
         self.current_npc_name = npc_key or npc_name
         self.current_dialog_level = dialog_level
-        self.auto_close_enabled = auto_close
+        # Use default from settings if auto_close not explicitly specified
+        if auto_close is None:
+            self.auto_close_enabled = self.settings.dialog_auto_close_default if self.settings else False
+        else:
+            self.auto_close_enabled = auto_close
         self.auto_close_timer = 0.0
         self._reset_text_reveal()
 

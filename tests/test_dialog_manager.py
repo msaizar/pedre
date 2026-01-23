@@ -23,6 +23,7 @@ class TestDialogManager(unittest.TestCase):
 
         # Create mock settings with dialog_auto_close_duration
         self.mock_settings = MagicMock()
+        self.mock_settings.dialog_auto_close_default = False
         self.mock_settings.dialog_auto_close_duration = 0.5
 
         # Setup manager with mocks
@@ -310,6 +311,43 @@ class TestDialogManager(unittest.TestCase):
 
         # Timer should be reset
         assert self.manager.auto_close_timer == 0.0
+
+    def test_auto_close_uses_settings_default_when_none(self) -> None:
+        """Test that auto_close=None uses settings default (False)."""
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=None, dialog_level=0)
+
+        # With default False, auto_close should be disabled
+        assert self.manager.auto_close_enabled is False
+
+    def test_auto_close_uses_settings_default_when_true(self) -> None:
+        """Test that auto_close=None uses settings default when set to True."""
+        # Change settings default to True
+        self.mock_settings.dialog_auto_close_default = True
+
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=None, dialog_level=0)
+
+        # Should use settings default (True)
+        assert self.manager.auto_close_enabled is True
+
+    def test_auto_close_explicit_false_overrides_settings_default(self) -> None:
+        """Test that explicit auto_close=False overrides settings default."""
+        # Change settings default to True
+        self.mock_settings.dialog_auto_close_default = True
+
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=False, dialog_level=0)
+
+        # Explicit False should override settings
+        assert self.manager.auto_close_enabled is False
+
+    def test_auto_close_explicit_true_overrides_settings_default(self) -> None:
+        """Test that explicit auto_close=True overrides settings default."""
+        # Settings default is False
+        self.mock_settings.dialog_auto_close_default = False
+
+        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
+
+        # Explicit True should override settings
+        assert self.manager.auto_close_enabled is True
 
 
 if __name__ == "__main__":
