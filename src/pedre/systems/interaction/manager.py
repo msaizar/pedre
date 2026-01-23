@@ -25,9 +25,6 @@ positioning or targeting.
 Example usage in a map:
     # In Tiled, create an object with properties:
     # - name: "town_sign"
-    # - interaction_type: "message"
-    # - title: "Welcome"
-    # - message: "Welcome to Townsville!"
 
     # In game code:
     interaction_mgr = context.get_system("interaction")
@@ -44,23 +41,23 @@ Example usage in a map:
     if input_mgr.is_key_pressed(arcade.key.E):
         obj = interaction_mgr.get_nearby_object(player_sprite)
         if obj:
-            interaction_mgr.handle_interaction(obj, dialog_manager)
+            interaction_mgr.handle_interaction(obj)
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
 from pedre.systems.base import BaseSystem
+from pedre.systems.interaction.events import ObjectInteractedEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.config import GameSettings
-    from pedre.systems.dialog import DialogManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -75,11 +72,6 @@ class InteractiveObject:
     created from Tiled map data where designers define interactive elements with
     custom properties.
 
-    The interaction_type determines what happens when the object is activated:
-    - "message": Shows a dialog box with text (requires title and message properties)
-    - "toggle": Changes the object's state (on/off, useful for switches)
-    - Custom types can be added by extending the InteractionManager
-
     The properties dictionary contains all custom properties from the Tiled object,
     allowing designers to configure behavior without code changes. Common properties
     include message text, interaction effects, state values, and trigger flags.
@@ -89,22 +81,16 @@ class InteractiveObject:
                Used for position, rendering, and distance calculations.
         name: Unique identifier for this object. Used to track interaction state
              and reference the object in scripts or events.
-        interaction_type: Type of interaction behavior (e.g., "message", "toggle").
-                        Determines which handler method is called.
         properties: Dictionary of custom properties from Tiled or code. Contains
                    configuration like message text, state values, and behavior flags.
 
     Example from Tiled:
         Object properties:
         - name: "mysterious_lever"
-        - interaction_type: "toggle"
-        - state: "off"
-        - description: "An old lever covered in dust"
     """
 
     sprite: arcade.Sprite
     name: str
-    interaction_type: str
     properties: dict
 
 
@@ -114,8 +100,7 @@ class InteractionManager(BaseSystem):
 
     The InteractionManager acts as a registry and handler for all interactive objects
     in the game world. It maintains a collection of registered objects, determines which
-    objects are within interaction range of the player, and dispatches interaction events
-    to the appropriate handler based on the object's type.
+    objects are within interaction range of the player.
 
     This manager provides a flexible, data-driven approach to game interactions where
     designers can configure interactive elements in Tiled without requiring code changes.
@@ -126,7 +111,6 @@ class InteractionManager(BaseSystem):
     - Registering interactive objects from map data
     - Finding nearby objects within interaction distance
     - Routing interactions to type-specific handlers
-    - Managing object state changes (toggles, flags, etc.)
 
     The distance-based interaction system uses Euclidean distance to determine if an
     object is within range. When multiple objects are nearby, the nearest one is selected
@@ -184,24 +168,41 @@ class InteractionManager(BaseSystem):
     ) -> None:
         """Load interactive objects from Tiled scene layer."""
         self.clear()
-
-        if "Interactive" not in arcade_scene:
+        interactive_layer = tile_map.object_lists.get("Interactive")
+        if not interactive_layer:
             logger.debug("No Interactive layer found in map")
             return
 
-        for sprite in arcade_scene["Interactive"]:
-            # Extract name from properties or sprite.name
-            name = None
-            if hasattr(sprite, "properties") and sprite.properties:
-                name = sprite.properties.get("name")
+        for obj in interactive_layer:
+            if not obj.name:
+                continue
 
-            if not name and hasattr(sprite, "name"):
-                name = sprite.name
+            # Extract shape geometry
+            xs: list[float] = []
+            ys: list[float] = []
 
-            if name:
-                # Get properties for interaction type
-                properties = sprite.properties if hasattr(sprite, "properties") else {}
-                self.register_object(sprite, name.lower(), properties)
+            if isinstance(obj.shape, (list, tuple)) and len(obj.shape) > 0:
+                first_elem = obj.shape[0]
+                if isinstance(first_elem, (tuple, list)):
+                    for p in obj.shape:
+                        if isinstance(p, (tuple, list)) and len(p) >= 2:
+                            xs.append(float(p[0]))
+                            ys.append(float(p[1]))
+                else:
+                    xs.append(float(obj.shape[0]))
+                    ys.append(float(obj.shape[1]))
+            else:
+                continue
+
+            # Create sprite for interaction zone
+            sprite = arcade.Sprite()
+            sprite.center_x = (min(xs) + max(xs)) / 2
+            sprite.center_y = (min(ys) + max(ys)) / 2
+            sprite.width = max(xs) - min(xs)
+            sprite.height = max(ys) - min(ys)
+
+            properties = obj.properties if hasattr(obj, "properties") and obj.properties else {}
+            self.register_object(sprite, obj.name.lower(), properties)
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle interaction input.
@@ -216,16 +217,17 @@ class InteractionManager(BaseSystem):
         """
         if symbol == arcade.key.SPACE:
             player_sprite = context.player_sprite
-
             if player_sprite:
-                # Interaction logic
-                # We need DialogManager if we want to show messages.
-                dialog_manager = cast("DialogManager", context.get_system("dialog"))
+                logger.debug(
+                    "InteractionManager: SPACE pressed, player at (%.1f, %.1f)",
+                    player_sprite.center_x,
+                    player_sprite.center_y,
+                )
 
                 # Check for nearby objects
                 obj = self.get_nearby_object(player_sprite)
                 if obj:
-                    return self.handle_interaction(obj, dialog_manager)
+                    return self.handle_interaction(obj, context)
 
         return False
 
@@ -264,12 +266,6 @@ class InteractionManager(BaseSystem):
         interaction queries and handling. This method is typically called during map
         loading when processing Tiled object layers that contain interactive elements.
 
-        The properties dictionary should contain at minimum an "interaction_type" key
-        that determines the object's behavior. If not provided, defaults to "generic".
-        Additional properties depend on the interaction type:
-        - "message": Requires "title" and "message" properties
-        - "toggle": Can include "state" property (defaults to "off")
-
         Objects are stored by name, so each name must be unique within the manager.
         Registering an object with an existing name will overwrite the previous object.
 
@@ -278,8 +274,7 @@ class InteractionManager(BaseSystem):
                    position (center_x, center_y) is used for distance calculations.
             name: Unique identifier for this object. Used for lookups and tracking.
                  Should match the object's name in Tiled for consistency.
-            properties: Dictionary of custom properties from Tiled. Should include
-                       "interaction_type" and any type-specific properties. The entire
+            properties: Dictionary of custom properties from Tiled. The entire
                        dictionary is stored with the object for flexible configuration.
 
         Example:
@@ -291,17 +286,14 @@ class InteractionManager(BaseSystem):
                     properties=obj.properties
                 )
         """
-        interaction_type = properties.get("interaction_type", "generic")
-
         obj = InteractiveObject(
             sprite=sprite,
             name=name,
-            interaction_type=interaction_type,
             properties=properties,
         )
 
         self.interactive_objects[name] = obj
-        logger.info("Registered interactive object: %s (type: %s)", name, interaction_type)
+        logger.info("Registered interactive object: %s", name)
 
     def get_nearby_object(self, player_sprite: arcade.Sprite) -> InteractiveObject | None:
         """Get the nearest interactive object within interaction distance.
@@ -336,7 +328,7 @@ class InteractionManager(BaseSystem):
             if input_mgr.is_key_pressed(arcade.key.E):
                 nearby_obj = interaction_mgr.get_nearby_object(self.player_sprite)
                 if nearby_obj:
-                    self.interaction_mgr.handle_interaction(nearby_obj, self.dialog_mgr)
+                    self.interaction_mgr.handle_interaction(nearby_obj)
                 else:
                     # Optional: Show "nothing to interact with" message
                     pass
@@ -358,58 +350,31 @@ class InteractionManager(BaseSystem):
     def handle_interaction(
         self,
         obj: InteractiveObject,
-        dialog_manager: DialogManager | None = None,
+        context: GameContext,
     ) -> bool:
         """Handle interaction with an object by dispatching to type-specific handler.
 
-        This is the main entry point for processing interactions. It examines the object's
-        interaction_type and routes to the appropriate handler method. This pattern allows
-        for easy extension with new interaction types by adding new handler methods.
+        This is the main entry point for processing interactions.
 
-        Currently supported interaction types:
-        - "message": Shows a dialog box with title and message text
-        - "toggle": Toggles the object's state between "on" and "off"
-
-        If an unknown interaction type is encountered, a warning is logged and False is
-        returned. This allows the game to continue running even if there are configuration
-        errors in the map data.
-
-        The dialog_manager parameter is optional but required for "message" type interactions.
-        If a message interaction is triggered without a dialog_manager, the interaction will
-        fail gracefully.
 
         Args:
-            obj: The InteractiveObject to interact with. The object's interaction_type
-                determines which handler method is called.
-            dialog_manager: Optional DialogManager for displaying message interactions.
-                          Required for "message" type, unused for other types. Pass None
-                          if dialog is not available or not needed.
-
+            obj: The InteractiveObject to interact with.
+            context: GameContext
         Returns:
-            True if the interaction was successfully handled, False if the interaction
-            failed (unknown type, missing dependencies, etc.). The return value can be
-            used to provide feedback to the player or trigger follow-up actions.
+            True when the interaction is handled.
 
         Example:
             obj = interaction_mgr.get_nearby_object(player_sprite)
             if obj:
-                success = interaction_mgr.handle_interaction(obj, dialog_mgr)
+                success = interaction_mgr.handle_interaction(obj)
                 if success:
                     audio_mgr.play_sfx("interact.wav")
                     context.interacted_objects.add(obj.name)
         """
-        if obj.interaction_type == "message":
-            result = self._handle_message(obj, dialog_manager)
-            if result:
-                self.mark_as_interacted(obj.name)
-            return result
-        if obj.interaction_type == "toggle":
-            result = self._handle_toggle(obj)
-            if result:
-                self.mark_as_interacted(obj.name)
-            return result
-        logger.warning("Unknown interaction type: %s", obj.interaction_type)
-        return False
+        self.mark_as_interacted(obj.name)
+        context.event_bus.publish(ObjectInteractedEvent(object_name=obj.name))
+        logger.debug("Published ObjectInteractedEvent for %s", obj.name)
+        return True
 
     def mark_as_interacted(self, object_name: str) -> None:
         """Mark an object as interacted with.
@@ -430,87 +395,6 @@ class InteractionManager(BaseSystem):
             True if the object has been interacted with, False otherwise.
         """
         return object_name in self.interacted_objects
-
-    def _handle_message(self, obj: InteractiveObject, dialog_manager: DialogManager | None) -> bool:
-        """Handle showing a message dialog to the player.
-
-        This handler displays a dialog box with text when the player interacts with an
-        object. It's commonly used for signs, books, notes, and environmental storytelling
-        elements that provide information to the player.
-
-        The message is extracted from the object's properties dictionary. Expected properties:
-        - "message": The text to display (defaults to "..." if missing)
-        - "title": The dialog box title/speaker name (defaults to "Info" if missing)
-
-        If no dialog_manager is provided, the interaction fails gracefully and returns False.
-        This prevents crashes when the system is called without proper setup.
-
-        Args:
-            obj: The InteractiveObject containing message properties. Should have "message"
-                and optionally "title" in its properties dictionary.
-            dialog_manager: DialogManager for displaying the message. If None, the interaction
-                          fails and returns False.
-
-        Returns:
-            True if the message was successfully shown (dialog_manager was available),
-            False if dialog_manager was None.
-
-        Example Tiled properties:
-            - interaction_type: "message"
-            - title: "Town Sign"
-            - message: "Welcome to Adventureville! Population: 42"
-        """
-        if not dialog_manager:
-            return False
-
-        message = obj.properties.get("message", "...")
-        title = obj.properties.get("title", "Info")
-        dialog_manager.show_dialog(title, [message])
-        return True
-
-    def _handle_toggle(self, obj: InteractiveObject) -> bool:
-        """Handle toggling an object's state between on and off.
-
-        This handler switches the object's state property between "on" and "off" each
-        time it's interacted with. It's commonly used for switches, levers, buttons,
-        and other interactive elements that have two states.
-
-        The state is stored in the object's properties dictionary under the "state" key.
-        If no state exists, it defaults to "off" before toggling. The new state is stored
-        back in the properties dictionary, making it persistent for the game session.
-
-        This handler always succeeds and returns True. The state change is logged for
-        debugging purposes. Game code can query the object's state via its properties
-        to trigger visual changes (sprite swaps) or game logic (opening doors, etc.).
-
-        Args:
-            obj: The InteractiveObject to toggle. The object's properties["state"] will
-                be switched from "off" to "on" or vice versa.
-
-        Returns:
-            True (always succeeds). The toggle operation cannot fail.
-
-        Example usage:
-            # In Tiled:
-            - interaction_type: "toggle"
-            - state: "off"
-            - linked_door: "secret_passage"
-
-            # In game code after interaction:
-            if obj.properties["state"] == "on":
-                open_door(obj.properties["linked_door"])
-                obj.sprite.texture = lever_on_texture
-            else:
-                close_door(obj.properties["linked_door"])
-                obj.sprite.texture = lever_off_texture
-        """
-        # Toggle visibility or other state
-        current_state = obj.properties.get("state", "off")
-        new_state = "on" if current_state == "off" else "off"
-        obj.properties["state"] = new_state
-
-        logger.info("Toggled object %s to state: %s", obj.name, new_state)
-        return True
 
     def clear(self) -> None:
         """Clear all registered interactive objects from the manager.
