@@ -81,7 +81,7 @@ from pedre.systems.registry import SystemRegistry
 if TYPE_CHECKING:
     from pedre.config import GameSettings
     from pedre.events import EventBus
-    from pedre.systems import AudioManager, DialogManager, ParticleManager
+    from pedre.systems import DialogManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -552,16 +552,7 @@ class NPCManager(BaseSystem):
         if not npc:
             return False
 
-        # Visual/Audio feedback
-        particle_manager = cast("ParticleManager", context.get_system("particle"))
-        audio_manager = cast("AudioManager", context.get_system("audio"))
         dialog_manager = cast("DialogManager", context.get_system("dialog"))
-
-        if particle_manager:
-            particle_manager.emit_sparkles(npc.sprite.center_x, npc.sprite.center_y, count=10)
-
-        if audio_manager:
-            audio_manager.play_sfx("interact")
 
         # Get dialog
         current_scene = context.current_scene or "default"
