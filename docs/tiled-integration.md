@@ -205,13 +205,72 @@ Set properties on the map itself (not layers) to configure map behavior.
 | `music` | string | No | Background music file (relative to assets/audio/music/) | `"village_theme.mp3"` |
 | `show_all_npcs` | bool | No | Force all NPCs to be visible | `true` |
 | `show_npcs` | string | No | Comma-separated list of NPCs to show | `"merchant,guard,elder"` |
+| `camera_follow` | string | No | Camera follow target: "player", "npc:\<name\>", or "none" | `"player"`, `"npc:merchant"` |
+| `camera_smooth` | bool | No | Use smooth interpolation (true) or instant following (false) | `true` |
 
 ### Example Map Property Configuration
 
 ```text
 music: "peaceful_village.ogg"
 show_npcs: "merchant,blacksmith"
+camera_follow: "player"
+camera_smooth: true
 ```
+
+### Camera Configuration
+
+The camera system can be configured via map properties to control which entity the camera follows and how it moves.
+
+#### Camera Follow Modes
+
+The `camera_follow` property determines what the camera tracks:
+
+- **"player"** (default): Camera smoothly follows the player sprite
+- **"npc:\<name\>"**: Camera follows a specific NPC by name (e.g., "npc:merchant")
+- **"none"**: Static camera with no following
+
+#### Camera Smoothing
+
+The `camera_smooth` property controls the camera movement style:
+
+- **true** (default): Camera smoothly interpolates to target using lerp (cinematic feel)
+- **false**: Camera instantly snaps to target position (no delay)
+
+#### Camera Configuration Examples
+
+**Follow player with smooth camera (default behavior):**
+
+```text
+camera_follow: "player"
+camera_smooth: true
+```
+
+**Follow NPC for cutscene:**
+
+```text
+camera_follow: "npc:wizard"
+camera_smooth: true
+```
+
+**Static camera for puzzle room:**
+
+```text
+camera_follow: "none"
+```
+
+**Instant following for fast-paced gameplay:**
+
+```text
+camera_follow: "player"
+camera_smooth: false
+```
+
+#### Important Notes
+
+- If `camera_follow` specifies an NPC that doesn't exist, the camera will fall back to following the player
+- The camera automatically positions itself at the follow target when the scene loads
+- You can change camera following at runtime using camera actions in scripts (see `FollowPlayerAction`, `FollowNPCAction`, `StopCameraFollowAction`)
+- Default behavior (if no properties are set): follow player if it exists, otherwise center on map with no following
 
 ## Player Character Setup
 

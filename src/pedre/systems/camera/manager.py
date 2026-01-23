@@ -97,7 +97,7 @@ class CameraManager(BaseSystem):
     """
 
     name: ClassVar[str] = "camera"
-    dependencies: ClassVar[list[str]] = []
+    dependencies: ClassVar[list[str]] = ["npc"]  # Need NPC system for validation
 
     def __init__(
         self,
@@ -135,6 +135,8 @@ class CameraManager(BaseSystem):
         self.follow_mode: str | None = None  # None, "player", "npc"
         self.follow_target_npc: str | None = None
         self.follow_smooth: bool = True
+        # Tiled configuration (applied after camera is set)
+        self._follow_config: dict[str, Any] | None = None
 
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize the camera system with game context and settings.
@@ -152,6 +154,7 @@ class CameraManager(BaseSystem):
         self.use_bounds = False
         self.follow_mode = None
         self.follow_target_npc = None
+        self._follow_config = None
         logger.debug("CameraManager cleanup complete")
 
     def get_state(self) -> dict[str, Any]:
@@ -405,6 +408,135 @@ class CameraManager(BaseSystem):
                         self.smooth_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
                     else:
                         self.instant_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
+
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+        context: GameContext,
+        settings: GameSettings,
+    ) -> None:
+        """Load camera configuration from Tiled map properties.
+
+        Reads camera_follow and camera_smooth properties to configure
+        camera behavior. Configuration is stored and applied later via
+        apply_follow_config() after the camera object is created.
+
+        Map Property Configuration in Tiled:
+            1. Click on the map name in Layers panel (deselect any layers)
+            2. Open Properties panel (View → Properties)
+            3. Add custom properties as needed
+
+        Supported Properties:
+            - camera_follow (string): "player", "npc:<name>", or "none"
+              Default: "player"
+            - camera_smooth (bool): true for smooth, false for instant
+              Default: true
+
+        Examples:
+            camera_follow: "player"           # Follow player (default)
+            camera_follow: "npc:merchant"     # Follow NPC named merchant
+            camera_follow: "none"             # Static camera
+            camera_smooth: false              # Instant following
+
+        Args:
+            tile_map: Loaded TileMap with properties.
+            arcade_scene: Scene created from tile_map (unused).
+            context: GameContext for NPC validation.
+            settings: GameSettings (unused).
+        """
+        # Check if tile_map has properties
+        if not hasattr(tile_map, "properties") or tile_map.properties is None:
+            logger.debug("TileMap does not have properties, using defaults")
+            self._follow_config = {"mode": "player", "smooth": True}
+            return
+
+        # Get camera properties with defaults
+        camera_follow = tile_map.properties.get("camera_follow", "player")
+        camera_smooth = tile_map.properties.get("camera_smooth", True)
+
+        # Validate types
+        if not isinstance(camera_follow, str):
+            logger.warning("Invalid camera_follow property type: %s, using 'player'", type(camera_follow))
+            camera_follow = "player"
+
+        if not isinstance(camera_smooth, bool):
+            logger.warning("Invalid camera_smooth property type: %s, using True", type(camera_smooth))
+            camera_smooth = True
+
+        # Parse camera_follow
+        camera_follow = camera_follow.strip().lower()
+
+        if camera_follow == "none":
+            config = {"mode": "none", "smooth": camera_smooth}
+        elif camera_follow == "player":
+            config = {"mode": "player", "smooth": camera_smooth}
+        elif camera_follow.startswith("npc:"):
+            npc_name = camera_follow[4:].strip()
+            if not npc_name:
+                logger.warning("camera_follow 'npc:' requires NPC name, using 'player'")
+                config = {"mode": "player", "smooth": camera_smooth}
+            else:
+                # Validate NPC exists
+                npc_manager = cast("NPCManager", context.get_system("npc"))
+                if npc_manager:
+                    # NPCs are registered during load_from_tiled phase
+                    # We can check if NPC will exist (it's in the map)
+                    npc_state = npc_manager.get_npc_by_name(npc_name)
+                    if npc_state is None:
+                        logger.warning(
+                            "camera_follow references NPC '%s' which does not exist, using 'player'",
+                            npc_name,
+                        )
+                        config = {"mode": "player", "smooth": camera_smooth}
+                    else:
+                        logger.info("Camera will follow NPC: %s", npc_name)
+                        config = {"mode": "npc", "target": npc_name, "smooth": camera_smooth}
+                else:
+                    logger.warning("NPCManager not available, cannot follow NPC, using 'player'")
+                    config = {"mode": "player", "smooth": camera_smooth}
+        else:
+            logger.warning("Invalid camera_follow value: '%s', using 'player'", camera_follow)
+            config = {"mode": "player", "smooth": camera_smooth}
+
+        self._follow_config = config
+        logger.debug("Camera follow config loaded: %s", config)
+
+    def apply_follow_config(self, context: GameContext) -> None:
+        """Apply camera following configuration loaded from Tiled.
+
+        Called by SceneManager after camera is created and set.
+        This applies the configuration stored by load_from_tiled().
+
+        Args:
+            context: GameContext with player and systems.
+        """
+        if not self._follow_config:
+            # Default behavior if no config loaded
+            if context.player_sprite:
+                self.set_follow_player(smooth=True)
+                logger.debug("Applied default camera following: player")
+            return
+
+        mode = self._follow_config["mode"]
+        smooth = self._follow_config.get("smooth", True)
+
+        if mode == "none":
+            self.stop_follow()
+            logger.info("Camera following disabled (static camera)")
+        elif mode == "player":
+            if context.player_sprite:
+                self.set_follow_player(smooth=smooth)
+                logger.info("Camera following player (smooth=%s)", smooth)
+            else:
+                logger.warning("Cannot follow player: player sprite not available")
+        elif mode == "npc":
+            npc_name = self._follow_config.get("target")
+            if npc_name:
+                self.set_follow_npc(npc_name, smooth=smooth)
+                logger.info("Camera following NPC '%s' (smooth=%s)", npc_name, smooth)
+            else:
+                logger.error("NPC mode but no target specified")
 
     def shake(self, intensity: float = 10.0, duration: float = 0.5) -> None:
         """Add camera shake effect (for future implementation).
