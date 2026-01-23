@@ -110,6 +110,7 @@ For more complex checks, use the `conditions` array. All conditions must be true
 | `inventory_accessed` | `equals` | Check if inventory was opened | `{"check": "inventory_accessed", "equals": true}` |
 | `object_interacted` | `object`, `equals` | Check if object was interacted with | `{"check": "object_interacted", "object": "sink", "equals": true}` |
 | `script_completed` | `script` | Check if a run_once script has completed | `{"check": "script_completed", "script": "intro_cutscene"}` |
+| `item_acquired` | `item_id` | Check if an item was acquired | `{"check": "item_acquired", "item_id": "golden_key"}` |
 
 ### npc_dialog_level
 
@@ -266,6 +267,35 @@ Check if a run_once script has completed execution. This is useful for creating 
       {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   }
+}
+```
+
+### item_acquired
+
+Check if an inventory item was acquired.
+
+**Parameters:**
+
+- `check`: `"item_acquired"`
+- `item_id`: Item id
+
+**Example:**
+
+```json
+{
+  "trigger": {
+    "event": "portal_entered",
+    "portal": "dungeon_gate"
+  },
+  "conditions": [
+    {
+      "check": "item_acquired",
+      "script": "dungeon_key"
+    }
+  ],
+  "actions": [
+    {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+  ]
 }
 ```
 

@@ -235,6 +235,7 @@ class InventoryManager(BaseSystem):
         """Reset inventory state for new game."""
         self.items.clear()
         self.has_been_accessed = False
+        self._initialize_default_items()
         logger.debug("InventoryManager reset complete")
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
@@ -696,3 +697,11 @@ class InventoryManager(BaseSystem):
                 self.items[item_id].acquired = acquired
             else:
                 logger.warning("Unknown item in save data: %s", item_id)
+
+    def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
+        """No inventory caching per scene."""
+        return {}
+
+    def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
+        """No inventory caching per scene."""
+        return

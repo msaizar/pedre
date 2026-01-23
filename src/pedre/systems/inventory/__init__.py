@@ -11,7 +11,7 @@ save/load functionality for persistent state.
 """
 
 from pedre.systems.inventory.actions import AcquireItemAction, WaitForInventoryAccessAction
-from pedre.systems.inventory.conditions import check_inventory_accessed
+from pedre.systems.inventory.conditions import check_inventory_accessed, check_item_acquired
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.inventory.manager import InventoryItem, InventoryManager
 
@@ -23,4 +23,5 @@ __all__ = [
     "ItemAcquiredEvent",
     "WaitForInventoryAccessAction",
     "check_inventory_accessed",
+    "check_item_acquired",
 ]

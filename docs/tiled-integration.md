@@ -789,48 +789,6 @@ Interactive objects are shapes (rectangles, polygons, points) that trigger actio
 | Property | Type | Required | Description | Example |
 | -------- | ---- | -------- | ----------- | ------- |
 | `name` | string | **Yes** | Unique identifier | `"treasure_chest"` |
-| `interaction_type` | string | **Yes** | Interaction type | `"message"`, `"toggle"` |
-| `message` | string | No | Text to display (for type="message") | `"Welcome to Riverside Village!"` |
-| `title` | string | No | Dialog title (for type="message") | `"Village Sign"` |
-| `state` | string | No | Initial state (for type="toggle") | `"off"` |
-
-### Interaction Types
-
-#### Message
-
-Displays text in a dialog box when interacted with:
-
-```text
-Properties:
-  name: "village_sign"
-  interaction_type: "message"
-  title: "Village Sign"
-  message: "Welcome to Riverside Village!"
-```
-
-**Note:** If `title` is not specified, it defaults to "Info". If `message` is not specified, it defaults to "...".
-
-#### Toggle
-
-Toggles the object's state between "on" and "off":
-
-```text
-Properties:
-  name: "secret_switch"
-  interaction_type: "toggle"
-  state: "off"
-```
-
-**How it works:**
-
-- Each interaction toggles the `state` property between "on" and "off"
-- The state change is logged and can be checked in game code
-- Use this for switches, levers, buttons, and other two-state objects
-- Game code can query the object's state to trigger visual changes or game logic
-
-**Example usage in scripts:**
-
-After the player interacts with the toggle, you can check its state and perform actions accordingly (e.g., opening doors, changing sprites, triggering events).
 
 ## Custom Properties
 
