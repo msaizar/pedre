@@ -144,7 +144,7 @@ class DialogManager(BaseSystem):
         # In a script, you can chain dialogs and actions:
         [
             {"type": "dialog", "speaker": "Martin", "text": ["Hello!"]},
-            {"type": "wait_dialog_close"},  # Pauses until player presses SPACE
+            {"type": "wait_for_dialog_close"},  # Pauses until player presses SPACE
             {"type": "move_npc", "npcs": ["martin"], "waypoint": "door"},
             {"type": "wait_for_movement", "npc": "martin"},
             {"type": "dialog", "speaker": "Martin", "text": ["I'm leaving now!"]}

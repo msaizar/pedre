@@ -88,7 +88,7 @@ class DialogAction(Action):
         )
 
 
-@ActionRegistry.register("wait_dialog_close")
+@ActionRegistry.register("wait_for_dialog_close")
 class WaitForDialogCloseAction(WaitForConditionAction):
     """Wait for dialog to be closed.
 
@@ -102,7 +102,7 @@ class WaitForDialogCloseAction(WaitForConditionAction):
     Example usage in a sequence:
         [
             {"type": "dialog", "speaker": "martin", "text": ["Hello!"]},
-            {"type": "wait_dialog_close"},
+            {"type": "wait_for_dialog_close"},
             {"type": "dialog", "speaker": "yema", "text": ["Hi there!"]}
         ]
     """

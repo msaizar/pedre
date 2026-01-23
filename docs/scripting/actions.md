@@ -381,41 +381,43 @@ Transition to a different map/scene with fade effects.
 
 ### emit_particles
 
-Spawn particle effects at a location or on an NPC.
-
-**Option 1 - At Coordinates:**
+Spawn particle effects at an NPC, player, or interactive object location.
 
 **Parameters:**
 
-- `x` (float) - X coordinate
-- `y` (float) - Y coordinate
 - `particle_type` (string) - Effect type: "hearts", "sparkles", or "burst"
+- **Exactly one of:**
+  - `npc` (string) - NPC identifier
+  - `player` (boolean) - Set to true for player location
+  - `interactive_object` (string) - Interactive object name
 
-**Example:**
-
-```json
-{
-  "type": "emit_particles",
-  "particle_type": "sparkles",
-  "x": 400,
-  "y": 300
-}
-```
-
-**Option 2 - On NPC:**
-
-**Parameters:**
-
-- `npc` (string) - NPC identifier
-- `particle_type` (string) - Effect type: "hearts", "sparkles", or "burst"
-
-**Example:**
+**Option 1 - At NPC Location:**
 
 ```json
 {
   "type": "emit_particles",
   "particle_type": "hearts",
   "npc": "merchant"
+}
+```
+
+**Option 2 - At Player Location:**
+
+```json
+{
+  "type": "emit_particles",
+  "particle_type": "sparkles",
+  "player": true
+}
+```
+
+**Option 3 - At Interactive Object Location:**
+
+```json
+{
+  "type": "emit_particles",
+  "particle_type": "burst",
+  "interactive_object": "treasure_chest"
 }
 ```
 
@@ -427,11 +429,11 @@ Spawn particle effects at a location or on an NPC.
 
 **Use Cases:**
 
-- Item discoveries
-- NPC reactions
-- Quest completion
-- Magic effects
-- Emotional moments
+- Item discoveries at chest/object locations
+- NPC reactions and emotions
+- Player achievement celebrations
+- Quest completion effects
+- Magic effects at specific objects
 
 ## Wait Actions
 
@@ -703,8 +705,7 @@ Actions execute in order. Use wait actions to control timing:
     {
       "type": "emit_particles",
       "particle_type": "sparkles",  // Visual cue
-      "x": 400,
-      "y": 300
+      "interactive_object": "treasure_chest"
     }
   ]
 }
@@ -757,10 +758,10 @@ Actions execute in order. Use wait actions to control timing:
 {"particle_type": "hearts", "npc": "lover"}
 
 // Discovery
-{"particle_type": "sparkles", "x": 400, "y": 300}
+{"particle_type": "sparkles", "player": true}
 
 // Impact
-{"particle_type": "burst", "x": 500, "y": 400}
+{"particle_type": "burst", "interactive_object": "explosion_point"}
 ```
 
 ## Common Action Patterns
@@ -782,8 +783,7 @@ Actions execute in order. Use wait actions to control timing:
     {
       "type": "emit_particles",
       "particle_type": "sparkles",
-      "x": 500,
-      "y": 400
+      "interactive_object": "item_chest"
     }
   ]
 }

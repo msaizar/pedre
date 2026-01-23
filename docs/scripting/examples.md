@@ -73,8 +73,7 @@ Opening a chest and receiving an item with visual and audio feedback.
       {
         "type": "emit_particles",
         "particle_type": "sparkles",
-        "x": 500,
-        "y": 400
+        "interactive_object": "golden_chest"
       }
     ]
   }
@@ -192,8 +191,7 @@ Examining an object with atmospheric effects.
       {
         "type": "emit_particles",
         "particle_type": "sparkles",
-        "x": 700,
-        "y": 100
+        "interactive_object": "altar"
       }
     ]
   }
@@ -229,8 +227,7 @@ Dramatic boss appearance with music and effects.
       {
         "type": "emit_particles",
         "particle_type": "burst",
-        "x": 400,
-        "y": 300
+        "interactive_object": "altar"
       },
       {
         "type": "reveal_npcs",
@@ -388,8 +385,7 @@ Multi-stage quest with progress tracking.
       {
         "type": "emit_particles",
         "particle_type": "sparkles",
-        "x": 600,
-        "y": 400
+        "interactive_object": "ancient_artifact"
       },
       {
         "type": "set_dialog_level",

@@ -219,8 +219,7 @@ Triggered when the player interacts with an interactive object.
       {
         "type": "emit_particles",
         "particle_type": "sparkles",
-        "x": 500,
-        "y": 400
+        "interactive_object": "treasure_chest"
       }
     ]
   }
@@ -302,8 +301,7 @@ Triggered when an NPC's disappear animation finishes.
       {
         "type": "emit_particles",
         "particle_type": "burst",
-        "x": 300,
-        "y": 400
+        "player": true
       }
     ]
   }
