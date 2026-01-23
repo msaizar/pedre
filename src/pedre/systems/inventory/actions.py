@@ -31,7 +31,7 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
     Example usage in a tutorial sequence:
         [
             {"type": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
-            {"type": "wait_dialog_close"},
+            {"type": "wait_for_dialog_close"},
             {"type": "wait_inventory_access"},
             {"type": "dialog", "speaker": "martin", "text": ["Great job!"]}
         ]
