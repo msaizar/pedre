@@ -233,7 +233,6 @@ class InventoryManager(BaseSystem):
 
     def reset(self) -> None:
         """Reset inventory state for new game."""
-        self.items.clear()
         self.has_been_accessed = False
         logger.debug("InventoryManager reset complete")
 
