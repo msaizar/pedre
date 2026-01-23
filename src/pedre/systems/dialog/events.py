@@ -51,15 +51,28 @@ class DialogOpenedEvent(Event):
     """Fired when a dialog is opened.
 
     This event is published by the dialog manager when a dialog window is shown to
-    the player. It can be used to track when conversations begin or to coordinate
-    other systems with dialog display.
+    the player. It's commonly used to trigger scripts that should run when a conversation
+    begins, such as playing sound effects, pausing music, or coordinating other systems.
 
-    Note: This event is not currently used for script triggers, but is available
-    for programmatic event handling.
+    The event includes both the NPC name and their dialog level at the time the dialog
+    was shown, allowing scripts to trigger on specific conversation stages.
+
+    Script trigger example:
+        {
+            "trigger": {
+                "event": "dialog_opened",
+                "npc": "martin",
+                "dialog_level": 1
+            }
+        }
+
+    The trigger filters are optional:
+    - npc: Only trigger for specific NPC (omit to trigger for any NPC)
+    - dialog_level: Only trigger at specific dialog level (omit to trigger at any level)
 
     Attributes:
         npc_name: Name of the NPC whose dialog was opened.
-        dialog_level: Current conversation level.
+        dialog_level: Conversation level at the time dialog was shown.
     """
 
     npc_name: str

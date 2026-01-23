@@ -63,7 +63,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast
 import arcade
 
 from pedre.systems.base import BaseSystem
-from pedre.systems.dialog.events import DialogClosedEvent
+from pedre.systems.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -184,16 +184,20 @@ class DialogManager(BaseSystem):
         self.page_indicator_text: arcade.Text | None = None
         self.instruction_text: arcade.Text | None = None
 
+        # Game context for event publishing
+        self.context: GameContext | None = None
+
     def setup(self, context: GameContext, settings: GameSettings) -> None:
         """Initialize the dialog system with game settings.
 
         This method is called by the SystemLoader after all systems have been
-        instantiated. DialogManager doesn't require any special setup.
+        instantiated. Stores the game context for event publishing.
 
         Args:
-            context: Game context (not used by DialogManager).
+            context: Game context for accessing the event bus.
             settings: Game configuration (not used by DialogManager).
         """
+        self.context = context
         logger.debug("DialogManager setup complete")
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
@@ -300,6 +304,20 @@ class DialogManager(BaseSystem):
         self.current_npc_name = npc_key or npc_name
         self.current_dialog_level = dialog_level
         self._reset_text_reveal()
+
+        # Publish DialogOpenedEvent
+        if self.context and hasattr(self.context, "event_bus") and self.context.event_bus:
+            self.context.event_bus.publish(
+                DialogOpenedEvent(
+                    npc_name=self.current_npc_name,
+                    dialog_level=dialog_level or 0,
+                )
+            )
+            logger.debug(
+                "Published DialogOpenedEvent for %s at level %s",
+                self.current_npc_name,
+                dialog_level or 0,
+            )
 
         # If instant mode, immediately reveal all text
         if instant:

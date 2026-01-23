@@ -404,6 +404,7 @@ Common event types used throughout the framework:
 
 - `NPCInteractedEvent` - Player interacted with NPC
 - `ItemCollectedEvent` - Item added to inventory
+- `DialogOpenedEvent` - Dialog window opened
 - `DialogClosedEvent` - Dialog finished
 - `InventoryClosedEvent` - Inventory view closed
 - `PortalEnteredEvent` - Player entered portal zone
