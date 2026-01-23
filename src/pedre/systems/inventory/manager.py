@@ -233,7 +233,9 @@ class InventoryManager(BaseSystem):
 
     def reset(self) -> None:
         """Reset inventory state for new game."""
+        self.items.clear()
         self.has_been_accessed = False
+        self._initialize_default_items()
         logger.debug("InventoryManager reset complete")
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
