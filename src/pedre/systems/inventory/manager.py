@@ -534,7 +534,7 @@ class InventoryManager(BaseSystem):
         if not item.image_path:
             return None
 
-        return asset_path(f"images/{item.image_path}")
+        return asset_path(f"{item.image_path}")
 
     def get_icon_path(self, item: InventoryItem) -> str | None:
         """Get the full absolute path to an item's icon/thumbnail image file.
@@ -561,7 +561,7 @@ class InventoryManager(BaseSystem):
         if not item.icon_path:
             return None
 
-        return asset_path(f"images/{item.icon_path}")
+        return asset_path(f"{item.icon_path}")
 
     def get_acquired_count(self, category: str | None = None) -> int:
         """Get the count of items the player has acquired.
