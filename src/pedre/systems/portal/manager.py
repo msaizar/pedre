@@ -164,12 +164,10 @@ class PortalManager(BaseSystem):
 
         Args:
             context: Game context providing access to event bus.
-            settings: Game configuration containing portal_interaction_distance.
         """
         self.event_bus = context.event_bus
 
-        if hasattr(settings, "portal_interaction_distance"):
-            self.interaction_distance = settings.PORTAL_INTERACTION_DISTANCE
+        self.interaction_distance = settings.PORTAL_INTERACTION_DISTANCE
 
         logger.debug("PortalManager setup complete (interaction_distance=%.1f)", self.interaction_distance)
 
