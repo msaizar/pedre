@@ -38,4 +38,4 @@ __version__ = "0.0.7"
 
 from pedre.helpers import run_game
 
-__all__ = ["run_game"]
+__all__ = ["__version__", "run_game"]
