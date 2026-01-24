@@ -56,13 +56,13 @@ from collections import deque
 from heapq import heappop, heappush
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     import arcade
 
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ class PathfindingManager(BaseSystem):
         self.tile_size: int = 32
         self.wall_list: arcade.SpriteList | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the pathfinding system with game context and settings.
 
         This method is called by the SystemLoader after all systems have been
@@ -118,10 +118,9 @@ class PathfindingManager(BaseSystem):
 
         Args:
             context: Game context providing access to other systems.
-            settings: Game configuration containing tile_size setting.
         """
-        if hasattr(settings, "tile_size"):
-            self.tile_size = settings.tile_size
+        if hasattr(settings, "TILE_SIZE"):
+            self.tile_size = settings.TILE_SIZE
         logger.debug("PathfindingManager setup complete (tile_size=%d)", self.tile_size)
 
     def cleanup(self) -> None:

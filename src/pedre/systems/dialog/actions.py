@@ -67,7 +67,7 @@ class DialogAction(Action):
             instant: If True, text appears immediately without letter-by-letter reveal.
             auto_close: If True, dialog automatically closes after configured duration.
                 If False, player must manually close. If None (default), uses the default
-                from GameSettings.dialog_auto_close_default.
+                from settings.DIALOG_AUTO_CLOSE_DEFAULT.
         """
         self.speaker = speaker
         self.text = text

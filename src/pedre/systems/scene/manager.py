@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
+from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
@@ -24,7 +25,6 @@ from pedre.systems.scene.events import SceneStartEvent
 if TYPE_CHECKING:
     from typing import Any
 
-    from pedre.config import GameSettings
     from pedre.systems import CameraManager, PathfindingManager, PhysicsManager
     from pedre.systems.cache_manager import CacheManager
     from pedre.systems.game_context import GameContext
@@ -117,17 +117,14 @@ class SceneManager(BaseSystem):
         self.pending_map_file: str | None = None
         self.pending_spawn_waypoint: str | None = None
 
-        self._settings: GameSettings | None = None
-
         # Map data (merged from MapManager)
         self.tile_map: arcade.TileMap | None = None
         self.arcade_scene: arcade.Scene | None = None
         self.waypoints: dict[str, tuple[float, float]] = {}
         self.current_map: str = ""
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize with context."""
-        self._settings = settings
         if context.current_scene:
             self.current_scene = context.current_scene
 
@@ -149,10 +146,6 @@ class SceneManager(BaseSystem):
             spawn_waypoint: Optional waypoint to spawn at.
             context: Game context.
         """
-        if not self._settings:
-            logger.error("SceneManager: Settings not initialized, cannot load level")
-            return
-
         # Cache current scene state before transitioning
         if self._cache_manager:
             self._cache_manager.cache_scene(self.current_scene, context)
@@ -169,7 +162,7 @@ class SceneManager(BaseSystem):
             logger.debug("SceneManager: Set context.next_spawn_waypoint to '%s'", spawn_waypoint)
 
         # Load map
-        self._load_map(map_file, context, self._settings)
+        self._load_map(map_file, context)
 
         # Get NPC and script managers for scene loading
         npc_manager = cast("NPCManager | None", context.get_system("npc"))
@@ -177,10 +170,10 @@ class SceneManager(BaseSystem):
 
         npc_dialogs_data = {}
         if npc_manager and hasattr(npc_manager, "load_scene_dialogs"):
-            npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene, self._settings)
+            npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
 
         if script_manager and hasattr(script_manager, "load_scene_scripts"):
-            script_manager.load_scene_scripts(current_scene, self._settings, npc_dialogs_data)
+            script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
 
         # Restore scene state using cache manager
         if self._cache_manager:
@@ -197,15 +190,14 @@ class SceneManager(BaseSystem):
         # Emit SceneStartEvent
         context.event_bus.publish(SceneStartEvent(current_scene))
 
-    def _load_map(self, map_file: str, context: GameContext, settings: GameSettings) -> None:
+    def _load_map(self, map_file: str, context: GameContext) -> None:
         """Load a Tiled map and populate game context and systems.
 
         Args:
             map_file: Filename of the .tmx map to load (e.g. "map.tmx").
             context: GameContext for updating shared state (wall_list, waypoints).
-            settings: GameSettings for resolving asset paths.
         """
-        map_path = asset_path(f"maps/{map_file}", settings.assets_handle)
+        map_path = asset_path(f"maps/{map_file}", settings.ASSETS_HANDLE)
         logger.info("Loading map: %s", map_path)
         self.current_map = map_file
 
@@ -219,7 +211,7 @@ class SceneManager(BaseSystem):
 
         # 3. Let systems load their Tiled data (in dependency order)
         # This includes waypoints, portals, interactions, player, NPCs
-        self._load_systems_from_tiled(context, settings)
+        self._load_systems_from_tiled(context)
 
         # 4. Invalidate physics engine (needs new player/walls)
         physics_manager = cast("PhysicsManager", context.get_system("physics"))
@@ -232,7 +224,7 @@ class SceneManager(BaseSystem):
             pathfinding.set_wall_list(wall_list)
 
         # 6. Setup camera with map bounds
-        self._setup_camera(context, settings)
+        self._setup_camera(context)
 
     def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
         """Extract collision layers into a wall list."""
@@ -245,7 +237,7 @@ class SceneManager(BaseSystem):
                         wall_list.append(sprite)
         return wall_list
 
-    def _load_systems_from_tiled(self, context: GameContext, settings: GameSettings) -> None:
+    def _load_systems_from_tiled(self, context: GameContext) -> None:
         """Call load_from_tiled() on all systems that implement it."""
         # Iterate through all systems (already in dependency order)
         for system in context.get_systems().values():
@@ -255,11 +247,10 @@ class SceneManager(BaseSystem):
                     self.tile_map,
                     self.arcade_scene,
                     context,
-                    settings,
                 )
                 logger.debug("Loaded Tiled data for system: %s", system.name)
 
-    def _setup_camera(self, context: GameContext, settings: GameSettings) -> None:
+    def _setup_camera(self, context: GameContext) -> None:
         """Setup camera with map bounds after loading."""
         camera_manager = cast("CameraManager", context.get_system("camera"))
         if not camera_manager or not self.tile_map:
@@ -280,9 +271,7 @@ class SceneManager(BaseSystem):
         # Apply camera following configuration from map properties
         camera_manager.apply_follow_config(context)
 
-    def _get_initial_camera_position(
-        self, camera_manager: CameraManager, context: GameContext
-    ) -> tuple[float, float]:
+    def _get_initial_camera_position(self, camera_manager: CameraManager, context: GameContext) -> tuple[float, float]:
         """Determine initial camera position based on follow configuration.
 
         Checks the camera's follow config (loaded from Tiled map properties) to
@@ -297,7 +286,7 @@ class SceneManager(BaseSystem):
             Tuple of (x, y) position for initial camera placement.
         """
         # Check if camera has follow config from Tiled
-        follow_config = camera_manager._follow_config
+        follow_config = camera_manager._follow_config  # noqa: SLF001
 
         if follow_config and follow_config.get("mode") == "npc":
             # Camera should follow NPC - position at NPC initially
@@ -324,18 +313,17 @@ class SceneManager(BaseSystem):
                 player_sprite.center_y,
             )
             return (player_sprite.center_x, player_sprite.center_y)
-        else:
-            # Center of map
-            if self.tile_map:
-                map_width = self.tile_map.width * self.tile_map.tile_width
-                map_height = self.tile_map.height * self.tile_map.tile_height
-                logger.debug(
-                    "Initial camera position set to map center at (%.1f, %.1f)",
-                    map_width / 2,
-                    map_height / 2,
-                )
-                return (map_width / 2, map_height / 2)
-            return (0.0, 0.0)
+        # Center of map
+        if self.tile_map:
+            map_width = self.tile_map.width * self.tile_map.tile_width
+            map_height = self.tile_map.height * self.tile_map.tile_height
+            logger.debug(
+                "Initial camera position set to map center at (%.1f, %.1f)",
+                map_width / 2,
+                map_height / 2,
+            )
+            return (map_width / 2, map_height / 2)
+        return (0.0, 0.0)
 
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map.

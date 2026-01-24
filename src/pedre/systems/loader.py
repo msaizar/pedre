@@ -9,17 +9,16 @@ Example:
     Loading and initializing systems::
 
         from pedre.systems.loader import SystemLoader
-        from pedre.config import GameSettings
+        from pedre.conf import settings
 
-        settings = GameSettings(
-            installed_systems=[
-                "pedre.systems.audio",
-                "pedre.systems.npc",
-                "myapp.weather",  # Custom system
-            ]
-        )
+        # Configure settings in your settings.py:
+        # INSTALLED_SYSTEMS = [
+        #     "pedre.systems.audio",
+        #     "pedre.systems.npc",
+        #     "myapp.weather",  # Custom system
+        # ]
 
-        loader = SystemLoader(settings)
+        loader = SystemLoader()
         systems = loader.instantiate_all()
 
         # Setup all systems with game context
@@ -35,11 +34,11 @@ import importlib
 import logging
 from typing import TYPE_CHECKING
 
+from pedre.conf import settings
 from pedre.systems.cache_manager import CacheManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.base import BaseSystem
     from pedre.systems.game_context import GameContext
 
@@ -64,15 +63,12 @@ class SystemLoader:
     4. Calling lifecycle methods (setup, update, cleanup) on all systems
 
     This enables a Django-like plugin architecture where users can configure
-    which systems to load via GameSettings.installed_systems.
-
-    Attributes:
-        settings: Game configuration containing installed_systems list.
+    which systems to load via settings.INSTALLED_SYSTEMS.
 
     Example:
         Basic usage::
 
-            loader = SystemLoader(settings)
+            loader = SystemLoader()
             systems = loader.instantiate_all()
             loader.setup_all(context)
 
@@ -83,13 +79,8 @@ class SystemLoader:
             loader.cleanup_all()
     """
 
-    def __init__(self, settings: GameSettings) -> None:
-        """Initialize the system loader.
-
-        Args:
-            settings: Game configuration containing the installed_systems list.
-        """
-        self.settings = settings
+    def __init__(self) -> None:
+        """Initialize the system loader."""
         self._instances: dict[str, BaseSystem] = {}
         self._load_order: list[str] = []
         self._cache_manager: CacheManager | None = None
@@ -97,14 +88,14 @@ class SystemLoader:
     def load_modules(self) -> None:
         """Import all configured system modules to trigger registration.
 
-        This imports each module path from settings.installed_systems,
+        This imports each module path from settings.INSTALLED_SYSTEMS,
         which causes any @SystemRegistry.register decorators to execute
         and register the systems.
 
         Raises:
             ImportError: If a module cannot be imported.
         """
-        installed_systems = self.settings.installed_systems or []
+        installed_systems = settings.INSTALLED_SYSTEMS
         for module_path in installed_systems:
             try:
                 importlib.import_module(module_path)
@@ -169,7 +160,7 @@ class SystemLoader:
         for name in self._load_order:
             system = self._instances.get(name)
             if system:
-                system.setup(context, self.settings)
+                system.setup(context)
                 logger.debug("Setup system: %s", name)
 
     def update_all(self, delta_time: float, context: GameContext) -> None:

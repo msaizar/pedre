@@ -61,7 +61,6 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -125,18 +124,17 @@ class AudioManager(BaseSystem):
         self.music_enabled = True
         self.sfx_enabled = True
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the audio system with game settings.
 
         This method is called by the SystemLoader after all systems have been
-        instantiated. It configures volume levels based on GameSettings.
+        instantiated. It configures volume levels based on settings.
 
         Args:
             context: Game context (not used by AudioManager).
-            settings: Game configuration containing volume settings.
         """
         # AudioManager doesn't need context, but settings could be used
-        # for initial volume configuration if GameSettings had audio settings
+        # for initial volume configuration if settings had audio settings
         logger.debug("AudioManager setup complete")
 
     def cleanup(self) -> None:
@@ -630,7 +628,6 @@ class AudioManager(BaseSystem):
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
         context: GameContext,
-        settings: GameSettings,
     ) -> None:
         """Load and play background music from Tiled map property.
 
@@ -651,7 +648,6 @@ class AudioManager(BaseSystem):
             tile_map: Loaded TileMap with properties.
             arcade_scene: Scene created from tile_map (unused).
             context: GameContext (unused).
-            settings: GameSettings (unused - paths handled by play_music).
         """
         # Check if tile_map has properties attribute (defensive)
         if not hasattr(tile_map, "properties") or tile_map.properties is None:

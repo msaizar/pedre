@@ -60,7 +60,7 @@ Display dialog with a speaker and text.
 
 - Each string in the `text` array is a separate page
 - When `auto_close` is false (default), player presses a key to advance to next page
-- When `auto_close` is true, dialog automatically advances and closes after the configured duration (see `dialog_auto_close_duration` in GameSettings)
+- When `auto_close` is true, dialog automatically advances and closes after the configured duration (see `DIALOG_AUTO_CLOSE_DURATION` in `settings.py`)
 - The auto-close timer starts after text is fully revealed
 - Dialog window automatically sizes to fit text
 

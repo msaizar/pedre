@@ -52,12 +52,12 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 from pedre.systems.interaction.events import ObjectInteractedEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -148,14 +148,13 @@ class InteractionManager(BaseSystem):
         self.interactive_objects: dict[str, InteractiveObject] = {}
         self.interacted_objects: set[str] = set()
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the interaction system with game context and settings.
 
         Args:
             context: Game context providing access to other systems.
-            settings: Game configuration containing interaction_manager_distance.
         """
-        self.interaction_distance = float(settings.interaction_manager_distance)
+        self.interaction_distance = float(settings.INTERACTION_MANAGER_DISTANCE)
         self.interacted_objects = context.interacted_objects
         logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
 
@@ -164,7 +163,6 @@ class InteractionManager(BaseSystem):
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
         context: GameContext,
-        settings: GameSettings,
     ) -> None:
         """Load interactive objects from Tiled scene layer."""
         self.clear()

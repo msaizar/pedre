@@ -122,23 +122,13 @@ if __name__ == "__main__":
     run_game()
 ```
 
-Configure your game settings in `main.py`:
+Configure your game settings in `settings.py`:
 
 ```python
-"""Simple RPG game using Pedre framework."""
-
-from pedre import run_game, GameSettings
-
-# Configure game settings
-settings = GameSettings(
-    screen_width=1280,
-    screen_height=720,
-    window_title="My First RPG",
-    initial_map="village.tmx"
-)
-
-if __name__ == "__main__":
-    run_game(settings)
+SCREEN_WIDTH=1280,
+SCREEN_HEIGHT=720,
+WINDOW_TITLE="My First RPG",
+INITIAL_MAP="village.tmx"
 ```
 
 The scene name is automatically derived from the map filename (e.g., `village.tmx` → scene name `"village"`).

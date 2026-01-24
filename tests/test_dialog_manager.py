@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.systems.dialog.manager import DialogManager
 
@@ -21,13 +22,16 @@ class TestDialogManager(unittest.TestCase):
         self.mock_event_bus = MagicMock()
         self.mock_context.event_bus = self.mock_event_bus
 
-        # Create mock settings with dialog_auto_close_duration
-        self.mock_settings = MagicMock()
-        self.mock_settings.dialog_auto_close_default = False
-        self.mock_settings.dialog_auto_close_duration = 0.5
+        # Configure settings for dialog tests
+        # The configure_test_settings fixture will have already set defaults,
+        # but we ensure the dialog settings are correct for these tests
+        settings.configure(
+            DIALOG_AUTO_CLOSE_DEFAULT=False,
+            DIALOG_AUTO_CLOSE_DURATION=0.5,
+        )
 
-        # Setup manager with mocks
-        self.manager.setup(self.mock_context, self.mock_settings)
+        # Setup manager with context (settings are now global)
+        self.manager.setup(self.mock_context)
 
     def test_show_dialog_publishes_event(self) -> None:
         """Test that showing a dialog publishes DialogOpenedEvent."""
@@ -164,7 +168,7 @@ class TestDialogManager(unittest.TestCase):
         mock_context_no_bus = MagicMock()
         mock_context_no_bus.event_bus = None
 
-        manager_no_bus.setup(mock_context_no_bus, self.mock_settings)
+        manager_no_bus.setup(mock_context_no_bus)
 
         # Should not crash
         manager_no_bus.show_dialog("TestNPC", ["Hello!"], dialog_level=0)
@@ -322,7 +326,7 @@ class TestDialogManager(unittest.TestCase):
     def test_auto_close_uses_settings_default_when_true(self) -> None:
         """Test that auto_close=None uses settings default when set to True."""
         # Change settings default to True
-        self.mock_settings.dialog_auto_close_default = True
+        settings.configure(DIALOG_AUTO_CLOSE_DEFAULT=True)
 
         self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=None, dialog_level=0)
 
@@ -332,7 +336,7 @@ class TestDialogManager(unittest.TestCase):
     def test_auto_close_explicit_false_overrides_settings_default(self) -> None:
         """Test that explicit auto_close=False overrides settings default."""
         # Change settings default to True
-        self.mock_settings.dialog_auto_close_default = True
+        settings.configure(DIALOG_AUTO_CLOSE_DEFAULT=True)
 
         self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=False, dialog_level=0)
 
@@ -342,7 +346,7 @@ class TestDialogManager(unittest.TestCase):
     def test_auto_close_explicit_true_overrides_settings_default(self) -> None:
         """Test that explicit auto_close=True overrides settings default."""
         # Settings default is False
-        self.mock_settings.dialog_auto_close_default = False
+        settings.configure(DIALOG_AUTO_CLOSE_DEFAULT=False)
 
         self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
 

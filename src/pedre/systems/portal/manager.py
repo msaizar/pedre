@@ -72,12 +72,12 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 from pedre.systems.portal.events import PortalEnteredEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.events import EventBus
     from pedre.systems.game_context import GameContext
 
@@ -156,7 +156,7 @@ class PortalManager(BaseSystem):
         self.interaction_distance: float = 64.0
         self._portals_player_inside: set[str] = set()
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the portal system with game context and settings.
 
         This method is called by the SystemLoader after all systems have been
@@ -164,12 +164,10 @@ class PortalManager(BaseSystem):
 
         Args:
             context: Game context providing access to event bus.
-            settings: Game configuration containing portal_interaction_distance.
         """
         self.event_bus = context.event_bus
 
-        if hasattr(settings, "portal_interaction_distance"):
-            self.interaction_distance = settings.portal_interaction_distance
+        self.interaction_distance = settings.PORTAL_INTERACTION_DISTANCE
 
         logger.debug("PortalManager setup complete (interaction_distance=%.1f)", self.interaction_distance)
 
@@ -178,7 +176,6 @@ class PortalManager(BaseSystem):
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
         context: GameContext,
-        settings: GameSettings,
     ) -> None:
         """Load portals from Tiled map object layer."""
         self.clear()  # Clear old portals

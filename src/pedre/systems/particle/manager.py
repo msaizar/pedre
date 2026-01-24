@@ -47,7 +47,6 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -133,12 +132,11 @@ class ParticleManager(BaseSystem):
         self.enabled = True
         self._rng = Random()  # noqa: S311 - Non-cryptographic RNG for particle effects
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the particle system with game context and settings.
 
         Args:
             context: Game context (not used by particle system).
-            settings: Game configuration (not used by particle system).
         """
         logger.debug("ParticleManager setup complete")
 

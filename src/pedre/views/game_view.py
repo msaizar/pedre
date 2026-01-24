@@ -53,6 +53,7 @@ from typing import TYPE_CHECKING, cast
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.scene import TransitionState
 
 # These imports are used for cast() type annotations only
@@ -134,7 +135,7 @@ class GameView(arcade.View):
     def setup(self) -> None:
         """Set up the game. Called on first show or when resetting the game state."""
         # Load the initial map
-        target_map = self.map_file or self.window.settings.initial_map
+        target_map = self.map_file or settings.INITIAL_MAP
         if target_map and self.view_manager.game_context:
             scene_manager = cast("SceneManager", self.view_manager.game_context.get_system("scene"))
             if scene_manager:

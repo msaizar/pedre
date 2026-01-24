@@ -59,7 +59,6 @@ from pedre.systems.registry import SystemRegistry
 if TYPE_CHECKING:
     import arcade
 
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
     from pedre.systems.npc import NPCManager
 
@@ -138,12 +137,11 @@ class CameraManager(BaseSystem):
         # Tiled configuration (applied after camera is set)
         self._follow_config: dict[str, Any] | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the camera system with game context and settings.
 
         Args:
             context: Game context providing access to other systems.
-            settings: Game configuration (not used by camera system).
         """
         logger.debug("CameraManager setup complete")
 
@@ -414,7 +412,6 @@ class CameraManager(BaseSystem):
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
         context: GameContext,
-        settings: GameSettings,
     ) -> None:
         """Load camera configuration from Tiled map properties.
 
@@ -443,7 +440,6 @@ class CameraManager(BaseSystem):
             tile_map: Loaded TileMap with properties.
             arcade_scene: Scene created from tile_map (unused).
             context: GameContext for NPC validation.
-            settings: GameSettings (unused).
         """
         # Check if tile_map has properties
         if not hasattr(tile_map, "properties") or tile_map.properties is None:

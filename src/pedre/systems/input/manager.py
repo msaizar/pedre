@@ -49,12 +49,12 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conf import settings
 from pedre.events import ShowMenuEvent
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -106,14 +106,13 @@ class InputManager(BaseSystem):
         self.movement_speed = movement_speed
         self.keys_pressed: set[int] = set()
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the input system with game context and settings.
 
         Args:
             context: Game context providing access to other systems.
-            settings: Game configuration containing player_movement_speed.
         """
-        self.movement_speed = settings.player_movement_speed
+        self.movement_speed = settings.PLAYER_MOVEMENT_SPEED
         logger.debug("InputManager setup complete with speed=%s", self.movement_speed)
 
     def cleanup(self) -> None:

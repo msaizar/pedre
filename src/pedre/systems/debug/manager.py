@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
     from pedre.systems.npc import NPCManager
 
@@ -31,16 +31,13 @@ class DebugManager(BaseSystem):
         """Initialize the debug manager with default state."""
         self.debug_mode = False
         self.debug_text_objects: list[arcade.Text] = []
-        self.settings: GameSettings | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the debug system.
 
         Args:
             context: Game context.
-            settings: Game settings.
         """
-        self.settings = settings
         self.debug_text_objects = []
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
@@ -69,13 +66,13 @@ class DebugManager(BaseSystem):
         Args:
             context: Game context.
         """
-        if not self.debug_mode or not self.settings:
+        if not self.debug_mode:
             return
 
         # Build debug text content
         debug_lines = []
         y_offset = 30
-        tile_size = self.settings.tile_size
+        tile_size = settings.TILE_SIZE
 
         # Collect player position (from context)
         if context.player_sprite:

@@ -38,20 +38,13 @@ if __name__ == "__main__":
     run_game()
 ```
 
-Configure your game settings with `GameSettings`:
+Configure your game settings with `settings.py` in your project root:
 
 ```python
-from pedre import run_game, GameSettings
-
-settings = GameSettings(
-    screen_width=1280,
-    screen_height=720,
-    window_title="My RPG",
-    initial_map="my_map.tmx"
-)
-
-if __name__ == "__main__":
-    run_game(settings)
+SCREEN_WIDTH=1280
+SCREEN_HEIGHT=720
+WINDOW_TITLE="My RPG"
+INITIAL_MAP="my_map.tmx
 ```
 
 ### Manager Coordination
@@ -62,7 +55,7 @@ The framework uses `SystemLoader` to initialize systems and `GameContext` to pas
 from pedre.systems.loader import SystemLoader
 
 # Loader handles initialization and dependency injection
-loader = SystemLoader(settings)
+loader = SystemLoader()
 loader.setup_all(context)
 
 # Systems access each other via context

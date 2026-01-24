@@ -417,36 +417,31 @@ Common event types used throughout the framework:
 
 ## Configuration
 
-Configuration is handled through the `GameSettings` dataclass:
+Configuration is handled through the `settings.py` file:
 
 ```python
-from pedre import GameSettings
-
-settings = GameSettings(
-    screen_width=1280,
-    screen_height=720,
-    window_title="My RPG",
-    player_movement_speed=3,
-    tile_size=32,
-    interaction_manager_distance=50,
-    npc_interaction_distance=50,
-    portal_interaction_distance=50,
-    inventory_grid_cols=10,
-    inventory_grid_rows=4,
-    inventory_box_size=30,
-    inventory_box_spacing=5,
-    dialog_auto_close_duration=0.5  # seconds to wait after text reveal before auto-closing
-)
+SCREEN_WIDTH=1280
+SCREEN_HEIGHT=720
+WINDOW_TITLE="My RPG"
+PLAYER_MOVEMENT_SPEED=3
+TILE_SIZE=32
+INTERACTION_MANAGER_DISTANCE=50
+NPC_INTERACTION_DISTANCE=50
+PORTAL_INTERACTION_DISTANCE=50
+INVENTORY_GRID_COLS=10
+INVENTORY_GRID_ROWS=4
+INVENTORY_BOX_SIZE=30
+INVENTORY_BOX_SPACING=5
+DIALOG_AUTO_CLOSE_DURATION=0.5  # seconds to wait after text reveal before auto-closing
 ```
 
 Access configuration:
 
 ```python
-from pedre import GameSettings
+from pedre.conf import settings
 
-settings = GameSettings()
-window_width = settings.screen_width
-player_speed = settings.player_movement_speed
+window_width = settings.SCREEN_WIDTH
+player_speed = settings.PLAYER_MOVEMENT_SPEED
 ```
 
 ## See Also

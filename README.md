@@ -38,21 +38,13 @@ if __name__ == "__main__":
     run_game()
 ```
 
-This will start your game with the default configuration. Configure your game using `GameSettings`:
+This will start your game with the default configuration. Configure your game using `settings.py` in your project root:
 
 ```python
-from pedre import run_game, GameSettings
-
-# Create settings directly
-settings = GameSettings(
-    screen_width=1280,
-    screen_height=720,
-    window_title="My RPG",
-    initial_map="my_map.tmx"
-)
-
-if __name__ == "__main__":
-    run_game(settings)
+SCREEN_WIDTH=1280
+SCREEN_HEIGHT=720,
+WINDOW_TITLE="My RPG",
+INITIAL_MAP="my_map.tmx"
 ```
 
 ### Adding NPCs with Dialogs
