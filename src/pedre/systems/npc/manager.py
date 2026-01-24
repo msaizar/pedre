@@ -844,11 +844,12 @@ class NPCManager(BaseSystem):
                         self.event_bus.publish(NPCMovementCompleteEvent(npc_name=npc.name))
                         logger.info("%s movement complete, event emitted", npc.name)
 
-            # Move NPC
-            move_distance = self.npc_speed * delta_time
-            move_distance = min(move_distance, distance)
-            npc.sprite.center_x += (dx / distance) * move_distance
-            npc.sprite.center_y += (dy / distance) * move_distance
+            # Move NPC (only if distance > 0 to avoid division by zero)
+            elif distance > 0:
+                move_distance = self.npc_speed * delta_time
+                move_distance = min(move_distance, distance)
+                npc.sprite.center_x += (dx / distance) * move_distance
+                npc.sprite.center_y += (dy / distance) * move_distance
 
     def get_npc_positions(self) -> dict[str, dict[str, float | bool]]:
         """Get current positions and visibility for all NPCs.
