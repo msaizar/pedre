@@ -265,15 +265,8 @@ class SceneManager(BaseSystem):
         if not camera_manager or not self.tile_map:
             return
 
-        # Create camera positioned at player (or map center if no player)
-        player_sprite = context.player_sprite
-        if player_sprite:
-            initial_pos = (player_sprite.center_x, player_sprite.center_y)
-        else:
-            # Center of map
-            map_width = self.tile_map.width * self.tile_map.tile_width
-            map_height = self.tile_map.height * self.tile_map.tile_height
-            initial_pos = (map_width / 2, map_height / 2)
+        # Determine initial camera position based on follow configuration
+        initial_pos = self._get_initial_camera_position(camera_manager, context)
 
         camera = arcade.camera.Camera2D(position=initial_pos)
         camera_manager.set_camera(camera)
@@ -286,6 +279,63 @@ class SceneManager(BaseSystem):
 
         # Apply camera following configuration from map properties
         camera_manager.apply_follow_config(context)
+
+    def _get_initial_camera_position(
+        self, camera_manager: CameraManager, context: GameContext
+    ) -> tuple[float, float]:
+        """Determine initial camera position based on follow configuration.
+
+        Checks the camera's follow config (loaded from Tiled map properties) to
+        determine where the camera should start. This prevents flickering when
+        the camera should follow an NPC instead of the player.
+
+        Args:
+            camera_manager: The camera manager with follow config.
+            context: Game context with player and NPCs.
+
+        Returns:
+            Tuple of (x, y) position for initial camera placement.
+        """
+        # Check if camera has follow config from Tiled
+        follow_config = camera_manager._follow_config
+
+        if follow_config and follow_config.get("mode") == "npc":
+            # Camera should follow NPC - position at NPC initially
+            npc_name = follow_config.get("target")
+            if npc_name:
+                npc_manager = cast("NPCManager | None", context.get_system("npc"))
+                if npc_manager:
+                    npc_state = npc_manager.get_npc_by_name(npc_name)
+                    if npc_state:
+                        logger.debug(
+                            "Initial camera position set to NPC '%s' at (%.1f, %.1f)",
+                            npc_name,
+                            npc_state.sprite.center_x,
+                            npc_state.sprite.center_y,
+                        )
+                        return (npc_state.sprite.center_x, npc_state.sprite.center_y)
+
+        # Default: position at player (or map center if no player)
+        player_sprite = context.player_sprite
+        if player_sprite:
+            logger.debug(
+                "Initial camera position set to player at (%.1f, %.1f)",
+                player_sprite.center_x,
+                player_sprite.center_y,
+            )
+            return (player_sprite.center_x, player_sprite.center_y)
+        else:
+            # Center of map
+            if self.tile_map:
+                map_width = self.tile_map.width * self.tile_map.tile_width
+                map_height = self.tile_map.height * self.tile_map.tile_height
+                logger.debug(
+                    "Initial camera position set to map center at (%.1f, %.1f)",
+                    map_width / 2,
+                    map_height / 2,
+                )
+                return (map_width / 2, map_height / 2)
+            return (0.0, 0.0)
 
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map.
