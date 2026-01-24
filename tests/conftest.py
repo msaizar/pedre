@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import arcade
 import pytest
 
-from pedre.config import GameSettings
+from pedre.conf import settings
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -47,25 +47,64 @@ def _setup_arcade_resources() -> Generator[None]:
             yield
 
 
-@pytest.fixture
-def game_settings() -> GameSettings:
-    """Create a GameSettings instance for testing.
+@pytest.fixture(autouse=True)
+def configure_test_settings() -> Generator[None]:
+    """Configure settings for each test using the new settings system.
 
-    Returns:
-        GameSettings with default values.
-    """
-    return GameSettings()
-
-
-@pytest.fixture
-def headless_window(game_settings: GameSettings) -> Generator[arcade.Window]:
-    """Create a headless arcade window for testing with settings attached.
-
-    Args:
-        game_settings: GameSettings fixture.
+    This fixture runs automatically before each test to configure settings
+    and resets them after the test completes.
 
     Yields:
-        Headless arcade window with settings attribute.
+        None
+    """
+    # Configure settings with test defaults
+    settings.configure(
+        SCREEN_WIDTH=1280,
+        SCREEN_HEIGHT=720,
+        TILE_SIZE=32,
+        ASSETS_HANDLE="game_assets",
+        WINDOW_TITLE="Test",
+        MENU_TITLE="Test Menu",
+        PLAYER_MOVEMENT_SPEED=3,
+        INTERACTION_MANAGER_DISTANCE=50,
+        NPC_INTERACTION_DISTANCE=50,
+        PORTAL_INTERACTION_DISTANCE=50,
+        WAYPOINT_THRESHOLD=2,
+        NPC_SPEED=80.0,
+        INITIAL_MAP="map.tmx",
+        INVENTORY_GRID_COLS=4,
+        INVENTORY_GRID_ROWS=3,
+        INVENTORY_BOX_SIZE=100,
+        INVENTORY_BOX_SPACING=15,
+        INVENTORY_BOX_BORDER_WIDTH=3,
+        DIALOG_AUTO_CLOSE_DEFAULT=False,
+        DIALOG_AUTO_CLOSE_DURATION=0.5,
+        MENU_TITLE_SIZE=48,
+        MENU_OPTION_SIZE=24,
+        MENU_SPACING=50,
+        MENU_BACKGROUND_IMAGE="",
+        MENU_MUSIC_FILES=[],
+        MENU_TEXT_CONTINUE="Continue",
+        MENU_TEXT_NEW_GAME="New Game",
+        MENU_TEXT_SAVE_GAME="Save Game",
+        MENU_TEXT_LOAD_GAME="Load Game",
+        MENU_TEXT_EXIT="Exit",
+        INVENTORY_BACKGROUND_IMAGE="",
+    )
+    yield
+    # Reset settings after test
+    settings._wrapped = None
+
+
+@pytest.fixture
+def headless_window() -> Generator[arcade.Window]:
+    """Create a headless arcade window for testing.
+
+    The window no longer needs settings attached as they're available globally
+    via the settings singleton.
+
+    Yields:
+        Headless arcade window.
     """
     window = arcade.Window(
         width=1280,
@@ -73,6 +112,5 @@ def headless_window(game_settings: GameSettings) -> Generator[arcade.Window]:
         title="Test",
         visible=False,
     )
-    window.settings = game_settings
     yield window
     window.close()

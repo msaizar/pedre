@@ -27,7 +27,7 @@ Note: Active scripts in progress are NOT saved - interrupted scripts will restar
 from the beginning when the game is loaded.
 
 The save system uses pluggable save providers configured via installed_saves in
-GameSettings. Each provider handles its own state serialization.
+settings.py. Each provider handles its own state serialization.
 
 File structure:
 - Save files are stored in a designated saves/ directory
@@ -61,7 +61,6 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.audio import AudioManager
     from pedre.systems.game_context import GameContext
     from pedre.systems.scene import SceneManager
@@ -163,15 +162,14 @@ class SaveManager(BaseSystem):
         self.saves_dir.mkdir(exist_ok=True)
 
         self.current_slot: int | None = None
-        self.settings: GameSettings | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the save system with settings."""
-        self.settings = settings
+        return
 
     def cleanup(self) -> None:
         """Clean up save system resources."""
-        self.settings = None
+        return
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle quick save/load hotkeys.

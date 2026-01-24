@@ -11,7 +11,7 @@ from pathlib import Path
 import arcade
 from rich.logging import RichHandler
 
-from pedre.config import GameSettings
+from pedre.conf import settings
 from pedre.view_manager import ViewManager
 
 
@@ -49,54 +49,52 @@ def setup_resources(assets_handle: str) -> None:
     arcade.resources.add_resource_handle(assets_handle, assets_dir.resolve())
 
 
-def create_game(settings: GameSettings) -> arcade.Window:
+def create_game() -> arcade.Window:
     """Create and configure a Pedre game window.
 
-    Creates an arcade.Window with the provided settings, sets up logging
+    Creates an arcade.Window using the settings from your project's settings.py
+    (or the module specified by PEDRE_SETTINGS_MODULE), sets up logging
     and resource handles, and attaches a ViewManager to the window.
 
     This is the recommended way to initialize a Pedre game when you need
     access to the window instance for customization.
 
-    Args:
-        settings: Game configuration settings.
-
     Returns:
-        Configured arcade.Window with view_manager and settings attributes attached.
+        Configured arcade.Window with view_manager attribute attached.
 
     Side effects:
         - Configures logging via setup_logging()
         - Registers resource handles via setup_resources()
         - Creates arcade.Window instance
-        - Attaches ViewManager and settings to window
+        - Attaches ViewManager to window
 
     Example:
-        >>> settings = GameSettings(window_title="My RPG")
-        >>> window = create_game(settings)
+        >>> # Create settings.py in your project with settings
+        >>> # WINDOW_TITLE = "My RPG"
+        >>> from pedre import create_game
+        >>> window = create_game()
         >>> window.view_manager.show_menu()
         >>> arcade.run()
     """
     setup_logging()
-    setup_resources(settings.assets_handle)
+    setup_resources(settings.ASSETS_HANDLE)
 
     window = arcade.Window(
-        settings.screen_width,
-        settings.screen_height,
-        settings.window_title,
+        settings.SCREEN_WIDTH,
+        settings.SCREEN_HEIGHT,
+        settings.WINDOW_TITLE,
     )
-    window.settings = settings
     window.view_manager = ViewManager(window)
     return window
 
 
-def run_game(settings: GameSettings | None = None) -> None:
+def run_game() -> None:
     """Create and run a Pedre game.
 
-    This is the simplest way to start a Pedre game. It creates the window,
-    sets up all resources, shows the main menu, and starts the game loop.
-
-    Args:
-        settings: Game configuration settings. If None, uses default GameSettings.
+    This is the simplest way to start a Pedre game. It creates the window
+    using settings from your project's settings.py (or the module specified
+    by PEDRE_SETTINGS_MODULE), sets up all resources, shows the main menu,
+    and starts the game loop.
 
     Side effects:
         - Configures logging via setup_logging()
@@ -106,17 +104,14 @@ def run_game(settings: GameSettings | None = None) -> None:
         - Starts arcade.run() game loop (blocks until window closes)
 
     Example:
-        >>> from pedre import GameSettings, run_game
-        >>> settings = GameSettings(
-        ...     window_title="My RPG",
-        ...     screen_width=1920,
-        ...     screen_height=1080,
-        ... )
+        >>> # Create settings.py in your project:
+        >>> # WINDOW_TITLE = "My RPG"
+        >>> # SCREEN_WIDTH = 1920
+        >>> # SCREEN_HEIGHT = 1080
+        >>> from pedre import run_game
         >>> if __name__ == "__main__":
-        ...     run_game(settings)
+        ...     run_game()
     """
-    if settings is None:
-        settings = GameSettings()
-    window = create_game(settings)
+    window = create_game()
     window.view_manager.show_menu()
     arcade.run()

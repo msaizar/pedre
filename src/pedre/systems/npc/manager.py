@@ -66,6 +66,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast
 import arcade
 
 from pedre.conditions.registry import ConditionRegistry
+from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
 from pedre.systems.base import BaseSystem
@@ -79,7 +80,6 @@ from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.events import EventBus
     from pedre.systems import DialogManager
     from pedre.systems.game_context import GameContext
@@ -248,7 +248,7 @@ class NPCManager(BaseSystem):
         self.interacted_objects: set[str] = set()
         self.interacted_npcs: set[str] = set()
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the NPC system with game context and settings.
 
         This method is called by the SystemLoader after all systems have been
@@ -275,10 +275,10 @@ class NPCManager(BaseSystem):
         # Wait, let's check NPCManager.has_npc_been_interacted_with.
 
         # Apply settings if available
-        if hasattr(settings, "npc_interaction_distance"):
-            self.interaction_distance = settings.npc_interaction_distance
-        if hasattr(settings, "npc_speed"):
-            self.npc_speed = settings.npc_speed
+        if hasattr(settings, "NPC_INTERACTION_DISTANCE"):
+            self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
+        if hasattr(settings, "NPC_SPEED"):
+            self.npc_speed = settings.NPC_SPEED
 
         logger.debug("NPCManager setup complete")
 
@@ -287,7 +287,6 @@ class NPCManager(BaseSystem):
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
         context: GameContext,
-        settings: GameSettings,
     ) -> None:
         """Load NPCs from Tiled object layer."""
         npc_layer = tile_map.object_lists.get("NPCs")
@@ -299,7 +298,6 @@ class NPCManager(BaseSystem):
         self.load_npcs_from_objects(
             npc_layer,
             arcade_scene,
-            settings,
             context.wall_list,
         )
 
@@ -327,7 +325,7 @@ class NPCManager(BaseSystem):
         """
         self.dialogs = dialogs
 
-    def load_scene_dialogs(self, scene_name: str, settings: GameSettings) -> dict[str, Any]:
+    def load_scene_dialogs(self, scene_name: str) -> dict[str, Any]:
         """Load and cache dialogs for a specific scene.
 
         Args:
@@ -341,7 +339,7 @@ class NPCManager(BaseSystem):
             self.dialogs[scene_name] = self._dialog_cache[scene_name]
         else:
             try:
-                scene_dialog_file = asset_path(f"dialogs/{scene_name}_dialogs.json", settings.assets_handle)
+                scene_dialog_file = asset_path(f"dialogs/{scene_name}_dialogs.json", settings.ASSETS_HANDLE)
                 if self.load_dialogs_from_json(scene_dialog_file) and scene_name in self.dialogs:
                     self._dialog_cache[scene_name] = self.dialogs[scene_name]
                 else:
@@ -944,7 +942,6 @@ class NPCManager(BaseSystem):
         self,
         npc_objects: list,
         scene: arcade.Scene | None,
-        settings: GameSettings,
         wall_list: arcade.SpriteList | None = None,
     ) -> None:
         """Load NPCs from Tiled object layer (like Player, Portals, etc.).
@@ -982,7 +979,7 @@ class NPCManager(BaseSystem):
                 logger.warning("NPC %s missing 'sprite_sheet' property", npc_name)
                 continue
 
-            sprite_sheet_path = asset_path(sprite_sheet, settings.assets_handle)
+            sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
 
             # Extract animation props
             anim_props = {

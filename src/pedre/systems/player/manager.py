@@ -12,13 +12,13 @@ from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
+from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedPlayer
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems import DialogManager, InputManager
     from pedre.systems.game_context import GameContext
     from pedre.systems.scene import SceneManager
@@ -45,7 +45,7 @@ class PlayerManager(BaseSystem):
         self.player_sprite: AnimatedPlayer | None = None
         self.player_list: arcade.SpriteList | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize player system for the current scene."""
 
     def load_from_tiled(
@@ -53,7 +53,6 @@ class PlayerManager(BaseSystem):
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
         context: GameContext,
-        settings: GameSettings,
     ) -> None:
         """Load player from Tiled map object layer."""
         # Get Player object layer
@@ -84,8 +83,8 @@ class PlayerManager(BaseSystem):
             )
             if waypoints and context.next_spawn_waypoint in waypoints:
                 tile_x, tile_y = waypoints[context.next_spawn_waypoint]
-                spawn_x = tile_x * settings.tile_size + settings.tile_size / 2
-                spawn_y = tile_y * settings.tile_size + settings.tile_size / 2
+                spawn_x = tile_x * settings.TILE_SIZE + settings.TILE_SIZE / 2
+                spawn_y = tile_y * settings.TILE_SIZE + settings.TILE_SIZE / 2
                 logger.debug(
                     "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
                     context.next_spawn_waypoint,
@@ -93,7 +92,7 @@ class PlayerManager(BaseSystem):
                     tile_y,
                     spawn_x,
                     spawn_y,
-                    settings.tile_size,
+                    settings.TILE_SIZE,
                 )
                 # Clear the spawn waypoint
                 context.next_spawn_waypoint = None
@@ -111,7 +110,7 @@ class PlayerManager(BaseSystem):
             logger.error("Player object missing 'sprite_sheet' or 'tile_size' properties")
             return
 
-        sprite_sheet_path = asset_path(sprite_sheet, settings.assets_handle)
+        sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
 
         # Helper to extract animation props
         anim_props = self._get_animation_properties(player_obj.properties)
@@ -186,7 +185,7 @@ class PlayerManager(BaseSystem):
             # Update animation
             self.player_sprite.update_animation(delta_time, moving=moving)
 
-    def spawn_player(self, context: GameContext, settings: GameSettings) -> None:
+    def spawn_player(self, context: GameContext) -> None:
         """Spawn player based on map data."""
         scene_manager = cast("SceneManager", context.get_system("scene"))
         if not scene_manager or not scene_manager.tile_map:
@@ -223,8 +222,8 @@ class PlayerManager(BaseSystem):
             )
             if context.next_spawn_waypoint in waypoints:
                 tile_x, tile_y = waypoints[context.next_spawn_waypoint]
-                spawn_x = tile_x * settings.tile_size + settings.tile_size / 2
-                spawn_y = tile_y * settings.tile_size + settings.tile_size / 2
+                spawn_x = tile_x * settings.TILE_SIZE + settings.TILE_SIZE / 2
+                spawn_y = tile_y * settings.TILE_SIZE + settings.TILE_SIZE / 2
                 logger.debug(
                     "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
                     context.next_spawn_waypoint,
@@ -232,7 +231,7 @@ class PlayerManager(BaseSystem):
                     tile_y,
                     spawn_x,
                     spawn_y,
-                    settings.tile_size,
+                    settings.TILE_SIZE,
                 )
                 # Clear the spawn waypoint
                 context.next_spawn_waypoint = None
@@ -250,7 +249,7 @@ class PlayerManager(BaseSystem):
             logger.error("Player object missing 'sprite_sheet' or 'tile_size' properties")
             return
 
-        sprite_sheet_path = asset_path(sprite_sheet, settings.assets_handle)
+        sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
 
         # Helper to extract animation props
         anim_props = self._get_animation_properties(player_obj.properties)

@@ -62,6 +62,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 from pedre.actions import ActionSequence
 from pedre.actions.registry import ActionRegistry
 from pedre.conditions.registry import ConditionRegistry
+from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
 from pedre.systems.base import BaseSystem
@@ -69,7 +70,6 @@ from pedre.systems.registry import SystemRegistry
 from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.events import Event, EventBus
     from pedre.systems.game_context import GameContext
 
@@ -179,14 +179,13 @@ class ScriptManager(BaseSystem):
         self._subscribed_events: set[str] = set()  # Track subscribed event types to avoid duplicates
         self.context: GameContext | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Set up the script system.
 
         Args:
             context: Game context containing all systems.
-            settings: Game configuration.
         """
-        super().setup(context, settings)
+        super().setup(context)
         self.context = context
         self.event_bus = context.event_bus
         self._register_event_handlers()
@@ -281,14 +280,11 @@ class ScriptManager(BaseSystem):
         """
         self._load_script_file(script_path, npc_dialogs)
 
-    def load_scene_scripts(
-        self, scene_name: str, settings: GameSettings, npc_dialogs_data: dict[str, Any]
-    ) -> dict[str, Any]:
+    def load_scene_scripts(self, scene_name: str, npc_dialogs_data: dict[str, Any]) -> dict[str, Any]:
         """Load and cache scripts for a specific scene.
 
         Args:
             scene_name: Name of the scene (map file without extension).
-            settings: Game settings for resolving asset paths.
             npc_dialogs_data: NPC dialog data for resolving text references.
 
         Returns:
@@ -298,7 +294,7 @@ class ScriptManager(BaseSystem):
             self.load_scripts_from_data(self._script_cache[scene_name], npc_dialogs_data)
         else:
             try:
-                scene_script_file = asset_path(f"scripts/{scene_name}_scripts.json", settings.assets_handle)
+                scene_script_file = asset_path(f"scripts/{scene_name}_scripts.json", settings.ASSETS_HANDLE)
                 self.load_scripts(scene_script_file, npc_dialogs_data)
                 # Cache raw data
                 with Path(scene_script_file).open() as f:

@@ -15,7 +15,6 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -39,7 +38,7 @@ class PhysicsManager(BaseSystem):
         self.physics_engine: arcade.PhysicsEngineSimple | None = None
         self._needs_recreate: bool = True
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize physics engine."""
         self._create_engine(context)
 

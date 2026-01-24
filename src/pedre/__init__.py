@@ -10,22 +10,34 @@ This package provides a complete framework for building 2D RPG games with featur
 - Camera system
 
 Quick start:
-    from pedre import GameSettings, run_game
-    from pathlib import Path
+    # Create a settings.py file in your project root:
+    # WINDOW_TITLE = "My RPG"
+    # SCREEN_WIDTH = 1920
+    # SCREEN_HEIGHT = 1080
+
+    from pedre import run_game
 
     if __name__ == "__main__":
-        settings = GameSettings(
-            window_title="My RPG",
-            screen_width=1920,
-            screen_height=1080,
-        )
-        run_game(settings)
+        run_game()
+
+Alternative usage:
+    # Access settings in your code
+    from pedre.conf import settings
+
+    print(settings.WINDOW_TITLE)  # "My RPG"
+
+    # Or customize settings programmatically
+    settings.configure(
+        WINDOW_TITLE="My RPG",
+        SCREEN_WIDTH=1920,
+        SCREEN_HEIGHT=1080,
+    )
 """
 
 __version__ = "0.0.7"
 
-from pedre.config import GameSettings
-from pedre.helpers import run_game
+from pedre.conf import settings
+from pedre.helpers import create_game, run_game
 from pedre.sprites import AnimatedNPC, AnimatedPlayer
 from pedre.systems import (
     AudioManager,
@@ -59,7 +71,6 @@ __all__ = [
     "EventBus",
     "GameContext",
     "GameSaveData",
-    "GameSettings",
     "GameView",
     "InputManager",
     "InteractionManager",
@@ -76,5 +87,7 @@ __all__ = [
     "ScriptManager",
     "ViewManager",
     "__version__",
+    "create_game",
     "run_game",
+    "settings",
 ]

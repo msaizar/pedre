@@ -45,11 +45,11 @@ from typing import TYPE_CHECKING
 
 import arcade
 
+from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.types import MenuOption
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems import AudioManager, SaveManager
     from pedre.view_manager import ViewManager
 from typing import cast
@@ -143,9 +143,8 @@ class MenuView(arcade.View):
         arcade.set_background_color(arcade.color.BLACK)
 
         # Load background image if not already loaded
-        settings = self.window.settings
-        if self.background_texture is None and settings.menu_background_image:
-            background_path = asset_path(settings.menu_background_image, settings.assets_handle)
+        if self.background_texture is None and settings.MENU_BACKGROUND_IMAGE:
+            background_path = asset_path(settings.MENU_BACKGROUND_IMAGE, settings.ASSETS_HANDLE)
             try:
                 self.background_texture = arcade.load_texture(background_path)
                 logger.info("Loaded menu background: %s", background_path)
@@ -187,14 +186,13 @@ class MenuView(arcade.View):
             )
 
         # Create or update title text
-        settings = self.window.settings
         if self.title_text is None:
             self.title_text = arcade.Text(
-                settings.menu_title,
+                settings.MENU_TITLE,
                 self.window.width / 2,
                 self.window.height * 0.75,
                 arcade.color.RED,
-                font_size=settings.menu_title_size,
+                font_size=settings.MENU_TITLE_SIZE,
                 anchor_x="center",
             )
         else:
@@ -205,12 +203,11 @@ class MenuView(arcade.View):
         self.title_text.draw()
 
         # Draw menu options
-        settings = self.window.settings
         menu_options = list(MenuOption)
         start_y = self.window.height * 0.5
 
         for i, option in enumerate(menu_options):
-            y_position = start_y - (i * settings.menu_spacing)
+            y_position = start_y - (i * settings.MENU_SPACING)
 
             # Determine color based on state
             if option == self.selected_option:
@@ -222,7 +219,7 @@ class MenuView(arcade.View):
 
             # Add selection indicator
             prefix = "> " if option == self.selected_option else "  "
-            text = prefix + self._get_menu_text(option, settings)
+            text = prefix + self._get_menu_text(option)
 
             # Create or update text object for this option
             if option not in self.menu_text_objects:
@@ -231,7 +228,7 @@ class MenuView(arcade.View):
                     self.window.width / 2,
                     y_position,
                     color,
-                    font_size=settings.menu_option_size,
+                    font_size=settings.MENU_OPTION_SIZE,
                     anchor_x="center",
                 )
                 self.menu_text_objects[option] = text_obj
@@ -386,14 +383,14 @@ class MenuView(arcade.View):
         if not self.menu_enabled.get(self.selected_option, False):
             self.selected_option = MenuOption.NEW_GAME
 
-    def _get_menu_text(self, option: MenuOption, settings: GameSettings) -> str:
+    def _get_menu_text(self, option: MenuOption) -> str:
         """Get the display text for a menu option from settings."""
         menu_text_map: dict[MenuOption, str] = {
-            MenuOption.CONTINUE: settings.menu_text_continue,
-            MenuOption.NEW_GAME: settings.menu_text_new_game,
-            MenuOption.SAVE_GAME: settings.menu_text_save_game,
-            MenuOption.LOAD_GAME: settings.menu_text_load_game,
-            MenuOption.EXIT: settings.menu_text_exit,
+            MenuOption.CONTINUE: settings.MENU_TEXT_CONTINUE,
+            MenuOption.NEW_GAME: settings.MENU_TEXT_NEW_GAME,
+            MenuOption.SAVE_GAME: settings.MENU_TEXT_SAVE_GAME,
+            MenuOption.LOAD_GAME: settings.MENU_TEXT_LOAD_GAME,
+            MenuOption.EXIT: settings.MENU_TEXT_EXIT,
         }
         return menu_text_map.get(option, option.name)
 
@@ -464,8 +461,7 @@ class MenuView(arcade.View):
                         audio_manager.mark_music_loading(music_file)
                         try:
                             # Load music file using asset_path
-                            settings = self.window.settings
-                            music_path = asset_path(f"audio/music/{music_file}", settings.assets_handle)
+                            music_path = asset_path(f"audio/music/{music_file}", settings.ASSETS_HANDLE)
                             sound = arcade.load_sound(music_path, streaming=False)
                             audio_manager.music_cache[music_file] = sound
                             logger.info("Preloaded music in background: %s", music_file)
@@ -475,8 +471,7 @@ class MenuView(arcade.View):
 
                 # Load all music files in parallel using thread pool
                 # Only preload looping music (streaming music like turntable.mp3 loads instantly)
-                settings = self.window.settings
-                music_files = settings.menu_music_files
+                music_files = settings.MENU_MUSIC_FILES
 
                 with ThreadPoolExecutor(max_workers=4) as executor:
                     # Submit all music files for parallel loading

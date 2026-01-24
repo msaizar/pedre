@@ -35,6 +35,8 @@ from typing import TYPE_CHECKING, cast
 
 import arcade
 
+from pedre.conf import settings
+
 if TYPE_CHECKING:
     from pedre.systems import SaveManager
     from pedre.view_manager import ViewManager
@@ -129,14 +131,13 @@ class LoadGameView(arcade.View):
         self.clear()
 
         # Create or update title text
-        settings = self.window.settings
         if self.title_text is None:
             self.title_text = arcade.Text(
                 "Load Game",
                 self.window.width / 2,
                 self.window.height * 0.75,
                 arcade.color.WHITE,
-                font_size=settings.menu_title_size,
+                font_size=settings.MENU_TITLE_SIZE,
                 anchor_x="center",
             )
         else:
@@ -147,7 +148,6 @@ class LoadGameView(arcade.View):
         self.title_text.draw()
 
         # Draw save slots
-        settings = self.window.settings
         start_y = self.window.height * 0.55
         slot_order = [0, 1, 2, 3]  # Auto-save first, then slots 1-3
 
@@ -158,13 +158,13 @@ class LoadGameView(arcade.View):
                 self.window.width / 2,
                 0,
                 arcade.color.WHITE,
-                font_size=settings.menu_option_size,
+                font_size=settings.MENU_OPTION_SIZE,
                 anchor_x="center",
             )
             self.slot_text_objects.append(text_obj)
 
         for i, slot in enumerate(slot_order):
-            y_position = start_y - (i * settings.menu_spacing)
+            y_position = start_y - (i * settings.MENU_SPACING)
             is_selected = slot == self.selected_slot
 
             # Determine slot name and info
@@ -203,8 +203,7 @@ class LoadGameView(arcade.View):
             text_obj.draw()
 
         # Draw back option
-        settings = self.window.settings
-        back_y = start_y - (len(slot_order) * settings.menu_spacing)
+        back_y = start_y - (len(slot_order) * settings.MENU_SPACING)
         is_back_selected = self.selected_slot == -1
         back_color = arcade.color.YELLOW if is_back_selected else arcade.color.WHITE
         back_prefix = "> " if is_back_selected else "  "
@@ -216,7 +215,7 @@ class LoadGameView(arcade.View):
                 self.window.width / 2,
                 back_y,
                 back_color,
-                font_size=settings.menu_option_size,
+                font_size=settings.MENU_OPTION_SIZE,
                 anchor_x="center",
             )
         else:

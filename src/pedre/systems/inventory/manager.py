@@ -75,7 +75,6 @@ from pedre.systems.registry import SystemRegistry
 if TYPE_CHECKING:
     from typing import Any
 
-    from pedre.config import GameSettings
     from pedre.events import EventBus
     from pedre.systems.game_context import GameContext
 
@@ -211,12 +210,11 @@ class InventoryManager(BaseSystem):
         # Event bus for publishing events
         self.event_bus: EventBus | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the inventory system with game context and settings.
 
         Args:
             context: Game context providing access to event bus.
-            settings: Game configuration (not used by inventory system).
         """
         self.event_bus = context.event_bus
 

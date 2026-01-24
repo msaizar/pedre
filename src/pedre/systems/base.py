@@ -9,14 +9,16 @@ Example:
 
         from pedre.systems.base import BaseSystem
         from pedre.systems.registry import SystemRegistry
+        from pedre.conf import settings
 
         @SystemRegistry.register
         class WeatherManager(BaseSystem):
             name = "weather"
             dependencies = ["particle", "audio"]
 
-            def setup(self, context, settings):
+            def setup(self, context):
                 self.current_weather = "clear"
+                self.update_interval = settings.WEATHER_UPDATE_INTERVAL
 
             def update(self, delta_time, context):
                 if self.current_weather == "rain":
@@ -29,7 +31,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     import arcade
 
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
 
 
@@ -52,13 +53,16 @@ class BaseSystem(ABC):
     Example:
         Creating a weather system::
 
+            from pedre.conf import settings
+
             @SystemRegistry.register
             class WeatherManager(BaseSystem):
                 name = "weather"
                 dependencies = ["particle"]
 
-                def setup(self, context, settings):
+                def setup(self, context):
                     self.intensity = 0.0
+                    self.update_interval = settings.WEATHER_UPDATE_INTERVAL
 
                 def set_weather(self, weather_type, intensity):
                     self.current_weather = weather_type
@@ -73,7 +77,7 @@ class BaseSystem(ABC):
     dependencies: ClassVar[list[str]] = []
 
     @abstractmethod
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the system when a scene loads.
 
         This method is called after all systems have been instantiated but before
@@ -82,12 +86,13 @@ class BaseSystem(ABC):
 
         Args:
             context: Game context providing access to other systems via get_system().
-            settings: Game configuration settings from GameSettings.
 
         Example:
-            def setup(self, context, settings):
+            from pedre.conf import settings
+
+            def setup(self, context):
                 self.event_bus = context.event_bus
-                self.volume = settings.music_volume
+                self.volume = settings.MUSIC_VOLUME
                 self.event_bus.subscribe(SceneStartEvent, self._on_scene_start)
         """
 
@@ -96,7 +101,6 @@ class BaseSystem(ABC):
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
         context: GameContext,
-        settings: GameSettings,
     ) -> None:
         """Load system-specific data from Tiled map (optional hook).
 
@@ -119,10 +123,11 @@ class BaseSystem(ABC):
             tile_map: Loaded arcade.TileMap instance.
             arcade_scene: arcade.Scene created from tile_map.
             context: GameContext with wall_list already populated.
-            settings: GameSettings for resolving asset paths.
 
         Example:
-            def load_from_tiled(self, tile_map, arcade_scene, context, settings):
+            from pedre.conf import settings
+
+            def load_from_tiled(self, tile_map, arcade_scene, context):
                 portal_layer = tile_map.object_lists.get("Portals")
                 if not portal_layer:
                     return

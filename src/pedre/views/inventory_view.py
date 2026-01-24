@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING
 
 import arcade
 
+from pedre.conf import settings
 from pedre.constants import asset_path
 
 if TYPE_CHECKING:
@@ -138,9 +139,8 @@ class InventoryView(arcade.View):
         arcade.set_background_color(arcade.color.BLACK)
 
         # Load background image if not already loaded
-        settings = self.window.settings
-        if self.background_texture is None and settings.inventory_background_image:
-            background_path = asset_path(settings.inventory_background_image, settings.assets_handle)
+        if self.background_texture is None and settings.INVENTORY_BACKGROUND_IMAGE:
+            background_path = asset_path(settings.INVENTORY_BACKGROUND_IMAGE, settings.ASSETS_HANDLE)
             try:
                 self.background_texture = arcade.load_texture(background_path)
                 logger.info("Loaded inventory background: %s", background_path)
@@ -207,14 +207,13 @@ class InventoryView(arcade.View):
             )
 
         # Create or update title text
-        settings = self.window.settings
         if self.title_text is None:
             self.title_text = arcade.Text(
                 "Inventory",
                 self.window.width / 2,
                 self.window.height - 60,
                 arcade.color.WHITE,
-                font_size=settings.menu_title_size,
+                font_size=settings.MENU_TITLE_SIZE,
                 anchor_x="center",
             )
         else:
@@ -225,28 +224,27 @@ class InventoryView(arcade.View):
         self.title_text.draw()
 
         # Calculate grid positioning (centered on screen)
-        settings = self.window.settings
         grid_width = (
-            settings.inventory_grid_cols * settings.inventory_box_size
-            + (settings.inventory_grid_cols - 1) * settings.inventory_box_spacing
+            settings.INVENTORY_GRID_COLS * settings.INVENTORY_BOX_SIZE
+            + (settings.INVENTORY_GRID_COLS - 1) * settings.INVENTORY_BOX_SPACING
         )
         grid_height = (
-            settings.inventory_grid_rows * settings.inventory_box_size
-            + (settings.inventory_grid_rows - 1) * settings.inventory_box_spacing
+            settings.INVENTORY_GRID_ROWS * settings.INVENTORY_BOX_SIZE
+            + (settings.INVENTORY_GRID_ROWS - 1) * settings.INVENTORY_BOX_SPACING
         )
 
         start_x = (self.window.width - grid_width) / 2
         start_y = (self.window.height - grid_height) / 2 + 20  # Slight offset up
 
         # Draw grid boxes
-        for row in range(settings.inventory_grid_rows):
-            for col in range(settings.inventory_grid_cols):
-                item_index = row * settings.inventory_grid_cols + col
+        for row in range(settings.INVENTORY_GRID_ROWS):
+            for col in range(settings.INVENTORY_GRID_COLS):
+                item_index = row * settings.INVENTORY_GRID_COLS + col
 
                 # Calculate box position (top-left corner)
-                x = start_x + col * (settings.inventory_box_size + settings.inventory_box_spacing)
-                y = start_y + (settings.inventory_grid_rows - 1 - row) * (
-                    settings.inventory_box_size + settings.inventory_box_spacing
+                x = start_x + col * (settings.INVENTORY_BOX_SIZE + settings.INVENTORY_BOX_SPACING)
+                y = start_y + (settings.INVENTORY_GRID_ROWS - 1 - row) * (
+                    settings.INVENTORY_BOX_SIZE + settings.INVENTORY_BOX_SPACING
                 )
 
                 # Determine if this slot has an item
@@ -262,19 +260,19 @@ class InventoryView(arcade.View):
                 bg_color = arcade.color.DARK_SLATE_GRAY
 
                 arcade.draw_lrbt_rectangle_filled(
-                    x, x + settings.inventory_box_size, y, y + settings.inventory_box_size, bg_color
+                    x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, bg_color
                 )
 
                 # Draw border (yellow if selected, white otherwise)
                 if is_selected:
                     border_color = arcade.color.YELLOW
-                    border_width = settings.inventory_box_border_width + 1
+                    border_width = settings.INVENTORY_BOX_BORDER_WIDTH + 1
                 else:
                     border_color = arcade.color.WHITE
-                    border_width = settings.inventory_box_border_width
+                    border_width = settings.INVENTORY_BOX_BORDER_WIDTH
 
                 arcade.draw_lrbt_rectangle_outline(
-                    x, x + settings.inventory_box_size, y, y + settings.inventory_box_size, border_color, border_width
+                    x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, border_color, border_width
                 )
 
                 # Draw icon if available
@@ -282,7 +280,7 @@ class InventoryView(arcade.View):
                 if icon_texture:
                     # Scale icon to fit box with padding
                     padding = 4
-                    max_icon_size = settings.inventory_box_size - (padding * 2)
+                    max_icon_size = settings.INVENTORY_BOX_SIZE - (padding * 2)
 
                     # Calculate scale to fit
                     scale_x = max_icon_size / icon_texture.width
@@ -292,8 +290,8 @@ class InventoryView(arcade.View):
                     # Draw centered icon
                     icon_width = icon_texture.width * scale
                     icon_height = icon_texture.height * scale
-                    icon_center_x = x + settings.inventory_box_size / 2
-                    icon_center_y = y + settings.inventory_box_size / 2
+                    icon_center_x = x + settings.INVENTORY_BOX_SIZE / 2
+                    icon_center_y = y + settings.INVENTORY_BOX_SIZE / 2
 
                     arcade.draw_texture_rect(
                         icon_texture,
@@ -306,8 +304,7 @@ class InventoryView(arcade.View):
                     )
 
         # Draw selected item name at bottom (below grid)
-        settings = self.window.settings
-        selected_index = self.selected_row * settings.inventory_grid_cols + self.selected_col
+        selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
         if selected_index < len(self.all_items):
             selected_item = self.all_items[selected_index]
 
@@ -367,8 +364,7 @@ class InventoryView(arcade.View):
             return
 
         # Get selected item
-        settings = self.window.settings
-        selected_index = self.selected_row * settings.inventory_grid_cols + self.selected_col
+        selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
         if 0 <= selected_index < len(self.all_items):
             item = self.all_items[selected_index]
 
@@ -424,7 +420,7 @@ class InventoryView(arcade.View):
                     self.window.width / 2,
                     90,
                     arcade.color.WHITE,
-                    font_size=settings.menu_title_size,
+                    font_size=settings.MENU_TITLE_SIZE,
                     anchor_x="center",
                 )
             else:
@@ -535,9 +531,8 @@ class InventoryView(arcade.View):
         Side effects:
             - Updates self.selected_row and self.selected_col with wrapping
         """
-        settings = self.window.settings
-        self.selected_col = (self.selected_col + delta_col) % settings.inventory_grid_cols
-        self.selected_row = (self.selected_row + delta_row) % settings.inventory_grid_rows
+        self.selected_col = (self.selected_col + delta_col) % settings.INVENTORY_GRID_COLS
+        self.selected_row = (self.selected_row + delta_row) % settings.INVENTORY_GRID_ROWS
 
     def _view_selected_item(self) -> None:
         """View the currently selected item (photo) in full-screen mode (internal implementation).
@@ -562,8 +557,7 @@ class InventoryView(arcade.View):
             - Sets self.viewing_photo to True
             - Logs photo name on success or errors on failure
         """
-        settings = self.window.settings
-        selected_index = self.selected_row * settings.inventory_grid_cols + self.selected_col
+        selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
 
         if selected_index >= len(self.all_items):
             return

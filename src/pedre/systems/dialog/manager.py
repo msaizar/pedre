@@ -62,12 +62,12 @@ from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 from pedre.systems.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.config import GameSettings
     from pedre.systems.game_context import GameContext
     from pedre.systems.npc import NPCManager
 
@@ -190,9 +190,8 @@ class DialogManager(BaseSystem):
 
         # Game context for event publishing
         self.context: GameContext | None = None
-        self.settings: GameSettings | None = None
 
-    def setup(self, context: GameContext, settings: GameSettings) -> None:
+    def setup(self, context: GameContext) -> None:
         """Initialize the dialog system with game settings.
 
         This method is called by the SystemLoader after all systems have been
@@ -200,10 +199,8 @@ class DialogManager(BaseSystem):
 
         Args:
             context: Game context for accessing the event bus.
-            settings: Game configuration for auto-close duration.
         """
         self.context = context
-        self.settings = settings
         logger.debug("DialogManager setup complete")
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
@@ -278,7 +275,7 @@ class DialogManager(BaseSystem):
                 animation would be distracting.
             auto_close: If True, dialog automatically closes after configured duration.
                 If False, player must manually close. If None, uses the default from
-                GameSettings.dialog_auto_close_default. Useful for cutscenes and
+                settings.DIALOG_AUTO_CLOSE_DEFAULT. Useful for cutscenes and
                 scripted sequences. The timer starts after text is fully revealed.
             dialog_level: Optional dialog level for event tracking. Used when emitting
                 DialogClosedEvent.
@@ -316,7 +313,7 @@ class DialogManager(BaseSystem):
         self.current_dialog_level = dialog_level
         # Use default from settings if auto_close not explicitly specified
         if auto_close is None:
-            self.auto_close_enabled = self.settings.dialog_auto_close_default if self.settings else False
+            self.auto_close_enabled = settings.DIALOG_AUTO_CLOSE_DEFAULT
         else:
             self.auto_close_enabled = auto_close
         self.auto_close_timer = 0.0
@@ -480,9 +477,9 @@ class DialogManager(BaseSystem):
                     self.text_fully_revealed = True
 
         # Handle auto-close countdown
-        if self.auto_close_enabled and self.text_fully_revealed and self.settings:
+        if self.auto_close_enabled and self.text_fully_revealed:
             self.auto_close_timer += delta_time
-            if self.auto_close_timer >= self.settings.dialog_auto_close_duration:
+            if self.auto_close_timer >= settings.DIALOG_AUTO_CLOSE_DURATION:
                 closed = self.advance_page()
                 if (
                     closed

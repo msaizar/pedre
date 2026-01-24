@@ -42,7 +42,7 @@ class SystemRegistry:
     The SystemRegistry maintains a mapping of system names to their classes.
     Systems register themselves using the @SystemRegistry.register decorator,
     which allows the SystemLoader to discover and instantiate them based on
-    the GameSettings.installed_systems configuration.
+    the settings.installed_systems configuration.
 
     This pattern is similar to Django's app registry, enabling users to create
     custom systems that integrate seamlessly with the engine.

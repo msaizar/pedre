@@ -119,7 +119,7 @@ class ViewManager:
             waypoints={},
             interacted_objects=set(),
         )
-        self.system_loader = SystemLoader(self.window.settings)
+        self.system_loader = SystemLoader()
         system_instances = self.system_loader.instantiate_all()
 
         # Update game_context reference (set game_view now that we have the instance)
