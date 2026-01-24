@@ -498,9 +498,9 @@ Waypoints Layer:
 
 ```python
 # Configure your game
-WINDOW_TITLE="My RPG",
-SCREEN_WIDTH=1920,
-SCREEN_HEIGHT=1080,
+WINDOW_TITLE="My RPG"
+SCREEN_WIDTH=1920
+SCREEN_HEIGHT=1080
 INITIAL_MAP="village.tmx"
 ```
 
