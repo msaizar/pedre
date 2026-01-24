@@ -409,16 +409,16 @@ The player is controlled via keyboard input:
 
 **Movement Configuration:**
 
-Player movement and interaction speeds are controlled by game settings. These can be configured when creating your GameSettings:
+Player movement and interaction speeds are controlled by game settings. These can be configured when creating your `settings.py` file:
 
 | Property | Default | Description |
 | -------- | ------- | ----------- |
-| `player_movement_speed` | 3 | Player movement speed (pixels per frame) |
-| `tile_size` | 32 | Size of each game tile (pixels) |
-| `interaction_manager_distance` | 50 | Distance for object interaction (pixels, ~1.5 tiles) |
-| `npc_interaction_distance` | 50 | Distance for NPC interaction (pixels, ~1.5 tiles) |
-| `portal_interaction_distance` | 50 | Distance for portal activation (pixels, ~1.5 tiles) |
-| `waypoint_threshold` | 2 | Distance threshold for reaching waypoints (pixels) |
+| `PLAYER_MOVEMENT_SPEED` | 3 | Player movement speed (pixels per frame) |
+| `TILE_SIZE` | 32 | Size of each game tile (pixels) |
+| `INTERACTION_MANAGER_DISTANCE` | 50 | Distance for object interaction (pixels, ~1.5 tiles) |
+| `NPC_INTERACTION_DISTANCE` | 50 | Distance for NPC interaction (pixels, ~1.5 tiles) |
+| `PORTAL_INTERACTION_DISTANCE` | 50 | Distance for portal activation (pixels, ~1.5 tiles) |
+| `WAYPOINT_THRESHOLD` | 2 | Distance threshold for reaching waypoints (pixels) |
 
 ### Player Collision
 
@@ -494,19 +494,23 @@ Waypoints Layer:
 
 **In Code (Game initialization):**
 
-```python
-from pedre import GameSettings, run_game
+`settings.py`:
 
+```python
 # Configure your game
-settings = GameSettings(
-    window_title="My RPG",
-    screen_width=1920,
-    screen_height=1080,
-    initial_map="village.tmx"
-)
+WINDOW_TITLE="My RPG",
+SCREEN_WIDTH=1920,
+SCREEN_HEIGHT=1080,
+INITIAL_MAP="village.tmx"
+```
+
+`main.py`:
+
+```python
+from pedre import run_game
 
 if __name__ == "__main__":
-    run_game(settings)
+    run_game()
 ```
 
 This will create a window with your custom settings and start the game.
