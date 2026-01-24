@@ -13,8 +13,10 @@ from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems import InteractionManager, NPCManager, ParticleManager
     from pedre.systems.game_context import GameContext
+    from pedre.systems.interaction.manager import InteractionBaseManager
+    from pedre.systems.npc.base import NPCBaseManager
+    from pedre.systems.particle.manager import ParticleManager
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +118,7 @@ class EmitParticlesAction(Action):
                     return True
 
             elif self.npc_name:
-                npc_manager = cast("NPCManager", context.get_system("npc"))
+                npc_manager = cast("NPCBaseManager", context.get_system("npc"))
                 if npc_manager:
                     npc_state = npc_manager.npcs.get(self.npc_name)
                     if npc_state:
@@ -130,11 +132,11 @@ class EmitParticlesAction(Action):
                     return True
 
             elif self.interactive_object:
-                interaction_manager = cast("InteractionManager", context.get_system("interaction"))
+                interaction_manager = cast("InteractionBaseManager", context.get_system("interaction"))
                 if interaction_manager:
                     # Lowercase for case-insensitive matching
                     obj_name = self.interactive_object.lower()
-                    interactive_obj = interaction_manager.interactive_objects.get(obj_name)
+                    interactive_obj = interaction_manager.get_interactive_objects().get(obj_name)
                     if interactive_obj:
                         emit_x = interactive_obj.sprite.center_x
                         emit_y = interactive_obj.sprite.center_y

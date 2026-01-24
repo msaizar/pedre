@@ -58,8 +58,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
@@ -69,8 +68,8 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
-from pedre.systems.base import BaseSystem
 from pedre.systems.inventory import InventoryManager
+from pedre.systems.npc.base import NPCBaseManager, NPCState
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
@@ -81,53 +80,10 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.events import EventBus
-    from pedre.systems import DialogManager
+    from pedre.systems.dialog.base import DialogBaseManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class NPCState:
-    """Runtime state tracking for a single NPC.
-
-    NPCState holds all mutable state for an NPC during gameplay, including their current
-    position (via sprite), conversation progress, pathfinding data, and animation status.
-    This state persists throughout the game session and is updated as the NPC moves,
-    interacts with players, and performs animations.
-
-    The state is stored separately from dialog configuration (NPCDialogConfig) to separate
-    what the NPC says (static data) from what the NPC is currently doing (runtime state).
-
-    Attributes:
-        sprite: The arcade Sprite representing this NPC visually. Can be a regular Sprite
-               or an AnimatedNPC with animation capabilities. Position is tracked via
-               sprite.center_x and sprite.center_y.
-        name: Unique identifier for this NPC (e.g., "martin", "shopkeeper"). Used for
-             lookups, dialog assignment, and event tracking.
-        dialog_level: Current conversation progression level (0-based). Increments as
-                     player has conversations, determining which dialog text is shown.
-                     Default starts at 0 for first conversation.
-        path: Queue of (x, y) pixel coordinates representing the NPC's pathfinding route.
-             Waypoints are popped from the front as the NPC reaches them. Empty deque
-             means no active path.
-        is_moving: Whether the NPC is currently traversing a path. True during movement,
-                  False when stationary. NPCs cannot be interacted with while moving.
-        appear_event_emitted: Tracks if NPCAppearCompleteEvent has been published for this
-                            NPC. Reset when starting a new appear animation. Prevents
-                            duplicate event emissions.
-        disappear_event_emitted: Tracks if NPCDisappearCompleteEvent has been published.
-                               Reset when starting a new disappear animation. Prevents
-                               duplicate event emissions.
-    """
-
-    sprite: arcade.Sprite
-    name: str
-    dialog_level: int = 0
-    path: deque[tuple[float, float]] = field(default_factory=deque)
-    is_moving: bool = False
-    appear_event_emitted: bool = False
-    disappear_event_emitted: bool = False
 
 
 @dataclass
@@ -183,7 +139,7 @@ class NPCDialogConfig:
 
 
 @SystemRegistry.register
-class NPCManager(BaseSystem):
+class NPCManager(NPCBaseManager):
     """Manages NPC state, movement, and interactions.
 
     The NPCManager is the central controller for all NPC-related systems. It coordinates
@@ -550,7 +506,7 @@ class NPCManager(BaseSystem):
         if not npc:
             return False
 
-        dialog_manager = cast("DialogManager", context.get_system("dialog"))
+        dialog_manager = cast("DialogBaseManager", context.get_system("dialog"))
 
         # Get dialog
         current_scene = context.current_scene or "default"

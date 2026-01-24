@@ -53,20 +53,20 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
-from pedre.systems.base import BaseSystem
+from pedre.systems.camera.base import CameraBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     import arcade
 
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc import NPCManager
+    from pedre.systems.npc.base import NPCBaseManager
 
 logger = logging.getLogger(__name__)
 
 
 @SystemRegistry.register
-class CameraManager(BaseSystem):
+class CameraManager(CameraBaseManager):
     """Manages camera with smooth following and optional boundaries.
 
     The CameraManager wraps an Arcade Camera2D object and provides smooth
@@ -398,7 +398,7 @@ class CameraManager(BaseSystem):
                 else:
                     self.instant_follow(context.player_sprite.center_x, context.player_sprite.center_y)
         elif self.follow_mode == "npc":
-            npc_manager = cast("NPCManager", context.get_system("npc"))
+            npc_manager = cast("NPCBaseManager", context.get_system("npc"))
             if npc_manager and self.follow_target_npc:
                 npc_state = npc_manager.get_npc_by_name(self.follow_target_npc)
                 if npc_state:
@@ -474,7 +474,7 @@ class CameraManager(BaseSystem):
                 config = {"mode": "player", "smooth": camera_smooth}
             else:
                 # Validate NPC exists
-                npc_manager = cast("NPCManager", context.get_system("npc"))
+                npc_manager = cast("NPCBaseManager", context.get_system("npc"))
                 if npc_manager:
                     # NPCs are registered during load_from_tiled phase
                     # We can check if NPC will exist (it's in the map)
@@ -497,6 +497,10 @@ class CameraManager(BaseSystem):
 
         self._follow_config = config
         logger.debug("Camera follow config loaded: %s", config)
+
+    def get_follow_config(self) -> dict[str, Any] | None:
+        """Get the stored follow config."""
+        return self._follow_config
 
     def apply_follow_config(self, context: GameContext) -> None:
         """Apply camera following configuration loaded from Tiled.

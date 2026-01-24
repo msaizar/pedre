@@ -23,6 +23,7 @@ from pedre.systems.npc.actions import (
     WaitForNPCsAppearAction,
     WaitForNPCsDisappearAction,
 )
+from pedre.systems.npc.base import NPCBaseManager, NPCState
 from pedre.systems.npc.conditions import check_npc_dialog_level, check_npc_interacted
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
@@ -30,12 +31,13 @@ from pedre.systems.npc.events import (
     NPCInteractedEvent,
     NPCMovementCompleteEvent,
 )
-from pedre.systems.npc.manager import NPCDialogConfig, NPCManager, NPCState
+from pedre.systems.npc.manager import NPCDialogConfig, NPCManager
 
 __all__ = [
     "AdvanceDialogAction",
     "MoveNPCAction",
     "NPCAppearCompleteEvent",
+    "NPCBaseManager",
     "NPCDialogConfig",
     "NPCDisappearCompleteEvent",
     "NPCInteractedEvent",

@@ -36,58 +36,6 @@ Alternative usage:
 
 __version__ = "0.0.7"
 
-from pedre.conf import settings
-from pedre.helpers import create_game, run_game
-from pedre.sprites import AnimatedNPC, AnimatedPlayer
-from pedre.systems import (
-    AudioManager,
-    CameraManager,
-    DialogManager,
-    EventBus,
-    GameContext,
-    GameSaveData,
-    InputManager,
-    InteractionManager,
-    InteractiveObject,
-    InventoryItem,
-    InventoryManager,
-    NPCManager,
-    ParticleManager,
-    PathfindingManager,
-    Portal,
-    PortalManager,
-    SaveManager,
-    ScriptManager,
-)
-from pedre.view_manager import ViewManager
-from pedre.views import GameView, MenuView
+from pedre.helpers import run_game
 
-__all__ = [
-    "AnimatedNPC",
-    "AnimatedPlayer",
-    "AudioManager",
-    "CameraManager",
-    "DialogManager",
-    "EventBus",
-    "GameContext",
-    "GameSaveData",
-    "GameView",
-    "InputManager",
-    "InteractionManager",
-    "InteractiveObject",
-    "InventoryItem",
-    "InventoryManager",
-    "MenuView",
-    "NPCManager",
-    "ParticleManager",
-    "PathfindingManager",
-    "Portal",
-    "PortalManager",
-    "SaveManager",
-    "ScriptManager",
-    "ViewManager",
-    "__version__",
-    "create_game",
-    "run_game",
-    "settings",
-]
+__all__ = ["run_game"]

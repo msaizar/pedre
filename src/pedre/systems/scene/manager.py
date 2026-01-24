@@ -11,40 +11,32 @@ scenes, including:
 from __future__ import annotations
 
 import logging
-from enum import Enum, auto
 from typing import TYPE_CHECKING, ClassVar, cast
 
 import arcade
 
 from pedre.conf import settings
 from pedre.constants import asset_path
-from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
+from pedre.systems.scene.base import SceneBaseManager, TransitionState
 from pedre.systems.scene.events import SceneStartEvent
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from pedre.systems import CameraManager, PathfindingManager, PhysicsManager
     from pedre.systems.cache_manager import CacheManager
+    from pedre.systems.camera.base import CameraBaseManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc import NPCManager
-    from pedre.systems.script import ScriptManager
+    from pedre.systems.npc.base import NPCBaseManager
+    from pedre.systems.pathfinding.base import PathfindingBaseManager
+    from pedre.systems.physics.base import PhysicsBaseManager
+    from pedre.systems.script.base import ScriptBaseManager
 
 logger = logging.getLogger(__name__)
 
 
-class TransitionState(Enum):
-    """Enum for scene transition states."""
-
-    NONE = auto()  # No transition happening
-    FADING_OUT = auto()  # Fading out old scene
-    LOADING = auto()  # Loading new scene (internal state)
-    FADING_IN = auto()  # Fading in new scene
-
-
 @SystemRegistry.register
-class SceneManager(BaseSystem):
+class SceneManager(SceneBaseManager):
     """Manages scene transitions, lifecycle, and map loading.
 
     Responsibilities:
@@ -104,6 +96,14 @@ class SceneManager(BaseSystem):
             return cls._cache_manager.to_dict()
         return {}
 
+    def get_current_map(self) -> str:
+        """Get current map."""
+        return self.current_map
+
+    def get_transition_state(self) -> TransitionState:
+        """Get transition state."""
+        return self.transition_state
+
     def __init__(self) -> None:
         """Initialize the scene manager."""
         self.current_scene: str = "default"
@@ -138,6 +138,14 @@ class SceneManager(BaseSystem):
         self.pending_spawn_waypoint = None
         logger.debug("SceneManager reset complete")
 
+    def get_arcade_scene(self) -> arcade.Scene | None:
+        """Get arcade scene."""
+        return self.arcade_scene
+
+    def get_tile_map(self) -> arcade.TileMap | None:
+        """Get tile map."""
+        return self.tile_map
+
     def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
         """Central orchestration for loading a new map/level.
 
@@ -165,14 +173,14 @@ class SceneManager(BaseSystem):
         self._load_map(map_file, context)
 
         # Get NPC and script managers for scene loading
-        npc_manager = cast("NPCManager | None", context.get_system("npc"))
-        script_manager = cast("ScriptManager | None", context.get_system("script"))
+        npc_manager = cast("NPCBaseManager | None", context.get_system("npc"))
+        script_manager = cast("ScriptBaseManager | None", context.get_system("script"))
 
         npc_dialogs_data = {}
-        if npc_manager and hasattr(npc_manager, "load_scene_dialogs"):
+        if npc_manager:
             npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
 
-        if script_manager and hasattr(script_manager, "load_scene_scripts"):
+        if script_manager:
             script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
 
         # Restore scene state using cache manager
@@ -214,14 +222,12 @@ class SceneManager(BaseSystem):
         self._load_systems_from_tiled(context)
 
         # 4. Invalidate physics engine (needs new player/walls)
-        physics_manager = cast("PhysicsManager", context.get_system("physics"))
-        if physics_manager and hasattr(physics_manager, "invalidate"):
-            physics_manager.invalidate()
+        physics_manager = cast("PhysicsBaseManager", context.get_system("physics"))
+        physics_manager.invalidate()
 
         # 5. Update pathfinding (needs new wall list)
-        pathfinding = cast("PathfindingManager", context.get_system("pathfinding"))
-        if pathfinding and hasattr(pathfinding, "set_wall_list"):
-            pathfinding.set_wall_list(wall_list)
+        pathfinding = cast("PathfindingBaseManager", context.get_system("pathfinding"))
+        pathfinding.set_wall_list(wall_list)
 
         # 6. Setup camera with map bounds
         self._setup_camera(context)
@@ -252,7 +258,7 @@ class SceneManager(BaseSystem):
 
     def _setup_camera(self, context: GameContext) -> None:
         """Setup camera with map bounds after loading."""
-        camera_manager = cast("CameraManager", context.get_system("camera"))
+        camera_manager = cast("CameraBaseManager", context.get_system("camera"))
         if not camera_manager or not self.tile_map:
             return
 
@@ -271,7 +277,9 @@ class SceneManager(BaseSystem):
         # Apply camera following configuration from map properties
         camera_manager.apply_follow_config(context)
 
-    def _get_initial_camera_position(self, camera_manager: CameraManager, context: GameContext) -> tuple[float, float]:
+    def _get_initial_camera_position(
+        self, camera_manager: CameraBaseManager, context: GameContext
+    ) -> tuple[float, float]:
         """Determine initial camera position based on follow configuration.
 
         Checks the camera's follow config (loaded from Tiled map properties) to
@@ -286,13 +294,13 @@ class SceneManager(BaseSystem):
             Tuple of (x, y) position for initial camera placement.
         """
         # Check if camera has follow config from Tiled
-        follow_config = camera_manager._follow_config  # noqa: SLF001
+        follow_config = camera_manager.get_follow_config()
 
         if follow_config and follow_config.get("mode") == "npc":
             # Camera should follow NPC - position at NPC initially
             npc_name = follow_config.get("target")
             if npc_name:
-                npc_manager = cast("NPCManager | None", context.get_system("npc"))
+                npc_manager = cast("NPCBaseManager | None", context.get_system("npc"))
                 if npc_manager:
                     npc_state = npc_manager.get_npc_by_name(npc_name)
                     if npc_state:

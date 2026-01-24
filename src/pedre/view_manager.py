@@ -56,8 +56,15 @@ from typing import TYPE_CHECKING, cast
 
 import arcade
 
-from pedre.events import ShowInventoryEvent, ShowLoadGameEvent, ShowMenuEvent, ShowSaveGameEvent
-from pedre.systems import EventBus, GameContext, SaveManager, SystemLoader
+from pedre.events import (
+    EventBus,
+    ShowInventoryEvent,
+    ShowLoadGameEvent,
+    ShowMenuEvent,
+    ShowSaveGameEvent,
+)
+from pedre.systems.game_context import GameContext
+from pedre.systems.loader import SystemLoader
 from pedre.views.game_view import GameView
 from pedre.views.inventory_view import InventoryView
 from pedre.views.load_game_view import LoadGameView
@@ -65,7 +72,9 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems import GameSaveData, InventoryManager, SceneManager
+    from pedre.systems.inventory.manager import InventoryManager
+    from pedre.systems.save.base import GameSaveData, SaveBaseManager
+    from pedre.systems.scene.manager import SceneBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -387,7 +396,7 @@ class ViewManager:
             return
 
         # Full load: no game view exists, load from auto-save
-        save_manager = cast("SaveManager", self.game_context.get_system("save"))
+        save_manager = cast("SaveBaseManager", self.game_context.get_system("save"))
         if not save_manager:
             logger.error("Save system not available")
             return
@@ -454,7 +463,7 @@ class ViewManager:
             logger.error("ViewManager: No GameContext after showing GameView")
             return
 
-        save_manager = cast("SaveManager", context.get_system("save"))
+        save_manager = cast("SaveBaseManager", context.get_system("save"))
         if not save_manager:
             logger.error("ViewManager: Save system not found in context")
             return
@@ -464,7 +473,7 @@ class ViewManager:
 
         # Restore cache state for persistence across scene transitions
         if "_scene_caches" in save_data.save_states:
-            scene_manager = cast("SceneManager", context.get_system("scene"))
+            scene_manager = cast("SceneBaseManager", context.get_system("scene"))
             if scene_manager:
                 scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
 

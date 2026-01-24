@@ -57,7 +57,7 @@ from heapq import heappop, heappush
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pedre.conf import settings
-from pedre.systems.base import BaseSystem
+from pedre.systems.pathfinding.base import PathfindingBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -69,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 
 @SystemRegistry.register
-class PathfindingManager(BaseSystem):
+class PathfindingManager(PathfindingBaseManager):
     """Manages pathfinding calculations using A* algorithm.
 
     The PathfindingManager provides efficient navigation for game entities across a

@@ -40,8 +40,8 @@ from pedre.conf import settings
 from pedre.constants import asset_path
 
 if TYPE_CHECKING:
-    from pedre.systems import InventoryManager
     from pedre.systems.inventory import InventoryItem
+    from pedre.systems.inventory.manager import InventoryManager
     from pedre.view_manager import ViewManager
 
 logger = logging.getLogger(__name__)

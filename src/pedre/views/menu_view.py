@@ -50,7 +50,8 @@ from pedre.constants import asset_path
 from pedre.types import MenuOption
 
 if TYPE_CHECKING:
-    from pedre.systems import AudioManager, SaveManager
+    from pedre.systems.audio.base import AudioBaseManager
+    from pedre.systems.save.manager import SaveBaseManager
     from pedre.view_manager import ViewManager
 from typing import cast
 
@@ -355,7 +356,7 @@ class MenuView(arcade.View):
         has_autosave = False
         if has_game_view:
             # If game view exists, check for auto-save through it
-            save_manager = cast("SaveManager", self.view_manager.game_context.get_system("save"))
+            save_manager = cast("SaveBaseManager", self.view_manager.game_context.get_system("save"))
             has_autosave = save_manager.save_exists(slot=0)
 
         # Enable Continue if either condition is met
@@ -432,7 +433,7 @@ class MenuView(arcade.View):
                 if not game_view or not hasattr(game_view, "audio_manager"):
                     return
 
-                audio_manager = cast("AudioManager", game_view.audio_manager)
+                audio_manager = cast("AudioBaseManager", game_view.audio_manager)
                 if not audio_manager:
                     return
 
@@ -455,7 +456,7 @@ class MenuView(arcade.View):
                         - Removes loading marker when complete
                         - Logs loading status
                     """
-                    if music_file not in audio_manager.music_cache:
+                    if music_file not in audio_manager.get_music_cache():
                         logger.debug("Starting to load music: %s", music_file)
                         # Mark as loading
                         audio_manager.mark_music_loading(music_file)
@@ -463,7 +464,7 @@ class MenuView(arcade.View):
                             # Load music file using asset_path
                             music_path = asset_path(f"audio/music/{music_file}", settings.ASSETS_HANDLE)
                             sound = arcade.load_sound(music_path, streaming=False)
-                            audio_manager.music_cache[music_file] = sound
+                            audio_manager.set_music_cache(music_file, sound)
                             logger.info("Preloaded music in background: %s", music_file)
                         finally:
                             # Remove from loading set

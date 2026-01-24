@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, cast
 from pedre.conditions.registry import ConditionRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems import InventoryManager
     from pedre.systems.game_context import GameContext
+    from pedre.systems.inventory.manager import InventoryManager
 
 
 @ConditionRegistry.register("inventory_accessed")

@@ -11,7 +11,7 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc import NPCManager
+    from pedre.systems.npc.base import NPCBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class DebugManager(BaseSystem):
             player_y = int(context.player_sprite.center_y)
             debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
         # Collect NPC positions
-        npc_manager = cast("NPCManager", context.get_system("npc"))
+        npc_manager = cast("NPCBaseManager", context.get_system("npc"))
         if npc_manager:
             for npc_name, npc_state in npc_manager.npcs.items():
                 if npc_state.sprite and npc_state.sprite.visible:

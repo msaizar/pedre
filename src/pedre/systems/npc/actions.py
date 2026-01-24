@@ -10,8 +10,9 @@ from pedre.actions.registry import ActionRegistry
 from pedre.sprites import AnimatedNPC
 
 if TYPE_CHECKING:
-    from pedre.systems import DialogManager, NPCManager, ParticleManager
+    from pedre.systems.dialog.base import DialogBaseManager
     from pedre.systems.game_context import GameContext
+    from pedre.systems.npc.manager import NPCManager
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +109,7 @@ class RevealNPCsAction(Action):
 
     This action makes NPCs visible that have their sprite.visible property set to False.
     Hidden NPCs are not rendered and cannot be interacted with by the player. When revealed,
-    the NPCs become visible, are added to the collision wall list, and a golden burst
-    particle effect is emitted at each NPC's location for dramatic effect.
+    the NPCs become visible, are added to the collision wall list.
 
     NPCs can be hidden by setting sprite.visible = False during initialization in the map
     data or programmatically. AnimatedNPCs will also play their appear animation when revealed.
@@ -134,21 +134,9 @@ class RevealNPCsAction(Action):
         """Reveal NPCs and show particle effects."""
         if not self.executed:
             npc_manager = cast("NPCManager", context.get_system("npc"))
-            particle_manager = cast("ParticleManager", context.get_system("particle"))
 
             if npc_manager:
                 npc_manager.show_npcs(self.npc_names, context.wall_list)
-
-                # Emit burst particles at each NPC location
-                if particle_manager:
-                    for npc_name in self.npc_names:
-                        npc_state = npc_manager.npcs.get(npc_name)
-                        if npc_state:
-                            particle_manager.emit_burst(
-                                npc_state.sprite.center_x,
-                                npc_state.sprite.center_y,
-                                color=(255, 215, 0),  # Gold color for reveal
-                            )
 
             self.executed = True
             logger.debug("RevealNPCsAction: Revealed NPCs %s", self.npc_names)
@@ -330,12 +318,12 @@ class SetCurrentNPCAction(Action):
         if not self.executed:
             # Access game view through context to set current NPC
             npc_manager = cast("NPCManager", context.get_system("npc"))
-            dialog_manager = cast("DialogManager", context.get_system("dialog"))
+            dialog_manager = cast("DialogBaseManager", context.get_system("dialog"))
             if npc_manager and dialog_manager:
                 npc_state = npc_manager.npcs.get(self.npc_name)
                 if npc_state:
-                    dialog_manager.current_npc_name = self.npc_name
-                    dialog_manager.current_dialog_level = npc_state.dialog_level
+                    dialog_manager.set_current_npc_name(self.npc_name)
+                    dialog_manager.set_current_dialog_level(npc_state.dialog_level)
                 logger.debug(
                     "SetCurrentNPCAction: Set current NPC to %s at level %d",
                     self.npc_name,

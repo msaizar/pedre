@@ -9,7 +9,7 @@ from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems import AudioManager
+    from pedre.systems.audio.manager import AudioManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)

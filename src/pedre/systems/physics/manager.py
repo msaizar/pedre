@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
-from pedre.systems.base import BaseSystem
+from pedre.systems.physics.base import PhysicsBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @SystemRegistry.register
-class PhysicsManager(BaseSystem):
+class PhysicsManager(PhysicsBaseManager):
     """Manages physics engine and collision updates.
 
     Responsibilities:

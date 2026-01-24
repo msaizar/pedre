@@ -38,7 +38,7 @@ import arcade
 from pedre.conf import settings
 
 if TYPE_CHECKING:
-    from pedre.systems import SaveManager
+    from pedre.systems.save.base import SaveBaseManager
     from pedre.view_manager import ViewManager
 
 
@@ -70,7 +70,7 @@ class LoadGameView(arcade.View):
         """
         super().__init__()
         self.view_manager = view_manager
-        self.save_manager = cast("SaveManager", self.view_manager.game_context.get_system("save"))
+        self.save_manager = cast("SaveBaseManager", self.view_manager.game_context.get_system("save"))
         self.selected_slot = 1  # Slots 1-3, plus 0 for back
         self.save_info: dict[int, dict | None] = {}
 

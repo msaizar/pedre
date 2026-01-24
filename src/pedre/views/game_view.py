@@ -18,7 +18,6 @@ Key responsibilities:
 System architecture:
 The GameView orchestrates multiple manager classes that handle specific subsystems:
 - ScriptManager: Executes scripted sequences from JSON
-- AudioManager: Plays music and sound effects
 - SaveManager: Handles game state persistence
 - CameraManager: Smooth camera following
 
@@ -58,10 +57,8 @@ from pedre.systems.scene import TransitionState
 
 # These imports are used for cast() type annotations only
 if TYPE_CHECKING:
-    from pedre.systems import (
-        CameraManager,
-        SceneManager,
-    )
+    from pedre.systems.camera.manager import CameraBaseManager
+    from pedre.systems.scene.manager import SceneBaseManager
     from pedre.view_manager import ViewManager
 
 
@@ -137,7 +134,7 @@ class GameView(arcade.View):
         # Load the initial map
         target_map = self.map_file or settings.INITIAL_MAP
         if target_map and self.view_manager.game_context:
-            scene_manager = cast("SceneManager", self.view_manager.game_context.get_system("scene"))
+            scene_manager = cast("SceneBaseManager", self.view_manager.game_context.get_system("scene"))
             if scene_manager:
                 scene_manager.load_level(target_map, self.spawn_waypoint, self.view_manager.game_context)
 
@@ -170,8 +167,8 @@ class GameView(arcade.View):
             return
 
         # Handle scene transitions
-        scene_manager = cast("SceneManager", self.view_manager.game_context.get_system("scene"))
-        if scene_manager and scene_manager.transition_state != TransitionState.NONE:
+        scene_manager = cast("SceneBaseManager", self.view_manager.game_context.get_system("scene"))
+        if scene_manager and scene_manager.get_transition_state() != TransitionState.NONE:
             scene_manager.update(delta_time, self.view_manager.game_context)
             # During transition, skip other game logic
             return
@@ -190,7 +187,7 @@ class GameView(arcade.View):
             return
 
         # Activate game camera for world rendering
-        camera_manager = cast("CameraManager", self.view_manager.game_context.get_system("camera"))
+        camera_manager = cast("CameraBaseManager", self.view_manager.game_context.get_system("camera"))
         if camera_manager:
             camera_manager.use()
 
@@ -246,7 +243,7 @@ class GameView(arcade.View):
         """
         # Cache state for this scene before clearing (for scene transitions)
         scene_manager = (
-            cast("SceneManager", self.view_manager.game_context.get_system("scene"))
+            cast("SceneBaseManager", self.view_manager.game_context.get_system("scene"))
             if self.view_manager.game_context
             else None
         )

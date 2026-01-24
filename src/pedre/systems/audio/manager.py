@@ -57,7 +57,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.constants import asset_path
-from pedre.systems.base import BaseSystem
+from pedre.systems.audio.base import AudioBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -67,7 +67,7 @@ logger = logging.getLogger(__name__)
 
 
 @SystemRegistry.register
-class AudioManager(BaseSystem):
+class AudioManager(AudioBaseManager):
     """Manages background music and sound effects.
 
     The AudioManager is the central system for all audio playback in the game.
@@ -150,6 +150,14 @@ class AudioManager(BaseSystem):
         """Reset audio system for new game (stop music, keep cache)."""
         self.stop_music()
         logger.debug("AudioManager reset complete")
+
+    def get_music_cache(self) -> dict[str, arcade.Sound]:
+        """Get music cache."""
+        return self.music_cache
+
+    def set_music_cache(self, cache_key: str, sound: arcade.Sound) -> None:
+        """Set music cache."""
+        self.music_cache[cache_key] = sound
 
     def play_music(self, filename: str, *, loop: bool = True, volume: float | None = None) -> bool:
         """Play background music.

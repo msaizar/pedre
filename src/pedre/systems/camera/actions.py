@@ -11,7 +11,7 @@ from pedre.actions.registry import ActionRegistry
 if TYPE_CHECKING:
     from pedre.systems.camera import CameraManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc import NPCManager
+    from pedre.systems.npc.base import NPCBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ class FollowNPCAction(Action):
             camera_manager = cast("CameraManager", context.get_system("camera"))
             if camera_manager:
                 # Validate NPC exists
-                npc_manager = cast("NPCManager", context.get_system("npc"))
+                npc_manager = cast("NPCBaseManager", context.get_system("npc"))
                 if npc_manager:
                     npc_state = npc_manager.get_npc_by_name(self.npc_name)
                     if not npc_state:

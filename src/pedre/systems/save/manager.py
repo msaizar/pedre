@@ -50,90 +50,25 @@ Example usage:
 
 import json
 import logging
-from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
-from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
+from pedre.systems.save.base import GameSaveData, SaveBaseManager
 
 if TYPE_CHECKING:
-    from pedre.systems.audio import AudioManager
+    from pedre.systems.audio.base import AudioBaseManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.scene import SceneManager
+    from pedre.systems.scene.base import SceneBaseManager
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class GameSaveData:
-    """Complete game save state.
-
-    This data class represents a snapshot of the entire game state at a moment in time.
-    It contains player position, current map, and all state from save providers.
-
-    State categories:
-    1. Player state: Physical location in the world
-    2. World state: Which map the player is currently in
-    3. Save states: All state from configured save providers
-    4. Metadata: When the save was created and what format version
-
-    The save_version field enables future migration if the save format needs to change.
-
-    Attributes:
-        player_x: Player's X position in pixel coordinates.
-        player_y: Player's Y position in pixel coordinates.
-        current_map: Filename of the current map (e.g., "village.tmx").
-        save_states: Dictionary mapping save provider names to their serialized state.
-        save_timestamp: Unix timestamp when save was created (seconds since epoch).
-        save_version: Save format version string for future compatibility.
-    """
-
-    # Player state
-    player_x: float
-    player_y: float
-    current_map: str
-
-    # All state from save providers
-    save_states: dict[str, Any] = field(default_factory=dict)
-
-    # Metadata
-    save_timestamp: float = 0.0
-    save_version: str = "2.0"
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for JSON serialization.
-
-        Returns:
-            Dictionary representation with all save data fields as key-value pairs.
-        """
-        return asdict(self)
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> GameSaveData:
-        """Create from dictionary loaded from JSON.
-
-        Args:
-            data: Dictionary loaded from JSON save file.
-
-        Returns:
-            New GameSaveData instance with values from the dictionary.
-        """
-        return cls(
-            player_x=data["player_x"],
-            player_y=data["player_y"],
-            current_map=data["current_map"],
-            save_states=data.get("save_states", {}),
-            save_timestamp=data.get("save_timestamp", 0.0),
-            save_version=data.get("save_version", "2.0"),
-        )
-
-
 @SystemRegistry.register
-class SaveManager(BaseSystem):
+class SaveManager(SaveBaseManager):
     """Manages game save and load operations.
 
     The SaveManager coordinates all save/load functionality, handling file I/O, slot
@@ -201,7 +136,7 @@ class SaveManager(BaseSystem):
 
         success = self.auto_save(context)
 
-        audio_manager = cast("AudioManager | None", context.get_system("audio"))
+        audio_manager = cast("AudioBaseManager | None", context.get_system("audio"))
         if success:
             if audio_manager:
                 audio_manager.play_sfx("save.wav")
@@ -218,7 +153,7 @@ class SaveManager(BaseSystem):
             return
 
         # Reload map if different
-        scene_manager = cast("SceneManager | None", context.get_system("scene"))
+        scene_manager = cast("SceneBaseManager | None", context.get_system("scene"))
         current_map = ""
         if scene_manager and hasattr(scene_manager, "current_map"):
             current_map = scene_manager.current_map
@@ -238,7 +173,7 @@ class SaveManager(BaseSystem):
             context.player_sprite.center_x = save_data.player_x
             context.player_sprite.center_y = save_data.player_y
 
-        audio_manager = cast("AudioManager | None", context.get_system("audio"))
+        audio_manager = cast("AudioBaseManager | None", context.get_system("audio"))
         if audio_manager:
             audio_manager.play_sfx("save.wav")
         logger.info("Quick load completed")
@@ -267,7 +202,7 @@ class SaveManager(BaseSystem):
             logger.error("No player sprite in context")
             return False
 
-        scene_manager = cast("SceneManager | None", context.get_system("scene"))
+        scene_manager = cast("SceneBaseManager | None", context.get_system("scene"))
         if not scene_manager or not hasattr(scene_manager, "current_map"):
             logger.error("SceneManager not available")
             return False
@@ -290,7 +225,7 @@ class SaveManager(BaseSystem):
             save_data = GameSaveData(
                 player_x=context.player_sprite.center_x,
                 player_y=context.player_sprite.center_y,
-                current_map=scene_manager.current_map,
+                current_map=scene_manager.get_current_map(),
                 save_states=save_states,
                 save_timestamp=datetime.now(UTC).timestamp(),
             )
@@ -351,7 +286,7 @@ class SaveManager(BaseSystem):
         """
         # Restore cache manager state first
         if "_scene_caches" in save_data.save_states:
-            scene_manager = cast("SceneManager | None", context.get_system("scene"))
+            scene_manager = cast("SceneBaseManager | None", context.get_system("scene"))
             if scene_manager:
                 scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
                 logger.debug("Restored cache manager state")

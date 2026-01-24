@@ -65,8 +65,8 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
-from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
+from pedre.systems.script.base import ScriptBaseManager
 from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
@@ -114,7 +114,7 @@ class Script:
 
 
 @SystemRegistry.register
-class ScriptManager(BaseSystem):
+class ScriptManager(ScriptBaseManager):
     """Manages loading, triggering, and execution of scripted event sequences.
 
     The ScriptManager is the central system for the game's scripting engine. It loads

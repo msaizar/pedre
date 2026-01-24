@@ -9,8 +9,8 @@ from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems import SceneManager
     from pedre.systems.game_context import GameContext
+    from pedre.systems.scene.manager import SceneManager
 
 logger = logging.getLogger(__name__)
 
