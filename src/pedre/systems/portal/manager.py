@@ -67,13 +67,13 @@ Example conditional portal:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
 from pedre.conf import settings
 from pedre.systems.base import BaseSystem
+from pedre.systems.portal.base import Portal
 from pedre.systems.portal.events import PortalEnteredEvent
 from pedre.systems.registry import SystemRegistry
 
@@ -82,29 +82,6 @@ if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class Portal:
-    """Represents a portal/transition zone between maps.
-
-    A Portal is a trigger zone in the game world that publishes a PortalEnteredEvent
-    when the player enters it. Scripts subscribe to these events to handle transitions,
-    including condition checks, cutscenes, and the actual map change.
-
-    Portals are typically created from Tiled map objects during map loading. The sprite
-    represents the physical location and collision area of the portal in the world.
-
-    The portal name is used in script triggers to match specific portals:
-        {"trigger": {"event": "portal_entered", "portal": "forest_gate"}}
-
-    Attributes:
-        sprite: The arcade Sprite representing the portal's physical location and area.
-        name: Unique identifier for this portal (from Tiled object name).
-    """
-
-    sprite: arcade.Sprite
-    name: str
 
 
 @SystemRegistry.register
