@@ -41,25 +41,24 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pedre.systems.audio.base import AudioBaseManager
-from pedre.systems.camera.base import CameraBaseManager
-from pedre.systems.dialog.base import DialogBaseManager
-from pedre.systems.input.base import InputBaseManager
-from pedre.systems.interaction.base import InteractionBaseManager
-from pedre.systems.inventory.base import InventoryBaseManager
-from pedre.systems.npc.base import NPCBaseManager
-from pedre.systems.particle.base import ParticleBaseManager
-from pedre.systems.pathfinding.base import PathfindingBaseManager
-from pedre.systems.physics.base import PhysicsBaseManager
-from pedre.systems.save.base import SaveBaseManager
-from pedre.systems.scene.base import SceneBaseManager
-from pedre.systems.script.base import ScriptBaseManager
-
 if TYPE_CHECKING:
     import arcade
 
     from pedre.events import EventBus
+    from pedre.systems.audio.base import AudioBaseManager
     from pedre.systems.base import BaseSystem
+    from pedre.systems.camera.base import CameraBaseManager
+    from pedre.systems.dialog.base import DialogBaseManager
+    from pedre.systems.input.base import InputBaseManager
+    from pedre.systems.interaction.base import InteractionBaseManager
+    from pedre.systems.inventory.base import InventoryBaseManager
+    from pedre.systems.npc.base import NPCBaseManager
+    from pedre.systems.particle.base import ParticleBaseManager
+    from pedre.systems.pathfinding.base import PathfindingBaseManager
+    from pedre.systems.physics.base import PhysicsBaseManager
+    from pedre.systems.save.base import SaveBaseManager
+    from pedre.systems.scene.base import SceneBaseManager
+    from pedre.systems.script.base import ScriptBaseManager
 
 
 class GameContext:
@@ -220,32 +219,8 @@ class GameContext:
         """
         self._systems[name] = system
 
-        if isinstance(system, AudioBaseManager):
-            self.audio_manager = system
-        elif isinstance(system, SaveBaseManager):
-            self.save_manager = system
-        elif isinstance(system, NPCBaseManager):
-            self.npc_manager = system
-        elif isinstance(system, SceneBaseManager):
-            self.scene_manager = system
-        elif isinstance(system, CameraBaseManager):
-            self.camera_manager = system
-        elif isinstance(system, DialogBaseManager):
-            self.dialog_manager = system
-        elif isinstance(system, InventoryBaseManager):
-            self.inventory_manager = system
-        elif isinstance(system, InteractionBaseManager):
-            self.interaction_manager = system
-        elif isinstance(system, PathfindingBaseManager):
-            self.pathfinding_manager = system
-        elif isinstance(system, ParticleBaseManager):
-            self.particle_manager = system
-        elif isinstance(system, InputBaseManager):
-            self.input_manager = system
-        elif isinstance(system, PhysicsBaseManager):
-            self.physics_manager = system
-        elif isinstance(system, ScriptBaseManager):
-            self.script_manager = system
+        if system.role:
+            setattr(self, system.role, system)
 
     def get_system(self, name: str) -> BaseSystem | None:
         """Get a registered system by name.

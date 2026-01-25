@@ -86,6 +86,8 @@ class InventoryItem:
 class InventoryBaseManager(BaseSystem, ABC):
     """Base class for InventoryManager."""
 
+    role = "inventory_manager"
+
     @abstractmethod
     def has_been_accessed(self) -> bool:
         """Check if inventory has been accessed."""

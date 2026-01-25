@@ -46,6 +46,8 @@ class DialogPage:
 class DialogBaseManager(BaseSystem, ABC):
     """Base class for DialogManager."""
 
+    role = "dialog_manager"
+
     @abstractmethod
     def show_dialog(
         self,

@@ -47,6 +47,8 @@ class Script:
 class ScriptBaseManager(BaseSystem, ABC):
     """Base class for ScriptManager."""
 
+    role = "script_manager"
+
     @abstractmethod
     def load_scene_scripts(self, scene_name: str, npc_dialogs_data: dict[str, Any]) -> dict[str, Any]:
         """Load and cache scripts for a specific scene."""

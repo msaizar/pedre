@@ -1,5 +1,6 @@
 """Base class for SaveManager."""
 
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -73,29 +74,37 @@ class GameSaveData:
         )
 
 
-class SaveBaseManager(BaseSystem):
+class SaveBaseManager(BaseSystem, ABC):
     """Base class for SaveManager."""
 
+    role = "save_manager"
+
+    @abstractmethod
     def restore_game_data(self, save_data: GameSaveData, context: GameContext) -> None:
         """Restore all state from save data to save providers."""
-        return
+        ...
 
+    @abstractmethod
     def load_auto_save(self) -> GameSaveData | None:
         """Load from auto-save slot."""
-        return
+        ...
 
+    @abstractmethod
     def load_game(self, slot: int) -> GameSaveData | None:
         """Load game from a slot."""
-        return
+        ...
 
+    @abstractmethod
     def get_save_info(self, slot: int) -> dict[str, Any] | None:
         """Get basic info about a save file without fully loading it."""
-        return
+        ...
 
+    @abstractmethod
     def save_exists(self, slot: int) -> bool:
         """Check if a save file exists in a slot."""
-        return False
+        ...
 
+    @abstractmethod
     def save_game(self, slot: int, context: GameContext) -> bool:
         """Save game to a slot."""
-        return False
+        ...

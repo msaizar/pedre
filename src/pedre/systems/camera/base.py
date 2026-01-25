@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 class CameraBaseManager(BaseSystem, ABC):
     """Base class for CameraManager."""
 
+    role = "camera_manager"
+
     @abstractmethod
     def set_camera(self, camera: arcade.camera.Camera2D) -> None:
         """Set the camera to manage."""

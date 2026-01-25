@@ -44,6 +44,8 @@ class Particle:
 class ParticleBaseManager(BaseSystem, ABC):
     """Manages particle effects and visual polish."""
 
+    role = "particle_manager"
+
     @abstractmethod
     def emit_hearts(
         self,

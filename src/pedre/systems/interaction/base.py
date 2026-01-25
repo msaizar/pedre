@@ -44,6 +44,8 @@ class InteractiveObject:
 class InteractionBaseManager(BaseSystem, ABC):
     """Base class for InteractionManager."""
 
+    role = "interaction_manager"
+
     @abstractmethod
     def get_interactive_objects(self) -> dict[str, InteractiveObject]:
         """Get interactive objects."""

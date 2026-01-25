@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 class PathfindingBaseManager(BaseSystem, ABC):
     """Base class for PathfindingManager."""
 
+    role = "pathfinding_manager"
+
     @abstractmethod
     def set_wall_list(self, wall_list: arcade.SpriteList) -> None:
         """Set the wall list for collision detection."""

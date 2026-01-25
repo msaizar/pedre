@@ -25,6 +25,8 @@ class TransitionState(Enum):
 class SceneBaseManager(BaseSystem, ABC):
     """Base class for SceneManager."""
 
+    role = "scene_manager"
+
     @abstractmethod
     def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
         """Central orchestration for loading a new map/level."""

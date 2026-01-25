@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 class AudioBaseManager(BaseSystem, ABC):
     """Base class for AudioManager."""
 
+    role = "audio_manager"
+
     @abstractmethod
     def get_music_cache(self) -> dict[str, arcade.Sound]:
         """Get music cache."""
