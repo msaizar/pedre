@@ -1,7 +1,7 @@
 """Debug manager for rendering debug overlays."""
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
@@ -11,7 +11,6 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc import NPCManager
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +82,9 @@ class DebugManager(BaseSystem):
             player_y = int(context.player_sprite.center_y)
             debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
         # Collect NPC positions
-        npc_manager = cast("NPCManager", context.get_system("npc"))
+        npc_manager = context.npc_manager
         if npc_manager:
-            for npc_name, npc_state in npc_manager.npcs.items():
+            for npc_name, npc_state in npc_manager.get_npcs().items():
                 if npc_state.sprite and npc_state.sprite.visible:
                     npc_tile_x = int(npc_state.sprite.center_x / tile_size)
                     npc_tile_y = int(npc_state.sprite.center_y / tile_size)

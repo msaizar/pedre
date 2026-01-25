@@ -71,7 +71,7 @@ class BaseSystem(ABC):
 
     # System identifier (must be unique across all systems)
     name: ClassVar[str]
-
+    role: str | None = None
     # Other systems this one depends on (by name)
     # Systems are initialized in dependency order
     dependencies: ClassVar[list[str]] = []

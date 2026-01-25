@@ -55,9 +55,9 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from pedre.actions import ActionSequence
 from pedre.actions.registry import ActionRegistry
@@ -65,8 +65,8 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
-from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
+from pedre.systems.script.base import Script, ScriptBaseManager, ScriptEvent
 from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
@@ -76,45 +76,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ScriptEvent(Protocol):
-    """Protocol for events that support script data extraction."""
-
-    def get_script_data(self) -> dict[str, Any]:
-        """Get data formatted for script trigger evaluation."""
-        ...
-
-
-@dataclass
-class Script:
-    """Represents a game script with triggers, conditions, and actions.
-
-    A script encapsulates a sequence of actions that can be triggered by events
-    or manual calls. Scripts support conditional execution, scene restrictions,
-    and one-time execution for story progression control.
-
-    Attributes:
-        trigger: Event specification that triggers this script.
-        conditions: List of condition dictionaries that must all be true.
-        scene: Optional scene name where this script can run.
-        run_once: If True, script only executes once per game session.
-        actions: List of action dictionaries to execute in sequence.
-        on_condition_fail: Optional actions to execute when conditions fail.
-        has_run: Tracks if this script has started (for run_once prevention).
-        completed: Tracks if this script has fully completed all actions.
-    """
-
-    trigger: dict[str, Any] | None = None
-    conditions: list[dict[str, Any]] = field(default_factory=list)
-    scene: str | None = None
-    run_once: bool = False
-    actions: list[dict[str, Any]] = field(default_factory=list)
-    on_condition_fail: list[dict[str, Any]] = field(default_factory=list)
-    has_run: bool = False
-    completed: bool = False
-
-
 @SystemRegistry.register
-class ScriptManager(BaseSystem):
+class ScriptManager(ScriptBaseManager):
     """Manages loading, triggering, and execution of scripted event sequences.
 
     The ScriptManager is the central system for the game's scripting engine. It loads
@@ -214,6 +177,10 @@ class ScriptManager(BaseSystem):
         self.scripts.clear()
         self.active_sequences.clear()
         self._subscribed_events.clear()
+
+    def get_scripts(self) -> dict[str, Script]:
+        """Get scripts."""
+        return self.scripts
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving to disk.

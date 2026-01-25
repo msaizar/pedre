@@ -60,7 +60,6 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -68,7 +67,7 @@ import arcade
 
 from pedre.constants import asset_path
 from pedre.events import ShowInventoryEvent
-from pedre.systems.base import BaseSystem
+from pedre.systems.inventory.base import InventoryBaseManager, InventoryItem
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.registry import SystemRegistry
 
@@ -81,81 +80,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class InventoryItem:
-    """Represents a collectible item in the player's inventory.
-
-    An InventoryItem contains all the metadata needed to display and track a collectible
-    item in the game. Items are defined with their content (name, description, image) and
-    state (whether the player has acquired it).
-
-    The dataclass structure makes items easy to define in code or load from data files.
-    Items are typically created during game initialization and added to the InventoryManager,
-    where they persist throughout the game session.
-
-    The 'acquired' flag determines whether the player currently possesses the item. Items
-    can be pre-acquired (starting inventory) or start unacquired and be collected during
-    gameplay. This allows for collectathon gameplay where players track their progress
-    toward finding all items.
-
-    Attributes:
-        id: Unique identifier for this item (e.g., "secret_key", "photo_01").
-           Used for lookups, save data, and script references. Should be lowercase
-           with underscores for consistency.
-        name: Display name shown to the player (e.g., "Rusty Key", "Family Photo").
-             Can be in any language and include special characters for presentation.
-        description: Flavor text or description shown when examining the item.
-                    Can be multiple sentences providing context or story information.
-        image_path: Optional path to the item's full-size image file, relative to assets/images/.
-                   For example, "items/key.png" or "photos/memory_01.jpg". Set to None
-                   for items without visual representation. This is displayed when viewing
-                   the item in detail (e.g., full-screen photo view).
-        icon_path: Optional path to the item's icon/thumbnail image, relative to assets/images/.
-                  For example, "icons/key_icon.png" or "photos/thumbs/memory_01_thumb.jpg".
-                  This is displayed in the inventory grid as a preview. If None, the grid
-                  slot will be empty (just the background color). Default is None.
-        category: Item category for filtering and organization. Common categories include
-                 "photo", "note", "key", "general". Categories are user-defined strings
-                 and can be extended as needed. Default is "general".
-        acquired: Whether the player has collected this item. True means the item is in
-                 the player's possession, False means it hasn't been found yet. Can be
-                 set to True initially for starting items. Default is False.
-
-    Example:
-        # A collectible photograph with icon
-        photo = InventoryItem(
-            id="beach_memory",
-            name="Beach Day",
-            description="A sunny day at the coast with friends.",
-            image_path="photos/beach.jpg",
-            icon_path="photos/icons/beach_icon.png",
-            category="photo",
-            acquired=False
-        )
-
-        # A key item for progression
-        key = InventoryItem(
-            id="tower_key",
-            name="Tower Key",
-            description="Opens the old tower door.",
-            image_path="items/tower_key.png",
-            icon_path="items/icons/key_icon.png",
-            category="key",
-            acquired=True  # Player starts with this
-        )
-    """
-
-    id: str  # Unique identifier
-    name: str  # Display name
-    description: str  # Item description
-    image_path: str | None = None  # Path to full-size image file (relative to assets/images/)
-    icon_path: str | None = None  # Path to icon/thumbnail image (relative to assets/images/)
-    category: str = "general"  # Item category (photo, note, key, etc.)
-    acquired: bool = False  # Whether the player has this item
-
-
 @SystemRegistry.register
-class InventoryManager(BaseSystem):
+class InventoryManager(InventoryBaseManager):
     """Manages player's inventory and item collection.
 
     The InventoryManager acts as a central registry for all collectible items in game.
@@ -180,7 +106,7 @@ class InventoryManager(BaseSystem):
         items: Dictionary mapping item IDs to InventoryItem instances. Maintains insertion
               order for consistent display. All possible items are stored here regardless
               of acquisition status.
-        has_been_accessed: Boolean flag tracking whether player has opened the inventory
+        accessed: Boolean flag tracking whether player has opened the inventory
                           view at least once. Used for tutorial prompts, achievements, or
                           quest progression that requires checking inventory.
         event_bus: Optional event bus for publishing ItemAcquiredEvent when items are obtained.
@@ -205,7 +131,7 @@ class InventoryManager(BaseSystem):
         self.items: dict[str, InventoryItem] = {}
 
         # Track if inventory has been accessed
-        self.has_been_accessed: bool = False
+        self.accessed: bool = False
 
         # Event bus for publishing events
         self.event_bus: EventBus | None = None
@@ -226,13 +152,13 @@ class InventoryManager(BaseSystem):
     def cleanup(self) -> None:
         """Clean up inventory resources when the scene unloads."""
         self.items.clear()
-        self.has_been_accessed = False
+        self.accessed = False
         logger.debug("InventoryManager cleanup complete")
 
     def reset(self) -> None:
         """Reset inventory state for new game."""
         self.items.clear()
-        self.has_been_accessed = False
+        self.accessed = False
         self._initialize_default_items()
         logger.debug("InventoryManager reset complete")
 
@@ -598,10 +524,14 @@ class InventoryManager(BaseSystem):
         """
         return len(self.get_all_items(category))
 
+    def has_been_accessed(self) -> bool:
+        """Check if inventory has been accessed."""
+        return self.accessed
+
     def mark_as_accessed(self) -> None:
         """Mark the inventory as having been accessed by the player.
 
-        Sets the has_been_accessed flag to True, indicating the player has opened the
+        Sets the accessed flag to True, indicating the player has opened the
         inventory view at least once. This is typically called by the inventory UI when
         it's first displayed.
 
@@ -620,8 +550,8 @@ class InventoryManager(BaseSystem):
                 self.inventory_mgr.mark_as_accessed()
                 # ... rest of UI setup
         """
-        if not self.has_been_accessed:
-            self.has_been_accessed = True
+        if not self.accessed:
+            self.accessed = True
             logger.info("Inventory accessed for the first time")
 
     def emit_closed_event(self, context: GameContext) -> None:
@@ -634,8 +564,8 @@ class InventoryManager(BaseSystem):
             context: Game context for accessing event bus.
         """
         if self.event_bus:
-            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.has_been_accessed))
-            logger.info("Published InventoryClosedEvent (accessed=%s)", self.has_been_accessed)
+            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.accessed))
+            logger.info("Published InventoryClosedEvent (accessed=%s)", self.accessed)
 
     def to_dict(self) -> dict[str, bool]:
         """Convert inventory state to dictionary for save data serialization.

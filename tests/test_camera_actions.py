@@ -19,7 +19,7 @@ class TestFollowPlayerAction(unittest.TestCase):
         action = FollowPlayerAction(smooth=True)
         context = MagicMock()
         camera_manager = MagicMock()
-        context.get_system.return_value = camera_manager
+        context.camera_manager = camera_manager
 
         # Execute
         result = action.execute(context)
@@ -33,7 +33,7 @@ class TestFollowPlayerAction(unittest.TestCase):
         action = FollowPlayerAction(smooth=False)
         context = MagicMock()
         camera_manager = MagicMock()
-        context.get_system.return_value = camera_manager
+        context.camera_manager = camera_manager
 
         result = action.execute(context)
 
@@ -44,7 +44,7 @@ class TestFollowPlayerAction(unittest.TestCase):
         """Test graceful handling when camera manager not available."""
         action = FollowPlayerAction()
         context = MagicMock()
-        context.get_system.return_value = None
+        context.camera_manager = None
 
         result = action.execute(context)
 
@@ -67,7 +67,7 @@ class TestFollowPlayerAction(unittest.TestCase):
         action = FollowPlayerAction()
         context = MagicMock()
         camera_manager = MagicMock()
-        context.get_system.return_value = camera_manager
+        context.camera_manager = camera_manager
 
         action.execute(context)
         assert action.executed is True
@@ -87,10 +87,9 @@ class TestFollowNPCAction(unittest.TestCase):
         npc_manager = MagicMock()
         npc_state = MagicMock()
 
-        context.get_system.side_effect = lambda name: {
-            "camera": camera_manager,
-            "npc": npc_manager,
-        }.get(name)
+        context.camera_manager = camera_manager
+        context.npc_manager = npc_manager
+
         npc_manager.get_npc_by_name.return_value = npc_state
 
         result = action.execute(context)
@@ -105,10 +104,8 @@ class TestFollowNPCAction(unittest.TestCase):
         camera_manager = MagicMock()
         npc_manager = MagicMock()
 
-        context.get_system.side_effect = lambda name: {
-            "camera": camera_manager,
-            "npc": npc_manager,
-        }.get(name)
+        context.camera_manager = camera_manager
+        context.npc_manager = npc_manager
         npc_manager.get_npc_by_name.return_value = None
 
         result = action.execute(context)
@@ -123,10 +120,8 @@ class TestFollowNPCAction(unittest.TestCase):
         camera_manager = MagicMock()
         npc_manager = MagicMock()
 
-        context.get_system.side_effect = lambda name: {
-            "camera": camera_manager,
-            "npc": npc_manager,
-        }.get(name)
+        context.camera_manager = camera_manager
+        context.npc_manager = npc_manager
 
         result = action.execute(context)
 
@@ -137,7 +132,7 @@ class TestFollowNPCAction(unittest.TestCase):
         """Test graceful handling when camera manager not available."""
         action = FollowNPCAction("martin")
         context = MagicMock()
-        context.get_system.return_value = None
+        context.camera_manager = None
 
         result = action.execute(context)
 
@@ -161,7 +156,7 @@ class TestFollowNPCAction(unittest.TestCase):
         action = FollowNPCAction("martin")
         context = MagicMock()
         camera_manager = MagicMock()
-        context.get_system.return_value = camera_manager
+        context.camera_manager = camera_manager
 
         action.execute(context)
         assert action.executed is True
@@ -178,7 +173,7 @@ class TestStopCameraFollowAction(unittest.TestCase):
         action = StopCameraFollowAction()
         context = MagicMock()
         camera_manager = MagicMock()
-        context.get_system.return_value = camera_manager
+        context.camera_manager = camera_manager
 
         result = action.execute(context)
 
@@ -189,7 +184,7 @@ class TestStopCameraFollowAction(unittest.TestCase):
         """Test graceful handling when camera manager not available."""
         action = StopCameraFollowAction()
         context = MagicMock()
-        context.get_system.return_value = None
+        context.camera_manager = None
 
         result = action.execute(context)
 
@@ -205,7 +200,7 @@ class TestStopCameraFollowAction(unittest.TestCase):
         action = StopCameraFollowAction()
         context = MagicMock()
         camera_manager = MagicMock()
-        context.get_system.return_value = camera_manager
+        context.camera_manager = camera_manager
 
         action.execute(context)
         assert action.executed is True

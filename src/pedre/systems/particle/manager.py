@@ -37,13 +37,12 @@ from __future__ import annotations
 
 import logging
 import math
-from dataclasses import dataclass
 from random import Random
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
-from pedre.systems.base import BaseSystem
+from pedre.systems.particle.base import Particle, ParticleBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -52,43 +51,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class Particle:
-    """Individual particle state.
-
-    Represents a single particle with position, motion, and visual properties.
-    Particles are short-lived visual effects that move according to their velocity
-    and are affected by gravity. They can optionally fade out over their lifetime.
-
-    The particle system updates position each frame based on velocity, applies
-    downward gravity acceleration, and automatically removes particles when their
-    age exceeds their lifetime.
-
-    Attributes:
-        x: Current X position in screen coordinates.
-        y: Current Y position in screen coordinates.
-        velocity_x: Horizontal velocity in pixels per second.
-        velocity_y: Vertical velocity in pixels per second.
-        lifetime: Total lifetime in seconds before particle expires.
-        age: Current age in seconds (starts at 0.0).
-        color: RGBA color tuple (red, green, blue, alpha) with values 0-255.
-        size: Particle radius in pixels.
-        fade: Whether particle alpha should fade to 0 over lifetime.
-    """
-
-    x: float
-    y: float
-    velocity_x: float
-    velocity_y: float
-    lifetime: float
-    age: float = 0.0
-    color: tuple[int, int, int, int] = (255, 255, 255, 255)
-    size: float = 4.0
-    fade: bool = True
-
-
 @SystemRegistry.register
-class ParticleManager(BaseSystem):
+class ParticleManager(ParticleBaseManager):
     """Manages particle effects and visual polish.
 
     The ParticleManager coordinates creation, updating, and rendering of particle effects

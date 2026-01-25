@@ -11,6 +11,6 @@ The audio system consists of:
 """
 
 from pedre.systems.audio.actions import PlayMusicAction, PlaySFXAction
-from pedre.systems.audio.manager import AudioManager
+from pedre.systems.audio.manager import AudioBaseManager, AudioManager
 
-__all__ = ["AudioManager", "PlayMusicAction", "PlaySFXAction"]
+__all__ = ["AudioBaseManager", "AudioManager", "PlayMusicAction", "PlaySFXAction"]

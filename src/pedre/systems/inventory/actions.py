@@ -93,7 +93,7 @@ class AcquireItemAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Acquire the item if not already started."""
         if not self.started:
-            inventory_manager = context.get_system("inventory")
+            inventory_manager = context.inventory_manager
             if inventory_manager and isinstance(inventory_manager, InventoryManager):
                 # Use acquire_item method directly since inventory manager is BaseSystem
                 inventory_manager.acquire_item(self.item_id)

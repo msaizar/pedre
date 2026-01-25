@@ -10,8 +10,7 @@ The pathfinding system consists of:
 - Automatic retry logic with NPC passthrough for blocked paths
 """
 
+from pedre.systems.pathfinding.base import PathfindingBaseManager
 from pedre.systems.pathfinding.manager import PathfindingManager
 
-__all__ = [
-    "PathfindingManager",
-]
+__all__ = ["PathfindingBaseManager", "PathfindingManager"]

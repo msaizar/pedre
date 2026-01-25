@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems.camera import CameraManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc import NPCManager
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +53,7 @@ class FollowPlayerAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Set camera to follow player."""
         if not self.executed:
-            camera_manager = cast("CameraManager", context.get_system("camera"))
+            camera_manager = context.camera_manager
             if camera_manager:
                 camera_manager.set_follow_player(smooth=self.smooth)
                 logger.debug(
@@ -137,10 +135,10 @@ class FollowNPCAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Set camera to follow NPC."""
         if not self.executed:
-            camera_manager = cast("CameraManager", context.get_system("camera"))
+            camera_manager = context.camera_manager
             if camera_manager:
                 # Validate NPC exists
-                npc_manager = cast("NPCManager", context.get_system("npc"))
+                npc_manager = context.npc_manager
                 if npc_manager:
                     npc_state = npc_manager.get_npc_by_name(self.npc_name)
                     if not npc_state:
@@ -204,7 +202,7 @@ class StopCameraFollowAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Stop camera following."""
         if not self.executed:
-            camera_manager = cast("CameraManager", context.get_system("camera"))
+            camera_manager = context.camera_manager
             if camera_manager:
                 camera_manager.stop_follow()
                 logger.debug("StopCameraFollowAction: Camera following stopped")

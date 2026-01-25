@@ -47,13 +47,12 @@ Example usage in a map:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
 from pedre.conf import settings
-from pedre.systems.base import BaseSystem
+from pedre.systems.interaction.base import InteractionBaseManager, InteractiveObject
 from pedre.systems.interaction.events import ObjectInteractedEvent
 from pedre.systems.registry import SystemRegistry
 
@@ -63,39 +62,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class InteractiveObject:
-    """Represents an interactive object in the game world.
-
-    An InteractiveObject wraps an arcade Sprite with metadata that defines how the
-    object behaves when the player interacts with it. These objects are typically
-    created from Tiled map data where designers define interactive elements with
-    custom properties.
-
-    The properties dictionary contains all custom properties from the Tiled object,
-    allowing designers to configure behavior without code changes. Common properties
-    include message text, interaction effects, state values, and trigger flags.
-
-    Attributes:
-        sprite: The arcade Sprite representing this object in the game world.
-               Used for position, rendering, and distance calculations.
-        name: Unique identifier for this object. Used to track interaction state
-             and reference the object in scripts or events.
-        properties: Dictionary of custom properties from Tiled or code. Contains
-                   configuration like message text, state values, and behavior flags.
-
-    Example from Tiled:
-        Object properties:
-        - name: "mysterious_lever"
-    """
-
-    sprite: arcade.Sprite
-    name: str
-    properties: dict
-
-
 @SystemRegistry.register
-class InteractionManager(BaseSystem):
+class InteractionManager(InteractionBaseManager):
     """Manages interactive objects and their behaviors.
 
     The InteractionManager acts as a registry and handler for all interactive objects
@@ -201,6 +169,10 @@ class InteractionManager(BaseSystem):
 
             properties = obj.properties if hasattr(obj, "properties") and obj.properties else {}
             self.register_object(sprite, obj.name.lower(), properties)
+
+    def get_interactive_objects(self) -> dict[str, InteractiveObject]:
+        """Get interactive objects."""
+        return self.interactive_objects
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle interaction input.

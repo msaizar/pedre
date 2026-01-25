@@ -52,12 +52,19 @@ Example usage:
 """
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import arcade
 
-from pedre.events import ShowInventoryEvent, ShowLoadGameEvent, ShowMenuEvent, ShowSaveGameEvent
-from pedre.systems import EventBus, GameContext, SaveManager, SystemLoader
+from pedre.events import (
+    EventBus,
+    ShowInventoryEvent,
+    ShowLoadGameEvent,
+    ShowMenuEvent,
+    ShowSaveGameEvent,
+)
+from pedre.systems.game_context import GameContext
+from pedre.systems.loader import SystemLoader
 from pedre.views.game_view import GameView
 from pedre.views.inventory_view import InventoryView
 from pedre.views.load_game_view import LoadGameView
@@ -65,7 +72,7 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems import GameSaveData, InventoryManager, SceneManager
+    from pedre.systems.save.base import GameSaveData
 
 logger = logging.getLogger(__name__)
 
@@ -121,9 +128,6 @@ class ViewManager:
         )
         self.system_loader = SystemLoader()
         system_instances = self.system_loader.instantiate_all()
-
-        # Update game_context reference (set game_view now that we have the instance)
-        self.game_context.game_view = self
 
         # Register all systems with the context
         for name, system in system_instances.items():
@@ -245,7 +249,7 @@ class ViewManager:
             - Returns None if game view hasn't been created yet
         """
         if self._inventory_view is None and self._game_view is not None and self.game_context:
-            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
+            inventory_manager = self.game_context.inventory_manager
             if inventory_manager:
                 self._inventory_view = InventoryView(self, inventory_manager)
         return self._inventory_view  # type: ignore[return-value]
@@ -293,7 +297,7 @@ class ViewManager:
         logger.info("show_game called with trigger_post_inventory_dialog=%s", trigger_post_inventory_dialog)
         self.window.show_view(self.game_view)
         if trigger_post_inventory_dialog and self.game_context:
-            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
+            inventory_manager = self.game_context.inventory_manager
             if inventory_manager:
                 logger.info("Calling emit_closed_event on inventory_manager")
                 inventory_manager.emit_closed_event(self.game_context)
@@ -387,7 +391,7 @@ class ViewManager:
             return
 
         # Full load: no game view exists, load from auto-save
-        save_manager = cast("SaveManager", self.game_context.get_system("save"))
+        save_manager = self.game_context.save_manager
         if not save_manager:
             logger.error("Save system not available")
             return
@@ -454,17 +458,16 @@ class ViewManager:
             logger.error("ViewManager: No GameContext after showing GameView")
             return
 
-        save_manager = cast("SaveManager", context.get_system("save"))
-        if not save_manager:
+        if not context.save_manager:
             logger.error("ViewManager: Save system not found in context")
             return
 
         # Restore all state from save data
-        save_manager.restore_game_data(save_data, context)
+        context.save_manager.restore_game_data(save_data, context)
 
         # Restore cache state for persistence across scene transitions
         if "_scene_caches" in save_data.save_states:
-            scene_manager = cast("SceneManager", context.get_system("scene"))
+            scene_manager = context.scene_manager
             if scene_manager:
                 scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
 

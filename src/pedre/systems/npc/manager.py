@@ -30,7 +30,7 @@ scripted sequences.
 
 Example usage:
     # Get the NPC manager from context
-    npc_mgr = context.get_system("npc")
+    npc_mgr = context.npc_manager
 
     # Load dialog from JSON files
     npc_mgr.load_dialogs_from_json("assets/dialogs/")
@@ -58,10 +58,8 @@ from __future__ import annotations
 
 import json
 import logging
-from collections import deque
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
@@ -69,121 +67,23 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
-from pedre.systems.base import BaseSystem
-from pedre.systems.inventory import InventoryManager
+from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
     NPCMovementCompleteEvent,
 )
-from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.events import EventBus
-    from pedre.systems import DialogManager
     from pedre.systems.game_context import GameContext
-
+    from pedre.systems.pathfinding.base import PathfindingBaseManager
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class NPCState:
-    """Runtime state tracking for a single NPC.
-
-    NPCState holds all mutable state for an NPC during gameplay, including their current
-    position (via sprite), conversation progress, pathfinding data, and animation status.
-    This state persists throughout the game session and is updated as the NPC moves,
-    interacts with players, and performs animations.
-
-    The state is stored separately from dialog configuration (NPCDialogConfig) to separate
-    what the NPC says (static data) from what the NPC is currently doing (runtime state).
-
-    Attributes:
-        sprite: The arcade Sprite representing this NPC visually. Can be a regular Sprite
-               or an AnimatedNPC with animation capabilities. Position is tracked via
-               sprite.center_x and sprite.center_y.
-        name: Unique identifier for this NPC (e.g., "martin", "shopkeeper"). Used for
-             lookups, dialog assignment, and event tracking.
-        dialog_level: Current conversation progression level (0-based). Increments as
-                     player has conversations, determining which dialog text is shown.
-                     Default starts at 0 for first conversation.
-        path: Queue of (x, y) pixel coordinates representing the NPC's pathfinding route.
-             Waypoints are popped from the front as the NPC reaches them. Empty deque
-             means no active path.
-        is_moving: Whether the NPC is currently traversing a path. True during movement,
-                  False when stationary. NPCs cannot be interacted with while moving.
-        appear_event_emitted: Tracks if NPCAppearCompleteEvent has been published for this
-                            NPC. Reset when starting a new appear animation. Prevents
-                            duplicate event emissions.
-        disappear_event_emitted: Tracks if NPCDisappearCompleteEvent has been published.
-                               Reset when starting a new disappear animation. Prevents
-                               duplicate event emissions.
-    """
-
-    sprite: arcade.Sprite
-    name: str
-    dialog_level: int = 0
-    path: deque[tuple[float, float]] = field(default_factory=deque)
-    is_moving: bool = False
-    appear_event_emitted: bool = False
-    disappear_event_emitted: bool = False
-
-
-@dataclass
-class NPCDialogConfig:
-    """Configuration for NPC dialog at a specific conversation level.
-
-    NPCDialogConfig defines what an NPC says at a particular point in their conversation
-    progression, along with optional conditions that must be met for this dialog to appear.
-    This is static data typically loaded from JSON files that doesn't change during gameplay.
-
-    The dialog system supports conditional branching where different text can be shown based
-    on game state (inventory accessed, objects interacted with, other NPC dialog levels).
-    If conditions aren't met, optional fallback actions can be executed instead.
-
-    Attributes:
-        text: List of dialog text pages to display. Each string is one page that the player
-             advances through. Example: ["Hello there!", "Welcome to my shop."]
-        name: Optional display name for the speaker. If provided, this name is shown in the
-             dialog box instead of the NPC's key name. Useful for proper capitalization or
-             titles (e.g., "Merchant" instead of "merchant").
-        conditions: Optional list of condition dictionaries that must ALL be true for this
-                   dialog to display. Each condition has a "check" type and expected values.
-                   Common checks: "npc_dialog_level", "inventory_accessed", "object_interacted".
-                   If None or empty, dialog always shows.
-        on_condition_fail: Optional list of action dictionaries to execute if conditions fail.
-                          Allows fallback behavior like showing reminder text or triggering
-                          alternative sequences. If None, condition failure silently falls back
-                          to other available dialog options.
-
-    Example JSON:
-        {
-            "merchant": {
-                "0": {
-                    "name": "Merchant",
-                    "text": ["Welcome to my shop!"]
-                },
-                "1": {
-                    "name": "Merchant",
-                    "text": ["You're back! Did you check your inventory?"],
-                    "conditions": [{"check": "inventory_accessed", "equals": true}],
-                    "on_condition_fail": [
-                        {"type": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
-                    ]
-                }
-            }
-        }
-    """
-
-    text: list[str]
-    name: str | None = None
-    conditions: list[dict[str, Any]] | None = None
-    on_condition_fail: list[dict[str, Any]] | None = None  # List of actions to execute if conditions fail
-
-
 @SystemRegistry.register
-class NPCManager(BaseSystem):
+class NPCManager(NPCBaseManager):
     """Manages NPC state, movement, and interactions.
 
     The NPCManager is the central controller for all NPC-related systems. It coordinates
@@ -239,11 +139,10 @@ class NPCManager(BaseSystem):
         self.npcs: dict[str, NPCState] = {}
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
-        self.pathfinding: PathfindingManager | None = None
+        self.pathfinding: PathfindingBaseManager | None = None
         self.interaction_distance = 50
         self.waypoint_threshold = 2
         self.npc_speed = 80.0
-        self.inventory_manager: InventoryManager | None = None
         self.event_bus: EventBus | None = None
         self.interacted_objects: set[str] = set()
         self.interacted_npcs: set[str] = set()
@@ -260,19 +159,12 @@ class NPCManager(BaseSystem):
             settings: Game configuration containing NPC-related settings.
         """
         # Get required dependencies from context
-        pathfinding_system = context.get_system("pathfinding")
-        if pathfinding_system and isinstance(pathfinding_system, PathfindingManager):
-            self.pathfinding = pathfinding_system
+        pathfinding_manager = context.pathfinding_manager
+        if pathfinding_manager:
+            self.pathfinding = pathfinding_manager
 
-        inventory_system = context.get_system("inventory")
-        if inventory_system and isinstance(inventory_system, InventoryManager):
-            self.inventory_manager = inventory_system
         self.event_bus = context.event_bus
         self.interacted_objects = context.interacted_objects
-        # Use a separate set for NPCs if desired, or share context.interacted_objects
-        # For now, let's keep it consistent with ScriptManager's potential view.
-        # ScriptManager used has_npc_been_interacted_with(npc_name) which checked npc_manager.
-        # Wait, let's check NPCManager.has_npc_been_interacted_with.
 
         # Apply settings if available
         if hasattr(settings, "NPC_INTERACTION_DISTANCE"):
@@ -316,6 +208,10 @@ class NPCManager(BaseSystem):
         self.dialogs.clear()
         self.interacted_npcs.clear()
         logger.debug("NPCManager reset complete")
+
+    def get_npcs(self) -> dict[str, NPCState]:
+        """Get NPCs."""
+        return self.npcs
 
     def load_dialogs(self, dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]]) -> None:
         """Load NPC dialog configurations.
@@ -550,7 +446,7 @@ class NPCManager(BaseSystem):
         if not npc:
             return False
 
-        dialog_manager = cast("DialogManager", context.get_system("dialog"))
+        dialog_manager = context.dialog_manager
 
         # Get dialog
         current_scene = context.current_scene or "default"

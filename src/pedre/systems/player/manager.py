@@ -8,7 +8,7 @@ from the main GameView.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
@@ -19,9 +19,7 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems import DialogManager, InputManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.scene import SceneManager
 
 logger = logging.getLogger(__name__)
 
@@ -146,11 +144,11 @@ class PlayerManager(BaseSystem):
             return
 
         # Check if dialog is showing (blocking movement)
-        dialog_manager = cast("DialogManager", context.get_system("dialog"))
-        dialog_showing = dialog_manager.showing if dialog_manager else False
+        dialog_manager = context.dialog_manager
+        dialog_showing = dialog_manager.is_showing() if dialog_manager else False
 
         # Get input manager
-        input_manager = cast("InputManager", context.get_system("input"))
+        input_manager = context.input_manager
 
         # Determine movement
         dx, dy = 0.0, 0.0
@@ -187,18 +185,19 @@ class PlayerManager(BaseSystem):
 
     def spawn_player(self, context: GameContext) -> None:
         """Spawn player based on map data."""
-        scene_manager = cast("SceneManager", context.get_system("scene"))
-        if not scene_manager or not scene_manager.tile_map:
+        scene_manager = context.scene_manager
+        if not scene_manager or not scene_manager.get_tile_map():
             logger.warning("No tile map available for player spawning")
             return
 
-        tile_map = scene_manager.tile_map
+        tile_map = scene_manager.get_tile_map()
 
         # Get Player object layer
-        player_layer = tile_map.object_lists.get("Player")
-        if not player_layer:
-            logger.warning("No 'Player' object layer found in map")
-            return
+        if tile_map:
+            player_layer = tile_map.object_lists.get("Player")
+            if not player_layer:
+                logger.warning("No 'Player' object layer found in map")
+                return
 
         # Use first player object
         player_obj = player_layer[0]
@@ -269,10 +268,11 @@ class PlayerManager(BaseSystem):
         self.player_list.append(self.player_sprite)
 
         # Add to scene
-        if scene_manager.arcade_scene:
-            if "Player" in scene_manager.arcade_scene:
-                scene_manager.arcade_scene.remove_sprite_list_by_name("Player")
-            scene_manager.arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
+        arcade_scene = scene_manager.get_arcade_scene()
+        if arcade_scene:
+            if "Player" in arcade_scene:
+                arcade_scene.remove_sprite_list_by_name("Player")
+            arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
 
         # Update context
         context.update_player(self.player_sprite)

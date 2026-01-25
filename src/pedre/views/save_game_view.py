@@ -39,10 +39,7 @@ import arcade
 from pedre.conf import settings
 
 if TYPE_CHECKING:
-    from pedre.systems.save import SaveManager
-    from pedre.systems.scene import SceneManager
     from pedre.view_manager import ViewManager
-from typing import cast
 
 
 class SaveGameView(arcade.View):
@@ -57,7 +54,6 @@ class SaveGameView(arcade.View):
 
     Attributes:
         view_manager: ViewManager instance for handling view transitions.
-        save_manager: SaveManager instance for saving game data and querying metadata.
         selected_slot: Currently selected slot index (1-3=manual, -1=back).
         save_info: Dictionary mapping slot numbers to save metadata (or None if empty).
     """
@@ -75,7 +71,6 @@ class SaveGameView(arcade.View):
         self.view_manager = view_manager
         self.selected_slot = 1  # Default to slot 1
         self.save_info: dict[int, dict | None] = {}
-        self.save_manager = cast("SaveManager", self.view_manager.game_context.get_system("save"))
         # Text objects (created on first draw)
         self.title_text: arcade.Text | None = None
         self.slot_text_objects: list[arcade.Text] = []
@@ -99,7 +94,7 @@ class SaveGameView(arcade.View):
         # Load save slot information for manual slots only
         self.save_info = {}
         for slot in range(1, 4):  # Slots 1-3
-            self.save_info[slot] = self.save_manager.get_save_info(slot)
+            self.save_info[slot] = self.view_manager.game_context.save_manager.get_save_info(slot)
 
     def on_draw(self) -> None:
         """Render the save game menu (arcade lifecycle callback).
@@ -311,20 +306,9 @@ class SaveGameView(arcade.View):
             return
 
         context = self.view_manager.game_context
-        player_sprite = context.player_sprite
-        scene_manager = cast("SceneManager", context.get_system("scene"))
-
-        if (
-            not player_sprite
-            or not scene_manager
-            or not hasattr(scene_manager, "current_map")
-            or not scene_manager.current_map
-        ):
-            # No active game to save
-            return
 
         # Save the game to the selected slot (uses pluggable save providers)
-        success = self.save_manager.save_game(slot=self.selected_slot, context=context)
+        success = context.save_manager.save_game(slot=self.selected_slot, context=context)
 
         if success:
             # Return to pause menu after successful save
