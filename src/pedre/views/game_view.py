@@ -55,7 +55,6 @@ import arcade
 from pedre.conf import settings
 from pedre.systems.scene import TransitionState
 
-# These imports are used for cast() type annotations only
 if TYPE_CHECKING:
     from pedre.view_manager import ViewManager
 

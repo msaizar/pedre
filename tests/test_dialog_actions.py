@@ -110,7 +110,7 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
         dialog_manager = MagicMock()
-        context.get_system.return_value = dialog_manager
+        context.dialog_manager = dialog_manager
 
         result = action.execute(context)
 
@@ -123,7 +123,7 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"], instant=True)
         context = MagicMock()
         dialog_manager = MagicMock()
-        context.get_system.return_value = dialog_manager
+        context.dialog_manager = dialog_manager
 
         action.execute(context)
 
@@ -134,7 +134,7 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"], auto_close=True)
         context = MagicMock()
         dialog_manager = MagicMock()
-        context.get_system.return_value = dialog_manager
+        context.dialog_manager = dialog_manager
 
         action.execute(context)
 
@@ -145,7 +145,7 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"], instant=True, auto_close=True)
         context = MagicMock()
         dialog_manager = MagicMock()
-        context.get_system.return_value = dialog_manager
+        context.dialog_manager = dialog_manager
 
         action.execute(context)
 
@@ -155,7 +155,7 @@ class TestDialogAction(unittest.TestCase):
         """Test execute handles missing dialog manager gracefully."""
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
-        context.get_system.return_value = None
+        context.dialog_manager = None
 
         result = action.execute(context)
 
@@ -167,7 +167,7 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
         dialog_manager = MagicMock()
-        context.get_system.return_value = dialog_manager
+        context.dialog_manager = dialog_manager
 
         action.execute(context)
         action.execute(context)
@@ -179,7 +179,7 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
         dialog_manager = MagicMock()
-        context.get_system.return_value = dialog_manager
+        context.dialog_manager = dialog_manager
 
         action.execute(context)
         assert action.started is True

@@ -89,7 +89,7 @@ class TestDialogManager(unittest.TestCase):
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 1
         mock_npc_manager.npcs = {"TestNPC": mock_npc_state}
-        self.mock_context.get_system.return_value = mock_npc_manager
+        self.mock_context.npc_manager = mock_npc_manager
 
         # Show dialog first
         self.manager.show_dialog("TestNPC", ["Hello!"], dialog_level=1)
