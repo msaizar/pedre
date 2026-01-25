@@ -72,7 +72,7 @@ from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems.inventory.manager import InventoryManager
+    from pedre.systems.inventory.manager import InventoryBaseManager
     from pedre.systems.save.base import GameSaveData, SaveBaseManager
     from pedre.systems.scene.manager import SceneBaseManager
 
@@ -254,7 +254,7 @@ class ViewManager:
             - Returns None if game view hasn't been created yet
         """
         if self._inventory_view is None and self._game_view is not None and self.game_context:
-            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
+            inventory_manager = cast("InventoryBaseManager", self.game_context.get_system("inventory"))
             if inventory_manager:
                 self._inventory_view = InventoryView(self, inventory_manager)
         return self._inventory_view  # type: ignore[return-value]
@@ -302,7 +302,7 @@ class ViewManager:
         logger.info("show_game called with trigger_post_inventory_dialog=%s", trigger_post_inventory_dialog)
         self.window.show_view(self.game_view)
         if trigger_post_inventory_dialog and self.game_context:
-            inventory_manager = cast("InventoryManager", self.game_context.get_system("inventory"))
+            inventory_manager = cast("InventoryBaseManager", self.game_context.get_system("inventory"))
             if inventory_manager:
                 logger.info("Calling emit_closed_event on inventory_manager")
                 inventory_manager.emit_closed_event(self.game_context)

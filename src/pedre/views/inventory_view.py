@@ -40,8 +40,7 @@ from pedre.conf import settings
 from pedre.constants import asset_path
 
 if TYPE_CHECKING:
-    from pedre.systems.inventory import InventoryItem
-    from pedre.systems.inventory.manager import InventoryManager
+    from pedre.systems.inventory.base import InventoryBaseManager, InventoryItem
     from pedre.view_manager import ViewManager
 
 logger = logging.getLogger(__name__)
@@ -76,7 +75,7 @@ class InventoryView(arcade.View):
         background_texture: Loaded background image texture, or None if not loaded.
     """
 
-    def __init__(self, view_manager: ViewManager, inventory_manager: InventoryManager) -> None:
+    def __init__(self, view_manager: ViewManager, inventory_manager: InventoryBaseManager) -> None:
         """Initialize the inventory view.
 
         Creates the view with references to the view manager and inventory manager,

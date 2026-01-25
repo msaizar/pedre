@@ -68,7 +68,6 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
-from pedre.systems.inventory import InventoryManager
 from pedre.systems.npc.base import NPCBaseManager, NPCState
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
@@ -199,7 +198,6 @@ class NPCManager(NPCBaseManager):
         self.interaction_distance = 50
         self.waypoint_threshold = 2
         self.npc_speed = 80.0
-        self.inventory_manager: InventoryManager | None = None
         self.event_bus: EventBus | None = None
         self.interacted_objects: set[str] = set()
         self.interacted_npcs: set[str] = set()
@@ -220,9 +218,6 @@ class NPCManager(NPCBaseManager):
         if pathfinding_system and isinstance(pathfinding_system, PathfindingManager):
             self.pathfinding = pathfinding_system
 
-        inventory_system = context.get_system("inventory")
-        if inventory_system and isinstance(inventory_system, InventoryManager):
-            self.inventory_manager = inventory_system
         self.event_bus = context.event_bus
         self.interacted_objects = context.interacted_objects
         # Use a separate set for NPCs if desired, or share context.interacted_objects
