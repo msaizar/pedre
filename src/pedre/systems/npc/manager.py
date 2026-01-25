@@ -117,8 +117,6 @@ class NPCManager(NPCBaseManager):
         npc_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
         inventory_manager: Optional reference for checking inventory conditions in dialog.
         event_bus: Optional EventBus for publishing NPC lifecycle events.
-        interacted_objects: Set tracking which interactive objects have been used, for
-                           dialog condition checking.
         interacted_npcs: Set tracking which NPCs have been interacted with, for
                         dialog and script condition checking.
     """
@@ -144,7 +142,6 @@ class NPCManager(NPCBaseManager):
         self.waypoint_threshold = 2
         self.npc_speed = 80.0
         self.event_bus: EventBus | None = None
-        self.interacted_objects: set[str] = set()
         self.interacted_npcs: set[str] = set()
 
     def setup(self, context: GameContext) -> None:
@@ -164,7 +161,6 @@ class NPCManager(NPCBaseManager):
             self.pathfinding = pathfinding_manager
 
         self.event_bus = context.event_bus
-        self.interacted_objects = context.interacted_objects
 
         # Apply settings if available
         if hasattr(settings, "NPC_INTERACTION_DISTANCE"):

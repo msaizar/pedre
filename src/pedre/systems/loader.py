@@ -222,7 +222,6 @@ class SystemLoader:
             context: The game context to reset.
         """
         # Reset context state
-        context.interacted_objects.clear()
         context.current_scene = ""
         context.player_sprite = None
         context.waypoints.clear()

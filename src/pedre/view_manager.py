@@ -124,7 +124,6 @@ class ViewManager:
             player_sprite=None,
             current_scene="default",
             waypoints={},
-            interacted_objects=set(),
         )
         self.system_loader = SystemLoader()
         system_instances = self.system_loader.instantiate_all()

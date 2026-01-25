@@ -111,7 +111,6 @@ class GameContext:
         player_sprite: arcade.Sprite | None = None,
         current_scene: str = "",
         waypoints: dict[str, tuple[int, int]] | None = None,
-        interacted_objects: set[str] | None = None,
         next_spawn_waypoint: str | None = None,
     ) -> None:
         """Initialize game context with game state.
@@ -133,8 +132,6 @@ class GameContext:
                          Used to track which map is active for conditional logic.
             waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
                       NPCs use these to navigate to named locations.
-            interacted_objects: Set of object names that the player has interacted with.
-                              Used by scripts and conditions to track object state.
             next_spawn_waypoint: Waypoint name for next spawn (set by SceneManager for
                                portal transitions). Read by PlayerManager and cleared after use.
         """
@@ -144,7 +141,6 @@ class GameContext:
         self.player_sprite = player_sprite
         self.current_scene = current_scene
         self.waypoints = waypoints or {}
-        self.interacted_objects = interacted_objects or set()
         self.next_spawn_waypoint = next_spawn_waypoint
 
         # Registry for all pluggable systems (accessed via get_system)
