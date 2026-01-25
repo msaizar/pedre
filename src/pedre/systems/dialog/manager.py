@@ -153,6 +153,10 @@ class DialogManager(DialogBaseManager):
         # Game context for event publishing
         self.context: GameContext | None = None
 
+    def is_showing(self) -> bool:
+        """Verify if dialog is showing."""
+        return self.showing
+
     def set_current_dialog_level(self, dialog_level: int) -> None:
         """Set current dialog level."""
         self.current_dialog_level = dialog_level

@@ -65,3 +65,7 @@ class DialogBaseManager(BaseSystem):
     def set_current_npc_name(self, npc_name: str) -> None:
         """Set current dialog level."""
         return
+
+    def is_showing(self) -> bool:
+        """Verify if dialog is showing."""
+        return False

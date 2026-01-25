@@ -51,7 +51,7 @@ import arcade
 
 from pedre.conf import settings
 from pedre.events import ShowMenuEvent
-from pedre.systems.base import BaseSystem
+from pedre.systems.input.base import InputBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 
 
 @SystemRegistry.register
-class InputManager(BaseSystem):
+class InputManager(InputBaseManager):
     """Manages player input state and movement calculation.
 
     The InputManager provides a clean interface for handling keyboard input in the game.

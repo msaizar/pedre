@@ -19,9 +19,9 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems.dialog.manager import DialogManager
+    from pedre.systems.dialog.manager import DialogBaseManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.input.manager import InputManager
+    from pedre.systems.input.manager import InputBaseManager
     from pedre.systems.scene.base import SceneBaseManager
 
 logger = logging.getLogger(__name__)
@@ -147,11 +147,11 @@ class PlayerManager(BaseSystem):
             return
 
         # Check if dialog is showing (blocking movement)
-        dialog_manager = cast("DialogManager", context.get_system("dialog"))
-        dialog_showing = dialog_manager.showing if dialog_manager else False
+        dialog_manager = cast("DialogBaseManager", context.get_system("dialog"))
+        dialog_showing = dialog_manager.is_showing() if dialog_manager else False
 
         # Get input manager
-        input_manager = cast("InputManager", context.get_system("input"))
+        input_manager = cast("InputBaseManager", context.get_system("input"))
 
         # Determine movement
         dx, dy = 0.0, 0.0
