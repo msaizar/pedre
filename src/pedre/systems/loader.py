@@ -222,7 +222,6 @@ class SystemLoader:
             context: The game context to reset.
         """
         # Reset context state
-        context.current_scene = ""
         context.waypoints.clear()
 
         # Clear key persistence cache

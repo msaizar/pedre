@@ -445,7 +445,7 @@ class NPCManager(NPCBaseManager):
         dialog_manager = context.dialog_manager
 
         # Get dialog
-        current_scene = context.current_scene or "default"
+        current_scene = context.scene_manager.get_current_scene()
 
         dialog_data = self.get_dialog(name, npc.dialog_level, current_scene, context)
         if not dialog_data:

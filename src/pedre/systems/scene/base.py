@@ -28,6 +28,11 @@ class SceneBaseManager(BaseSystem, ABC):
     role = "scene_manager"
 
     @abstractmethod
+    def get_current_scene(self) -> str:
+        """Get current scene."""
+        ...
+
+    @abstractmethod
     def get_wall_list(self) -> arcade.SpriteList | None:
         """Get wall list."""
         ...

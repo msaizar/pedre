@@ -105,7 +105,6 @@ class GameContext:
         self,
         event_bus: EventBus,
         window: arcade.Window,
-        current_scene: str = "",
         waypoints: dict[str, tuple[int, int]] | None = None,
         next_spawn_waypoint: str | None = None,
     ) -> None:
@@ -120,8 +119,6 @@ class GameContext:
                       Actions can publish events to trigger scripts or notify other systems.
             window: Reference to the arcade Window instance. Used by systems that need
                    to access window properties (size, rendering context, etc).
-            current_scene: Name of the currently loaded map/scene (e.g., "town", "forest").
-                         Used to track which map is active for conditional logic.
             waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
                       NPCs use these to navigate to named locations.
             next_spawn_waypoint: Waypoint name for next spawn (set by SceneManager for
@@ -129,23 +126,11 @@ class GameContext:
         """
         self.event_bus = event_bus
         self.window = window
-        self.current_scene = current_scene
         self.waypoints = waypoints or {}
         self.next_spawn_waypoint = next_spawn_waypoint
 
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}
-
-    def update_scene(self, scene_name: str) -> None:
-        """Update the current scene/map name in the context.
-
-        This method is called when transitioning between different maps or areas in the game
-        world. The scene name is used by scripts and conditions to execute map-specific logic.
-
-        Args:
-            scene_name: The name identifier of the new scene/map being entered.
-        """
-        self.current_scene = scene_name
 
     def update_waypoints(self, waypoints: dict[str, tuple[int, int]]) -> None:
         """Update the waypoints dictionary for the current map.

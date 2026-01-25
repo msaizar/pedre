@@ -96,6 +96,10 @@ class SceneManager(SceneBaseManager):
         """Get current map."""
         return self.current_map
 
+    def get_current_scene(self) -> str:
+        """Get current scene."""
+        return self.current_scene or "default"
+
     def get_transition_state(self) -> TransitionState:
         """Get transition state."""
         return self.transition_state
@@ -122,8 +126,6 @@ class SceneManager(SceneBaseManager):
 
     def setup(self, context: GameContext) -> None:
         """Initialize with context."""
-        if context.current_scene:
-            self.current_scene = context.current_scene
 
     def reset(self) -> None:
         """Reset scene manager state for new game."""
@@ -171,7 +173,6 @@ class SceneManager(SceneBaseManager):
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
         self.current_scene = current_scene
-        context.update_scene(current_scene)
 
         # Set next_spawn_waypoint in context BEFORE loading map, so PlayerManager.spawn_player()
         # can use it to spawn the player at the correct position directly
