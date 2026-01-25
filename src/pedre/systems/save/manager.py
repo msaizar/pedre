@@ -52,7 +52,7 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
@@ -60,9 +60,7 @@ from pedre.systems.registry import SystemRegistry
 from pedre.systems.save.base import GameSaveData, SaveBaseManager
 
 if TYPE_CHECKING:
-    from pedre.systems.audio.base import AudioBaseManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.scene.base import SceneBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -130,13 +128,13 @@ class SaveManager(SaveBaseManager):
         if not context.player_sprite:
             return
 
-        scene_manager = context.get_system("scene")
+        scene_manager = context.scene_manager
         if not scene_manager or not hasattr(scene_manager, "current_map"):
             return
 
         success = self.auto_save(context)
 
-        audio_manager = cast("AudioBaseManager | None", context.get_system("audio"))
+        audio_manager = context.audio_manager
         if success:
             if audio_manager:
                 audio_manager.play_sfx("save.wav")
@@ -153,7 +151,7 @@ class SaveManager(SaveBaseManager):
             return
 
         # Reload map if different
-        scene_manager = cast("SceneBaseManager | None", context.get_system("scene"))
+        scene_manager = context.scene_manager
         current_map = ""
         if scene_manager and hasattr(scene_manager, "current_map"):
             current_map = scene_manager.current_map
@@ -173,7 +171,7 @@ class SaveManager(SaveBaseManager):
             context.player_sprite.center_x = save_data.player_x
             context.player_sprite.center_y = save_data.player_y
 
-        audio_manager = cast("AudioBaseManager | None", context.get_system("audio"))
+        audio_manager = context.audio_manager
         if audio_manager:
             audio_manager.play_sfx("save.wav")
         logger.info("Quick load completed")
@@ -202,7 +200,7 @@ class SaveManager(SaveBaseManager):
             logger.error("No player sprite in context")
             return False
 
-        scene_manager = cast("SceneBaseManager | None", context.get_system("scene"))
+        scene_manager = context.scene_manager
         if not scene_manager or not hasattr(scene_manager, "current_map"):
             logger.error("SceneManager not available")
             return False
@@ -286,7 +284,7 @@ class SaveManager(SaveBaseManager):
         """
         # Restore cache manager state first
         if "_scene_caches" in save_data.save_states:
-            scene_manager = cast("SceneBaseManager | None", context.get_system("scene"))
+            scene_manager = context.scene_manager
             if scene_manager:
                 scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
                 logger.debug("Restored cache manager state")

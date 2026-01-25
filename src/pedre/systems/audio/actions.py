@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems.audio.manager import AudioManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -45,7 +44,7 @@ class PlaySFXAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Play the sound effect."""
         if not self.executed:
-            audio_manager = cast("AudioManager", context.get_system("audio"))
+            audio_manager = context.audio_manager
             audio_manager.play_sfx(self.sfx_file)
             self.executed = True
             logger.debug("PlaySFXAction: Playing %s", self.sfx_file)
@@ -106,7 +105,7 @@ class PlayMusicAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Play the background music."""
         if not self.executed:
-            audio_manager = cast("AudioManager", context.get_system("audio"))
+            audio_manager = context.audio_manager
             audio_manager.play_music(self.music_file, loop=self.loop, volume=self.volume)
             self.executed = True
             logger.debug("PlayMusicAction: Playing %s (loop=%s)", self.music_file, self.loop)

@@ -1,5 +1,6 @@
 """Base class for InteractionManager."""
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -40,9 +41,15 @@ class InteractiveObject:
     properties: dict
 
 
-class InteractionBaseManager(BaseSystem):
+class InteractionBaseManager(BaseSystem, ABC):
     """Base class for InteractionManager."""
 
+    @abstractmethod
     def get_interactive_objects(self) -> dict[str, InteractiveObject]:
         """Get interactive objects."""
-        return {}
+        ...
+
+    @abstractmethod
+    def has_interacted_with(self, object_name: str) -> bool:
+        """Check if an object has been interacted with."""
+        ...

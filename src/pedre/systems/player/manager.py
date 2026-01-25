@@ -8,7 +8,7 @@ from the main GameView.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
@@ -19,10 +19,7 @@ from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.systems.dialog.manager import DialogBaseManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.input.manager import InputBaseManager
-    from pedre.systems.scene.base import SceneBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -147,11 +144,11 @@ class PlayerManager(BaseSystem):
             return
 
         # Check if dialog is showing (blocking movement)
-        dialog_manager = cast("DialogBaseManager", context.get_system("dialog"))
+        dialog_manager = context.dialog_manager
         dialog_showing = dialog_manager.is_showing() if dialog_manager else False
 
         # Get input manager
-        input_manager = cast("InputBaseManager", context.get_system("input"))
+        input_manager = context.input_manager
 
         # Determine movement
         dx, dy = 0.0, 0.0
@@ -188,7 +185,7 @@ class PlayerManager(BaseSystem):
 
     def spawn_player(self, context: GameContext) -> None:
         """Spawn player based on map data."""
-        scene_manager = cast("SceneBaseManager", context.get_system("scene"))
+        scene_manager = context.scene_manager
         if not scene_manager or not scene_manager.get_tile_map():
             logger.warning("No tile map available for player spawning")
             return

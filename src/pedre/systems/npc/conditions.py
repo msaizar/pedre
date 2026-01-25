@@ -1,18 +1,17 @@
 """Conditions module for npc."""
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from pedre.conditions.registry import ConditionRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc import NPCManager
 
 
 @ConditionRegistry.register("npc_interacted")
 def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if an NPC has been interacted with."""
-    npc_mgr = cast("NPCManager", context.get_system("npc"))
+    npc_mgr = context.npc_manager
     if not npc_mgr:
         return False
     npc_name = condition_data.get("npc")
@@ -25,7 +24,7 @@ def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -
 @ConditionRegistry.register("npc_dialog_level")
 def check_npc_dialog_level(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check an NPC's dialog level."""
-    npc_mgr = cast("NPCManager", context.get_system("npc"))
+    npc_mgr = context.npc_manager
     if not npc_mgr:
         return False
     npc_name = condition_data.get("npc")

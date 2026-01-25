@@ -50,10 +50,7 @@ from pedre.constants import asset_path
 from pedre.types import MenuOption
 
 if TYPE_CHECKING:
-    from pedre.systems.audio.base import AudioBaseManager
-    from pedre.systems.save.manager import SaveBaseManager
     from pedre.view_manager import ViewManager
-from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -356,7 +353,7 @@ class MenuView(arcade.View):
         has_autosave = False
         if has_game_view:
             # If game view exists, check for auto-save through it
-            save_manager = cast("SaveBaseManager", self.view_manager.game_context.get_system("save"))
+            save_manager = self.view_manager.game_context.save_manager
             has_autosave = save_manager.save_exists(slot=0)
 
         # Enable Continue if either condition is met
@@ -428,12 +425,7 @@ class MenuView(arcade.View):
                 - Logs loading progress and errors
             """
             try:
-                # Get game view's audio manager
-                game_view = self.view_manager.game_view
-                if not game_view or not hasattr(game_view, "audio_manager"):
-                    return
-
-                audio_manager = cast("AudioBaseManager", game_view.audio_manager)
+                audio_manager = self.view_manager.game_context.audio_manager
                 if not audio_manager:
                     return
 

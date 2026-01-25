@@ -1,13 +1,12 @@
 """Conditions module for script."""
 
 import logging
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from pedre.conditions.registry import ConditionRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
-    from pedre.systems.script import ScriptManager
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ def check_script_completed(condition: dict[str, Any], context: GameContext) -> b
     Returns:
         True if the script has completed all actions, False otherwise.
     """
-    script_manager = cast("ScriptManager", context.get_system("script"))
+    script_manager = context.script_manager
     if not script_manager:
         return False
 
@@ -35,7 +34,7 @@ def check_script_completed(condition: dict[str, Any], context: GameContext) -> b
         logger.warning("script_completed condition missing 'script' field")
         return False
 
-    script = script_manager.scripts.get(script_name)
+    script = script_manager.get_scripts().get(script_name)
     if not script:
         return False
 

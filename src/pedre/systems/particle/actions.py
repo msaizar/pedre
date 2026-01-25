@@ -7,16 +7,13 @@ locations or following NPCs.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
-    from pedre.systems.interaction.manager import InteractionBaseManager
-    from pedre.systems.npc.base import NPCBaseManager
-    from pedre.systems.particle.manager import ParticleManager
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +115,7 @@ class EmitParticlesAction(Action):
                     return True
 
             elif self.npc_name:
-                npc_manager = cast("NPCBaseManager", context.get_system("npc"))
+                npc_manager = context.npc_manager
                 if npc_manager:
                     npc_state = npc_manager.npcs.get(self.npc_name)
                     if npc_state:
@@ -132,7 +129,7 @@ class EmitParticlesAction(Action):
                     return True
 
             elif self.interactive_object:
-                interaction_manager = cast("InteractionBaseManager", context.get_system("interaction"))
+                interaction_manager = context.interaction_manager
                 if interaction_manager:
                     # Lowercase for case-insensitive matching
                     obj_name = self.interactive_object.lower()
@@ -151,7 +148,7 @@ class EmitParticlesAction(Action):
 
             # Emit particles
             if emit_x is not None and emit_y is not None:
-                particle_manager = cast("ParticleManager", context.get_system("particle"))
+                particle_manager = context.particle_manager
                 if particle_manager:
                     if self.particle_type == "hearts":
                         particle_manager.emit_hearts(emit_x, emit_y)

@@ -57,7 +57,7 @@ Example usage from code:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
@@ -68,7 +68,6 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc.base import NPCBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +192,7 @@ class DialogManager(DialogBaseManager):
             if closed and self.current_npc_name is not None and hasattr(context, "event_bus") and context.event_bus:
                 # Get actual current level from NPC manager if available
                 current_level = self.current_dialog_level or 0
-                npc_manager = cast("NPCBaseManager", context.get_system("npc"))
+                npc_manager = context.npc_manager
                 if npc_manager and hasattr(npc_manager, "npcs"):
                     npc_state = npc_manager.npcs.get(self.current_npc_name)
                     if npc_state:
@@ -464,7 +463,7 @@ class DialogManager(DialogBaseManager):
                 ):
                     # Publish DialogClosedEvent (similar to on_key_press)
                     current_level = self.current_dialog_level or 0
-                    npc_manager = cast("NPCBaseManager", self.context.get_system("npc"))
+                    npc_manager = self.context.npc_manager
                     if npc_manager and hasattr(npc_manager, "npcs"):
                         npc_state = npc_manager.npcs.get(self.current_npc_name)
                         if npc_state:

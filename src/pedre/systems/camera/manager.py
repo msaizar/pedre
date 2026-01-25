@@ -51,7 +51,7 @@ Integration:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pedre.systems.camera.base import CameraBaseManager
 from pedre.systems.registry import SystemRegistry
@@ -60,7 +60,6 @@ if TYPE_CHECKING:
     import arcade
 
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc.base import NPCBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -398,7 +397,7 @@ class CameraManager(CameraBaseManager):
                 else:
                     self.instant_follow(context.player_sprite.center_x, context.player_sprite.center_y)
         elif self.follow_mode == "npc":
-            npc_manager = cast("NPCBaseManager", context.get_system("npc"))
+            npc_manager = context.npc_manager
             if npc_manager and self.follow_target_npc:
                 npc_state = npc_manager.get_npc_by_name(self.follow_target_npc)
                 if npc_state:
@@ -474,7 +473,7 @@ class CameraManager(CameraBaseManager):
                 config = {"mode": "player", "smooth": camera_smooth}
             else:
                 # Validate NPC exists
-                npc_manager = cast("NPCBaseManager", context.get_system("npc"))
+                npc_manager = context.npc_manager
                 if npc_manager:
                     # NPCs are registered during load_from_tiled phase
                     # We can check if NPC will exist (it's in the map)

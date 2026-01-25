@@ -31,14 +31,13 @@ Example usage:
     view_manager.show_load_game()
 """
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import arcade
 
 from pedre.conf import settings
 
 if TYPE_CHECKING:
-    from pedre.systems.save.base import SaveBaseManager
     from pedre.view_manager import ViewManager
 
 
@@ -54,7 +53,6 @@ class LoadGameView(arcade.View):
 
     Attributes:
         view_manager: ViewManager instance for handling view transitions.
-        save_manager: SaveManager instance for loading save data and metadata.
         selected_slot: Currently selected slot index (0=auto-save, 1-3=manual, -1=back).
         save_info: Dictionary mapping slot numbers to save metadata (or None if empty).
     """
@@ -70,7 +68,6 @@ class LoadGameView(arcade.View):
         """
         super().__init__()
         self.view_manager = view_manager
-        self.save_manager = cast("SaveBaseManager", self.view_manager.game_context.get_system("save"))
         self.selected_slot = 1  # Slots 1-3, plus 0 for back
         self.save_info: dict[int, dict | None] = {}
 
@@ -101,10 +98,10 @@ class LoadGameView(arcade.View):
         # Load save slot information
         self.save_info = {}
         for slot in range(1, 4):  # Slots 1-3
-            self.save_info[slot] = self.save_manager.get_save_info(slot)
+            self.save_info[slot] = self.view_manager.game_context.save_manager.get_save_info(slot)
 
         # Check auto-save
-        self.save_info[0] = self.save_manager.get_save_info(0)
+        self.save_info[0] = self.view_manager.game_context.save_manager.get_save_info(0)
 
     def on_draw(self) -> None:
         """Render the load game menu (arcade lifecycle callback).
@@ -320,7 +317,7 @@ class LoadGameView(arcade.View):
             return
 
         # Try to load the selected save
-        save_data = self.save_manager.load_game(self.selected_slot)
+        save_data = self.view_manager.game_context.save_manager.load_game(self.selected_slot)
 
         if save_data is None:
             # No save in this slot, do nothing (or could show error message)

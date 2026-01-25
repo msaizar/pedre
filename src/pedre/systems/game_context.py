@@ -32,7 +32,7 @@ Example usage:
     context.register_system("npc", npc_manager)
 
     # Actions access systems by name
-    dialog = context.get_system("dialog")
+    dialog = context.dialog_manager
     if dialog:
         dialog.show_dialog("Hello!")
 """
@@ -41,12 +41,25 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pedre.systems.audio.base import AudioBaseManager
+from pedre.systems.camera.base import CameraBaseManager
+from pedre.systems.dialog.base import DialogBaseManager
+from pedre.systems.input.base import InputBaseManager
+from pedre.systems.interaction.base import InteractionBaseManager
+from pedre.systems.inventory.base import InventoryBaseManager
+from pedre.systems.npc.base import NPCBaseManager
+from pedre.systems.particle.base import ParticleBaseManager
+from pedre.systems.pathfinding.base import PathfindingBaseManager
+from pedre.systems.physics.base import PhysicsBaseManager
+from pedre.systems.save.base import SaveBaseManager
+from pedre.systems.scene.base import SceneBaseManager
+from pedre.systems.script.base import ScriptBaseManager
+
 if TYPE_CHECKING:
     import arcade
 
     from pedre.events import EventBus
     from pedre.systems.base import BaseSystem
-    from pedre.views.game_view import GameView
 
 
 class GameContext:
@@ -75,8 +88,21 @@ class GameContext:
         waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
         interacted_objects: Set of object names that the player has interacted with.
         next_spawn_waypoint: Waypoint name for next spawn (portal transitions).
-        game_view: (Deprecated) Reference to game view - will be removed.
     """
+
+    audio_manager: AudioBaseManager
+    save_manager: SaveBaseManager
+    npc_manager: NPCBaseManager
+    scene_manager: SceneBaseManager
+    camera_manager: CameraBaseManager
+    dialog_manager: DialogBaseManager
+    inventory_manager: InventoryBaseManager
+    interaction_manager: InteractionBaseManager
+    pathfinding_manager: PathfindingBaseManager
+    particle_manager: ParticleBaseManager
+    input_manager: InputBaseManager
+    physics_manager: PhysicsBaseManager
+    script_manager: ScriptBaseManager
 
     def __init__(
         self,
@@ -88,7 +114,6 @@ class GameContext:
         waypoints: dict[str, tuple[int, int]] | None = None,
         interacted_objects: set[str] | None = None,
         next_spawn_waypoint: str | None = None,
-        game_view: GameView | None = None,
     ) -> None:
         """Initialize game context with game state.
 
@@ -113,8 +138,6 @@ class GameContext:
                               Used by scripts and conditions to track object state.
             next_spawn_waypoint: Waypoint name for next spawn (set by SceneManager for
                                portal transitions). Read by PlayerManager and cleared after use.
-            game_view: (Deprecated) Reference to the main GameView instance. Will be removed in
-                      future refactoring. Systems should not depend on this.
         """
         self.event_bus = event_bus
         self.wall_list = wall_list
@@ -124,9 +147,6 @@ class GameContext:
         self.waypoints = waypoints or {}
         self.interacted_objects = interacted_objects or set()
         self.next_spawn_waypoint = next_spawn_waypoint
-
-        # Deprecated: game_view reference (kept temporarily for compatibility)
-        self.game_view = game_view
 
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}
@@ -199,6 +219,33 @@ class GameContext:
             context.register_system("dialog", dialog_manager)
         """
         self._systems[name] = system
+
+        if isinstance(system, AudioBaseManager):
+            self.audio_manager = system
+        elif isinstance(system, SaveBaseManager):
+            self.save_manager = system
+        elif isinstance(system, NPCBaseManager):
+            self.npc_manager = system
+        elif isinstance(system, SceneBaseManager):
+            self.scene_manager = system
+        elif isinstance(system, CameraBaseManager):
+            self.camera_manager = system
+        elif isinstance(system, DialogBaseManager):
+            self.dialog_manager = system
+        elif isinstance(system, InventoryBaseManager):
+            self.inventory_manager = system
+        elif isinstance(system, InteractionBaseManager):
+            self.interaction_manager = system
+        elif isinstance(system, PathfindingBaseManager):
+            self.pathfinding_manager = system
+        elif isinstance(system, ParticleBaseManager):
+            self.particle_manager = system
+        elif isinstance(system, InputBaseManager):
+            self.input_manager = system
+        elif isinstance(system, PhysicsBaseManager):
+            self.physics_manager = system
+        elif isinstance(system, ScriptBaseManager):
+            self.script_manager = system
 
     def get_system(self, name: str) -> BaseSystem | None:
         """Get a registered system by name.

@@ -1,5 +1,6 @@
 """Base class for NPCManager."""
 
+from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -53,15 +54,37 @@ class NPCState:
     disappear_event_emitted: bool = False
 
 
-class NPCBaseManager(BaseSystem):
+class NPCBaseManager(BaseSystem, ABC):
     """Base class for NPCManager."""
 
     npcs: dict[str, NPCState]
 
+    @abstractmethod
     def load_scene_dialogs(self, scene_name: str) -> dict[str, Any]:
         """Load dialogs for a specific scene."""
-        return {}
+        ...
 
+    @abstractmethod
     def get_npc_by_name(self, name: str) -> NPCState | None:
         """Get NPC state by name."""
-        return
+        ...
+
+    @abstractmethod
+    def move_npc_to_tile(self, npc_name: str, tile_x: int, tile_y: int) -> None:
+        """Start moving an NPC to a target tile position."""
+        ...
+
+    @abstractmethod
+    def has_npc_been_interacted_with(self, npc_name: str) -> bool:
+        """Check if an NPC has been interacted with."""
+        ...
+
+    @abstractmethod
+    def advance_dialog(self, npc_name: str) -> int:
+        """Advance the dialog level for an NPC."""
+        ...
+
+    @abstractmethod
+    def show_npcs(self, npc_names: list[str], wall_list: arcade.SpriteList | None = None) -> None:
+        """Make hidden NPCs visible and add them to collision."""
+        ...

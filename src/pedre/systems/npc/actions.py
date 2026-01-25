@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionRegistry
 from pedre.sprites import AnimatedNPC
 
 if TYPE_CHECKING:
-    from pedre.systems.dialog.base import DialogBaseManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc.manager import NPCManager
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +78,7 @@ class MoveNPCAction(Action):
                 return True  # Complete immediately on error
 
             # Move all NPCs to the target
-            npc_manager = cast("NPCManager", context.get_system("npc"))
+            npc_manager = context.npc_manager
             if npc_manager:
                 for npc_name in self.npc_names:
                     npc_manager.move_npc_to_tile(npc_name, tile_x, tile_y)
@@ -133,7 +131,7 @@ class RevealNPCsAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Reveal NPCs and show particle effects."""
         if not self.executed:
-            npc_manager = cast("NPCManager", context.get_system("npc"))
+            npc_manager = context.npc_manager
 
             if npc_manager:
                 npc_manager.show_npcs(self.npc_names, context.wall_list)
@@ -183,7 +181,7 @@ class AdvanceDialogAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Advance the dialog."""
         if not self.executed:
-            npc_manager = cast("NPCManager", context.get_system("npc"))
+            npc_manager = context.npc_manager
             if npc_manager:
                 npc_manager.advance_dialog(self.npc_name)
             self.executed = True
@@ -242,7 +240,7 @@ class SetDialogLevelAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Set the dialog level."""
         if not self.executed:
-            npc_manager = cast("NPCManager", context.get_system("npc"))
+            npc_manager = context.npc_manager
             if npc_manager:
                 npc_state = npc_manager.npcs.get(self.npc_name)
                 if npc_state:
@@ -317,8 +315,8 @@ class SetCurrentNPCAction(Action):
         """
         if not self.executed:
             # Access game view through context to set current NPC
-            npc_manager = cast("NPCManager", context.get_system("npc"))
-            dialog_manager = cast("DialogBaseManager", context.get_system("dialog"))
+            npc_manager = context.npc_manager
+            dialog_manager = context.dialog_manager
             if npc_manager and dialog_manager:
                 npc_state = npc_manager.npcs.get(self.npc_name)
                 if npc_state:
@@ -375,7 +373,7 @@ class WaitForNPCMovementAction(WaitForConditionAction):
         self.npc_name = npc_name
 
         def check_movement(ctx: GameContext) -> bool:
-            npc_manager = cast("NPCManager", ctx.get_system("npc"))
+            npc_manager = ctx.npc_manager
             if not npc_manager:
                 return True
             npc_state = npc_manager.npcs.get(npc_name)
@@ -425,7 +423,7 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
         self.npc_names = npc_names
 
         def check_all_appeared(ctx: GameContext) -> bool:
-            npc_manager = cast("NPCManager", ctx.get_system("npc"))
+            npc_manager = ctx.npc_manager
             if not npc_manager:
                 return True
             for npc_name in npc_names:
@@ -479,7 +477,7 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
         self.npc_names = npc_names
 
         def check_all_disappeared(ctx: GameContext) -> bool:
-            npc_manager = cast("NPCManager", ctx.get_system("npc"))
+            npc_manager = ctx.npc_manager
             if not npc_manager:
                 return True
             for npc_name in npc_names:
@@ -542,7 +540,7 @@ class StartDisappearAnimationAction(Action):
         """Start the disappear animation and wait for completion."""
         # Start animations for all NPCs on first call
         if not self.animation_started:
-            npc_manager = cast("NPCManager", context.get_system("npc"))
+            npc_manager = context.npc_manager
             if npc_manager:
                 for npc_name in self.npc_names:
                     npc_state = npc_manager.npcs.get(npc_name)
@@ -559,7 +557,7 @@ class StartDisappearAnimationAction(Action):
             self.animation_started = True
 
         # Check if all animations have completed
-        npc_manager = cast("NPCManager", context.get_system("npc"))
+        npc_manager = context.npc_manager
         if npc_manager:
             for npc_name in self.npc_names:
                 npc_state = npc_manager.npcs.get(npc_name)

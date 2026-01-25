@@ -1,5 +1,6 @@
 """Base class for SceneManager."""
 
+from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
 
@@ -21,40 +22,53 @@ class TransitionState(Enum):
     FADING_IN = auto()  # Fading in new scene
 
 
-class SceneBaseManager(BaseSystem):
+class SceneBaseManager(BaseSystem, ABC):
     """Base class for SceneManager."""
 
+    @abstractmethod
     def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
         """Central orchestration for loading a new map/level."""
-        return
+        ...
 
+    @abstractmethod
     def get_transition_state(self) -> TransitionState:
         """Get transition state."""
-        return TransitionState()
+        ...
 
     @classmethod
+    @abstractmethod
     def get_cache_manager(cls) -> CacheManager | None:
         """Get the cache manager instance."""
-        return
+        ...
 
     @classmethod
-    def restore_cache_state(cls, cache_states: dict[str, Any]) -> None:  # noqa: ARG003
+    @abstractmethod
+    def restore_cache_state(cls, cache_states: dict[str, Any]) -> None:
         """Restore the cache state from saved data."""
-        return
+        ...
 
     @classmethod
+    @abstractmethod
     def get_cache_state_dict(cls) -> dict[str, Any]:
         """Get the cache state as a dictionary for saving."""
-        return {}
+        ...
 
+    @abstractmethod
     def get_current_map(self) -> str:
         """Get current map."""
-        return ""
+        ...
 
+    @abstractmethod
     def get_arcade_scene(self) -> arcade.Scene | None:
         """Get arcade scene."""
-        return
+        ...
 
+    @abstractmethod
     def get_tile_map(self) -> arcade.TileMap | None:
         """Get tile map."""
-        return
+        ...
+
+    @abstractmethod
+    def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
+        """Request a transition to a new map."""
+        ...

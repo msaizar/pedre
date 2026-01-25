@@ -1,5 +1,6 @@
 """Base class for InventoryManager."""
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -82,25 +83,40 @@ class InventoryItem:
     acquired: bool = False  # Whether the player has this item
 
 
-class InventoryBaseManager(BaseSystem):
+class InventoryBaseManager(BaseSystem, ABC):
     """Base class for InventoryManager."""
 
+    @abstractmethod
+    def has_been_accessed(self) -> bool:
+        """Check if inventory has been accessed."""
+        ...
+
+    @abstractmethod
     def get_icon_path(self, item: InventoryItem) -> str | None:
         """Get the full absolute path to an item's icon/thumbnail image file."""
-        return
+        ...
 
+    @abstractmethod
     def get_image_path(self, item: InventoryItem) -> str | None:
         """Get the full absolute path to an item's full-size image file."""
-        return
+        ...
 
+    @abstractmethod
     def get_acquired_items(self, category: str | None = None) -> list[InventoryItem]:
         """Get all items the player has acquired, optionally filtered by category."""
-        return []
+        ...
 
+    @abstractmethod
     def mark_as_accessed(self) -> None:
         """Mark the inventory as having been accessed by the player."""
-        return
+        ...
 
+    @abstractmethod
     def emit_closed_event(self, context: GameContext) -> None:
         """Emit InventoryClosedEvent when inventory view closes."""
-        return
+        ...
+
+    @abstractmethod
+    def has_item(self, item_id: str) -> bool:
+        """Check if the player has acquired a specific item."""
+        ...

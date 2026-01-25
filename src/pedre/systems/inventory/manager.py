@@ -106,7 +106,7 @@ class InventoryManager(InventoryBaseManager):
         items: Dictionary mapping item IDs to InventoryItem instances. Maintains insertion
               order for consistent display. All possible items are stored here regardless
               of acquisition status.
-        has_been_accessed: Boolean flag tracking whether player has opened the inventory
+        accessed: Boolean flag tracking whether player has opened the inventory
                           view at least once. Used for tutorial prompts, achievements, or
                           quest progression that requires checking inventory.
         event_bus: Optional event bus for publishing ItemAcquiredEvent when items are obtained.
@@ -131,7 +131,7 @@ class InventoryManager(InventoryBaseManager):
         self.items: dict[str, InventoryItem] = {}
 
         # Track if inventory has been accessed
-        self.has_been_accessed: bool = False
+        self.accessed: bool = False
 
         # Event bus for publishing events
         self.event_bus: EventBus | None = None
@@ -152,13 +152,13 @@ class InventoryManager(InventoryBaseManager):
     def cleanup(self) -> None:
         """Clean up inventory resources when the scene unloads."""
         self.items.clear()
-        self.has_been_accessed = False
+        self.accessed = False
         logger.debug("InventoryManager cleanup complete")
 
     def reset(self) -> None:
         """Reset inventory state for new game."""
         self.items.clear()
-        self.has_been_accessed = False
+        self.accessed = False
         self._initialize_default_items()
         logger.debug("InventoryManager reset complete")
 
@@ -524,10 +524,14 @@ class InventoryManager(InventoryBaseManager):
         """
         return len(self.get_all_items(category))
 
+    def has_been_accessed(self) -> bool:
+        """Check if inventory has been accessed."""
+        return self.accessed
+
     def mark_as_accessed(self) -> None:
         """Mark the inventory as having been accessed by the player.
 
-        Sets the has_been_accessed flag to True, indicating the player has opened the
+        Sets the accessed flag to True, indicating the player has opened the
         inventory view at least once. This is typically called by the inventory UI when
         it's first displayed.
 
@@ -546,8 +550,8 @@ class InventoryManager(InventoryBaseManager):
                 self.inventory_mgr.mark_as_accessed()
                 # ... rest of UI setup
         """
-        if not self.has_been_accessed:
-            self.has_been_accessed = True
+        if not self.accessed:
+            self.accessed = True
             logger.info("Inventory accessed for the first time")
 
     def emit_closed_event(self, context: GameContext) -> None:
@@ -560,8 +564,8 @@ class InventoryManager(InventoryBaseManager):
             context: Game context for accessing event bus.
         """
         if self.event_bus:
-            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.has_been_accessed))
-            logger.info("Published InventoryClosedEvent (accessed=%s)", self.has_been_accessed)
+            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.accessed))
+            logger.info("Published InventoryClosedEvent (accessed=%s)", self.accessed)
 
     def to_dict(self) -> dict[str, bool]:
         """Convert inventory state to dictionary for save data serialization.

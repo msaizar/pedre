@@ -11,7 +11,7 @@ scenes, including:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
@@ -27,10 +27,6 @@ if TYPE_CHECKING:
     from pedre.systems.cache_manager import CacheManager
     from pedre.systems.camera.base import CameraBaseManager
     from pedre.systems.game_context import GameContext
-    from pedre.systems.npc.base import NPCBaseManager
-    from pedre.systems.pathfinding.base import PathfindingBaseManager
-    from pedre.systems.physics.base import PhysicsBaseManager
-    from pedre.systems.script.base import ScriptBaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -173,8 +169,8 @@ class SceneManager(SceneBaseManager):
         self._load_map(map_file, context)
 
         # Get NPC and script managers for scene loading
-        npc_manager = cast("NPCBaseManager | None", context.get_system("npc"))
-        script_manager = cast("ScriptBaseManager | None", context.get_system("script"))
+        npc_manager = context.npc_manager
+        script_manager = context.script_manager
 
         npc_dialogs_data = {}
         if npc_manager:
@@ -222,11 +218,11 @@ class SceneManager(SceneBaseManager):
         self._load_systems_from_tiled(context)
 
         # 4. Invalidate physics engine (needs new player/walls)
-        physics_manager = cast("PhysicsBaseManager", context.get_system("physics"))
+        physics_manager = context.physics_manager
         physics_manager.invalidate()
 
         # 5. Update pathfinding (needs new wall list)
-        pathfinding = cast("PathfindingBaseManager", context.get_system("pathfinding"))
+        pathfinding = context.pathfinding_manager
         pathfinding.set_wall_list(wall_list)
 
         # 6. Setup camera with map bounds
@@ -258,7 +254,7 @@ class SceneManager(SceneBaseManager):
 
     def _setup_camera(self, context: GameContext) -> None:
         """Setup camera with map bounds after loading."""
-        camera_manager = cast("CameraBaseManager", context.get_system("camera"))
+        camera_manager = context.camera_manager
         if not camera_manager or not self.tile_map:
             return
 
@@ -300,7 +296,7 @@ class SceneManager(SceneBaseManager):
             # Camera should follow NPC - position at NPC initially
             npc_name = follow_config.get("target")
             if npc_name:
-                npc_manager = cast("NPCBaseManager | None", context.get_system("npc"))
+                npc_manager = context.npc_manager
                 if npc_manager:
                     npc_state = npc_manager.get_npc_by_name(npc_name)
                     if npc_state:
@@ -362,7 +358,7 @@ class SceneManager(SceneBaseManager):
 
     def _draw_transition_overlay(self, context: GameContext) -> None:
         """Draw the black fade overlay."""
-        camera_manager = context.get_system("camera")
+        camera_manager = context.camera_manager
         if camera_manager:
             pass
 

@@ -1,5 +1,6 @@
 """Base class for DialogManager."""
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from pedre.systems.base import BaseSystem
@@ -42,9 +43,10 @@ class DialogPage:
     total_pages: int
 
 
-class DialogBaseManager(BaseSystem):
+class DialogBaseManager(BaseSystem, ABC):
     """Base class for DialogManager."""
 
+    @abstractmethod
     def show_dialog(
         self,
         npc_name: str,
@@ -56,16 +58,19 @@ class DialogBaseManager(BaseSystem):
         npc_key: str | None = None,
     ) -> None:
         """Show a dialog from an NPC."""
-        return
+        ...
 
+    @abstractmethod
     def set_current_dialog_level(self, dialog_level: int) -> None:
         """Set current dialog level."""
-        return
+        ...
 
+    @abstractmethod
     def set_current_npc_name(self, npc_name: str) -> None:
         """Set current dialog level."""
-        return
+        ...
 
+    @abstractmethod
     def is_showing(self) -> bool:
         """Verify if dialog is showing."""
-        return False
+        ...

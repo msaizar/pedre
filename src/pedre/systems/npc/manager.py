@@ -30,7 +30,7 @@ scripted sequences.
 
 Example usage:
     # Get the NPC manager from context
-    npc_mgr = context.get_system("npc")
+    npc_mgr = context.npc_manager
 
     # Load dialog from JSON files
     npc_mgr.load_dialogs_from_json("assets/dialogs/")
@@ -60,7 +60,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
@@ -74,14 +74,12 @@ from pedre.systems.npc.events import (
     NPCDisappearCompleteEvent,
     NPCMovementCompleteEvent,
 )
-from pedre.systems.pathfinding import PathfindingManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.events import EventBus
-    from pedre.systems.dialog.base import DialogBaseManager
     from pedre.systems.game_context import GameContext
-
+    from pedre.systems.pathfinding.base import PathfindingBaseManager
 logger = logging.getLogger(__name__)
 
 
@@ -194,7 +192,7 @@ class NPCManager(NPCBaseManager):
         self.npcs: dict[str, NPCState] = {}
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
-        self.pathfinding: PathfindingManager | None = None
+        self.pathfinding: PathfindingBaseManager | None = None
         self.interaction_distance = 50
         self.waypoint_threshold = 2
         self.npc_speed = 80.0
@@ -214,16 +212,12 @@ class NPCManager(NPCBaseManager):
             settings: Game configuration containing NPC-related settings.
         """
         # Get required dependencies from context
-        pathfinding_system = context.get_system("pathfinding")
-        if pathfinding_system and isinstance(pathfinding_system, PathfindingManager):
-            self.pathfinding = pathfinding_system
+        pathfinding_manager = context.pathfinding_manager
+        if pathfinding_manager:
+            self.pathfinding = pathfinding_manager
 
         self.event_bus = context.event_bus
         self.interacted_objects = context.interacted_objects
-        # Use a separate set for NPCs if desired, or share context.interacted_objects
-        # For now, let's keep it consistent with ScriptManager's potential view.
-        # ScriptManager used has_npc_been_interacted_with(npc_name) which checked npc_manager.
-        # Wait, let's check NPCManager.has_npc_been_interacted_with.
 
         # Apply settings if available
         if hasattr(settings, "NPC_INTERACTION_DISTANCE"):
@@ -501,7 +495,7 @@ class NPCManager(NPCBaseManager):
         if not npc:
             return False
 
-        dialog_manager = cast("DialogBaseManager", context.get_system("dialog"))
+        dialog_manager = context.dialog_manager
 
         # Get dialog
         current_scene = context.current_scene or "default"
