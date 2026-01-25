@@ -57,8 +57,12 @@ class NPCState:
 class NPCBaseManager(BaseSystem, ABC):
     """Base class for NPCManager."""
 
-    npcs: dict[str, NPCState]
     role = "npc_manager"
+
+    @abstractmethod
+    def get_npcs(self) -> dict[str, NPCState]:
+        """Get NPCs."""
+        ...
 
     @abstractmethod
     def load_scene_dialogs(self, scene_name: str) -> dict[str, Any]:

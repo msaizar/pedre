@@ -262,6 +262,10 @@ class NPCManager(NPCBaseManager):
         self.interacted_npcs.clear()
         logger.debug("NPCManager reset complete")
 
+    def get_npcs(self) -> dict[str, NPCState]:
+        """Get NPCs."""
+        return self.npcs
+
     def load_dialogs(self, dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]]) -> None:
         """Load NPC dialog configurations.
 

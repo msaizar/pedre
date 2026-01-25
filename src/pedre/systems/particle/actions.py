@@ -117,7 +117,7 @@ class EmitParticlesAction(Action):
             elif self.npc_name:
                 npc_manager = context.npc_manager
                 if npc_manager:
-                    npc_state = npc_manager.npcs.get(self.npc_name)
+                    npc_state = npc_manager.get_npcs().get(self.npc_name)
                     if npc_state:
                         emit_x = npc_state.sprite.center_x
                         emit_y = npc_state.sprite.center_y

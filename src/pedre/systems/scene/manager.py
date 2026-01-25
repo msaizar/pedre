@@ -185,7 +185,7 @@ class SceneManager(SceneBaseManager):
 
             # Sync wall_list with NPC visibility after restore
             if npc_manager and context.wall_list:
-                for npc_state in npc_manager.npcs.values():
+                for npc_state in npc_manager.get_npcs().values():
                     if not npc_state.sprite.visible and npc_state.sprite in context.wall_list:
                         context.wall_list.remove(npc_state.sprite)
                     elif npc_state.sprite.visible and npc_state.sprite not in context.wall_list:

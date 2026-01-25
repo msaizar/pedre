@@ -242,7 +242,7 @@ class SetDialogLevelAction(Action):
         if not self.executed:
             npc_manager = context.npc_manager
             if npc_manager:
-                npc_state = npc_manager.npcs.get(self.npc_name)
+                npc_state = npc_manager.get_npcs().get(self.npc_name)
                 if npc_state:
                     old_level = npc_state.dialog_level
                     npc_state.dialog_level = self.level
@@ -318,7 +318,7 @@ class SetCurrentNPCAction(Action):
             npc_manager = context.npc_manager
             dialog_manager = context.dialog_manager
             if npc_manager and dialog_manager:
-                npc_state = npc_manager.npcs.get(self.npc_name)
+                npc_state = npc_manager.get_npcs().get(self.npc_name)
                 if npc_state:
                     dialog_manager.set_current_npc_name(self.npc_name)
                     dialog_manager.set_current_dialog_level(npc_state.dialog_level)
@@ -376,7 +376,7 @@ class WaitForNPCMovementAction(WaitForConditionAction):
             npc_manager = ctx.npc_manager
             if not npc_manager:
                 return True
-            npc_state = npc_manager.npcs.get(npc_name)
+            npc_state = npc_manager.get_npcs().get(npc_name)
             if not npc_state:
                 return True
             # NPC is not moving if path is empty and is_moving is False
@@ -427,7 +427,7 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
             if not npc_manager:
                 return True
             for npc_name in npc_names:
-                npc_state = npc_manager.npcs.get(npc_name)
+                npc_state = npc_manager.get_npcs().get(npc_name)
                 if not npc_state:
                     continue
                 # Check if it's an AnimatedNPC and if appear animation is complete
@@ -481,7 +481,7 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
             if not npc_manager:
                 return True
             for npc_name in npc_names:
-                npc_state = npc_manager.npcs.get(npc_name)
+                npc_state = npc_manager.get_npcs().get(npc_name)
                 if not npc_state:
                     continue
                 # Check if it's an AnimatedNPC and if disappear animation is complete
@@ -543,7 +543,7 @@ class StartDisappearAnimationAction(Action):
             npc_manager = context.npc_manager
             if npc_manager:
                 for npc_name in self.npc_names:
-                    npc_state = npc_manager.npcs.get(npc_name)
+                    npc_state = npc_manager.get_npcs().get(npc_name)
                     if npc_state and isinstance(npc_state.sprite, AnimatedNPC):
                         npc_state.sprite.start_disappear_animation()
                         # Reset the disappear event flag so event can be emitted
@@ -560,7 +560,7 @@ class StartDisappearAnimationAction(Action):
         npc_manager = context.npc_manager
         if npc_manager:
             for npc_name in self.npc_names:
-                npc_state = npc_manager.npcs.get(npc_name)
+                npc_state = npc_manager.get_npcs().get(npc_name)
                 if not npc_state:
                     continue
                 # Check if it's an AnimatedNPC and if disappear animation is still running
@@ -572,7 +572,7 @@ class StartDisappearAnimationAction(Action):
         # All animations complete - remove NPCs from walls
         if npc_manager:
             for npc_name in self.npc_names:
-                npc_state = npc_manager.npcs.get(npc_name)
+                npc_state = npc_manager.get_npcs().get(npc_name)
                 if npc_state and context.wall_list and npc_state.sprite in context.wall_list:
                     context.wall_list.remove(npc_state.sprite)
                     logger.debug("StartDisappearAnimationAction: Removed %s from wall list", npc_name)

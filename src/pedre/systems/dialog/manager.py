@@ -194,7 +194,7 @@ class DialogManager(DialogBaseManager):
                 current_level = self.current_dialog_level or 0
                 npc_manager = context.npc_manager
                 if npc_manager and hasattr(npc_manager, "npcs"):
-                    npc_state = npc_manager.npcs.get(self.current_npc_name)
+                    npc_state = npc_manager.get_npcs().get(self.current_npc_name)
                     if npc_state:
                         current_level = npc_state.dialog_level
 
@@ -465,7 +465,7 @@ class DialogManager(DialogBaseManager):
                     current_level = self.current_dialog_level or 0
                     npc_manager = self.context.npc_manager
                     if npc_manager and hasattr(npc_manager, "npcs"):
-                        npc_state = npc_manager.npcs.get(self.current_npc_name)
+                        npc_state = npc_manager.get_npcs().get(self.current_npc_name)
                         if npc_state:
                             current_level = npc_state.dialog_level
 

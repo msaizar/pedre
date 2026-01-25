@@ -84,7 +84,7 @@ class DebugManager(BaseSystem):
         # Collect NPC positions
         npc_manager = context.npc_manager
         if npc_manager:
-            for npc_name, npc_state in npc_manager.npcs.items():
+            for npc_name, npc_state in npc_manager.get_npcs().items():
                 if npc_state.sprite and npc_state.sprite.visible:
                     npc_tile_x = int(npc_state.sprite.center_x / tile_size)
                     npc_tile_y = int(npc_state.sprite.center_y / tile_size)
