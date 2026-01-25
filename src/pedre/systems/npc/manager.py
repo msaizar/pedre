@@ -58,7 +58,6 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -68,7 +67,7 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedNPC
-from pedre.systems.npc.base import NPCBaseManager, NPCState
+from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
@@ -81,58 +80,6 @@ if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
     from pedre.systems.pathfinding.base import PathfindingBaseManager
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class NPCDialogConfig:
-    """Configuration for NPC dialog at a specific conversation level.
-
-    NPCDialogConfig defines what an NPC says at a particular point in their conversation
-    progression, along with optional conditions that must be met for this dialog to appear.
-    This is static data typically loaded from JSON files that doesn't change during gameplay.
-
-    The dialog system supports conditional branching where different text can be shown based
-    on game state (inventory accessed, objects interacted with, other NPC dialog levels).
-    If conditions aren't met, optional fallback actions can be executed instead.
-
-    Attributes:
-        text: List of dialog text pages to display. Each string is one page that the player
-             advances through. Example: ["Hello there!", "Welcome to my shop."]
-        name: Optional display name for the speaker. If provided, this name is shown in the
-             dialog box instead of the NPC's key name. Useful for proper capitalization or
-             titles (e.g., "Merchant" instead of "merchant").
-        conditions: Optional list of condition dictionaries that must ALL be true for this
-                   dialog to display. Each condition has a "check" type and expected values.
-                   Common checks: "npc_dialog_level", "inventory_accessed", "object_interacted".
-                   If None or empty, dialog always shows.
-        on_condition_fail: Optional list of action dictionaries to execute if conditions fail.
-                          Allows fallback behavior like showing reminder text or triggering
-                          alternative sequences. If None, condition failure silently falls back
-                          to other available dialog options.
-
-    Example JSON:
-        {
-            "merchant": {
-                "0": {
-                    "name": "Merchant",
-                    "text": ["Welcome to my shop!"]
-                },
-                "1": {
-                    "name": "Merchant",
-                    "text": ["You're back! Did you check your inventory?"],
-                    "conditions": [{"check": "inventory_accessed", "equals": true}],
-                    "on_condition_fail": [
-                        {"type": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
-                    ]
-                }
-            }
-        }
-    """
-
-    text: list[str]
-    name: str | None = None
-    conditions: list[dict[str, Any]] | None = None
-    on_condition_fail: list[dict[str, Any]] | None = None  # List of actions to execute if conditions fail
 
 
 @SystemRegistry.register
