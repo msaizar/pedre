@@ -318,7 +318,7 @@ class SceneManager(SceneBaseManager):
                         return (npc_state.sprite.center_x, npc_state.sprite.center_y)
 
         # Default: position at player (or map center if no player)
-        player_sprite = context.player_sprite
+        player_sprite = context.player_manager.get_player_sprite()
         if player_sprite:
             logger.debug(
                 "Initial camera position set to player at (%.1f, %.1f)",

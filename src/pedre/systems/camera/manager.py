@@ -391,11 +391,12 @@ class CameraManager(CameraBaseManager):
             context: Game context with player and systems.
         """
         if self.follow_mode == "player":
-            if context.player_sprite:
+            player_sprite = context.player_manager.get_player_sprite()
+            if player_sprite:
                 if self.follow_smooth:
-                    self.smooth_follow(context.player_sprite.center_x, context.player_sprite.center_y)
+                    self.smooth_follow(player_sprite.center_x, player_sprite.center_y)
                 else:
-                    self.instant_follow(context.player_sprite.center_x, context.player_sprite.center_y)
+                    self.instant_follow(player_sprite.center_x, player_sprite.center_y)
         elif self.follow_mode == "npc":
             npc_manager = context.npc_manager
             if npc_manager and self.follow_target_npc:
@@ -512,9 +513,8 @@ class CameraManager(CameraBaseManager):
         """
         if not self._follow_config:
             # Default behavior if no config loaded
-            if context.player_sprite:
-                self.set_follow_player(smooth=True)
-                logger.debug("Applied default camera following: player")
+            self.set_follow_player(smooth=True)
+            logger.debug("Applied default camera following: player")
             return
 
         mode = self._follow_config["mode"]
@@ -524,11 +524,8 @@ class CameraManager(CameraBaseManager):
             self.stop_follow()
             logger.info("Camera following disabled (static camera)")
         elif mode == "player":
-            if context.player_sprite:
-                self.set_follow_player(smooth=smooth)
-                logger.info("Camera following player (smooth=%s)", smooth)
-            else:
-                logger.warning("Cannot follow player: player sprite not available")
+            self.set_follow_player(smooth=smooth)
+            logger.info("Camera following player (smooth=%s)", smooth)
         elif mode == "npc":
             npc_name = self._follow_config.get("target")
             if npc_name:

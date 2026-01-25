@@ -15,7 +15,7 @@ import arcade
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.sprites import AnimatedPlayer
-from pedre.systems.base import BaseSystem
+from pedre.systems.player.base import PlayerBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @SystemRegistry.register
-class PlayerManager(BaseSystem):
+class PlayerManager(PlayerBaseManager):
     """Manages player spawning, movement, and animation.
 
     Responsibilities:
@@ -45,6 +45,10 @@ class PlayerManager(BaseSystem):
 
     def setup(self, context: GameContext) -> None:
         """Initialize player system for the current scene."""
+
+    def get_player_sprite(self) -> AnimatedPlayer | None:
+        """Get the player sprite."""
+        return self.player_sprite
 
     def load_from_tiled(
         self,
@@ -133,9 +137,6 @@ class PlayerManager(BaseSystem):
                 arcade_scene.remove_sprite_list_by_name("Player")
             arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
 
-        # Update context
-        context.update_player(self.player_sprite)
-
         logger.info("Player loaded at (%.1f, %.1f)", spawn_x, spawn_y)
 
     def update(self, delta_time: float, context: GameContext) -> None:
@@ -182,6 +183,12 @@ class PlayerManager(BaseSystem):
 
             # Update animation
             self.player_sprite.update_animation(delta_time, moving=moving)
+
+    def set_player_position(self, player_x: float, player_y: float) -> None:
+        """Set the player position."""
+        if self.player_sprite:
+            self.player_sprite.center_x = player_x
+            self.player_sprite.center_y = player_y
 
     def spawn_player(self, context: GameContext) -> None:
         """Spawn player based on map data."""
@@ -273,15 +280,6 @@ class PlayerManager(BaseSystem):
             if "Player" in arcade_scene:
                 arcade_scene.remove_sprite_list_by_name("Player")
             arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
-
-        # Update context
-        context.update_player(self.player_sprite)
-
-        # Initialize physics engine if wall list exists
-        # NOTE: Physics engine creation is currently in GameView.
-        # Ideally, we should trigger a physics system update here,
-        # or GameView will handle it via checking context.player_sprite.
-        # For now, we update context, and GameView (or PhysicsSystem) picks it up.
 
     def _get_animation_properties(self, properties: dict) -> dict[str, int]:
         """Extract animation properties from dictionary."""

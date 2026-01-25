@@ -223,7 +223,6 @@ class SystemLoader:
         """
         # Reset context state
         context.current_scene = ""
-        context.player_sprite = None
         context.waypoints.clear()
 
         # Clear key persistence cache

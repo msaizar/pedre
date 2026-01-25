@@ -55,8 +55,8 @@ class PhysicsManager(PhysicsBaseManager):
             self.physics_engine.update()
 
     def _create_engine(self, context: GameContext) -> None:
-        scene_manager = context.scene_manager
-        if context.player_sprite and scene_manager:
-            self.physics_engine = arcade.PhysicsEngineSimple(context.player_sprite, scene_manager.get_wall_list())
-            self._needs_recreate = False
-            logger.debug("Physics engine initialized")
+        player_sprite = context.player_manager.get_player_sprite()
+        if player_sprite:
+            self.physics_engine = arcade.PhysicsEngineSimple(player_sprite, context.scene_manager.get_wall_list())
+        self._needs_recreate = False
+        logger.debug("Physics engine initialized")

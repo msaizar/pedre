@@ -185,7 +185,7 @@ class InteractionManager(InteractionBaseManager):
             True if interaction occurred.
         """
         if symbol == arcade.key.SPACE:
-            player_sprite = context.player_sprite
+            player_sprite = context.player_manager.get_player_sprite()
             if player_sprite:
                 logger.debug(
                     "InteractionManager: SPACE pressed, player at (%.1f, %.1f)",

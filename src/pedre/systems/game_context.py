@@ -22,7 +22,6 @@ Example usage:
     # Create context with game state
     context = GameContext(
         event_bus=event_bus,
-        player_sprite=player,
         current_scene="town"
     )
 
@@ -55,6 +54,7 @@ if TYPE_CHECKING:
     from pedre.systems.particle.base import ParticleBaseManager
     from pedre.systems.pathfinding.base import PathfindingBaseManager
     from pedre.systems.physics.base import PhysicsBaseManager
+    from pedre.systems.player.base import PlayerBaseManager
     from pedre.systems.save.base import SaveBaseManager
     from pedre.systems.scene.base import SceneBaseManager
     from pedre.systems.script.base import ScriptBaseManager
@@ -80,7 +80,6 @@ class GameContext:
     Attributes:
         event_bus: Publish/subscribe event system for decoupled communication.
         window: Reference to the arcade Window instance.
-        player_sprite: Reference to the player's sprite (or None if not spawned).
         current_scene: Name of the currently loaded map/scene.
         waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
         interacted_objects: Set of object names that the player has interacted with.
@@ -100,12 +99,12 @@ class GameContext:
     input_manager: InputBaseManager
     physics_manager: PhysicsBaseManager
     script_manager: ScriptBaseManager
+    player_manager: PlayerBaseManager
 
     def __init__(
         self,
         event_bus: EventBus,
         window: arcade.Window,
-        player_sprite: arcade.Sprite | None = None,
         current_scene: str = "",
         waypoints: dict[str, tuple[int, int]] | None = None,
         next_spawn_waypoint: str | None = None,
@@ -121,8 +120,6 @@ class GameContext:
                       Actions can publish events to trigger scripts or notify other systems.
             window: Reference to the arcade Window instance. Used by systems that need
                    to access window properties (size, rendering context, etc).
-            player_sprite: Reference to the player's sprite. May be None if player hasn't
-                         spawned yet. Updated via update_player() when player is created.
             current_scene: Name of the currently loaded map/scene (e.g., "town", "forest").
                          Used to track which map is active for conditional logic.
             waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
@@ -132,29 +129,12 @@ class GameContext:
         """
         self.event_bus = event_bus
         self.window = window
-        self.player_sprite = player_sprite
         self.current_scene = current_scene
         self.waypoints = waypoints or {}
         self.next_spawn_waypoint = next_spawn_waypoint
 
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}
-
-    def update_player(self, player_sprite: arcade.Sprite | None) -> None:
-        """Update the player sprite reference in the context.
-
-        This method is called when the player sprite is created or changes, such as when
-        spawning into a new map or respawning after a game over. Actions that need to
-        access the player sprite (for positioning, collision checks, etc.) will use the
-        updated reference.
-
-        Setting player_sprite to None is valid and indicates that no player is currently
-        spawned in the game world.
-
-        Args:
-            player_sprite: The new player sprite reference, or None if no player exists.
-        """
-        self.player_sprite = player_sprite
 
     def update_scene(self, scene_name: str) -> None:
         """Update the current scene/map name in the context.
