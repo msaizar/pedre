@@ -186,7 +186,7 @@ class NPCManager(NPCBaseManager):
         self.load_npcs_from_objects(
             npc_layer,
             arcade_scene,
-            context.wall_list,
+            context,
         )
 
     def cleanup(self) -> None:
@@ -655,12 +655,12 @@ class NPCManager(NPCBaseManager):
         npc.path = path
         npc.is_moving = bool(path)
 
-    def show_npcs(self, npc_names: list[str], wall_list: arcade.SpriteList | None = None) -> None:
+    def show_npcs(self, npc_names: list[str], context: GameContext) -> None:
         """Make hidden NPCs visible and add them to collision.
 
         Args:
             npc_names: List of NPC names to reveal.
-            wall_list: Optional wall list to add visible NPCs to for collision.
+            context: Game Context.
         """
         for npc_name in npc_names:
             npc = self.npcs.get(npc_name)
@@ -670,9 +670,9 @@ class NPCManager(NPCBaseManager):
                 # Start appear animation for animated NPCs
                 if isinstance(npc.sprite, AnimatedNPC):
                     npc.sprite.start_appear_animation()
-
-                if wall_list is not None and npc.sprite not in wall_list:
-                    wall_list.append(npc.sprite)
+                scene_manager = context.scene_manager
+                if scene_manager:
+                    scene_manager.add_to_wall_list(npc.sprite)
                 logger.info("Showing hidden NPC: %s", npc_name)
 
     def update(self, delta_time: float, context: GameContext) -> None:
@@ -834,7 +834,7 @@ class NPCManager(NPCBaseManager):
         self,
         npc_objects: list,
         scene: arcade.Scene | None,
-        wall_list: arcade.SpriteList | None = None,
+        context: GameContext,
     ) -> None:
         """Load NPCs from Tiled object layer (like Player, Portals, etc.).
 
@@ -844,7 +844,7 @@ class NPCManager(NPCBaseManager):
             npc_objects: List of Tiled objects from tile_map.object_lists["NPCs"].
             scene: The arcade Scene to add NPC sprites to.
             settings: Game settings for asset paths.
-            wall_list: Optional wall list to add visible NPCs to for collision.
+            context: Game Context.
         """
         # Create NPCs sprite list for the scene if needed
         npc_sprite_list = arcade.SpriteList()
@@ -905,8 +905,9 @@ class NPCManager(NPCBaseManager):
                 npc_sprite_list.append(animated_npc)
 
                 # Add to wall list if visible
-                if wall_list is not None and animated_npc.visible:
-                    wall_list.append(animated_npc)
+                scene_manager = context.scene_manager
+                if scene_manager and animated_npc.visible:
+                    scene_manager.add_to_wall_list(animated_npc)
 
                 logger.debug("Loaded NPC %s at (%.1f, %.1f)", npc_name, spawn_x, spawn_y)
 

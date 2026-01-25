@@ -591,7 +591,6 @@ class CameraManager(CameraBaseManager):
                 self.camera_manager.use()
 
                 # Draw world objects
-                self.wall_list.draw()
                 self.npc_list.draw()
                 self.player_list.draw()
 

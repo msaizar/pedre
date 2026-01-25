@@ -22,7 +22,6 @@ Example usage:
     # Create context with game state
     context = GameContext(
         event_bus=event_bus,
-        wall_list=walls,
         player_sprite=player,
         current_scene="town"
     )
@@ -80,7 +79,6 @@ class GameContext:
 
     Attributes:
         event_bus: Publish/subscribe event system for decoupled communication.
-        wall_list: SpriteList of collidable objects for physics.
         window: Reference to the arcade Window instance.
         player_sprite: Reference to the player's sprite (or None if not spawned).
         current_scene: Name of the currently loaded map/scene.
@@ -106,7 +104,6 @@ class GameContext:
     def __init__(
         self,
         event_bus: EventBus,
-        wall_list: arcade.SpriteList,
         window: arcade.Window,
         player_sprite: arcade.Sprite | None = None,
         current_scene: str = "",
@@ -122,8 +119,6 @@ class GameContext:
         Args:
             event_bus: Central event system for publishing and subscribing to game events.
                       Actions can publish events to trigger scripts or notify other systems.
-            wall_list: Arcade SpriteList containing all collidable objects (walls, NPCs, etc).
-                      Used for collision detection and pathfinding calculations.
             window: Reference to the arcade Window instance. Used by systems that need
                    to access window properties (size, rendering context, etc).
             player_sprite: Reference to the player's sprite. May be None if player hasn't
@@ -136,7 +131,6 @@ class GameContext:
                                portal transitions). Read by PlayerManager and cleared after use.
         """
         self.event_bus = event_bus
-        self.wall_list = wall_list
         self.window = window
         self.player_sprite = player_sprite
         self.current_scene = current_scene
@@ -161,19 +155,6 @@ class GameContext:
             player_sprite: The new player sprite reference, or None if no player exists.
         """
         self.player_sprite = player_sprite
-
-    def update_wall_list(self, wall_list: arcade.SpriteList) -> None:
-        """Update the collision wall list reference in the context.
-
-        This method is called when loading a new map or when the collision geometry changes.
-        The wall list contains all sprites that block movement (walls, obstacles, NPCs, etc.)
-        and is used by the physics engine for collision detection and by the NPC pathfinding
-        system to calculate valid paths.
-
-        Args:
-            wall_list: The new SpriteList containing all collidable sprites for the current map.
-        """
-        self.wall_list = wall_list
 
     def update_scene(self, scene_name: str) -> None:
         """Update the current scene/map name in the context.

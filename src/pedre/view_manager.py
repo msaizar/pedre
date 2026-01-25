@@ -119,7 +119,6 @@ class ViewManager:
         # Create game context (outlives individual views)
         self.game_context = GameContext(
             event_bus=self.event_bus,
-            wall_list=arcade.SpriteList(),
             window=self.window,
             player_sprite=None,
             current_scene="default",

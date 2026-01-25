@@ -110,19 +110,18 @@ class BaseSystem(ABC):
 
         Call order:
         1. SceneManager loads tile_map and arcade_scene
-        2. SceneManager extracts collision layers into context.wall_list
-        3. load_from_tiled() called on all systems in dependency order
+        2. load_from_tiled() called on all systems in dependency order
            - WaypointManager populates context.waypoints
            - PortalManager registers portals
            - InteractionManager registers interactive objects
            - PlayerManager creates player sprite (uses waypoints)
            - NPCManager creates NPC sprites (depends on player)
-        4. Physics setup, pathfinding setup, camera setup
+        3. Physics setup, pathfinding setup, camera setup
 
         Args:
             tile_map: Loaded arcade.TileMap instance.
             arcade_scene: arcade.Scene created from tile_map.
-            context: GameContext with wall_list already populated.
+            context: GameContext.
 
         Example:
             from pedre.conf import settings

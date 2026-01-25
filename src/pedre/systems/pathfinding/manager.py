@@ -16,8 +16,7 @@ Key features:
 - Automatic fallback to NPC passthrough when normal pathfinding fails
 - Converts tile paths to pixel coordinates for smooth sprite movement
 
-The manager maintains a reference to the game's wall_list (collision layer) and uses
-it to determine which tiles are walkable. NPCs can be excluded from collision checks
+NPCs can be excluded from collision checks
 to allow them to pathfind through each other when necessary.
 
 Pathfinding workflow:
@@ -34,7 +33,6 @@ Integration with other systems:
 Example usage:
     # Get pathfinding manager from context
     pathfinding = context.get_system("pathfinding")
-    pathfinding.set_wall_list(wall_sprite_list)
 
     # Find path from pixel position to tile coordinates
     path = pathfinding.find_path(
@@ -43,6 +41,7 @@ Example usage:
         end_tile_x=10,
         end_tile_y=15,
         exclude_sprite=npc_sprite
+        context=context
     )
 
     # Path is a deque of (x, y) pixel positions
@@ -95,7 +94,6 @@ class PathfindingManager(PathfindingBaseManager):
 
     Attributes:
         tile_size: Size of each tile in pixels (default 32).
-        wall_list: SpriteList containing all collision objects (walls, NPCs, etc.).
     """
 
     name: ClassVar[str] = "pathfinding"
@@ -104,11 +102,9 @@ class PathfindingManager(PathfindingBaseManager):
     def __init__(self) -> None:
         """Initialize the pathfinding manager with default values.
 
-        Creates a pathfinding manager with default tile size. The wall_list must
-        be set separately via set_wall_list() before pathfinding can be performed.
+        Creates a pathfinding manager with default tile size.
         """
         self.tile_size: int = 32
-        self.wall_list: arcade.SpriteList | None = None
 
     def setup(self, context: GameContext) -> None:
         """Initialize the pathfinding system with game context and settings.
@@ -121,6 +117,7 @@ class PathfindingManager(PathfindingBaseManager):
         """
         if hasattr(settings, "TILE_SIZE"):
             self.tile_size = settings.TILE_SIZE
+        self.context = context
         logger.debug("PathfindingManager setup complete (tile_size=%d)", self.tile_size)
 
     def cleanup(self) -> None:
@@ -128,7 +125,6 @@ class PathfindingManager(PathfindingBaseManager):
 
         Clears the wall list reference.
         """
-        self.wall_list = None
         logger.debug("PathfindingManager cleanup complete")
 
     def get_state(self) -> dict[str, Any]:
@@ -149,25 +145,6 @@ class PathfindingManager(PathfindingBaseManager):
         Args:
             state: Previously saved state dictionary (unused).
         """
-
-    def set_wall_list(self, wall_list: arcade.SpriteList) -> None:
-        """Set the wall list for collision detection.
-
-        Configures which sprites should be considered as obstacles during pathfinding.
-        The wall list typically includes:
-        - Static wall tiles from the map
-        - Obstacle objects (trees, rocks, furniture)
-        - NPC sprites (can be excluded per-path via exclude_sprites)
-        - Any other sprites that should block movement
-
-        This method should be called once during game initialization, after the map
-        and collision layers have been loaded.
-
-        Args:
-            wall_list: SpriteList containing all walls and obstacles. NPCs are often
-                      included in this list but can be excluded during pathfinding.
-        """
-        self.wall_list = wall_list
 
     def is_tile_walkable(
         self,
@@ -204,7 +181,9 @@ class PathfindingManager(PathfindingBaseManager):
         Returns:
             True if the tile is walkable, False if blocked by any wall sprite.
         """
-        if not self.wall_list:
+        scene_manager = self.context.scene_manager
+        wall_list = scene_manager.get_wall_list()
+        if not wall_list:
             return True
 
         # Convert tile to pixel center
@@ -219,7 +198,7 @@ class PathfindingManager(PathfindingBaseManager):
             excluded.update(exclude_sprites)
 
         # Check if any wall sprites overlap this position
-        for wall in self.wall_list:
+        for wall in wall_list:
             if wall in excluded:
                 continue
 
@@ -283,13 +262,15 @@ class PathfindingManager(PathfindingBaseManager):
         path = self._find_path_internal(start_x, start_y, end_tile_x, end_tile_y, exclude_sprite, exclude_sprites)
 
         # If no path found, retry with NPC passthrough enabled
+        scene_manager = self.context.scene_manager
+        wall_list = scene_manager.get_wall_list()
         if not path:
             logger.info("  No path found, retrying with NPC passthrough enabled")
             # Collect all NPC sprites from wall_list to exclude them temporarily
-            if self.wall_list:
+            if wall_list:
                 all_npcs = [
                     sprite
-                    for sprite in self.wall_list
+                    for sprite in wall_list
                     if hasattr(sprite, "properties") and sprite.properties and sprite.properties.get("name")
                 ]
                 if exclude_sprites:

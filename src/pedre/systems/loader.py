@@ -225,8 +225,6 @@ class SystemLoader:
         context.current_scene = ""
         context.player_sprite = None
         context.waypoints.clear()
-        if context.wall_list:
-            context.wall_list.clear()
 
         # Clear key persistence cache
         if self._cache_manager:

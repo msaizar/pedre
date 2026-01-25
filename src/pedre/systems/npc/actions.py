@@ -132,9 +132,8 @@ class RevealNPCsAction(Action):
         """Reveal NPCs and show particle effects."""
         if not self.executed:
             npc_manager = context.npc_manager
-
             if npc_manager:
-                npc_manager.show_npcs(self.npc_names, context.wall_list)
+                npc_manager.show_npcs(self.npc_names, context)
 
             self.executed = True
             logger.debug("RevealNPCsAction: Revealed NPCs %s", self.npc_names)
@@ -568,13 +567,13 @@ class StartDisappearAnimationAction(Action):
                     return False
         else:
             return True
-
+        scene_manager = context.scene_manager
         # All animations complete - remove NPCs from walls
-        if npc_manager:
+        if npc_manager and scene_manager:
             for npc_name in self.npc_names:
                 npc_state = npc_manager.get_npcs().get(npc_name)
-                if npc_state and context.wall_list and npc_state.sprite in context.wall_list:
-                    context.wall_list.remove(npc_state.sprite)
+                if npc_state and npc_state.sprite:
+                    scene_manager.remove_from_wall_list(npc_state.sprite)
                     logger.debug("StartDisappearAnimationAction: Removed %s from wall list", npc_name)
 
         return True
