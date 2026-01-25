@@ -148,8 +148,8 @@ class PathfindingManager(PathfindingBaseManager):
 
     def is_tile_walkable(
         self,
-        tile_x: int,
-        tile_y: int,
+        tile_x: int | float,
+        tile_y: int | float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> bool:
@@ -214,8 +214,8 @@ class PathfindingManager(PathfindingBaseManager):
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int,
-        end_tile_y: int,
+        end_tile_x: int | float,
+        end_tile_y: int | float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:
@@ -286,8 +286,8 @@ class PathfindingManager(PathfindingBaseManager):
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int,
-        end_tile_y: int,
+        end_tile_x: int | float,
+        end_tile_y: int | float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:
@@ -338,7 +338,7 @@ class PathfindingManager(PathfindingBaseManager):
             logger.warning("  End tile blocked at (%d, %d)!", end_tile_x, end_tile_y)
 
         # A* pathfinding
-        def heuristic(ax: int, ay: int, bx: int, by: int) -> float:
+        def heuristic(ax: int | float, ay: int | float, bx: int | float, by: int | float) -> float:
             """Manhattan distance heuristic.
 
             Calculates the estimated cost from point A to point B using Manhattan
@@ -360,7 +360,7 @@ class PathfindingManager(PathfindingBaseManager):
         open_set: list[tuple[float, int, int]] = []
         heappush(open_set, (0, start_tile_x, start_tile_y))
 
-        came_from: dict[tuple[int, int], tuple[int, int]] = {}
+        came_from: dict[tuple[int | float, int | float], tuple[int, int]] = {}
         g_score: dict[tuple[int, int], float] = {(start_tile_x, start_tile_y): 0}
 
         while open_set:

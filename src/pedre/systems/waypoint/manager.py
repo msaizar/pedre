@@ -6,8 +6,8 @@ import logging
 from typing import TYPE_CHECKING, ClassVar
 
 from pedre.conf import settings
-from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
+from pedre.systems.waypoint.base import WaypointBaseManager
 
 if TYPE_CHECKING:
     import arcade
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @SystemRegistry.register
-class WaypointManager(BaseSystem):
+class WaypointManager(WaypointBaseManager):
     """Manages waypoints loaded from Tiled maps.
 
     Waypoints are named positions in the map used for:
@@ -36,6 +36,14 @@ class WaypointManager(BaseSystem):
 
     def setup(self, context: GameContext) -> None:
         """Initialize waypoint manager."""
+
+    def reset(self) -> None:
+        """Reset waypoint manager."""
+        self.waypoints.clear()
+
+    def get_waypoints(self) -> dict[str, tuple[float, float]]:
+        """Get waypoints."""
+        return self.waypoints
 
     def load_from_tiled(
         self,
@@ -79,8 +87,6 @@ class WaypointManager(BaseSystem):
                         tile_y,
                     )
 
-        # Update context for backward compatibility
-        context.waypoints = self.waypoints
         logger.info("Loaded %d waypoints", len(self.waypoints))
 
     def get_waypoint(self, name: str) -> tuple[float, float] | None:

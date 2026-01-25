@@ -65,8 +65,9 @@ class MoveNPCAction(Action):
         """Start NPC movement."""
         if not self.started:
             # Resolve waypoint to tile coordinates
-            if self.waypoint in context.waypoints:
-                tile_x, tile_y = context.waypoints[self.waypoint]
+            waypoints = context.waypoint_manager.get_waypoints()
+            if self.waypoint in context.waypoint_manager.get_waypoints():
+                tile_x, tile_y = waypoints[self.waypoint]
                 logger.debug(
                     "MoveNPCAction: Resolved waypoint '%s' to tile (%d, %d)",
                     self.waypoint,

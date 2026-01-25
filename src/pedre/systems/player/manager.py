@@ -78,7 +78,7 @@ class PlayerManager(PlayerBaseManager):
             context.next_spawn_waypoint,
         )
         if spawn_at_portal and context.next_spawn_waypoint:
-            waypoints = context.waypoints
+            waypoints = context.waypoint_manager.get_waypoints()
             logger.debug(
                 "PlayerManager: Available waypoints: %s",
                 list(waypoints.keys()) if waypoints else [],
@@ -221,7 +221,7 @@ class PlayerManager(PlayerBaseManager):
             context.next_spawn_waypoint,
         )
         if spawn_at_portal and context.next_spawn_waypoint:
-            waypoints = context.waypoints
+            waypoints = context.waypoint_manager.get_waypoints()
             logger.debug(
                 "PlayerManager: Available waypoints: %s",
                 list(waypoints.keys()),

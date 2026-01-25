@@ -120,7 +120,6 @@ class ViewManager:
         self.game_context = GameContext(
             event_bus=self.event_bus,
             window=self.window,
-            waypoints={},
         )
         self.system_loader = SystemLoader()
         system_instances = self.system_loader.instantiate_all()

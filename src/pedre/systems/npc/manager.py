@@ -615,7 +615,7 @@ class NPCManager(NPCBaseManager):
             return npc.dialog_level
         return 0
 
-    def move_npc_to_tile(self, npc_name: str, tile_x: int, tile_y: int) -> None:
+    def move_npc_to_tile(self, npc_name: str, tile_x: int | float, tile_y: int | float) -> None:
         """Start moving an NPC to a target tile position.
 
         Args:

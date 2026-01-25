@@ -9,20 +9,16 @@ The GameContext pattern enables:
 - Actions to be reusable and testable by providing dependencies explicitly
 - Scripts to interact with any game system without tight coupling
 - Easy mocking and testing by swapping out individual systems
-- Centralized access to shared resources like sprite lists and waypoints
 - Pluggable architecture where custom systems can be added without modifying core code
 
 Key components stored in the context:
 - Systems registry: All pluggable systems accessed via get_system()
-- Game state: Player sprite, wall list, current scene
-- Map data: Waypoints, interacted objects
 - View references: Game view for accessing view-specific functionality
 
 Example usage:
     # Create context with game state
     context = GameContext(
-        event_bus=event_bus,
-        current_scene="town"
+        event_bus=event_bus
     )
 
     # Register systems (done by SystemLoader)
@@ -58,6 +54,7 @@ if TYPE_CHECKING:
     from pedre.systems.save.base import SaveBaseManager
     from pedre.systems.scene.base import SceneBaseManager
     from pedre.systems.script.base import ScriptBaseManager
+    from pedre.systems.waypoint.base import WaypointBaseManager
 
 
 class GameContext:
@@ -80,9 +77,6 @@ class GameContext:
     Attributes:
         event_bus: Publish/subscribe event system for decoupled communication.
         window: Reference to the arcade Window instance.
-        current_scene: Name of the currently loaded map/scene.
-        waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
-        interacted_objects: Set of object names that the player has interacted with.
         next_spawn_waypoint: Waypoint name for next spawn (portal transitions).
     """
 
@@ -100,12 +94,12 @@ class GameContext:
     physics_manager: PhysicsBaseManager
     script_manager: ScriptBaseManager
     player_manager: PlayerBaseManager
+    waypoint_manager: WaypointBaseManager
 
     def __init__(
         self,
         event_bus: EventBus,
         window: arcade.Window,
-        waypoints: dict[str, tuple[int, int]] | None = None,
         next_spawn_waypoint: str | None = None,
     ) -> None:
         """Initialize game context with game state.
@@ -119,29 +113,15 @@ class GameContext:
                       Actions can publish events to trigger scripts or notify other systems.
             window: Reference to the arcade Window instance. Used by systems that need
                    to access window properties (size, rendering context, etc).
-            waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
-                      NPCs use these to navigate to named locations.
             next_spawn_waypoint: Waypoint name for next spawn (set by SceneManager for
                                portal transitions). Read by PlayerManager and cleared after use.
         """
         self.event_bus = event_bus
         self.window = window
-        self.waypoints = waypoints or {}
         self.next_spawn_waypoint = next_spawn_waypoint
 
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}
-
-    def update_waypoints(self, waypoints: dict[str, tuple[int, int]]) -> None:
-        """Update the waypoints dictionary for the current map.
-
-        This method is called when loading a new map that contains waypoint objects.
-        Waypoints are named locations in the map that NPCs can navigate to.
-
-        Args:
-            waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
-        """
-        self.waypoints = waypoints
 
     def register_system(self, name: str, system: BaseSystem) -> None:
         """Register a pluggable system with the context.

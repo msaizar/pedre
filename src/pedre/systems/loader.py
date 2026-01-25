@@ -221,9 +221,6 @@ class SystemLoader:
         Args:
             context: The game context to reset.
         """
-        # Reset context state
-        context.waypoints.clear()
-
         # Clear key persistence cache
         if self._cache_manager:
             self._cache_manager.clear()

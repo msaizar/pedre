@@ -21,8 +21,8 @@ class PathfindingBaseManager(BaseSystem, ABC):
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int,
-        end_tile_y: int,
+        end_tile_x: int | float,
+        end_tile_y: int | float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:
