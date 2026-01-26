@@ -442,10 +442,6 @@ class ViewManager:
         # Show the game view
         self.window.show_view(self.game_view)
 
-        # Restore player position
-        player_manager = self.game_context.player_manager
-        player_manager.set_player_position(save_data.player_x, save_data.player_y)
-
         # Restore all manager states using the centralized method
         context = self.game_context
         if not context:

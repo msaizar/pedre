@@ -32,8 +32,6 @@ class GameSaveData:
     """
 
     # Player state
-    player_x: float
-    player_y: float
     current_map: str
 
     # All state from save providers
@@ -62,8 +60,6 @@ class GameSaveData:
             New GameSaveData instance with values from the dictionary.
         """
         return cls(
-            player_x=data["player_x"],
-            player_y=data["player_y"],
             current_map=data["current_map"],
             save_states=data.get("save_states", {}),
             save_timestamp=data.get("save_timestamp", 0.0),
