@@ -94,7 +94,7 @@ class InteractionManager(InteractionBaseManager):
     name: ClassVar[str] = "interaction"
     dependencies: ClassVar[list[str]] = []
 
-    def __init__(self, interaction_distance: float = 64.0) -> None:
+    def __init__(self) -> None:
         """Initialize the interaction manager with configurable interaction distance.
 
         Creates a new InteractionManager with an empty registry of interactive objects.
@@ -112,7 +112,7 @@ class InteractionManager(InteractionBaseManager):
                                 Typical values: 32.0 (1 tile), 64.0 (2 tiles), 96.0 (3 tiles).
                                 Default is 64.0 for comfortable interaction range.
         """
-        self.interaction_distance = interaction_distance
+        self.interaction_distance = float(settings.INTERACTION_MANAGER_DISTANCE)
         self.interactive_objects: dict[str, InteractiveObject] = {}
         self.interacted_objects: set[str] = set()
 
@@ -122,7 +122,6 @@ class InteractionManager(InteractionBaseManager):
         Args:
             context: Game context providing access to other systems.
         """
-        self.interaction_distance = float(settings.INTERACTION_MANAGER_DISTANCE)
         logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
 
     def load_from_tiled(
@@ -204,29 +203,6 @@ class InteractionManager(InteractionBaseManager):
         """Clean up interaction resources when the scene unloads."""
         self.clear()
         logger.debug("InteractionManager cleanup complete")
-
-    def get_state(self) -> dict[str, Any]:
-        """Return serializable state for saving (BaseSystem interface).
-
-        Saves the state of all interactive objects (e.g., toggle states).
-        """
-        object_states = {}
-        for obj_name, obj in self.interactive_objects.items():
-            # Only save state-related properties that can change
-            if "state" in obj.properties:
-                object_states[obj_name] = {"state": obj.properties["state"]}
-        return {
-            "interaction_distance": self.interaction_distance,
-            "object_states": object_states,
-        }
-
-    def restore_state(self, state: dict[str, Any]) -> None:
-        """Restore state from save data (BaseSystem interface)."""
-        self.interaction_distance = state.get("interaction_distance", 64.0)
-        object_states = state.get("object_states", {})
-        for obj_name, obj_state in object_states.items():
-            if obj_name in self.interactive_objects:
-                self.interactive_objects[obj_name].properties.update(obj_state)
 
     def register_object(self, sprite: arcade.Sprite, name: str, properties: dict) -> None:
         """Register an interactive object in the manager.
@@ -396,3 +372,20 @@ class InteractionManager(InteractionBaseManager):
                 interaction_mgr.register_object(obj.sprite, obj.name, obj.properties)
         """
         self.interactive_objects.clear()
+
+    def get_save_state(self) -> dict[str, Any]:
+        """Return serializable state for saving (BaseSystem interface)."""
+        return self.to_dict()
+
+    def restore_save_state(self, state: dict[str, Any]) -> None:
+        """Restore state from save data (BaseSystem interface)."""
+        if "interaction" in state:
+            self.from_dict(state["interaction"])
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert interaction state to dictionary for save data serialization."""
+        return {"interacted_objects": list(self.interacted_objects)}
+
+    def from_dict(self, data: dict[str, set]) -> None:
+        """Convert interaction state to dictionary for save data serialization."""
+        self.interacted_objects = set(data["interacted_objects"])

@@ -239,10 +239,10 @@ class GameView(arcade.View):
             - Sets initialized = False
         """
         # Cache state for this scene before clearing (for scene transitions)
-        scene_manager = self.view_manager.game_context.scene_manager if self.view_manager.game_context else None
-        current_map = getattr(scene_manager, "current_map", "") if scene_manager else ""
+        scene_manager = self.view_manager.game_context.scene_manager
+        current_map = scene_manager.get_current_map()
 
-        if current_map and scene_manager and self.view_manager.game_context:
+        if current_map:
             cache_manager = scene_manager.get_cache_manager()
             if cache_manager:
                 cache_manager.cache_scene(current_map, self.view_manager.game_context)

@@ -87,7 +87,7 @@ class InputManager(InputBaseManager):
     name: ClassVar[str] = "input"
     dependencies: ClassVar[list[str]] = []
 
-    def __init__(self, movement_speed: float = 3.0) -> None:
+    def __init__(self) -> None:
         """Initialize the input manager with configurable movement speed.
 
         Creates a new InputManager with an empty key state. The movement speed determines
@@ -103,7 +103,7 @@ class InputManager(InputBaseManager):
                           movement faster. Typical values range from 2.0 (slow) to 5.0 (fast).
                           Default is 3.0 for moderate speed.
         """
-        self.movement_speed = movement_speed
+        self.movement_speed = settings.PLAYER_MOVEMENT_SPEED
         self.keys_pressed: set[int] = set()
 
     def setup(self, context: GameContext) -> None:
@@ -112,7 +112,6 @@ class InputManager(InputBaseManager):
         Args:
             context: Game context providing access to other systems.
         """
-        self.movement_speed = settings.PLAYER_MOVEMENT_SPEED
         logger.debug("InputManager setup complete with speed=%s", self.movement_speed)
 
     def cleanup(self) -> None:
@@ -120,7 +119,7 @@ class InputManager(InputBaseManager):
         self.keys_pressed.clear()
         logger.debug("InputManager cleanup complete")
 
-    def get_state(self) -> dict[str, Any]:
+    def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BaseSystem interface).
 
         Input state typically doesn't need to be saved as it represents
@@ -130,9 +129,9 @@ class InputManager(InputBaseManager):
             "movement_speed": self.movement_speed,
         }
 
-    def restore_state(self, state: dict[str, Any]) -> None:
+    def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data (BaseSystem interface)."""
-        self.movement_speed = state.get("movement_speed", 3.0)
+        self.movement_speed = state.get("movement_speed", settings.PLAYER_MOVEMENT_SPEED)
 
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Register a key press event.

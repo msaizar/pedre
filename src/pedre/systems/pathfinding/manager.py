@@ -53,7 +53,7 @@ Example usage:
 import logging
 from collections import deque
 from heapq import heappop, heappush
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from pedre.conf import settings
 from pedre.systems.pathfinding.base import PathfindingBaseManager
@@ -126,25 +126,6 @@ class PathfindingManager(PathfindingBaseManager):
         Clears the wall list reference.
         """
         logger.debug("PathfindingManager cleanup complete")
-
-    def get_state(self) -> dict[str, Any]:
-        """Return serializable state for saving.
-
-        Pathfinding has no persistent state to save.
-
-        Returns:
-            Empty dictionary as pathfinding state is transient.
-        """
-        return {}
-
-    def restore_state(self, state: dict[str, Any]) -> None:
-        """Restore state from save data.
-
-        Pathfinding has no persistent state to restore.
-
-        Args:
-            state: Previously saved state dictionary (unused).
-        """
 
     def is_tile_walkable(
         self,

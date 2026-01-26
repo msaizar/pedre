@@ -67,7 +67,7 @@ Example conditional portal:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
@@ -199,25 +199,6 @@ class PortalManager(BaseSystem):
         """
         self.clear()
         logger.debug("PortalManager cleanup complete")
-
-    def get_state(self) -> dict[str, Any]:
-        """Return serializable state for saving.
-
-        Portal state is transient and not saved.
-
-        Returns:
-            Empty dictionary as portal state is transient.
-        """
-        return {}
-
-    def restore_state(self, state: dict[str, Any]) -> None:
-        """Restore state from save data.
-
-        Portal state is transient and not restored.
-
-        Args:
-            state: Previously saved state dictionary (unused).
-        """
 
     def register_portal(self, sprite: arcade.Sprite, name: str) -> None:
         """Register a portal from Tiled map data.

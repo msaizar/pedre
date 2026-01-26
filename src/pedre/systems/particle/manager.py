@@ -109,14 +109,14 @@ class ParticleManager(ParticleBaseManager):
         self.clear()
         logger.debug("ParticleManager cleanup complete")
 
-    def get_state(self) -> dict[str, Any]:
+    def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving.
 
         Particle state is not persisted - particles are transient effects.
         """
         return {"enabled": self.enabled}
 
-    def restore_state(self, state: dict[str, Any]) -> None:
+    def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data.
 
         Args:

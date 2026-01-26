@@ -154,7 +154,7 @@ class CameraManager(CameraBaseManager):
         self._follow_config = None
         logger.debug("CameraManager cleanup complete")
 
-    def get_state(self) -> dict[str, Any]:
+    def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BaseSystem interface).
 
         Camera state typically doesn't need to be saved as it follows the player,
@@ -168,7 +168,7 @@ class CameraManager(CameraBaseManager):
             "follow_smooth": self.follow_smooth,
         }
 
-    def restore_state(self, state: dict[str, Any]) -> None:
+    def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data (BaseSystem interface)."""
         self.lerp_speed = state.get("lerp_speed", 0.1)
         self.use_bounds = state.get("use_bounds", False)
