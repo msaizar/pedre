@@ -199,40 +199,6 @@ class BaseSystem(ABC):
         """
         return
 
-    def get_state(self) -> dict[str, Any]:
-        """Return serializable state for saving.
-
-        Override this method to return a dictionary of state that should be
-        persisted when the game is saved. The dictionary must be JSON-serializable.
-
-        Returns:
-            Dictionary containing the system's saveable state.
-
-        Example:
-            def get_state(self):
-                return {
-                    "current_weather": self.current_weather,
-                    "intensity": self.intensity,
-                }
-        """
-        return {}
-
-    def restore_state(self, state: dict[str, Any]) -> None:
-        """Restore state from save data.
-
-        Override this method to restore the system's state from a previously
-        saved dictionary. This is called after setup() when loading a saved game.
-
-        Args:
-            state: Previously saved state dictionary from get_state().
-
-        Example:
-            def restore_state(self, state):
-                self.current_weather = state.get("current_weather", "clear")
-                self.intensity = state.get("intensity", 0.0)
-        """
-        return
-
     def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
         """Handle key press events.
 

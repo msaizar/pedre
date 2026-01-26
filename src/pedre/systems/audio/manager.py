@@ -542,7 +542,7 @@ class AudioManager(AudioBaseManager):
         """
         self._music_loading.discard(filename)
 
-    def get_state(self) -> dict[str, Any]:
+    def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BaseSystem interface).
 
         This implements the BaseSystem interface. For backwards compatibility,
@@ -553,7 +553,7 @@ class AudioManager(AudioBaseManager):
         """
         return self.to_dict()
 
-    def restore_state(self, state: dict[str, Any]) -> None:
+    def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data (BaseSystem interface).
 
         This implements the BaseSystem interface. For backwards compatibility,

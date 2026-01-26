@@ -145,8 +145,8 @@ npc_manager = NPCManager(game_context)
 - `add_npc(npc: AnimatedNPC)` - Register an NPC
 - `get_npc(name: str) -> AnimatedNPC | None` - Get NPC by name
 - `update_dialog_level(npc_name: str, level: int)` - Set dialog progress
-- `get_state() -> dict[str, int]` - Get all NPC dialog levels
-- `restore_state(state: dict[str, int])` - Restore NPC dialog levels
+- `get_save_state() -> dict[str, int]` - Get all NPC dialog levels
+- `restore_save_state(state: dict[str, int])` - Restore NPC dialog levels
 
 ### DialogManager
 
@@ -208,8 +208,8 @@ inventory_manager = InventoryManager(game_context)
 - `add_item(item: InventoryItem)` - Add item to inventory
 - `has_item(item_name: str) -> bool` - Check if item exists
 - `get_items() -> list[InventoryItem]` - Get all items
-- `get_state() -> list[dict]` - Serialize inventory state
-- `restore_state(items_data: list[dict])` - Restore from saved state
+- `get_save_state() -> list[dict]` - Serialize inventory state
+- `restore_save_state(items_data: list[dict])` - Restore from saved state
 
 **InventoryItem:**
 
@@ -267,8 +267,8 @@ audio_manager = AudioManager(game_context)
 - `stop_music(fade_duration: float = 1.0)` - Stop current music
 - `play_sound(filename: str, volume: float = 1.0)` - Play sound effect
 - `set_music_volume(volume: float)` - Adjust music volume
-- `get_state() -> dict` - Get current audio state
-- `restore_state(state: dict)` - Restore audio state
+- `get_save_state() -> dict` - Get current audio state
+- `restore_save_state(state: dict)` - Restore audio state
 
 ### SaveManager
 

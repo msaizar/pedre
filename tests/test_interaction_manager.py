@@ -15,7 +15,7 @@ class TestInteractionManager(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up InteractionManager."""
-        self.manager = InteractionManager(interaction_distance=100.0)
+        self.manager = InteractionManager()
 
     def test_register_object(self) -> None:
         """Test registering objects."""
@@ -38,13 +38,13 @@ class TestInteractionManager(unittest.TestCase):
         player.center_x = 0
         player.center_y = 0
 
-        # Create a close object (within 100)
+        # Create a close object (within 50)
         close_sprite = arcade.Sprite()
-        close_sprite.center_x = 50
+        close_sprite.center_x = 30
         close_sprite.center_y = 0
         self.manager.register_object(close_sprite, "close", {})
 
-        # Create a far object (outside 100)
+        # Create a far object (outside 50)
         far_sprite = arcade.Sprite()
         far_sprite.center_x = 200
         far_sprite.center_y = 0

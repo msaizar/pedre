@@ -99,7 +99,7 @@ class InventoryManager(InventoryBaseManager):
     displaying items in a consistent, meaningful order (e.g., chronological for photos).
 
     The inventory state is designed to be serializable to/from dictionaries, making it
-    compatible with JSON-based save systems. The get_state() and restore_state() methods handle
+    compatible with JSON-based save systems. The get_save_state() and restore_save_state() methods handle
     conversion between manager's internal state and save data format.
 
     Attributes:
