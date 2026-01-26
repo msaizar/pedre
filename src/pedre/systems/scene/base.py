@@ -28,6 +28,36 @@ class SceneBaseManager(BaseSystem, ABC):
     role = "scene_manager"
 
     @abstractmethod
+    def get_current_scene(self) -> str:
+        """Get current scene."""
+        ...
+
+    @abstractmethod
+    def get_next_spawn_waypoint(self) -> str:
+        """Get next spawn waypoint."""
+        ...
+
+    @abstractmethod
+    def clear_next_spawn_waypoint(self) -> None:
+        """Clear next spawn waypoint."""
+        ...
+
+    @abstractmethod
+    def get_wall_list(self) -> arcade.SpriteList | None:
+        """Get wall list."""
+        ...
+
+    @abstractmethod
+    def remove_from_wall_list(self, sprite: arcade.Sprite) -> None:
+        """Remove a sprite from the wall list."""
+        ...
+
+    @abstractmethod
+    def add_to_wall_list(self, sprite: arcade.Sprite) -> None:
+        """Add a sprite to the wall list."""
+        ...
+
+    @abstractmethod
     def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
         """Central orchestration for loading a new map/level."""
         ...

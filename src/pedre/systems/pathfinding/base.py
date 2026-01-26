@@ -17,17 +17,12 @@ class PathfindingBaseManager(BaseSystem, ABC):
     role = "pathfinding_manager"
 
     @abstractmethod
-    def set_wall_list(self, wall_list: arcade.SpriteList) -> None:
-        """Set the wall list for collision detection."""
-        ...
-
-    @abstractmethod
     def find_path(
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int,
-        end_tile_y: int,
+        end_tile_x: int | float,
+        end_tile_y: int | float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:

@@ -9,22 +9,16 @@ The GameContext pattern enables:
 - Actions to be reusable and testable by providing dependencies explicitly
 - Scripts to interact with any game system without tight coupling
 - Easy mocking and testing by swapping out individual systems
-- Centralized access to shared resources like sprite lists and waypoints
 - Pluggable architecture where custom systems can be added without modifying core code
 
 Key components stored in the context:
 - Systems registry: All pluggable systems accessed via get_system()
-- Game state: Player sprite, wall list, current scene
-- Map data: Waypoints, interacted objects
 - View references: Game view for accessing view-specific functionality
 
 Example usage:
     # Create context with game state
     context = GameContext(
-        event_bus=event_bus,
-        wall_list=walls,
-        player_sprite=player,
-        current_scene="town"
+        event_bus=event_bus
     )
 
     # Register systems (done by SystemLoader)
@@ -56,9 +50,11 @@ if TYPE_CHECKING:
     from pedre.systems.particle.base import ParticleBaseManager
     from pedre.systems.pathfinding.base import PathfindingBaseManager
     from pedre.systems.physics.base import PhysicsBaseManager
+    from pedre.systems.player.base import PlayerBaseManager
     from pedre.systems.save.base import SaveBaseManager
     from pedre.systems.scene.base import SceneBaseManager
     from pedre.systems.script.base import ScriptBaseManager
+    from pedre.systems.waypoint.base import WaypointBaseManager
 
 
 class GameContext:
@@ -80,12 +76,7 @@ class GameContext:
 
     Attributes:
         event_bus: Publish/subscribe event system for decoupled communication.
-        wall_list: SpriteList of collidable objects for physics.
         window: Reference to the arcade Window instance.
-        player_sprite: Reference to the player's sprite (or None if not spawned).
-        current_scene: Name of the currently loaded map/scene.
-        waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
-        interacted_objects: Set of object names that the player has interacted with.
         next_spawn_waypoint: Waypoint name for next spawn (portal transitions).
     """
 
@@ -102,17 +93,13 @@ class GameContext:
     input_manager: InputBaseManager
     physics_manager: PhysicsBaseManager
     script_manager: ScriptBaseManager
+    player_manager: PlayerBaseManager
+    waypoint_manager: WaypointBaseManager
 
     def __init__(
         self,
         event_bus: EventBus,
-        wall_list: arcade.SpriteList,
         window: arcade.Window,
-        player_sprite: arcade.Sprite | None = None,
-        current_scene: str = "",
-        waypoints: dict[str, tuple[int, int]] | None = None,
-        interacted_objects: set[str] | None = None,
-        next_spawn_waypoint: str | None = None,
     ) -> None:
         """Initialize game context with game state.
 
@@ -123,83 +110,15 @@ class GameContext:
         Args:
             event_bus: Central event system for publishing and subscribing to game events.
                       Actions can publish events to trigger scripts or notify other systems.
-            wall_list: Arcade SpriteList containing all collidable objects (walls, NPCs, etc).
-                      Used for collision detection and pathfinding calculations.
             window: Reference to the arcade Window instance. Used by systems that need
                    to access window properties (size, rendering context, etc).
-            player_sprite: Reference to the player's sprite. May be None if player hasn't
-                         spawned yet. Updated via update_player() when player is created.
-            current_scene: Name of the currently loaded map/scene (e.g., "town", "forest").
-                         Used to track which map is active for conditional logic.
-            waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
-                      NPCs use these to navigate to named locations.
-            interacted_objects: Set of object names that the player has interacted with.
-                              Used by scripts and conditions to track object state.
-            next_spawn_waypoint: Waypoint name for next spawn (set by SceneManager for
-                               portal transitions). Read by PlayerManager and cleared after use.
+
         """
         self.event_bus = event_bus
-        self.wall_list = wall_list
         self.window = window
-        self.player_sprite = player_sprite
-        self.current_scene = current_scene
-        self.waypoints = waypoints or {}
-        self.interacted_objects = interacted_objects or set()
-        self.next_spawn_waypoint = next_spawn_waypoint
 
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}
-
-    def update_player(self, player_sprite: arcade.Sprite | None) -> None:
-        """Update the player sprite reference in the context.
-
-        This method is called when the player sprite is created or changes, such as when
-        spawning into a new map or respawning after a game over. Actions that need to
-        access the player sprite (for positioning, collision checks, etc.) will use the
-        updated reference.
-
-        Setting player_sprite to None is valid and indicates that no player is currently
-        spawned in the game world.
-
-        Args:
-            player_sprite: The new player sprite reference, or None if no player exists.
-        """
-        self.player_sprite = player_sprite
-
-    def update_wall_list(self, wall_list: arcade.SpriteList) -> None:
-        """Update the collision wall list reference in the context.
-
-        This method is called when loading a new map or when the collision geometry changes.
-        The wall list contains all sprites that block movement (walls, obstacles, NPCs, etc.)
-        and is used by the physics engine for collision detection and by the NPC pathfinding
-        system to calculate valid paths.
-
-        Args:
-            wall_list: The new SpriteList containing all collidable sprites for the current map.
-        """
-        self.wall_list = wall_list
-
-    def update_scene(self, scene_name: str) -> None:
-        """Update the current scene/map name in the context.
-
-        This method is called when transitioning between different maps or areas in the game
-        world. The scene name is used by scripts and conditions to execute map-specific logic.
-
-        Args:
-            scene_name: The name identifier of the new scene/map being entered.
-        """
-        self.current_scene = scene_name
-
-    def update_waypoints(self, waypoints: dict[str, tuple[int, int]]) -> None:
-        """Update the waypoints dictionary for the current map.
-
-        This method is called when loading a new map that contains waypoint objects.
-        Waypoints are named locations in the map that NPCs can navigate to.
-
-        Args:
-            waypoints: Dictionary mapping waypoint names to (tile_x, tile_y) coordinates.
-        """
-        self.waypoints = waypoints
 
     def register_system(self, name: str, system: BaseSystem) -> None:
         """Register a pluggable system with the context.

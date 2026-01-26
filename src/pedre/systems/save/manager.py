@@ -125,9 +125,6 @@ class SaveManager(SaveBaseManager):
 
     def _handle_quick_save(self, context: GameContext) -> None:
         """Perform a quick save using current context state."""
-        if not context.player_sprite:
-            return
-
         scene_manager = context.scene_manager
         if not scene_manager or not hasattr(scene_manager, "current_map"):
             return
@@ -167,9 +164,7 @@ class SaveManager(SaveBaseManager):
         self.restore_game_data(save_data, context)
 
         # Reposition player
-        if context.player_sprite:
-            context.player_sprite.center_x = save_data.player_x
-            context.player_sprite.center_y = save_data.player_y
+        context.player_manager.set_player_position(save_data.player_x, save_data.player_y)
 
         audio_manager = context.audio_manager
         if audio_manager:
@@ -196,10 +191,6 @@ class SaveManager(SaveBaseManager):
         Returns:
             True if save succeeded and file was written, False if any error occurred.
         """
-        if not context.player_sprite:
-            logger.error("No player sprite in context")
-            return False
-
         scene_manager = context.scene_manager
         if not scene_manager or not hasattr(scene_manager, "current_map"):
             logger.error("SceneManager not available")
@@ -220,20 +211,22 @@ class SaveManager(SaveBaseManager):
                 save_states["_scene_caches"] = cache_state
 
             # Create save data
-            save_data = GameSaveData(
-                player_x=context.player_sprite.center_x,
-                player_y=context.player_sprite.center_y,
-                current_map=scene_manager.get_current_map(),
-                save_states=save_states,
-                save_timestamp=datetime.now(UTC).timestamp(),
-            )
+            player_sprite = context.player_manager.get_player_sprite()
+            if player_sprite:
+                save_data = GameSaveData(
+                    player_x=player_sprite.center_x,
+                    player_y=player_sprite.center_y,
+                    current_map=scene_manager.get_current_map(),
+                    save_states=save_states,
+                    save_timestamp=datetime.now(UTC).timestamp(),
+                )
 
-            # Write to file
-            save_path = self._get_save_path(slot)
-            with save_path.open("w") as f:
-                json.dump(save_data.to_dict(), f, indent=2)
+                # Write to file
+                save_path = self._get_save_path(slot)
+                with save_path.open("w") as f:
+                    json.dump(save_data.to_dict(), f, indent=2)
 
-            self.current_slot = slot
+                self.current_slot = slot
 
         except Exception:
             logger.exception("Failed to save game")

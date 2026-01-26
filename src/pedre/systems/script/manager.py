@@ -338,12 +338,12 @@ class ScriptManager(ScriptBaseManager):
         script = self.scripts[script_name]
 
         # Check scene restriction
-        if not manual_trigger and script.scene and script.scene != self.context.current_scene:
+        if not manual_trigger and script.scene and script.scene != self.context.scene_manager.get_current_scene():
             logger.debug(
                 "ScriptManager: Script '%s' scene mismatch (need: %s, current: %s)",
                 script_name,
                 script.scene,
-                self.context.current_scene,
+                self.context.scene_manager.get_current_scene(),
             )
             return False
 
@@ -586,7 +586,7 @@ class ScriptManager(ScriptBaseManager):
             # Check if trigger matches this event
             if self._trigger_matches_event(script.trigger, event_type, event_data):
                 # Check scene restriction
-                if script.scene and self.context and script.scene != self.context.current_scene:
+                if script.scene and self.context and script.scene != self.context.scene_manager.get_current_scene():
                     continue
 
                 # Check run_once restriction

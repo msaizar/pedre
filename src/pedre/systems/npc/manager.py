@@ -117,8 +117,6 @@ class NPCManager(NPCBaseManager):
         npc_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
         inventory_manager: Optional reference for checking inventory conditions in dialog.
         event_bus: Optional EventBus for publishing NPC lifecycle events.
-        interacted_objects: Set tracking which interactive objects have been used, for
-                           dialog condition checking.
         interacted_npcs: Set tracking which NPCs have been interacted with, for
                         dialog and script condition checking.
     """
@@ -144,7 +142,6 @@ class NPCManager(NPCBaseManager):
         self.waypoint_threshold = 2
         self.npc_speed = 80.0
         self.event_bus: EventBus | None = None
-        self.interacted_objects: set[str] = set()
         self.interacted_npcs: set[str] = set()
 
     def setup(self, context: GameContext) -> None:
@@ -164,7 +161,6 @@ class NPCManager(NPCBaseManager):
             self.pathfinding = pathfinding_manager
 
         self.event_bus = context.event_bus
-        self.interacted_objects = context.interacted_objects
 
         # Apply settings if available
         if hasattr(settings, "NPC_INTERACTION_DISTANCE"):
@@ -190,7 +186,7 @@ class NPCManager(NPCBaseManager):
         self.load_npcs_from_objects(
             npc_layer,
             arcade_scene,
-            context.wall_list,
+            context,
         )
 
     def cleanup(self) -> None:
@@ -414,7 +410,7 @@ class NPCManager(NPCBaseManager):
             True if interaction occurred.
         """
         if symbol == arcade.key.SPACE:
-            player_sprite = context.player_sprite
+            player_sprite = context.player_manager.get_player_sprite()
 
             if player_sprite:
                 nearby = self.get_nearby_npc(player_sprite)
@@ -449,7 +445,7 @@ class NPCManager(NPCBaseManager):
         dialog_manager = context.dialog_manager
 
         # Get dialog
-        current_scene = context.current_scene or "default"
+        current_scene = context.scene_manager.get_current_scene()
 
         dialog_data = self.get_dialog(name, npc.dialog_level, current_scene, context)
         if not dialog_data:
@@ -619,7 +615,7 @@ class NPCManager(NPCBaseManager):
             return npc.dialog_level
         return 0
 
-    def move_npc_to_tile(self, npc_name: str, tile_x: int, tile_y: int) -> None:
+    def move_npc_to_tile(self, npc_name: str, tile_x: int | float, tile_y: int | float) -> None:
         """Start moving an NPC to a target tile position.
 
         Args:
@@ -659,12 +655,12 @@ class NPCManager(NPCBaseManager):
         npc.path = path
         npc.is_moving = bool(path)
 
-    def show_npcs(self, npc_names: list[str], wall_list: arcade.SpriteList | None = None) -> None:
+    def show_npcs(self, npc_names: list[str], context: GameContext) -> None:
         """Make hidden NPCs visible and add them to collision.
 
         Args:
             npc_names: List of NPC names to reveal.
-            wall_list: Optional wall list to add visible NPCs to for collision.
+            context: Game Context.
         """
         for npc_name in npc_names:
             npc = self.npcs.get(npc_name)
@@ -674,9 +670,9 @@ class NPCManager(NPCBaseManager):
                 # Start appear animation for animated NPCs
                 if isinstance(npc.sprite, AnimatedNPC):
                     npc.sprite.start_appear_animation()
-
-                if wall_list is not None and npc.sprite not in wall_list:
-                    wall_list.append(npc.sprite)
+                scene_manager = context.scene_manager
+                if scene_manager:
+                    scene_manager.add_to_wall_list(npc.sprite)
                 logger.info("Showing hidden NPC: %s", npc_name)
 
     def update(self, delta_time: float, context: GameContext) -> None:
@@ -838,7 +834,7 @@ class NPCManager(NPCBaseManager):
         self,
         npc_objects: list,
         scene: arcade.Scene | None,
-        wall_list: arcade.SpriteList | None = None,
+        context: GameContext,
     ) -> None:
         """Load NPCs from Tiled object layer (like Player, Portals, etc.).
 
@@ -848,7 +844,7 @@ class NPCManager(NPCBaseManager):
             npc_objects: List of Tiled objects from tile_map.object_lists["NPCs"].
             scene: The arcade Scene to add NPC sprites to.
             settings: Game settings for asset paths.
-            wall_list: Optional wall list to add visible NPCs to for collision.
+            context: Game Context.
         """
         # Create NPCs sprite list for the scene if needed
         npc_sprite_list = arcade.SpriteList()
@@ -909,8 +905,9 @@ class NPCManager(NPCBaseManager):
                 npc_sprite_list.append(animated_npc)
 
                 # Add to wall list if visible
-                if wall_list is not None and animated_npc.visible:
-                    wall_list.append(animated_npc)
+                scene_manager = context.scene_manager
+                if scene_manager and animated_npc.visible:
+                    scene_manager.add_to_wall_list(animated_npc)
 
                 logger.debug("Loaded NPC %s at (%.1f, %.1f)", npc_name, spawn_x, spawn_y)
 

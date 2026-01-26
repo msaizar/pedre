@@ -107,9 +107,10 @@ class EmitParticlesAction(Action):
             emit_y: float | None = None
 
             if self.player:
-                if context.player_sprite:
-                    emit_x = context.player_sprite.center_x
-                    emit_y = context.player_sprite.center_y
+                player_sprite = context.player_manager.get_player_sprite()
+                if player_sprite:
+                    emit_x = player_sprite.center_x
+                    emit_y = player_sprite.center_y
                 else:
                     logger.warning("EmitParticlesAction: Player sprite not available")
                     return True

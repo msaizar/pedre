@@ -79,6 +79,7 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.events import EventBus
+    from pedre.sprites.animated_player import AnimatedPlayer
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -119,8 +120,7 @@ class PortalManager(BaseSystem):
 
     def update(self, delta_time: float, context: GameContext) -> None:
         """Update portal system, checking for player entry."""
-        if context.player_sprite:
-            self.check_portals(context.player_sprite)
+        self.check_portals(context.player_manager.get_player_sprite())
 
     def __init__(self) -> None:
         """Initialize portal manager with default values.
@@ -240,7 +240,7 @@ class PortalManager(BaseSystem):
         self.portals.append(portal)
         logger.info("Registered portal '%s'", name)
 
-    def check_portals(self, player_sprite: arcade.Sprite) -> None:
+    def check_portals(self, player_sprite: AnimatedPlayer | None) -> None:
         """Check if player is near any portal and publish events.
 
         Checks all registered portals to see if the player is within activation range.
@@ -258,7 +258,7 @@ class PortalManager(BaseSystem):
         Args:
             player_sprite: The player's arcade Sprite for position checking.
         """
-        if not self.event_bus:
+        if not self.event_bus or not player_sprite:
             return
 
         currently_inside: set[str] = set()

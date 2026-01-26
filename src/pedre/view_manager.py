@@ -119,12 +119,7 @@ class ViewManager:
         # Create game context (outlives individual views)
         self.game_context = GameContext(
             event_bus=self.event_bus,
-            wall_list=arcade.SpriteList(),
             window=self.window,
-            player_sprite=None,
-            current_scene="default",
-            waypoints={},
-            interacted_objects=set(),
         )
         self.system_loader = SystemLoader()
         system_instances = self.system_loader.instantiate_all()
@@ -448,9 +443,8 @@ class ViewManager:
         self.window.show_view(self.game_view)
 
         # Restore player position
-        if self.game_context.player_sprite:
-            self.game_context.player_sprite.center_x = save_data.player_x
-            self.game_context.player_sprite.center_y = save_data.player_y
+        player_manager = self.game_context.player_manager
+        player_manager.set_player_position(save_data.player_x, save_data.player_y)
 
         # Restore all manager states using the centralized method
         context = self.game_context

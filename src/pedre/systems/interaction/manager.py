@@ -123,7 +123,6 @@ class InteractionManager(InteractionBaseManager):
             context: Game context providing access to other systems.
         """
         self.interaction_distance = float(settings.INTERACTION_MANAGER_DISTANCE)
-        self.interacted_objects = context.interacted_objects
         logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
 
     def load_from_tiled(
@@ -186,7 +185,7 @@ class InteractionManager(InteractionBaseManager):
             True if interaction occurred.
         """
         if symbol == arcade.key.SPACE:
-            player_sprite = context.player_sprite
+            player_sprite = context.player_manager.get_player_sprite()
             if player_sprite:
                 logger.debug(
                     "InteractionManager: SPACE pressed, player at (%.1f, %.1f)",
@@ -339,7 +338,6 @@ class InteractionManager(InteractionBaseManager):
                 success = interaction_mgr.handle_interaction(obj)
                 if success:
                     audio_mgr.play_sfx("interact.wav")
-                    context.interacted_objects.add(obj.name)
         """
         self.mark_as_interacted(obj.name)
         context.event_bus.publish(ObjectInteractedEvent(object_name=obj.name))
@@ -365,6 +363,11 @@ class InteractionManager(InteractionBaseManager):
             True if the object has been interacted with, False otherwise.
         """
         return object_name in self.interacted_objects
+
+    def reset(self) -> None:
+        """Reset interactive and interacted objects."""
+        self.interactive_objects.clear()
+        self.interacted_objects.clear()
 
     def clear(self) -> None:
         """Clear all registered interactive objects from the manager.

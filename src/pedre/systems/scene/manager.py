@@ -96,6 +96,10 @@ class SceneManager(SceneBaseManager):
         """Get current map."""
         return self.current_map
 
+    def get_current_scene(self) -> str:
+        """Get current scene."""
+        return self.current_scene or "default"
+
     def get_transition_state(self) -> TransitionState:
         """Get transition state."""
         return self.transition_state
@@ -118,11 +122,11 @@ class SceneManager(SceneBaseManager):
         self.arcade_scene: arcade.Scene | None = None
         self.waypoints: dict[str, tuple[float, float]] = {}
         self.current_map: str = ""
+        self.wall_list: arcade.SpriteList = arcade.SpriteList()
+        self.next_spawn_waypoint: str = ""
 
     def setup(self, context: GameContext) -> None:
         """Initialize with context."""
-        if context.current_scene:
-            self.current_scene = context.current_scene
 
     def reset(self) -> None:
         """Reset scene manager state for new game."""
@@ -132,7 +136,20 @@ class SceneManager(SceneBaseManager):
         self.transition_alpha = 0.0
         self.pending_map_file = None
         self.pending_spawn_waypoint = None
+        self.wall_list.clear()
         logger.debug("SceneManager reset complete")
+
+    def get_wall_list(self) -> arcade.SpriteList | None:
+        """Get wall list."""
+        return self.wall_list
+
+    def remove_from_wall_list(self, sprite: arcade.Sprite) -> None:
+        """Remove a sprite from the wall list."""
+        self.wall_list.remove(sprite)
+
+    def add_to_wall_list(self, sprite: arcade.Sprite) -> None:
+        """Add a sprite to the wall list."""
+        self.wall_list.append(sprite)
 
     def get_arcade_scene(self) -> arcade.Scene | None:
         """Get arcade scene."""
@@ -141,6 +158,14 @@ class SceneManager(SceneBaseManager):
     def get_tile_map(self) -> arcade.TileMap | None:
         """Get tile map."""
         return self.tile_map
+
+    def get_next_spawn_waypoint(self) -> str:
+        """Get next spawn waypoint."""
+        return self.next_spawn_waypoint
+
+    def clear_next_spawn_waypoint(self) -> None:
+        """Clear next spawn waypoint."""
+        self.next_spawn_waypoint = ""
 
     def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
         """Central orchestration for loading a new map/level.
@@ -157,13 +182,10 @@ class SceneManager(SceneBaseManager):
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
         self.current_scene = current_scene
-        context.update_scene(current_scene)
 
-        # Set next_spawn_waypoint in context BEFORE loading map, so PlayerManager.spawn_player()
-        # can use it to spawn the player at the correct position directly
         if spawn_waypoint:
-            context.next_spawn_waypoint = spawn_waypoint
-            logger.debug("SceneManager: Set context.next_spawn_waypoint to '%s'", spawn_waypoint)
+            self.next_spawn_waypoint = spawn_waypoint
+            logger.debug("SceneManager: Set next_spawn_waypoint to '%s'", spawn_waypoint)
 
         # Load map
         self._load_map(map_file, context)
@@ -184,12 +206,12 @@ class SceneManager(SceneBaseManager):
             self._cache_manager.restore_scene(current_scene, context)
 
             # Sync wall_list with NPC visibility after restore
-            if npc_manager and context.wall_list:
+            if npc_manager and self.wall_list:
                 for npc_state in npc_manager.get_npcs().values():
-                    if not npc_state.sprite.visible and npc_state.sprite in context.wall_list:
-                        context.wall_list.remove(npc_state.sprite)
-                    elif npc_state.sprite.visible and npc_state.sprite not in context.wall_list:
-                        context.wall_list.append(npc_state.sprite)
+                    if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
+                        self.wall_list.remove(npc_state.sprite)
+                    elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
+                        self.wall_list.append(npc_state.sprite)
 
         # Emit SceneStartEvent
         context.event_bus.publish(SceneStartEvent(current_scene))
@@ -210,8 +232,7 @@ class SceneManager(SceneBaseManager):
         self.arcade_scene = arcade.Scene.from_tilemap(self.tile_map)
 
         # 2. Extract collision layers (foundation for other systems)
-        wall_list = self._extract_collision_layers(self.arcade_scene)
-        context.wall_list = wall_list
+        self.wall_list = self._extract_collision_layers(self.arcade_scene)
 
         # 3. Let systems load their Tiled data (in dependency order)
         # This includes waypoints, portals, interactions, player, NPCs
@@ -221,11 +242,7 @@ class SceneManager(SceneBaseManager):
         physics_manager = context.physics_manager
         physics_manager.invalidate()
 
-        # 5. Update pathfinding (needs new wall list)
-        pathfinding = context.pathfinding_manager
-        pathfinding.set_wall_list(wall_list)
-
-        # 6. Setup camera with map bounds
+        # 5. Setup camera with map bounds
         self._setup_camera(context)
 
     def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
@@ -309,7 +326,7 @@ class SceneManager(SceneBaseManager):
                         return (npc_state.sprite.center_x, npc_state.sprite.center_y)
 
         # Default: position at player (or map center if no player)
-        player_sprite = context.player_sprite
+        player_sprite = context.player_manager.get_player_sprite()
         if player_sprite:
             logger.debug(
                 "Initial camera position set to player at (%.1f, %.1f)",

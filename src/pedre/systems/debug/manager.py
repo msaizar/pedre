@@ -74,12 +74,13 @@ class DebugManager(BaseSystem):
         tile_size = settings.TILE_SIZE
 
         # Collect player position (from context)
-        if context.player_sprite:
-            player_tile_x = int(context.player_sprite.center_x / tile_size)
-            player_tile_y = int(context.player_sprite.center_y / tile_size)
+        player_sprite = context.player_manager.get_player_sprite()
+        if player_sprite:
+            player_tile_x = int(player_sprite.center_x / tile_size)
+            player_tile_y = int(player_sprite.center_y / tile_size)
             debug_lines.append((f"Player: tile ({player_tile_x}, {player_tile_y})", arcade.color.GREEN))
-            player_x = int(context.player_sprite.center_x)
-            player_y = int(context.player_sprite.center_y)
+            player_x = int(player_sprite.center_x)
+            player_y = int(player_sprite.center_y)
             debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
         # Collect NPC positions
         npc_manager = context.npc_manager
