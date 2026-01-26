@@ -146,10 +146,8 @@ class InventoryManager(InventoryBaseManager):
 
         # Text objects (created on first draw for efficiency)
         self.selected_item_text: arcade.Text | None = None
-        self.instructions_text: arcade.Text | None = None
         self.photo_title_text: arcade.Text | None = None
         self.photo_description_text: arcade.Text | None = None
-        self.photo_instructions_text: arcade.Text | None = None
 
     def setup(self, context: GameContext) -> None:
         """Initialize the inventory system with game context and settings.
@@ -440,10 +438,11 @@ class InventoryManager(InventoryBaseManager):
                 self.selected_item_text = arcade.Text(
                     selected_item.name,
                     window.width / 2,
-                    80,
+                    10,
                     arcade.color.WHITE,
                     font_size=16,
                     anchor_x="center",
+                    anchor_y="bottom",
                     bold=True,
                 )
             else:
@@ -451,21 +450,6 @@ class InventoryManager(InventoryBaseManager):
                 self.selected_item_text.x = window.width / 2
 
             self.selected_item_text.draw()
-
-        # Draw instructions
-        if self.instructions_text is None:
-            self.instructions_text = arcade.Text(
-                "Arrow keys to navigate | ENTER to view | ESC to close",
-                window.width / 2,
-                30,
-                arcade.color.WHITE,
-                font_size=12,
-                anchor_x="center",
-            )
-        else:
-            self.instructions_text.x = window.width / 2
-
-        self.instructions_text.draw()
 
     def _draw_photo_view(self, window: arcade.Window) -> None:
         """Draw the photo viewing overlay."""
@@ -543,21 +527,6 @@ class InventoryManager(InventoryBaseManager):
                 self.photo_description_text.x = window.width / 2
 
             self.photo_description_text.draw()
-
-            # Draw instructions
-            if self.photo_instructions_text is None:
-                self.photo_instructions_text = arcade.Text(
-                    "ESC or ENTER to close",
-                    window.width / 2,
-                    30,
-                    arcade.color.WHITE,
-                    font_size=12,
-                    anchor_x="center",
-                )
-            else:
-                self.photo_instructions_text.x = window.width / 2
-
-            self.photo_instructions_text.draw()
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BaseSystem interface)."""
