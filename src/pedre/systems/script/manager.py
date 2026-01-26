@@ -70,7 +70,7 @@ from pedre.systems.script.base import Script, ScriptBaseManager, ScriptEvent
 from pedre.systems.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
-    from pedre.events import Event, EventBus
+    from pedre.events import Event
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -135,12 +135,10 @@ class ScriptManager(ScriptBaseManager):
     def __init__(self) -> None:
         """Initialize script manager."""
         super().__init__()
-        self.event_bus: EventBus | None = None
         self.scripts: dict[str, Script] = {}
         self.active_sequences: list[tuple[str, ActionSequence]] = []
         self._pending_script_checks: list[str] = []  # Scripts to check conditions for after current update
         self._subscribed_events: set[str] = set()  # Track subscribed event types to avoid duplicates
-        self.context: GameContext | None = None
 
     def setup(self, context: GameContext) -> None:
         """Set up the script system.
@@ -150,15 +148,12 @@ class ScriptManager(ScriptBaseManager):
         """
         super().setup(context)
         self.context = context
-        self.event_bus = context.event_bus
         self._register_event_handlers()
 
     def cleanup(self) -> None:
         """Clean up script system resources."""
-        if self.event_bus:
-            # Unregister all event handlers
-            self.event_bus.unregister_all(self)
-        self.event_bus = None
+        self.context.event_bus.unregister_all(self)
+        self.context.event_bus = None
         self.scripts.clear()
         self.active_sequences.clear()
         self._subscribed_events.clear()
@@ -169,10 +164,7 @@ class ScriptManager(ScriptBaseManager):
 
         Clears all scripts and active sequences while preserving system wiring.
         """
-        if self.event_bus:
-            # Unregister all event handlers (script triggers)
-            # We will re-register them when loading scripts for the new game
-            self.event_bus.unregister_all(self)
+        self.context.event_bus.unregister_all(self)
 
         self.scripts.clear()
         self.active_sequences.clear()
@@ -307,8 +299,7 @@ class ScriptManager(ScriptBaseManager):
                 if script_name in self.scripts:
                     self.scripts[script_name].completed = True
                 # Publish completion event for chaining
-                if self.event_bus:
-                    self.event_bus.publish(ScriptCompleteEvent(script_name))
+                self.context.event_bus.publish(ScriptCompleteEvent(script_name))
 
         # Remove completed sequences (in reverse order to maintain indices)
         for i in reversed(completed_sequences):
@@ -368,8 +359,6 @@ class ScriptManager(ScriptBaseManager):
 
     def _register_event_handlers(self) -> None:
         """Register event handlers for all events triggered by loaded scripts."""
-        if not self.event_bus:
-            return
         # Identify all unique events required by loaded scripts
         required_events = set()
         for script in self.scripts.values():
@@ -389,7 +378,7 @@ class ScriptManager(ScriptBaseManager):
 
             # Cast to proper type after None check - EventRegistry returns type | None
             event_type = cast("type[Event]", event_class)
-            self.event_bus.subscribe(event_type, self._on_generic_event)
+            self.context.event_bus.subscribe(event_type, self._on_generic_event)
             self._subscribed_events.add(event_name)
             logger.debug("ScriptManager: Subscribed to '%s' for script triggers", event_name)
 

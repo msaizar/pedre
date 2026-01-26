@@ -57,7 +57,7 @@ class SceneBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def load_level(self, map_file: str) -> None:
+    def load_level(self, map_file: str, *, initial: bool = False) -> None:
         """Central orchestration for loading a new map/level."""
         ...
 

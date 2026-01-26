@@ -436,12 +436,6 @@ class ViewManager:
             self._game_view.cleanup()
             self._game_view = None
 
-        # Create new game view with the saved map
-        self._game_view = GameView(self, map_file=save_data.current_map)
-
-        # Show the game view
-        self.window.show_view(self.game_view)
-
         # Restore all manager states using the centralized method
         context = self.game_context
         if not context:
@@ -460,6 +454,11 @@ class ViewManager:
             scene_manager = context.scene_manager
             if scene_manager:
                 scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
+
+        self._game_view = GameView(self)
+
+        # Show the game view
+        self.window.show_view(self.game_view)
 
     def exit_game(self) -> None:
         """Close the game window and exit the application.

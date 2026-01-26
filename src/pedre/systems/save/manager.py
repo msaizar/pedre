@@ -124,10 +124,6 @@ class SaveManager(SaveBaseManager):
 
     def _handle_quick_save(self) -> None:
         """Perform a quick save using current context state."""
-        scene_manager = self.context.scene_manager
-        if not scene_manager or not hasattr(scene_manager, "current_map"):
-            return
-
         success = self.auto_save()
 
         audio_manager = self.context.audio_manager
@@ -140,24 +136,10 @@ class SaveManager(SaveBaseManager):
 
     def _handle_quick_load(self) -> None:
         """Perform a quick load from auto-save."""
-        # Note: game_view check removed - quick load handled by ViewManager.load_game()
         save_data = self.load_auto_save()
         if not save_data:
             logger.warning("No auto-save found for quick load")
             return
-
-        # Reload map if different
-        scene_manager = self.context.scene_manager
-        current_map = ""
-        if scene_manager and hasattr(scene_manager, "current_map"):
-            current_map = scene_manager.current_map
-
-        if save_data.current_map != current_map:
-            if scene_manager and hasattr(scene_manager, "load_level"):
-                scene_manager.load_level(save_data.current_map)
-            else:
-                logger.warning("Cannot reload map: SceneManager.load_level not available")
-                return
 
         # Restore state from save providers
         self.restore_game_data(save_data)
@@ -187,9 +169,6 @@ class SaveManager(SaveBaseManager):
             True if save succeeded and file was written, False if any error occurred.
         """
         scene_manager = self.context.scene_manager
-        if not scene_manager or not hasattr(scene_manager, "current_map"):
-            logger.error("SceneManager not available")
-            return False
 
         try:
             # Gather state from all systems
@@ -200,6 +179,11 @@ class SaveManager(SaveBaseManager):
                     save_states[system.name] = state
                     logger.debug("Gathered save state from system: %s", system.name)
 
+            # Cache the current active scene before saving (in case we never left it)
+            cache_manager = scene_manager.get_cache_manager()
+            if cache_manager:
+                cache_manager.cache_scene(scene_manager.get_current_scene(), self.context)
+
             # Also include cache manager state
             cache_state = scene_manager.get_cache_state_dict()
             if cache_state:
@@ -209,7 +193,6 @@ class SaveManager(SaveBaseManager):
             player_sprite = self.context.player_manager.get_player_sprite()
             if player_sprite:
                 save_data = GameSaveData(
-                    current_map=scene_manager.get_current_map(),
                     save_states=save_states,
                     save_timestamp=datetime.now(UTC).timestamp(),
                 )
@@ -267,18 +250,17 @@ class SaveManager(SaveBaseManager):
         Args:
             save_data: The GameSaveData object loaded from a save file.
         """
-        # Restore cache manager state first
-        if "_scene_caches" in save_data.save_states:
-            scene_manager = self.context.scene_manager
-            if scene_manager:
-                scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
-                logger.debug("Restored cache manager state")
-
         # Restore each system's state
         for system in self.context.get_systems().values():
             if system.name in save_data.save_states:
                 system.restore_save_state(save_data.save_states[system.name])
                 logger.debug("Restored save state to system: %s", system.name)
+
+        if "_scene_caches" in save_data.save_states:
+            scene_manager = self.context.scene_manager
+            if scene_manager:
+                scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
+                logger.debug("Restored cache manager state")
 
         logger.info("Restored all state from save data")
 
@@ -338,6 +320,7 @@ class SaveManager(SaveBaseManager):
                 data = json.load(f)
 
             # Return summary info
+            logger.debug("SaveManager: Data is %s", data)
             timestamp = data.get("save_timestamp", 0)
             dt = datetime.fromtimestamp(timestamp, UTC)
 
@@ -347,7 +330,7 @@ class SaveManager(SaveBaseManager):
         else:
             return {
                 "slot": slot,
-                "map": data.get("current_map", "Unknown"),
+                "map": data["save_states"]["scene"].get("current_map", "Unknown"),
                 "timestamp": timestamp,
                 "date_string": dt.strftime("%Y-%m-%d %H:%M"),
                 "version": data.get("save_version", "Unknown"),

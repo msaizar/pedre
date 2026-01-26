@@ -135,9 +135,9 @@ class NPCManager(NPCBaseManager):
         self.npcs: dict[str, NPCState] = {}
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
-        self.interaction_distance = 50
+        self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
         self.waypoint_threshold = 2
-        self.npc_speed = 80.0
+        self.npc_speed = settings.NPC_SPEED
         self.interacted_npcs: set[str] = set()
 
     def setup(self, context: GameContext) -> None:
@@ -152,13 +152,6 @@ class NPCManager(NPCBaseManager):
             settings: Game configuration containing NPC-related settings.
         """
         self.context = context
-
-        # Apply settings if available
-        if hasattr(settings, "NPC_INTERACTION_DISTANCE"):
-            self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
-        if hasattr(settings, "NPC_SPEED"):
-            self.npc_speed = settings.NPC_SPEED
-
         logger.debug("NPCManager setup complete")
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:

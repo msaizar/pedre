@@ -101,7 +101,6 @@ class GameView(arcade.View):
     def __init__(
         self,
         view_manager: ViewManager,
-        map_file: str | None = None,
     ) -> None:
         """Initialize the game view.
 
@@ -113,11 +112,9 @@ class GameView(arcade.View):
 
         Args:
             view_manager: ViewManager instance for handling view transitions (menu, inventory, etc.).
-            map_file: Name of the Tiled .tmx file to load from assets/maps/. If None, uses INITIAL_MAP from config.
         """
         super().__init__()
         self.view_manager = view_manager
-        self.map_file = map_file
 
         # Track if game has been initialized
         self.initialized: bool = False
@@ -125,11 +122,9 @@ class GameView(arcade.View):
     def setup(self) -> None:
         """Set up the game. Called on first show or when resetting the game state."""
         # Load the initial map
-        target_map = self.map_file or settings.INITIAL_MAP
-        if target_map and self.view_manager.game_context:
-            scene_manager = self.view_manager.game_context.scene_manager
-            if scene_manager:
-                scene_manager.load_level(target_map)
+        target_map = settings.INITIAL_MAP
+        scene_manager = self.view_manager.game_context.scene_manager
+        scene_manager.load_level(target_map, initial=True)
 
     def on_show_view(self) -> None:
         """Called when this view becomes active (arcade lifecycle callback).

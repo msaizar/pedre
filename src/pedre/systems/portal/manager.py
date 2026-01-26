@@ -127,7 +127,7 @@ class PortalManager(BaseSystem):
         distance and event_bus are configured during setup().
         """
         self.portals: list[Portal] = []
-        self.interaction_distance: float = 64.0
+        self.interaction_distance: float = settings.PORTAL_INTERACTION_DISTANCE
         self._portals_player_inside: set[str] = set()
 
     def setup(self, context: GameContext) -> None:
@@ -139,7 +139,6 @@ class PortalManager(BaseSystem):
         Args:
             context: Game context providing access to event bus.
         """
-        self.interaction_distance = settings.PORTAL_INTERACTION_DISTANCE
         self.context = context
         logger.debug("PortalManager setup complete (interaction_distance=%.1f)", self.interaction_distance)
 
