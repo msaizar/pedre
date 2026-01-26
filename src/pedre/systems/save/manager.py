@@ -245,16 +245,23 @@ class SaveManager(SaveBaseManager):
             return save_data
 
     def restore_game_data(self, save_data: GameSaveData) -> None:
-        """Restore all state from save data to save providers.
+        """Phase 1: Restore metadata state from save data before sprites exist.
+
+        This restores non-entity state (settings, flags, which map to load).
+        Entity-specific state (positions, visibility) is applied later via
+        apply_entity_states() after load_from_tiled() creates sprites.
 
         Args:
             save_data: The GameSaveData object loaded from a save file.
         """
-        # Restore each system's state
+        # Store save data for Phase 2 (entity state restoration)
+        self.context.set_pending_save_data(save_data)
+
+        # Restore each system's metadata state
         for system in self.context.get_systems().values():
             if system.name in save_data.save_states:
                 system.restore_save_state(save_data.save_states[system.name])
-                logger.debug("Restored save state to system: %s", system.name)
+                logger.debug("Restored metadata state to system: %s", system.name)
 
         if "_scene_caches" in save_data.save_states:
             scene_manager = self.context.scene_manager
@@ -262,7 +269,26 @@ class SaveManager(SaveBaseManager):
                 scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
                 logger.debug("Restored cache manager state")
 
-        logger.info("Restored all state from save data")
+        logger.info("Phase 1: Restored metadata state from save data")
+
+    def apply_entity_states(self) -> None:
+        """Phase 2: Apply entity-specific state after sprites exist.
+
+        Called by SceneManager after load_from_tiled() has created all sprites.
+        This applies positions, visibility, and other state that requires
+        sprites to exist.
+        """
+        save_data = self.context.get_pending_save_data()
+        if not save_data:
+            return
+
+        for system in self.context.get_systems().values():
+            if system.name in save_data.save_states:
+                system.apply_entity_state(save_data.save_states[system.name])
+                logger.debug("Applied entity state to system: %s", system.name)
+
+        self.context.clear_pending_save_data()
+        logger.info("Phase 2: Applied entity state from save data")
 
     def delete_save(self, slot: int) -> bool:
         """Delete a save file.

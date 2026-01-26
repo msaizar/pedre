@@ -185,6 +185,11 @@ class SceneManager(SceneBaseManager):
         # Load map
         self._load_map(map_file)
 
+        # Phase 2: Apply entity state from pending save data
+        save_manager = self.context.save_manager
+        if save_manager:
+            save_manager.apply_entity_states()
+
         # Get NPC and script managers for scene loading
         npc_manager = self.context.npc_manager
         script_manager = self.context.script_manager

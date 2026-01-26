@@ -42,7 +42,6 @@ class PlayerManager(PlayerBaseManager):
         """Initialize the player manager."""
         self.player_sprite: AnimatedPlayer | None = None
         self.player_list: arcade.SpriteList | None = None
-        self._pending_position: tuple[float, float] | None = None
 
     def setup(self, context: GameContext) -> None:
         """Initialize player system for the current scene."""
@@ -141,19 +140,6 @@ class PlayerManager(PlayerBaseManager):
 
         logger.info("Player loaded at (%.1f, %.1f)", spawn_x, spawn_y)
 
-        # Apply pending position from save game if present
-        if self._pending_position is not None:
-            self.player_sprite.center_x = self._pending_position[0]
-            self.player_sprite.center_y = self._pending_position[1]
-            logger.info(
-                "Applied saved position (%.1f, %.1f), overriding Tiled spawn (%.1f, %.1f)",
-                self._pending_position[0],
-                self._pending_position[1],
-                spawn_x,
-                spawn_y,
-            )
-            self._pending_position = None
-
     def update(self, delta_time: float) -> None:
         """Update player movement and animation."""
         if not self.player_sprite:
@@ -204,33 +190,30 @@ class PlayerManager(PlayerBaseManager):
         return self.to_dict()
 
     def restore_save_state(self, state: dict[str, Any]) -> None:
-        """Restore save state."""
+        """Phase 1: No metadata to restore for player."""
+
+    def apply_entity_state(self, state: dict[str, Any]) -> None:
+        """Phase 2: Apply saved player position after sprite exists."""
         self.from_dict(state)
+        if self.player_sprite and "player_x" in state:
+            logger.info(
+                "Applied saved player position (%.1f, %.1f)",
+                self.player_sprite.center_x,
+                self.player_sprite.center_y,
+            )
 
     def reset(self) -> None:
         """Reset player manager state for new game."""
         self.player_sprite = None
         self.player_list = None
-        self._pending_position = None
 
     def from_dict(self, data: dict[str, float]) -> None:
-        """Restore player position from saved data.
-
-        If sprite exists, applies immediately. Otherwise stores as pending
-        to be applied when the sprite is created in load_from_tiled().
-        """
+        """Apply position to sprite if it exists."""
         if "player_x" not in data or "player_y" not in data:
             return
-
-        x = float(data["player_x"])
-        y = float(data["player_y"])
-
         if self.player_sprite:
-            self.player_sprite.center_x = x
-            self.player_sprite.center_y = y
-        else:
-            self._pending_position = (x, y)
-            logger.debug("Stored pending player position: (%.1f, %.1f)", x, y)
+            self.player_sprite.center_x = float(data["player_x"])
+            self.player_sprite.center_y = float(data["player_y"])
 
     def to_dict(self) -> dict[str, float]:
         """Load player coordinates from saved dictionary data."""

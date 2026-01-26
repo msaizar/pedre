@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from pedre.systems.pathfinding.base import PathfindingBaseManager
     from pedre.systems.physics.base import PhysicsBaseManager
     from pedre.systems.player.base import PlayerBaseManager
-    from pedre.systems.save.base import SaveBaseManager
+    from pedre.systems.save.base import GameSaveData, SaveBaseManager
     from pedre.systems.scene.base import SceneBaseManager
     from pedre.systems.script.base import ScriptBaseManager
     from pedre.systems.waypoint.base import WaypointBaseManager
@@ -119,6 +119,9 @@ class GameContext:
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}
 
+        # Pending save data for two-phase restoration
+        self._pending_save_data: GameSaveData | None = None
+
     def register_system(self, name: str, system: BaseSystem) -> None:
         """Register a pluggable system with the context.
 
@@ -168,3 +171,15 @@ class GameContext:
     def get_systems(self) -> dict[str, BaseSystem]:
         """Get all registered systems."""
         return self._systems
+
+    def set_pending_save_data(self, save_data: GameSaveData | None) -> None:
+        """Store save data for Phase 2 restoration after sprites exist."""
+        self._pending_save_data = save_data
+
+    def get_pending_save_data(self) -> GameSaveData | None:
+        """Get pending save data for Phase 2 restoration."""
+        return self._pending_save_data
+
+    def clear_pending_save_data(self) -> None:
+        """Clear pending save data after restoration is complete."""
+        self._pending_save_data = None

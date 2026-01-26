@@ -92,3 +92,8 @@ class SaveBaseManager(BaseSystem, ABC):
     def save_game(self, slot: int) -> bool:
         """Save game to a slot."""
         ...
+
+    @abstractmethod
+    def apply_entity_states(self) -> None:
+        """Phase 2: Apply entity-specific state after sprites exist."""
+        ...

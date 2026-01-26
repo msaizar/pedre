@@ -250,6 +250,29 @@ class BaseSystem(ABC):
         """
         return
 
+    def apply_entity_state(self, state: dict[str, Any]) -> None:
+        """Apply entity-specific state after sprites have been created.
+
+        This method is called AFTER load_from_tiled() creates sprites/entities.
+        Use this to restore state that requires sprites to exist (positions,
+        visibility, animation flags, etc.).
+
+        The corresponding restore_save_state() method handles non-entity state
+        (metadata, settings, flags that don't depend on sprite existence).
+
+        Args:
+            state: Previously saved state dictionary from get_save_state().
+
+        Example:
+            def apply_entity_state(self, state):
+                # Sprites now exist, apply saved positions
+                for npc_name, npc_data in state.items():
+                    if npc := self.npcs.get(npc_name):
+                        npc.sprite.center_x = npc_data["x"]
+                        npc.sprite.center_y = npc_data["y"]
+        """
+        return
+
     def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
         """Return state to cache during scene transitions.
 
