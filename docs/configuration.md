@@ -32,6 +32,8 @@ INVENTORY_BOX_BORDER_WIDTH=1
 INVENTORY_BACKGROUND_IMAGE=""
 DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
+DIALOG_BOX_WIDTH_PERCENT=0.75
+DIALOG_BOX_HEIGHT_PERCENT=0.25
 ASSETS_HANDLE="game_assets"
 INITIAL_MAP="start.tmx"
 ```
@@ -125,19 +127,49 @@ Inventory grid layout and appearance.
 
 ### Dialog Settings
 
-Dialog system behavior and timing.
+Dialog system behavior, timing, and appearance.
+
+#### Behavior Settings
 
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
 | `DIALOG_AUTO_CLOSE_DEFAULT` | bool | False | Default auto-close behavior for dialogs when not explicitly specified |
 | `DIALOG_AUTO_CLOSE_DURATION` | float | 0.5 | Seconds to wait after text is fully revealed before auto-closing |
 
+#### Layout Settings
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `DIALOG_BOX_WIDTH_PERCENT` | float | 0.75 | Dialog box width as fraction of window width (0.0-1.0) |
+| `DIALOG_BOX_MAX_WIDTH` | int | 800 | Maximum dialog box width in pixels |
+| `DIALOG_BOX_MIN_WIDTH` | int | 400 | Minimum dialog box width in pixels |
+| `DIALOG_BOX_HEIGHT_PERCENT` | float | 0.25 | Dialog box height as fraction of window height (0.0-1.0) |
+| `DIALOG_BOX_MIN_HEIGHT` | int | 150 | Minimum dialog box height in pixels |
+| `DIALOG_VERTICAL_POSITION` | float | 0.25 | Vertical position from bottom as fraction of window height (0.0-1.0) |
+| `DIALOG_OVERLAY_ALPHA` | int | 128 | Transparency of background overlay (0-255, where 0 is transparent and 255 is opaque) |
+| `DIALOG_BORDER_WIDTH` | int | 3 | Width of dialog box border in pixels |
+| `DIALOG_PADDING_HORIZONTAL` | int | 20 | Horizontal padding inside dialog box in pixels |
+| `DIALOG_PADDING_VERTICAL` | int | 20 | Vertical padding inside dialog box in pixels |
+| `DIALOG_NPC_NAME_OFFSET` | int | 30 | Vertical offset of NPC name from top of dialog box in pixels |
+| `DIALOG_FOOTER_OFFSET` | int | 20 | Vertical offset of footer elements from bottom of dialog box in pixels |
+
+#### Font Settings
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `DIALOG_NPC_NAME_FONT_SIZE` | int | 20 | Font size for NPC name text |
+| `DIALOG_TEXT_FONT_SIZE` | int | 16 | Font size for dialog message text |
+| `DIALOG_INSTRUCTION_FONT_SIZE` | int | 12 | Font size for instruction text (e.g., "Press SPACE") |
+| `DIALOG_PAGE_INDICATOR_FONT_SIZE` | int | 10 | Font size for page indicator text (e.g., "Page 1/3") |
+
 **Notes:**
 
-- `DIALOG_AUTO_CLOSE_DEFAULT` controls whether dialogs auto-close by default (when `auto_close` parameter is not specified)
-- `DIALOG_AUTO_CLOSE_DURATION` only applies when auto-close is enabled for a dialog
-- The timer starts after the text reveal animation completes
-- Useful for cutscenes where you want dialogs to automatically advance
+- **Auto-close behavior**: `DIALOG_AUTO_CLOSE_DEFAULT` controls whether dialogs auto-close by default. The timer starts after the text reveal animation completes. Useful for cutscenes where you want dialogs to automatically advance.
+- **Responsive sizing**: Dialog box dimensions scale with window size using percentage-based values, constrained by min/max limits for readability
+- **Width calculation**: Actual width = `min(DIALOG_BOX_MAX_WIDTH, max(DIALOG_BOX_MIN_WIDTH, window_width × DIALOG_BOX_WIDTH_PERCENT))`
+- **Height calculation**: Actual height = `max(DIALOG_BOX_MIN_HEIGHT, window_height × DIALOG_BOX_HEIGHT_PERCENT)`
+- **Position**: `DIALOG_VERTICAL_POSITION` of 0.25 means the dialog center is at 25% from the bottom of the screen
+- **Overlay**: Semi-transparent overlay covers the entire screen behind the dialog. Alpha value of 128 = 50% transparency
 
 ### Asset Settings
 
@@ -216,6 +248,8 @@ INVENTORY_BACKGROUND_IMAGE="images/ui/inventory.png"
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
+DIALOG_BOX_WIDTH_PERCENT=0.8
+DIALOG_TEXT_FONT_SIZE=18
 
 # Asset settings
 ASSETS_HANDLE="mystic_quest_assets"
@@ -255,6 +289,22 @@ INVENTORY_BOX_BORDER_WIDTH: int = 3
 INVENTORY_BACKGROUND_IMAGE: str = ""
 DIALOG_AUTO_CLOSE_DEFAULT: bool = False
 DIALOG_AUTO_CLOSE_DURATION: float = 0.5
+DIALOG_BOX_WIDTH_PERCENT: float = 0.75
+DIALOG_BOX_MAX_WIDTH: int = 800
+DIALOG_BOX_MIN_WIDTH: int = 400
+DIALOG_BOX_HEIGHT_PERCENT: float = 0.25
+DIALOG_BOX_MIN_HEIGHT: int = 150
+DIALOG_VERTICAL_POSITION: float = 0.25
+DIALOG_OVERLAY_ALPHA: int = 128
+DIALOG_BORDER_WIDTH: int = 3
+DIALOG_PADDING_HORIZONTAL: int = 20
+DIALOG_PADDING_VERTICAL: int = 20
+DIALOG_NPC_NAME_OFFSET: int = 30
+DIALOG_FOOTER_OFFSET: int = 20
+DIALOG_NPC_NAME_FONT_SIZE: int = 20
+DIALOG_TEXT_FONT_SIZE: int = 16
+DIALOG_INSTRUCTION_FONT_SIZE: int = 12
+DIALOG_PAGE_INDICATOR_FONT_SIZE: int = 10
 ```
 
 ## See Also
