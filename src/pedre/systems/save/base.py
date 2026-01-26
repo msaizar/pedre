@@ -15,8 +15,8 @@ class GameSaveData:
     It contains player position, current map, and all state from save providers.
 
     State categories:
-    3. Save states: All state from configured save providers
-    4. Metadata: When the save was created and what format version
+    1. Save states: All state from configured save providers
+    2. Metadata: When the save was created and what format version
 
     The save_version field enables future migration if the save format needs to change.
 
