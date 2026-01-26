@@ -1,44 +1,16 @@
 """Main gameplay view for the game.
 
-This module provides the GameView class, which serves as the central hub for all gameplay
-systems during active play. It coordinates map loading, player control, NPC interactions,
-dialog systems, scripting, physics, rendering, and save/load functionality.
+This module provides the GameView class.
 
 Key responsibilities:
 - Load and render Tiled maps with layers (floor, walls, NPCs, interactive objects)
 - Initialize and coordinate all game systems (managers for dialog, NPCs, audio, etc.)
 - Handle player input and movement with physics
-- Process NPC pathfinding and animations
-- Manage dialog sequences and scripted events via the event bus
-- Handle portal transitions between maps
-- Provide save/load functionality (quick save/load)
-- Render game world with smooth camera following
-- Draw debug information when enabled
-
-System architecture:
-The GameView orchestrates multiple manager classes that handle specific subsystems:
-- ScriptManager: Executes scripted sequences from JSON
-- SaveManager: Handles game state persistence
-- CameraManager: Smooth camera following
-
-Map loading workflow:
-1. Load Tiled .tmx file and extract layers (walls, NPCs, objects, waypoints, portals)
-2. Create animated player sprite at spawn position
-3. Replace static NPC sprites with AnimatedNPC instances
-4. Register NPCs, portals, and interactive objects with their managers
-5. Load scene-specific scripts and NPC dialogs
-6. Initialize physics engine and camera
-7. Create GameContext to provide managers to scripts
-
-Event-driven scripting:
-The view integrates with the event bus to enable reactive scripting. When game events
-occur (dialog closed, NPC interacted, etc.), scripts can automatically trigger to
-create dynamic cutscenes and story progression.
 
 Example usage:
     # Create and show game view
     view_manager = ViewManager(window)
-    game_view = GameView(view_manager, map_file="Casa.tmx", debug_mode=False)
+    game_view = GameView(view_manager)
     view_manager.show_view(game_view)
 
     # Game loop happens automatically via arcade.View callbacks:
@@ -78,21 +50,9 @@ class GameView(arcade.View):
 
     Architecture highlights:
     - Lazy initialization: setup() is called on first show, not in __init__
-    - Per-scene loading: Each map loads its own dialog and script files only when needed
-    - Dialog caching: Dialog files cached per-scene to avoid reloading when returning
-    - Event-driven: Uses EventBus for decoupled communication between systems
-    - State tracking: Maintains current NPC interaction, scene name, portal spawn points
-
-    Class attributes:
-        _dialog_cache: Per-scene dialog cache {scene_name: dialog_data} shared across all
-                      GameView instances to avoid reloading when transitioning between maps.
-        _script_cache: Per-scene script JSON cache {scene_name: script_json_data} shared
-                      across all GameView instances to avoid reloading when returning to scenes.
 
     Instance attributes:
         view_manager: Reference to ViewManager for view transitions.
-        map_file: Current Tiled map filename (e.g., "Casa.tmx").
-        debug_mode: Whether to display debug overlays (NPC positions, etc.).
 
         State tracking:
         initialized: Whether setup() has been called.
@@ -101,11 +61,10 @@ class GameView(arcade.View):
     def __init__(self, view_manager: ViewManager) -> None:
         """Initialize the game view.
 
-        Creates all manager instances and initializes state, but does NOT load the map
-        or set up sprites yet. Actual setup happens in setup() when the view is first shown.
+        Initializes state, but does NOT load the map yet. Actual setup happens in setup() when the view is first shown.
 
         This lazy initialization pattern allows the view to be created without immediately
-        loading heavy assets, and enables the map_file to be changed before setup() runs.
+        loading heavy assets, and enables the map to be changed before setup() runs.
 
         Args:
             view_manager: ViewManager instance for handling view transitions (menu, inventory, etc.).
@@ -145,8 +104,6 @@ class GameView(arcade.View):
         Side effects:
             - Sets background color to black
             - Calls setup() if not yet initialized
-            - Plays background music
-            - Shows initial dialog
             - Sets initialized flag to True
         """
         arcade.set_background_color(arcade.color.BLACK)
@@ -222,20 +179,15 @@ class GameView(arcade.View):
     def cleanup(self) -> None:
         """Clean up resources when transitioning away from this view.
 
-        Performs cleanup including auto-save, stopping audio, clearing sprite lists,
+        Performs cleanup including
         resetting managers, and clearing the initialized flag. Called before switching
         to another view (menu, inventory, etc.).
 
         Cleanup process:
-            - Stop background music
-            - Clear all sprite lists
-            - Clear sprite references
             - Clear all managers
             - Reset initialized flag so game will set up again on next show
 
         Side effects:
-            - Stops audio playback
-            - Clears all sprite lists and references
             - Resets all managers to empty state
             - Sets initialized = False
         """
