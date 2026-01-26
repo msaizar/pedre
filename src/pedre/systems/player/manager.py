@@ -206,12 +206,6 @@ class PlayerManager(PlayerBaseManager):
             return {"player_x": self.player_sprite.center_x, "player_y": self.player_sprite.center_y}
         return {}
 
-    def set_player_position(self, player_x: float, player_y: float) -> None:
-        """Set the player position."""
-        if self.player_sprite:
-            self.player_sprite.center_x = player_x
-            self.player_sprite.center_y = player_y
-
     def _get_animation_properties(self, properties: dict) -> dict[str, int]:
         """Extract animation properties from dictionary."""
         animation_props: dict[str, int] = {}

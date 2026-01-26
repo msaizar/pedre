@@ -18,8 +18,3 @@ class PlayerBaseManager(BaseSystem, ABC):
     def get_player_sprite(self) -> AnimatedPlayer | None:
         """Get the player sprite."""
         ...
-
-    @abstractmethod
-    def set_player_position(self, player_x: float, player_y: float) -> None:
-        """Set the player position."""
-        ...
