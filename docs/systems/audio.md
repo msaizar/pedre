@@ -6,17 +6,6 @@ Manages background music and sound effects with caching.
 
 `src/pedre/systems/audio/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.audio import AudioManager
-
-audio_manager = AudioManager(
-    music_volume=0.5,  # 0.0 to 1.0
-    sfx_volume=0.7     # 0.0 to 1.0
-)
-```
-
 ## Key Methods
 
 ### `play_music(filename: str, loop: bool = True) -> None`

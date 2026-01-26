@@ -6,21 +6,6 @@ Manages NPC state, movement, pathfinding, and interactions.
 
 `src/pedre/systems/npc/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.npc import NPCManager
-
-npc_manager = NPCManager(
-    pathfinding_manager=pathfinding_mgr,
-    interaction_distance=50,  # pixels
-    waypoint_threshold=2,     # pixels
-    npc_speed=80.0,          # pixels/second
-    inventory_manager=inventory_mgr,  # optional
-    event_bus=event_bus               # optional
-)
-```
-
 ## Key Methods
 
 ### `add_npc(name: str, sprite: arcade.Sprite, dialog_level: int = 0) -> None`
@@ -104,20 +89,21 @@ Update an NPC's conversation progress.
 npc_manager.set_dialog_level("merchant", 2)
 ```
 
-### `move_npc_to_waypoint(npc_name: str, waypoint: tuple[float, float]) -> None`
+### `move_npc_to_position(npc_name: str, target_x: float, target_y: float) -> None`
 
-Start pathfinding movement to a waypoint.
+Start pathfinding movement to a position.
 
 **Parameters:**
 
 - `npc_name` - Name of the NPC to move
-- `waypoint` - (x, y) destination coordinates
+- `target_x` - x destination coordinate
+- `target_y` - y destination coordinate
 
 **Example:**
 
 ```python
 # Move merchant to the well
-npc_manager.move_npc_to_waypoint("merchant", (640, 480))
+npc_manager.move_npc_to_position("merchant", 640, 480)
 ```
 
 ### `update(delta_time: float) -> None`
