@@ -37,15 +37,15 @@ class DebugManager(BaseSystem):
         Args:
             context: Game context.
         """
+        self.context = context
         self.debug_text_objects = []
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle debug toggle input.
 
         Args:
             symbol: Key symbol.
             modifiers: Key modifiers.
-            context: Game context.
 
         Returns:
             True if handled.
@@ -59,12 +59,8 @@ class DebugManager(BaseSystem):
             return True
         return False
 
-    def on_draw_ui(self, context: GameContext) -> None:
-        """Draw debug information overlay in screen coordinates.
-
-        Args:
-            context: Game context.
-        """
+    def on_draw_ui(self) -> None:
+        """Draw debug information overlay in screen coordinates."""
         if not self.debug_mode:
             return
 
@@ -74,7 +70,7 @@ class DebugManager(BaseSystem):
         tile_size = settings.TILE_SIZE
 
         # Collect player position (from context)
-        player_sprite = context.player_manager.get_player_sprite()
+        player_sprite = self.context.player_manager.get_player_sprite()
         if player_sprite:
             player_tile_x = int(player_sprite.center_x / tile_size)
             player_tile_y = int(player_sprite.center_y / tile_size)
@@ -83,7 +79,7 @@ class DebugManager(BaseSystem):
             player_y = int(player_sprite.center_y)
             debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
         # Collect NPC positions
-        npc_manager = context.npc_manager
+        npc_manager = self.context.npc_manager
         if npc_manager:
             for npc_name, npc_state in npc_manager.get_npcs().items():
                 if npc_state.sprite and npc_state.sprite.visible:

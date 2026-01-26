@@ -120,13 +120,13 @@ class SceneManager(SceneBaseManager):
         # Map data (merged from MapManager)
         self.tile_map: arcade.TileMap | None = None
         self.arcade_scene: arcade.Scene | None = None
-        self.waypoints: dict[str, tuple[float, float]] = {}
         self.current_map: str = ""
         self.wall_list: arcade.SpriteList = arcade.SpriteList()
         self.next_spawn_waypoint: str = ""
 
     def setup(self, context: GameContext) -> None:
         """Initialize with context."""
+        self.context = context
 
     def reset(self) -> None:
         """Reset scene manager state for new game."""
@@ -167,32 +167,26 @@ class SceneManager(SceneBaseManager):
         """Clear next spawn waypoint."""
         self.next_spawn_waypoint = ""
 
-    def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
+    def load_level(self, map_file: str) -> None:
         """Central orchestration for loading a new map/level.
 
         Args:
             map_file: The .tmx filename.
-            spawn_waypoint: Optional waypoint to spawn at.
-            context: Game context.
         """
         # Cache current scene state before transitioning
         if self._cache_manager:
-            self._cache_manager.cache_scene(self.current_scene, context)
+            self._cache_manager.cache_scene(self.current_scene, self.context)
 
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
         self.current_scene = current_scene
 
-        if spawn_waypoint:
-            self.next_spawn_waypoint = spawn_waypoint
-            logger.debug("SceneManager: Set next_spawn_waypoint to '%s'", spawn_waypoint)
-
         # Load map
-        self._load_map(map_file, context)
+        self._load_map(map_file)
 
         # Get NPC and script managers for scene loading
-        npc_manager = context.npc_manager
-        script_manager = context.script_manager
+        npc_manager = self.context.npc_manager
+        script_manager = self.context.script_manager
 
         npc_dialogs_data = {}
         if npc_manager:
@@ -203,7 +197,7 @@ class SceneManager(SceneBaseManager):
 
         # Restore scene state using cache manager
         if self._cache_manager:
-            self._cache_manager.restore_scene(current_scene, context)
+            self._cache_manager.restore_scene(current_scene, self.context)
 
             # Sync wall_list with NPC visibility after restore
             if npc_manager and self.wall_list:
@@ -214,14 +208,14 @@ class SceneManager(SceneBaseManager):
                         self.wall_list.append(npc_state.sprite)
 
         # Emit SceneStartEvent
-        context.event_bus.publish(SceneStartEvent(current_scene))
+        self.context.event_bus.publish(SceneStartEvent(current_scene))
 
-    def _load_map(self, map_file: str, context: GameContext) -> None:
+    def _load_map(self, map_file: str) -> None:
         """Load a Tiled map and populate game context and systems.
 
         Args:
             map_file: Filename of the .tmx map to load (e.g. "map.tmx").
-            context: GameContext for updating shared state (wall_list, waypoints).
+
         """
         map_path = asset_path(f"maps/{map_file}", settings.ASSETS_HANDLE)
         logger.info("Loading map: %s", map_path)
@@ -236,14 +230,14 @@ class SceneManager(SceneBaseManager):
 
         # 3. Let systems load their Tiled data (in dependency order)
         # This includes waypoints, portals, interactions, player, NPCs
-        self._load_systems_from_tiled(context)
+        self._load_systems_from_tiled()
 
         # 4. Invalidate physics engine (needs new player/walls)
-        physics_manager = context.physics_manager
+        physics_manager = self.context.physics_manager
         physics_manager.invalidate()
 
         # 5. Setup camera with map bounds
-        self._setup_camera(context)
+        self._setup_camera()
 
     def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
         """Extract collision layers into a wall list."""
@@ -256,27 +250,26 @@ class SceneManager(SceneBaseManager):
                         wall_list.append(sprite)
         return wall_list
 
-    def _load_systems_from_tiled(self, context: GameContext) -> None:
+    def _load_systems_from_tiled(self) -> None:
         """Call load_from_tiled() on all systems that implement it."""
         # Iterate through all systems (already in dependency order)
-        for system in context.get_systems().values():
+        for system in self.context.get_systems().values():
             # Only call if system has load_from_tiled and both tile_map and arcade_scene are loaded
             if hasattr(system, "load_from_tiled") and self.tile_map is not None and self.arcade_scene is not None:
                 system.load_from_tiled(
                     self.tile_map,
                     self.arcade_scene,
-                    context,
                 )
                 logger.debug("Loaded Tiled data for system: %s", system.name)
 
-    def _setup_camera(self, context: GameContext) -> None:
+    def _setup_camera(self) -> None:
         """Setup camera with map bounds after loading."""
-        camera_manager = context.camera_manager
+        camera_manager = self.context.camera_manager
         if not camera_manager or not self.tile_map:
             return
 
         # Determine initial camera position based on follow configuration
-        initial_pos = self._get_initial_camera_position(camera_manager, context)
+        initial_pos = self._get_initial_camera_position(camera_manager)
 
         camera = arcade.camera.Camera2D(position=initial_pos)
         camera_manager.set_camera(camera)
@@ -288,11 +281,9 @@ class SceneManager(SceneBaseManager):
         camera_manager.set_bounds(map_width, map_height, window.width, window.height)
 
         # Apply camera following configuration from map properties
-        camera_manager.apply_follow_config(context)
+        camera_manager.apply_follow_config()
 
-    def _get_initial_camera_position(
-        self, camera_manager: CameraBaseManager, context: GameContext
-    ) -> tuple[float, float]:
+    def _get_initial_camera_position(self, camera_manager: CameraBaseManager) -> tuple[float, float]:
         """Determine initial camera position based on follow configuration.
 
         Checks the camera's follow config (loaded from Tiled map properties) to
@@ -301,7 +292,6 @@ class SceneManager(SceneBaseManager):
 
         Args:
             camera_manager: The camera manager with follow config.
-            context: Game context with player and NPCs.
 
         Returns:
             Tuple of (x, y) position for initial camera placement.
@@ -313,7 +303,7 @@ class SceneManager(SceneBaseManager):
             # Camera should follow NPC - position at NPC initially
             npc_name = follow_config.get("target")
             if npc_name:
-                npc_manager = context.npc_manager
+                npc_manager = self.context.npc_manager
                 if npc_manager:
                     npc_state = npc_manager.get_npc_by_name(npc_name)
                     if npc_state:
@@ -326,7 +316,7 @@ class SceneManager(SceneBaseManager):
                         return (npc_state.sprite.center_x, npc_state.sprite.center_y)
 
         # Default: position at player (or map center if no player)
-        player_sprite = context.player_manager.get_player_sprite()
+        player_sprite = self.context.player_manager.get_player_sprite()
         if player_sprite:
             logger.debug(
                 "Initial camera position set to player at (%.1f, %.1f)",
@@ -363,7 +353,7 @@ class SceneManager(SceneBaseManager):
         self.transition_state = TransitionState.FADING_OUT
         self.transition_alpha = 0.0
 
-    def on_draw(self, context: GameContext) -> None:
+    def on_draw(self) -> None:
         """Draw the map scene and transition overlay."""
         # Draw the map scene
         if self.arcade_scene:
@@ -371,11 +361,11 @@ class SceneManager(SceneBaseManager):
 
         # Draw transition overlay if transitioning
         if self.transition_state != TransitionState.NONE:
-            self._draw_transition_overlay(context)
+            self._draw_transition_overlay()
 
-    def _draw_transition_overlay(self, context: GameContext) -> None:
+    def _draw_transition_overlay(self) -> None:
         """Draw the black fade overlay."""
-        camera_manager = context.camera_manager
+        camera_manager = self.context.camera_manager
         if camera_manager:
             pass
 
@@ -396,7 +386,7 @@ class SceneManager(SceneBaseManager):
             (0, 0, 0, alpha),
         )
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update transition state."""
         if self.transition_state == TransitionState.NONE:
             return
@@ -408,7 +398,7 @@ class SceneManager(SceneBaseManager):
                 self.transition_state = TransitionState.LOADING
 
                 # Perform the map switch
-                self._perform_map_switch(context)
+                self._perform_map_switch()
 
                 self.transition_state = TransitionState.FADING_IN
 
@@ -419,7 +409,7 @@ class SceneManager(SceneBaseManager):
                 self.transition_state = TransitionState.NONE
                 logger.info("Transition complete")
 
-    def _perform_map_switch(self, context: GameContext) -> None:
+    def _perform_map_switch(self) -> None:
         """Execute the logic to switch maps while screen is black."""
         if not self.pending_map_file:
             return
@@ -438,8 +428,13 @@ class SceneManager(SceneBaseManager):
         self.pending_map_file = None
         self.pending_spawn_waypoint = None
 
+        # Set spawn waypoint before loading if specified
+        if waypoint:
+            self.next_spawn_waypoint = waypoint
+            logger.debug("SceneManager: Set next_spawn_waypoint to '%s'", waypoint)
+
         # Load the level through our own load_level method
-        self.load_level(map_file, waypoint, context)
+        self.load_level(map_file)
 
     def draw_overlay(self) -> None:
         """Draw the transition overlay (called from UI phase)."""

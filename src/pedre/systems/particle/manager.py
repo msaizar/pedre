@@ -102,6 +102,7 @@ class ParticleManager(ParticleBaseManager):
         Args:
             context: Game context (not used by particle system).
         """
+        self.context = context
         logger.debug("ParticleManager setup complete")
 
     def cleanup(self) -> None:

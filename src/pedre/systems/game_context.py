@@ -77,7 +77,6 @@ class GameContext:
     Attributes:
         event_bus: Publish/subscribe event system for decoupled communication.
         window: Reference to the arcade Window instance.
-        next_spawn_waypoint: Waypoint name for next spawn (portal transitions).
     """
 
     audio_manager: AudioBaseManager

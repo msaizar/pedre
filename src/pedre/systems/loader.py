@@ -25,7 +25,7 @@ Example:
         loader.setup_all(game_context)
 
         # In game loop
-        loader.update_all(delta_time, game_context)
+        loader.update_all(delta_time)
 """
 
 from __future__ import annotations
@@ -73,7 +73,7 @@ class SystemLoader:
             loader.setup_all(context)
 
             # In game loop
-            loader.update_all(delta_time, context)
+            loader.update_all(delta_time)
 
             # On scene unload
             loader.cleanup_all()
@@ -163,41 +163,34 @@ class SystemLoader:
                 system.setup(context)
                 logger.debug("Setup system: %s", name)
 
-    def update_all(self, delta_time: float, context: GameContext) -> None:
+    def update_all(self, delta_time: float) -> None:
         """Call update() on all systems.
 
         This should be called each frame from the game loop.
 
         Args:
             delta_time: Time elapsed since last frame in seconds.
-            context: Game context providing access to other systems.
         """
         for system in self._instances.values():
-            system.update(delta_time, context)
+            system.update(delta_time)
 
-    def draw_all(self, context: GameContext) -> None:
+    def draw_all(self) -> None:
         """Call on_draw() on all systems (world coordinates).
 
         This should be called during the draw phase of each frame,
         while world camera is active.
-
-        Args:
-            context: Game context providing access to other systems.
         """
         for system in self._instances.values():
-            system.on_draw(context)
+            system.on_draw()
 
-    def draw_ui_all(self, context: GameContext) -> None:
+    def draw_ui_all(self) -> None:
         """Call on_draw_ui() on all systems (screen coordinates).
 
         This should be called during the draw phase of each frame,
         while screen camera is active.
-
-        Args:
-            context: Game context providing access to other systems.
         """
         for system in self._instances.values():
-            system.on_draw_ui(context)
+            system.on_draw_ui()
 
     def cleanup_all(self) -> None:
         """Call cleanup() on all systems in reverse dependency order.
@@ -212,14 +205,10 @@ class SystemLoader:
                 system.cleanup()
                 logger.debug("Cleaned up system: %s", name)
 
-    def reset_all(self, context: GameContext) -> None:
+    def reset_all(self) -> None:
         """Call reset() on all systems to prepare for a new game session.
 
         This clears transient state (items, NPCs, flags) but keeps system wiring intact.
-        Also resets the GameContext state.
-
-        Args:
-            context: The game context to reset.
         """
         # Clear key persistence cache
         if self._cache_manager:
@@ -302,7 +291,7 @@ class SystemLoader:
 
         return result
 
-    def on_key_press_all(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press_all(self, symbol: int, modifiers: int) -> bool:
         """Propagate key press events to all systems.
 
         Iterates through systems in dependency order (or specific input order if needed).
@@ -311,31 +300,29 @@ class SystemLoader:
         Args:
             symbol: Arcade key constant.
             modifiers: Modifier key bitfield.
-            context: Game context.
 
         Returns:
             True if any system handled the event.
         """
         for name in reversed(self._load_order):
             system = self._instances.get(name)
-            if system and system.on_key_press(symbol, modifiers, context):
+            if system and system.on_key_press(symbol, modifiers):
                 logger.debug("Key press handled by system: %s", name)
                 return True
         return False
 
-    def on_key_release_all(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_release_all(self, symbol: int, modifiers: int) -> bool:
         """Propagate key release events to all systems.
 
         Args:
             symbol: Arcade key constant.
             modifiers: Modifier key bitfield.
-            context: Game context.
 
         Returns:
             True if any system handled the event.
         """
         for name in reversed(self._load_order):
             system = self._instances.get(name)
-            if system and system.on_key_release(symbol, modifiers, context):
+            if system and system.on_key_release(symbol, modifiers):
                 return True
         return False

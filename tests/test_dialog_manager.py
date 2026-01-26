@@ -101,7 +101,7 @@ class TestDialogManager(unittest.TestCase):
         self.manager.speed_up_text()
 
         # Press SPACE to close (should close and publish event)
-        consumed = self.manager.on_key_press(arcade.key.SPACE, 0, self.mock_context)
+        consumed = self.manager.on_key_press(arcade.key.SPACE, 0)
 
         assert consumed is True
         self.mock_event_bus.publish.assert_called_once()
@@ -123,14 +123,14 @@ class TestDialogManager(unittest.TestCase):
 
         # Press SPACE to advance past first page
         self.manager.speed_up_text()
-        self.manager.on_key_press(arcade.key.SPACE, 0, self.mock_context)
+        self.manager.on_key_press(arcade.key.SPACE, 0)
 
         # Should not have published event yet
         self.mock_event_bus.publish.assert_not_called()
 
         # Press SPACE to advance past second (last) page
         self.manager.speed_up_text()
-        consumed = self.manager.on_key_press(arcade.key.SPACE, 0, self.mock_context)
+        consumed = self.manager.on_key_press(arcade.key.SPACE, 0)
 
         assert consumed is True
 
@@ -199,7 +199,7 @@ class TestDialogManager(unittest.TestCase):
         self.manager.speed_up_text()
 
         # Update with delta time
-        self.manager.update(0.1, self.mock_context)
+        self.manager.update(0.1)
 
         assert self.manager.auto_close_timer > 0.0
 
@@ -208,7 +208,7 @@ class TestDialogManager(unittest.TestCase):
         self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
 
         # Don't reveal text, just update
-        self.manager.update(0.1, self.mock_context)
+        self.manager.update(0.1)
 
         # Timer should not have started yet
         assert self.manager.auto_close_timer == 0.0
@@ -224,7 +224,7 @@ class TestDialogManager(unittest.TestCase):
         self.mock_event_bus.reset_mock()
 
         # Update with enough time to trigger auto-close (0.5s default)
-        self.manager.update(0.6, self.mock_context)
+        self.manager.update(0.6)
 
         # Dialog should be closed
         assert self.manager.showing is False
@@ -245,7 +245,7 @@ class TestDialogManager(unittest.TestCase):
         self.mock_event_bus.reset_mock()
 
         # Update with enough time to trigger auto-close
-        self.manager.update(0.6, self.mock_context)
+        self.manager.update(0.6)
 
         # Should have advanced to page 2
         assert self.manager.showing is True
@@ -258,7 +258,7 @@ class TestDialogManager(unittest.TestCase):
         self.manager.speed_up_text()
 
         # Update again to auto-close
-        self.manager.update(0.6, self.mock_context)
+        self.manager.update(0.6)
 
         # Now dialog should be closed
         assert self.manager.showing is False
@@ -277,7 +277,7 @@ class TestDialogManager(unittest.TestCase):
         self.mock_event_bus.reset_mock()
 
         # Update with enough time that would trigger auto-close
-        self.manager.update(1.0, self.mock_context)
+        self.manager.update(1.0)
 
         # Dialog should still be showing
         assert self.manager.showing is True
@@ -290,7 +290,7 @@ class TestDialogManager(unittest.TestCase):
         self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)
 
         self.manager.speed_up_text()
-        self.manager.update(0.2, self.mock_context)
+        self.manager.update(0.2)
 
         assert self.manager.auto_close_timer > 0.0
 
@@ -305,7 +305,7 @@ class TestDialogManager(unittest.TestCase):
 
         # Reveal and build up timer
         self.manager.speed_up_text()
-        self.manager.update(0.3, self.mock_context)
+        self.manager.update(0.3)
 
         timer_value = self.manager.auto_close_timer
         assert timer_value > 0.0

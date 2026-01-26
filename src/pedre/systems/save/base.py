@@ -2,12 +2,9 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pedre.systems.base import BaseSystem
-
-if TYPE_CHECKING:
-    from pedre.systems.game_context import GameContext
 
 
 @dataclass
@@ -80,7 +77,7 @@ class SaveBaseManager(BaseSystem, ABC):
     role = "save_manager"
 
     @abstractmethod
-    def restore_game_data(self, save_data: GameSaveData, context: GameContext) -> None:
+    def restore_game_data(self, save_data: GameSaveData) -> None:
         """Restore all state from save data to save providers."""
         ...
 
@@ -105,6 +102,6 @@ class SaveBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def save_game(self, slot: int, context: GameContext) -> bool:
+    def save_game(self, slot: int) -> bool:
         """Save game to a slot."""
         ...

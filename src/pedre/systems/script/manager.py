@@ -284,7 +284,7 @@ class ScriptManager(ScriptBaseManager):
         self._parse_scripts(script_data, npc_dialogs)
         self._register_event_handlers()
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update all active action sequences.
 
         Called each frame to update all currently executing script action sequences.

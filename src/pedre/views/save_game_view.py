@@ -308,7 +308,7 @@ class SaveGameView(arcade.View):
         context = self.view_manager.game_context
 
         # Save the game to the selected slot (uses pluggable save providers)
-        success = context.save_manager.save_game(slot=self.selected_slot, context=context)
+        success = context.save_manager.save_game(slot=self.selected_slot)
 
         if success:
             # Return to pause menu after successful save

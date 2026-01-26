@@ -122,14 +122,10 @@ class InteractionManager(InteractionBaseManager):
         Args:
             context: Game context providing access to other systems.
         """
+        self.context = context
         logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
 
-    def load_from_tiled(
-        self,
-        tile_map: arcade.TileMap,
-        arcade_scene: arcade.Scene,
-        context: GameContext,
-    ) -> None:
+    def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load interactive objects from Tiled scene layer."""
         self.clear()
         interactive_layer = tile_map.object_lists.get("Interactive")
@@ -172,7 +168,7 @@ class InteractionManager(InteractionBaseManager):
         """Get interactive objects."""
         return self.interactive_objects
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle interaction input.
 
         Args:
@@ -184,7 +180,7 @@ class InteractionManager(InteractionBaseManager):
             True if interaction occurred.
         """
         if symbol == arcade.key.SPACE:
-            player_sprite = context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_manager.get_player_sprite()
             if player_sprite:
                 logger.debug(
                     "InteractionManager: SPACE pressed, player at (%.1f, %.1f)",
@@ -195,7 +191,7 @@ class InteractionManager(InteractionBaseManager):
                 # Check for nearby objects
                 obj = self.get_nearby_object(player_sprite)
                 if obj:
-                    return self.handle_interaction(obj, context)
+                    return self.handle_interaction(obj)
 
         return False
 
@@ -292,11 +288,7 @@ class InteractionManager(InteractionBaseManager):
 
         return nearest_obj
 
-    def handle_interaction(
-        self,
-        obj: InteractiveObject,
-        context: GameContext,
-    ) -> bool:
+    def handle_interaction(self, obj: InteractiveObject) -> bool:
         """Handle interaction with an object by dispatching to type-specific handler.
 
         This is the main entry point for processing interactions.
@@ -304,7 +296,7 @@ class InteractionManager(InteractionBaseManager):
 
         Args:
             obj: The InteractiveObject to interact with.
-            context: GameContext
+
         Returns:
             True when the interaction is handled.
 
@@ -316,7 +308,7 @@ class InteractionManager(InteractionBaseManager):
                     audio_mgr.play_sfx("interact.wav")
         """
         self.mark_as_interacted(obj.name)
-        context.event_bus.publish(ObjectInteractedEvent(object_name=obj.name))
+        self.context.event_bus.publish(ObjectInteractedEvent(object_name=obj.name))
         logger.debug("Published ObjectInteractedEvent for %s", obj.name)
         return True
 

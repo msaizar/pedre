@@ -176,29 +176,35 @@ class DialogManager(DialogBaseManager):
         self.context = context
         logger.debug("DialogManager setup complete")
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle input for dialog advancement.
 
         Args:
             symbol: Arcade key constant.
             modifiers: Modifier key bitfield.
-            context: Game context.
 
         Returns:
             True if dialog is showing and event was consumed.
         """
         if self.showing and symbol == arcade.key.SPACE:
             closed = self.advance_page()
-            if closed and self.current_npc_name is not None and hasattr(context, "event_bus") and context.event_bus:
+            if (
+                closed
+                and self.current_npc_name is not None
+                and hasattr(self.context, "event_bus")
+                and self.context.event_bus
+            ):
                 # Get actual current level from NPC manager if available
                 current_level = self.current_dialog_level or 0
-                npc_manager = context.npc_manager
+                npc_manager = self.context.npc_manager
                 if npc_manager and hasattr(npc_manager, "npcs"):
                     npc_state = npc_manager.get_npcs().get(self.current_npc_name)
                     if npc_state:
                         current_level = npc_state.dialog_level
 
-                context.event_bus.publish(DialogClosedEvent(npc_name=self.current_npc_name, dialog_level=current_level))
+                self.context.event_bus.publish(
+                    DialogClosedEvent(npc_name=self.current_npc_name, dialog_level=current_level)
+                )
                 logger.debug("Published DialogClosedEvent for %s at level %s", self.current_npc_name, current_level)
             return True
         return False
@@ -418,7 +424,7 @@ class DialogManager(DialogBaseManager):
             self.revealed_chars = len(current_page.text)
             self.text_fully_revealed = True
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update the dialog text reveal animation and auto-close timer.
 
         This method should be called every frame with the time elapsed since
@@ -428,7 +434,6 @@ class DialogManager(DialogBaseManager):
 
         Args:
             delta_time: Time elapsed since last update, in seconds.
-            context: Game context (not used by DialogManager).
         """
         if not self.showing:
             return
@@ -478,19 +483,20 @@ class DialogManager(DialogBaseManager):
                         current_level,
                     )
 
-    def on_draw_ui(self, context: GameContext) -> None:
+    def on_draw_ui(self) -> None:
         """Draw the dialog overlay in screen coordinates.
 
         This method is called automatically by the system loader during the UI
         draw phase. It renders the complete dialog UI on top of the game world.
 
-        Args:
-            context: Game context providing access to the window.
+
         """
         if not self.showing:
             return
-
-        window = context.window
+        if self.context:
+            window = self.context.window
+        if not window:
+            return
         current_page = self.get_current_page()
         if not current_page:
             return

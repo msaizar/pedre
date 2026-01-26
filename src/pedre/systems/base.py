@@ -96,12 +96,7 @@ class BaseSystem(ABC):
                 self.event_bus.subscribe(SceneStartEvent, self._on_scene_start)
         """
 
-    def load_from_tiled(
-        self,
-        tile_map: arcade.TileMap,
-        arcade_scene: arcade.Scene,
-        context: GameContext,
-    ) -> None:
+    def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load system-specific data from Tiled map (optional hook).
 
         This method is called after the tile map and arcade scene have been
@@ -121,12 +116,11 @@ class BaseSystem(ABC):
         Args:
             tile_map: Loaded arcade.TileMap instance.
             arcade_scene: arcade.Scene created from tile_map.
-            context: GameContext.
 
         Example:
             from pedre.conf import settings
 
-            def load_from_tiled(self, tile_map, arcade_scene, context):
+            def load_from_tiled(self, tile_map, arcade_scene):
                 portal_layer = tile_map.object_lists.get("Portals")
                 if not portal_layer:
                     return
@@ -137,7 +131,7 @@ class BaseSystem(ABC):
         """
         return
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Called every frame during the game loop.
 
         Override this method to implement per-frame logic such as animations,
@@ -145,35 +139,30 @@ class BaseSystem(ABC):
 
         Args:
             delta_time: Time elapsed since the last frame, in seconds.
-            context: Game context providing access to other systems.
 
         Example:
-            def update(self, delta_time, context):
+            def update(self, delta_time):
                 self.animation_timer += delta_time
                 if self.animation_timer > self.frame_duration:
                     self.advance_frame()
         """
         return
 
-    def on_draw(self, context: GameContext) -> None:
+    def on_draw(self) -> None:
         """Called during the draw phase of each frame (world coordinates).
 
         Override this method to render visual elements managed by this system
         in world coordinates (affected by camera).
 
-        Args:
-            context: Game context providing access to other systems.
         """
         return
 
-    def on_draw_ui(self, context: GameContext) -> None:
+    def on_draw_ui(self) -> None:
         """Called during the draw phase of each frame (screen coordinates).
 
         Override this method to render UI elements or overlays in screen coordinates
         (not affected by camera).
 
-        Args:
-            context: Game context providing access to other systems.
         """
         return
 
@@ -199,7 +188,7 @@ class BaseSystem(ABC):
         """
         return
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle key press events.
 
         Override this method to handle keyboard input.
@@ -207,14 +196,13 @@ class BaseSystem(ABC):
         Args:
             symbol: Arcade key constant for the pressed key.
             modifiers: Bitfield of modifier keys held.
-            context: Game context providing access to other systems.
 
         Returns:
             True if the event was handled and should stop propagating, False otherwise.
         """
         return False
 
-    def on_key_release(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_release(self, symbol: int, modifiers: int) -> bool:
         """Handle key release events.
 
         Override this method to handle keyboard input.
@@ -222,7 +210,6 @@ class BaseSystem(ABC):
         Args:
             symbol: Arcade key constant for the released key.
             modifiers: Bitfield of modifier keys held.
-            context: Game context providing access to other systems.
 
         Returns:
             True if the event was handled and should stop propagating, False otherwise.

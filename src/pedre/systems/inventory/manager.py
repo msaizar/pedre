@@ -74,7 +74,6 @@ from pedre.systems.registry import SystemRegistry
 if TYPE_CHECKING:
     from typing import Any
 
-    from pedre.events import EventBus
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -133,16 +132,13 @@ class InventoryManager(InventoryBaseManager):
         # Track if inventory has been accessed
         self.accessed: bool = False
 
-        # Event bus for publishing events
-        self.event_bus: EventBus | None = None
-
     def setup(self, context: GameContext) -> None:
         """Initialize the inventory system with game context and settings.
 
         Args:
             context: Game context providing access to event bus.
         """
-        self.event_bus = context.event_bus
+        self.context = context
 
         # Initialize default items
         self._initialize_default_items()
@@ -162,10 +158,10 @@ class InventoryManager(InventoryBaseManager):
         self._initialize_default_items()
         logger.debug("InventoryManager reset complete")
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle key presses for inventory - publish event to show inventory view."""
         if symbol == arcade.key.I:
-            context.event_bus.publish(ShowInventoryEvent())
+            self.context.event_bus.publish(ShowInventoryEvent())
             return True
         return False
 
@@ -297,8 +293,8 @@ class InventoryManager(InventoryBaseManager):
             logger.info("Player acquired item: %s (%s)", item_id, item.name)
 
             # Publish event if event bus is available
-            if self.event_bus:
-                self.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
+            if self.context.event_bus:
+                self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
 
             return True
 
@@ -554,7 +550,7 @@ class InventoryManager(InventoryBaseManager):
             self.accessed = True
             logger.info("Inventory accessed for the first time")
 
-    def emit_closed_event(self, context: GameContext) -> None:
+    def emit_closed_event(self) -> None:
         """Emit InventoryClosedEvent when inventory view closes.
 
         This allows the script system to react when the player finishes browsing
@@ -563,9 +559,8 @@ class InventoryManager(InventoryBaseManager):
         Args:
             context: Game context for accessing event bus.
         """
-        if self.event_bus:
-            self.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.accessed))
-            logger.info("Published InventoryClosedEvent (accessed=%s)", self.accessed)
+        self.context.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.accessed))
+        logger.info("Published InventoryClosedEvent (accessed=%s)", self.accessed)
 
     def to_dict(self) -> dict[str, bool]:
         """Convert inventory state to dictionary for save data serialization.

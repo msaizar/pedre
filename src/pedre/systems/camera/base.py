@@ -8,8 +8,6 @@ from pedre.systems.base import BaseSystem
 if TYPE_CHECKING:
     import arcade
 
-    from pedre.systems.game_context import GameContext
-
 
 class CameraBaseManager(BaseSystem, ABC):
     """Base class for CameraManager."""
@@ -38,7 +36,7 @@ class CameraBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def apply_follow_config(self, context: GameContext) -> None:
+    def apply_follow_config(self) -> None:
         """Apply camera following configuration loaded from Tiled."""
         ...
 
