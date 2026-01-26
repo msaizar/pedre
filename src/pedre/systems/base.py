@@ -256,9 +256,6 @@ class BaseSystem(ABC):
         Override this method to persist state when leaving a scene. The state
         will be restored when returning to the same scene.
 
-        By default, this delegates to get_save_state() since most systems
-        don't need scene-specific caching behavior.
-
         Args:
             scene_name: Name of the scene being left.
 
@@ -273,16 +270,13 @@ class BaseSystem(ABC):
                     for npc_name, npc in self.npcs.items()
                 }
         """
-        return self.get_save_state()
+        return {}
 
     def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
         """Restore cached state when returning to a scene.
 
         Override this method to restore scene-specific cached state. This is
         called after load_from_tiled() when entering a previously visited scene.
-
-        By default, this delegates to restore_save_state() since most systems
-        don't need scene-specific restoration behavior.
 
         Args:
             scene_name: Name of the scene being entered.
@@ -296,4 +290,4 @@ class BaseSystem(ABC):
                         npc.x = npc_state["x"]
                         npc.y = npc_state["y"]
         """
-        self.restore_save_state(state)
+        return

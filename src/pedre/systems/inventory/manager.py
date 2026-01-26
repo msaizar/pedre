@@ -620,11 +620,3 @@ class InventoryManager(InventoryBaseManager):
                 self.items[item_id].acquired = acquired
             else:
                 logger.warning("Unknown item in save data: %s", item_id)
-
-    def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
-        """No inventory caching per scene."""
-        return {}
-
-    def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
-        """No inventory caching per scene."""
-        return

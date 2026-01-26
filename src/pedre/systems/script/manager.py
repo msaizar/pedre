@@ -185,6 +185,14 @@ class ScriptManager(ScriptBaseManager):
             "run_once_scripts": [name for name, script in self.scripts.items() if script.has_run],
         }
 
+    def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
+        """Return state to cache during scene transitions."""
+        return self.get_save_state()
+
+    def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
+        """Restore cached state when returning to a scene."""
+        self.restore_save_state(state)
+
     def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore script system state from save file.
 
