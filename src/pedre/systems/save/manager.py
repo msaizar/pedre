@@ -320,7 +320,6 @@ class SaveManager(SaveBaseManager):
                 data = json.load(f)
 
             # Return summary info
-            logger.debug("SaveManager: Data is %s", data)
             timestamp = data.get("save_timestamp", 0)
             dt = datetime.fromtimestamp(timestamp, UTC)
 
