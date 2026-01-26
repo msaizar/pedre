@@ -65,8 +65,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conf import settings
 from pedre.constants import asset_path
-from pedre.events import ShowInventoryEvent
 from pedre.systems.inventory.base import InventoryBaseManager, InventoryItem
 from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.registry import SystemRegistry
@@ -132,6 +132,25 @@ class InventoryManager(InventoryBaseManager):
         # Track if inventory has been accessed
         self.accessed: bool = False
 
+        # Overlay state
+        self.showing: bool = False
+        self.selected_row: int = 0
+        self.selected_col: int = 0
+        self.viewing_photo: bool = False
+        self.current_photo_texture: arcade.Texture | None = None
+        self.all_items: list[InventoryItem] = []
+
+        # Texture caches
+        self.icon_textures: dict[str, arcade.Texture] = {}
+        self.background_texture: arcade.Texture | None = None
+
+        # Text objects (created on first draw for efficiency)
+        self.selected_item_text: arcade.Text | None = None
+        self.instructions_text: arcade.Text | None = None
+        self.photo_title_text: arcade.Text | None = None
+        self.photo_description_text: arcade.Text | None = None
+        self.photo_instructions_text: arcade.Text | None = None
+
     def setup(self, context: GameContext) -> None:
         """Initialize the inventory system with game context and settings.
 
@@ -155,15 +174,363 @@ class InventoryManager(InventoryBaseManager):
         """Reset inventory state for new game."""
         self.items.clear()
         self.accessed = False
+        self.showing = False
+        self.viewing_photo = False
+        self.current_photo_texture = None
+        self.all_items = []
+        self.icon_textures.clear()
         self._initialize_default_items()
         logger.debug("InventoryManager reset complete")
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool:
-        """Handle key presses for inventory - publish event to show inventory view."""
-        if symbol == arcade.key.I:
-            self.context.event_bus.publish(ShowInventoryEvent())
+        """Handle key presses for inventory overlay."""
+        # Toggle inventory with I key
+        if symbol == arcade.key.I and not self.showing:
+            self._show_inventory()
             return True
+
+        # Handle input when overlay is showing
+        if self.showing:
+            if self.viewing_photo:
+                # Close photo view
+                if symbol in (arcade.key.ESCAPE, arcade.key.ENTER, arcade.key.RETURN):
+                    self.viewing_photo = False
+                    self.current_photo_texture = None
+                    return True
+            # Grid navigation
+            elif symbol == arcade.key.ESCAPE:
+                self._hide_inventory()
+                return True
+            elif symbol == arcade.key.UP:
+                self._move_selection(0, -1)
+                return True
+            elif symbol == arcade.key.DOWN:
+                self._move_selection(0, 1)
+                return True
+            elif symbol == arcade.key.LEFT:
+                self._move_selection(-1, 0)
+                return True
+            elif symbol == arcade.key.RIGHT:
+                self._move_selection(1, 0)
+                return True
+            elif symbol in (arcade.key.ENTER, arcade.key.RETURN):
+                self._view_selected_item()
+                return True
+            return True  # Consume all input when overlay is showing
+
         return False
+
+    def _show_inventory(self) -> None:
+        """Show the inventory overlay."""
+        self.showing = True
+        self.viewing_photo = False
+        self.current_photo_texture = None
+        self.selected_row = 0
+        self.selected_col = 0
+
+        # Load background image if not already loaded
+        if self.background_texture is None and settings.INVENTORY_BACKGROUND_IMAGE:
+            background_path = asset_path(settings.INVENTORY_BACKGROUND_IMAGE, settings.ASSETS_HANDLE)
+            try:
+                self.background_texture = arcade.load_texture(background_path)
+                logger.info("Loaded inventory background: %s", background_path)
+            except FileNotFoundError:
+                logger.warning("Background image not found: %s", background_path)
+
+        # Mark inventory as accessed
+        self.mark_as_accessed()
+
+        # Get only acquired items for grid display
+        self.all_items = self.get_acquired_items()
+
+        # Load icon textures for acquired items
+        self._load_icon_textures()
+
+        logger.debug("Inventory overlay shown")
+
+    def _hide_inventory(self) -> None:
+        """Hide the inventory overlay and emit closed event."""
+        self.showing = False
+        self.viewing_photo = False
+        self.current_photo_texture = None
+        self.emit_closed_event()
+        logger.debug("Inventory overlay hidden")
+
+    def _move_selection(self, delta_col: int, delta_row: int) -> None:
+        """Move selection in the grid with wrapping."""
+        self.selected_col = (self.selected_col + delta_col) % settings.INVENTORY_GRID_COLS
+        self.selected_row = (self.selected_row + delta_row) % settings.INVENTORY_GRID_ROWS
+
+    def _view_selected_item(self) -> None:
+        """View the currently selected item (photo) in full-screen mode."""
+        selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
+
+        if selected_index >= len(self.all_items):
+            return
+
+        item = self.all_items[selected_index]
+
+        # Get image path
+        image_path = self.get_image_path(item)
+
+        if not image_path:
+            logger.warning("No image path configured for item: %s", item.id)
+            return
+
+        try:
+            # Load and display photo
+            self.current_photo_texture = arcade.load_texture(image_path)
+            self.viewing_photo = True
+            logger.info("Loaded photo: %s", item.name)
+        except Exception:
+            logger.exception("Failed to load photo: %s", image_path)
+
+    def _load_icon_textures(self) -> None:
+        """Load icon textures for all acquired items."""
+        self.icon_textures.clear()
+
+        for item in self.all_items:
+            icon_path = self.get_icon_path(item)
+            if icon_path:
+                try:
+                    self.icon_textures[item.id] = arcade.load_texture(icon_path)
+                    logger.debug("Loaded icon for item: %s", item.id)
+                except (FileNotFoundError, OSError):
+                    logger.warning("Failed to load icon for item: %s at %s", item.id, icon_path)
+
+    def on_draw_ui(self) -> None:
+        """Draw the inventory overlay in screen coordinates."""
+        if not self.showing:
+            return
+
+        window = self.context.window
+        if not window:
+            return
+
+        if self.viewing_photo and self.current_photo_texture:
+            self._draw_photo_view(window)
+        else:
+            self._draw_inventory_grid(window)
+
+    def _draw_inventory_grid(self, window: arcade.Window) -> None:
+        """Draw the inventory grid overlay."""
+        # Draw semi-transparent overlay
+        arcade.draw_lrbt_rectangle_filled(0, window.width, 0, window.height / 2, (0, 0, 0, 200))
+
+        # Draw background image if loaded
+        if self.background_texture:
+            arcade.draw_texture_rect(
+                self.background_texture,
+                arcade.LBWH(0, 0, window.width, window.height),
+            )
+
+        # Calculate grid positioning (centered on screen)
+        grid_width = (
+            settings.INVENTORY_GRID_COLS * settings.INVENTORY_BOX_SIZE
+            + (settings.INVENTORY_GRID_COLS - 1) * settings.INVENTORY_BOX_SPACING
+        )
+        grid_height = (
+            settings.INVENTORY_GRID_ROWS * settings.INVENTORY_BOX_SIZE
+            + (settings.INVENTORY_GRID_ROWS - 1) * settings.INVENTORY_BOX_SPACING
+        )
+
+        start_x = (window.width - grid_width) / 2
+        start_y = (window.height - grid_height) / 2 + 20  # Slight offset up
+
+        # Draw grid boxes
+        for row in range(settings.INVENTORY_GRID_ROWS):
+            for col in range(settings.INVENTORY_GRID_COLS):
+                item_index = row * settings.INVENTORY_GRID_COLS + col
+
+                # Calculate box position (top-left corner)
+                x = start_x + col * (settings.INVENTORY_BOX_SIZE + settings.INVENTORY_BOX_SPACING)
+                y = start_y + (settings.INVENTORY_GRID_ROWS - 1 - row) * (
+                    settings.INVENTORY_BOX_SIZE + settings.INVENTORY_BOX_SPACING
+                )
+
+                # Determine if this slot has an item
+                has_item = item_index < len(self.all_items)
+                item = self.all_items[item_index] if has_item else None
+                is_selected = row == self.selected_row and col == self.selected_col
+
+                # Only draw slots that have items
+                if not item:
+                    continue
+
+                # Draw box background
+                bg_color = arcade.color.DARK_SLATE_GRAY
+
+                arcade.draw_lrbt_rectangle_filled(
+                    x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, bg_color
+                )
+
+                # Draw border (yellow if selected, white otherwise)
+                if is_selected:
+                    border_color = arcade.color.YELLOW
+                    border_width = settings.INVENTORY_BOX_BORDER_WIDTH + 1
+                else:
+                    border_color = arcade.color.WHITE
+                    border_width = settings.INVENTORY_BOX_BORDER_WIDTH
+
+                arcade.draw_lrbt_rectangle_outline(
+                    x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, border_color, border_width
+                )
+
+                # Draw icon if available
+                icon_texture = self.icon_textures.get(item.id)
+                if icon_texture:
+                    # Scale icon to fit box with padding
+                    padding = 4
+                    max_icon_size = settings.INVENTORY_BOX_SIZE - (padding * 2)
+
+                    # Calculate scale to fit
+                    scale_x = max_icon_size / icon_texture.width
+                    scale_y = max_icon_size / icon_texture.height
+                    scale = min(scale_x, scale_y)
+
+                    # Draw centered icon
+                    icon_width = icon_texture.width * scale
+                    icon_height = icon_texture.height * scale
+                    icon_center_x = x + settings.INVENTORY_BOX_SIZE / 2
+                    icon_center_y = y + settings.INVENTORY_BOX_SIZE / 2
+
+                    arcade.draw_texture_rect(
+                        icon_texture,
+                        arcade.LRBT(
+                            icon_center_x - icon_width / 2,
+                            icon_center_x + icon_width / 2,
+                            icon_center_y - icon_height / 2,
+                            icon_center_y + icon_height / 2,
+                        ),
+                    )
+
+        # Draw selected item name at bottom
+        selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
+        if selected_index < len(self.all_items):
+            selected_item = self.all_items[selected_index]
+
+            if self.selected_item_text is None:
+                self.selected_item_text = arcade.Text(
+                    selected_item.name,
+                    window.width / 2,
+                    80,
+                    arcade.color.WHITE,
+                    font_size=16,
+                    anchor_x="center",
+                    bold=True,
+                )
+            else:
+                self.selected_item_text.text = selected_item.name
+                self.selected_item_text.x = window.width / 2
+
+            self.selected_item_text.draw()
+
+        # Draw instructions
+        if self.instructions_text is None:
+            self.instructions_text = arcade.Text(
+                "Arrow keys to navigate | ENTER to view | ESC to close",
+                window.width / 2,
+                30,
+                arcade.color.WHITE,
+                font_size=12,
+                anchor_x="center",
+            )
+        else:
+            self.instructions_text.x = window.width / 2
+
+        self.instructions_text.draw()
+
+    def _draw_photo_view(self, window: arcade.Window) -> None:
+        """Draw the photo viewing overlay."""
+        if not self.current_photo_texture:
+            return
+
+        # Draw black background
+        arcade.draw_lrbt_rectangle_filled(0, window.width, 0, window.height, arcade.color.BLACK)
+
+        # Get selected item
+        selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
+        if 0 <= selected_index < len(self.all_items):
+            item = self.all_items[selected_index]
+
+            # Reserve space for text at bottom
+            text_area_height = 120
+
+            # Calculate photo display size
+            max_width = window.width * 0.7
+            max_height = (window.height - text_area_height) * 0.7
+
+            # Calculate scale to fit
+            width_scale = max_width / self.current_photo_texture.width
+            height_scale = max_height / self.current_photo_texture.height
+            scale = min(width_scale, height_scale)
+
+            # Calculate final dimensions
+            final_width = self.current_photo_texture.width * scale
+            final_height = self.current_photo_texture.height * scale
+
+            # Center the photo vertically in the space above the text area
+            available_vertical_space = window.height - text_area_height
+            photo_center_y = text_area_height + available_vertical_space / 2
+            photo_center_x = window.width / 2
+
+            # Draw photo
+            arcade.draw_texture_rect(
+                self.current_photo_texture,
+                arcade.LRBT(
+                    photo_center_x - final_width / 2,
+                    photo_center_x + final_width / 2,
+                    photo_center_y - final_height / 2,
+                    photo_center_y + final_height / 2,
+                ),
+            )
+
+            # Draw photo title
+            if self.photo_title_text is None:
+                self.photo_title_text = arcade.Text(
+                    item.name,
+                    window.width / 2,
+                    90,
+                    arcade.color.WHITE,
+                    font_size=settings.MENU_TITLE_SIZE,
+                    anchor_x="center",
+                )
+            else:
+                self.photo_title_text.text = item.name
+                self.photo_title_text.x = window.width / 2
+
+            self.photo_title_text.draw()
+
+            # Draw photo description
+            if self.photo_description_text is None:
+                self.photo_description_text = arcade.Text(
+                    item.description,
+                    window.width / 2,
+                    60,
+                    arcade.color.LIGHT_GRAY,
+                    font_size=14,
+                    anchor_x="center",
+                )
+            else:
+                self.photo_description_text.text = item.description
+                self.photo_description_text.x = window.width / 2
+
+            self.photo_description_text.draw()
+
+            # Draw instructions
+            if self.photo_instructions_text is None:
+                self.photo_instructions_text = arcade.Text(
+                    "ESC or ENTER to close",
+                    window.width / 2,
+                    30,
+                    arcade.color.WHITE,
+                    font_size=12,
+                    anchor_x="center",
+                )
+            else:
+                self.photo_instructions_text.x = window.width / 2
+
+            self.photo_instructions_text.draw()
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BaseSystem interface)."""

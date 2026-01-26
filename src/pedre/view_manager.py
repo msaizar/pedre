@@ -28,7 +28,6 @@ Available views:
 - GameView: Primary gameplay view
 - LoadGameView: Save slot selection menu for loading
 - SaveGameView: Save slot selection menu for saving
-- InventoryView: Inventory viewer
 
 Example usage:
     # Create view manager with game window
@@ -38,12 +37,6 @@ Example usage:
     view_manager.show_menu()
 
     # User selects "New Game"
-    view_manager.show_game()
-
-    # User presses I for inventory
-    view_manager.show_inventory()
-
-    # User presses ESC to return
     view_manager.show_game()
 
     # User presses ESC to pause and selects "Save Game"
@@ -58,7 +51,6 @@ import arcade
 
 from pedre.events import (
     EventBus,
-    ShowInventoryEvent,
     ShowLoadGameEvent,
     ShowMenuEvent,
     ShowSaveGameEvent,
@@ -66,7 +58,6 @@ from pedre.events import (
 from pedre.systems.game_context import GameContext
 from pedre.systems.loader import SystemLoader
 from pedre.views.game_view import GameView
-from pedre.views.inventory_view import InventoryView
 from pedre.views.load_game_view import LoadGameView
 from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
@@ -133,7 +124,6 @@ class ViewManager:
 
         # Subscribe to view transition events
         self.event_bus.subscribe(ShowMenuEvent, self._on_show_menu_event)
-        self.event_bus.subscribe(ShowInventoryEvent, self._on_show_inventory_event)
         self.event_bus.subscribe(ShowSaveGameEvent, self._on_show_save_game_event)
         self.event_bus.subscribe(ShowLoadGameEvent, self._on_show_load_game_event)
 
@@ -142,7 +132,6 @@ class ViewManager:
         self._game_view: GameView | None = None
         self._load_game_view: LoadGameView | None = None
         self._save_game_view: SaveGameView | None = None
-        self._inventory_view: InventoryView | None = None
 
     @property
     def menu_view(self) -> MenuView:
@@ -227,28 +216,6 @@ class ViewManager:
             self._save_game_view = SaveGameView(self)
         return self._save_game_view
 
-    @property
-    def inventory_view(self) -> InventoryView:
-        """Get or create the inventory view (lazy initialization).
-
-        Returns the cached InventoryView instance, or creates a new one if this is
-        the first access. The inventory view requires the game view's inventory_manager,
-        so it can only be created after the game view exists.
-
-        Returns:
-            InventoryView instance (cached or newly created), or None if game view
-            doesn't exist yet.
-
-        Side effects:
-            - May create and cache InventoryView instance on first access
-            - Returns None if game view hasn't been created yet
-        """
-        if self._inventory_view is None and self._game_view is not None and self.game_context:
-            inventory_manager = self.game_context.inventory_manager
-            if inventory_manager:
-                self._inventory_view = InventoryView(self, inventory_manager)
-        return self._inventory_view  # type: ignore[return-value]
-
     def show_menu(self, *, from_game_pause: bool = False) -> None:
         """Switch to the menu view.
 
@@ -271,37 +238,16 @@ class ViewManager:
 
         self.window.show_view(self.menu_view)
 
-    def show_game(self, *, trigger_post_inventory_dialog: bool = False) -> None:
+    def show_game(self) -> None:
         """Switch to the game view.
 
-        Transitions to the gameplay view, optionally triggering a post-inventory
-        dialog event. The post-inventory dialog is used when returning from the
-        inventory view to notify scripts that the player checked their inventory.
-
-        Args:
-            trigger_post_inventory_dialog: If True, calls emit_closed_event()
-                on the inventory manager after showing it. This publishes an
-                InventoryClosedEvent for the script system.
+        Transitions to the gameplay view.
 
         Side effects:
             - Shows game view via window.show_view()
             - Triggers game view's on_show_view() callback
-            - May call inventory_manager.emit_closed_event() to publish event
-            - Logs transition details
         """
-        logger.info("show_game called with trigger_post_inventory_dialog=%s", trigger_post_inventory_dialog)
         self.window.show_view(self.game_view)
-        if trigger_post_inventory_dialog and self.game_context:
-            inventory_manager = self.game_context.inventory_manager
-            if inventory_manager:
-                logger.info("Calling emit_closed_event on inventory_manager")
-                inventory_manager.emit_closed_event()
-        else:
-            logger.info(
-                "Not calling trigger (flag=%s, game_view=%s)",
-                trigger_post_inventory_dialog,
-                self._game_view is not None,
-            )
 
     def start_new_game(self) -> None:
         """Start a new game with fresh state.
@@ -346,20 +292,6 @@ class ViewManager:
             - Triggers save game view's on_show_view() callback
         """
         self.window.show_view(self.save_game_view)
-
-    def show_inventory(self) -> None:
-        """Switch to the inventory view.
-
-        Transitions to the inventory view for browsing collected photos. Only
-        works if the game view exists (inventory requires inventory_manager).
-
-        Side effects:
-            - Shows inventory view via window.show_view() if it exists
-            - Triggers inventory view's on_show_view() callback
-            - Does nothing if inventory view doesn't exist yet
-        """
-        if self.inventory_view:
-            self.window.show_view(self.inventory_view)
 
     def continue_game(self) -> None:
         """Continue/resume the game.
@@ -480,17 +412,6 @@ class ViewManager:
             event: ShowMenuEvent containing transition parameters.
         """
         self.show_menu(from_game_pause=event.from_game_pause)
-
-    def _on_show_inventory_event(self, event: ShowInventoryEvent) -> None:
-        """Handle ShowInventoryEvent by transitioning to inventory view.
-
-        Event handler that responds to ShowInventoryEvent published by game systems.
-        Delegates to show_inventory().
-
-        Args:
-            event: ShowInventoryEvent (no parameters needed).
-        """
-        self.show_inventory()
 
     def _on_show_save_game_event(self, event: ShowSaveGameEvent) -> None:
         """Handle ShowSaveGameEvent by transitioning to save game view.
