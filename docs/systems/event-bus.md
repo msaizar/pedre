@@ -6,14 +6,6 @@ Publish-subscribe event system for loose coupling.
 
 `src/pedre/systems/events/base.py`
 
-## Initialization
-
-```python
-from pedre.systems.events import EventBus
-
-event_bus = EventBus()
-```
-
 ## Key Methods
 
 ### `subscribe(event_type: type[Event], callback: Callable) -> None`

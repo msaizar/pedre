@@ -87,8 +87,7 @@ class LazySettings:
         Example:
             settings.configure(
                 SCREEN_WIDTH=800,
-                SCREEN_HEIGHT=600,
-                TILE_SIZE=64
+                SCREEN_HEIGHT=600
             )
         """
         if self._wrapped is None:

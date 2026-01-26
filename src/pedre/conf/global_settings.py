@@ -64,9 +64,6 @@ MENU_TEXT_EXIT = "Exit"
 PLAYER_MOVEMENT_SPEED = 3
 """Player movement speed in pixels per frame."""
 
-TILE_SIZE = 32
-"""Size of tiles in pixels (for grid-based movement and positioning)."""
-
 INTERACTION_MANAGER_DISTANCE = 50
 """Maximum distance in pixels for general interactions."""
 

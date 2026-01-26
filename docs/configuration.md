@@ -12,7 +12,6 @@ SCREEN_WIDTH=1280
 SCREEN_HEIGHT=720
 WINDOW_TITLE="My RPG Game"
 PLAYER_MOVEMENT_SPEED=3
-TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=50
 NPC_INTERACTION_DISTANCE=50
 PORTAL_INTERACTION_DISTANCE=50
@@ -57,7 +56,6 @@ Player character movement and interaction settings.
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
 | `PLAYER_MOVEMENT_SPEED` | int | 3 | Player movement speed in pixels per frame |
-| `TILE_SIZE` | int | 32 | Base tile size for grid-based movement |
 | `INTERACTION_MANAGER_DISTANCE` | int | 50 | Maximum distance for player to interact with objects |
 | `NPC_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to interact with NPCs |
 | `PORTAL_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to activate portals |
@@ -220,7 +218,6 @@ WINDOW_TITLE="Mystic Quest"
 
 # Player settings
 PLAYER_MOVEMENT_SPEED=4
-TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=60
 NPC_INTERACTION_DISTANCE=60
 PORTAL_INTERACTION_DISTANCE=60
@@ -273,7 +270,6 @@ MENU_SPACING: int = 50
 MENU_BACKGROUND_IMAGE: str = ""
 MENU_MUSIC_FILES: list[str] = []
 PLAYER_MOVEMENT_SPEED: int = 3
-TILE_SIZE: int = 32
 INTERACTION_MANAGER_DISTANCE: int = 50
 NPC_INTERACTION_DISTANCE: int = 50
 PORTAL_INTERACTION_DISTANCE: int = 50
