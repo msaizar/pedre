@@ -142,6 +142,7 @@ class CameraManager(CameraBaseManager):
         Args:
             context: Game context providing access to other systems.
         """
+        self.context = context
         logger.debug("CameraManager setup complete")
 
     def cleanup(self) -> None:
@@ -381,24 +382,23 @@ class CameraManager(CameraBaseManager):
         self.follow_target_npc = None
         logger.debug("Camera following stopped")
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update camera position based on follow mode.
 
         Called automatically every frame by SystemLoader.
 
         Args:
             delta_time: Time since last update (unused).
-            context: Game context with player and systems.
         """
         if self.follow_mode == "player":
-            player_sprite = context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_manager.get_player_sprite()
             if player_sprite:
                 if self.follow_smooth:
                     self.smooth_follow(player_sprite.center_x, player_sprite.center_y)
                 else:
                     self.instant_follow(player_sprite.center_x, player_sprite.center_y)
         elif self.follow_mode == "npc":
-            npc_manager = context.npc_manager
+            npc_manager = self.context.npc_manager
             if npc_manager and self.follow_target_npc:
                 npc_state = npc_manager.get_npc_by_name(self.follow_target_npc)
                 if npc_state:
@@ -407,12 +407,7 @@ class CameraManager(CameraBaseManager):
                     else:
                         self.instant_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
 
-    def load_from_tiled(
-        self,
-        tile_map: arcade.TileMap,
-        arcade_scene: arcade.Scene,
-        context: GameContext,
-    ) -> None:
+    def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load camera configuration from Tiled map properties.
 
         Reads camera_follow and camera_smooth properties to configure
@@ -439,7 +434,6 @@ class CameraManager(CameraBaseManager):
         Args:
             tile_map: Loaded TileMap with properties.
             arcade_scene: Scene created from tile_map (unused).
-            context: GameContext for NPC validation.
         """
         # Check if tile_map has properties
         if not hasattr(tile_map, "properties") or tile_map.properties is None:
@@ -474,7 +468,7 @@ class CameraManager(CameraBaseManager):
                 config = {"mode": "player", "smooth": camera_smooth}
             else:
                 # Validate NPC exists
-                npc_manager = context.npc_manager
+                npc_manager = self.context.npc_manager
                 if npc_manager:
                     # NPCs are registered during load_from_tiled phase
                     # We can check if NPC will exist (it's in the map)
@@ -502,14 +496,12 @@ class CameraManager(CameraBaseManager):
         """Get the stored follow config."""
         return self._follow_config
 
-    def apply_follow_config(self, context: GameContext) -> None:
+    def apply_follow_config(self) -> None:
         """Apply camera following configuration loaded from Tiled.
 
         Called by SceneManager after camera is created and set.
         This applies the configuration stored by load_from_tiled().
 
-        Args:
-            context: GameContext with player and systems.
         """
         if not self._follow_config:
             # Default behavior if no config loaded

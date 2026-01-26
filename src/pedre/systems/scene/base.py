@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     import arcade
 
     from pedre.systems.cache_manager import CacheManager
-    from pedre.systems.game_context import GameContext
 
 
 class TransitionState(Enum):
@@ -58,7 +57,7 @@ class SceneBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
+    def load_level(self, map_file: str) -> None:
         """Central orchestration for loading a new map/level."""
         ...
 

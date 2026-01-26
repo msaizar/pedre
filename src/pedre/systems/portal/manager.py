@@ -78,7 +78,6 @@ from pedre.systems.portal.events import PortalEnteredEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.events import EventBus
     from pedre.sprites.animated_player import AnimatedPlayer
     from pedre.systems.game_context import GameContext
 
@@ -112,15 +111,14 @@ class PortalManager(BaseSystem):
     Attributes:
         portals: List of all registered Portal objects in the current map.
         interaction_distance: Maximum distance in pixels for portal activation.
-        event_bus: EventBus for publishing PortalEnteredEvent.
     """
 
     name: ClassVar[str] = "portal"
     dependencies: ClassVar[list[str]] = []
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update portal system, checking for player entry."""
-        self.check_portals(context.player_manager.get_player_sprite())
+        self.check_portals(self.context.player_manager.get_player_sprite())
 
     def __init__(self) -> None:
         """Initialize portal manager with default values.
@@ -128,7 +126,6 @@ class PortalManager(BaseSystem):
         Creates an empty portal manager ready to register portals. The interaction
         distance and event_bus are configured during setup().
         """
-        self.event_bus: EventBus | None = None
         self.portals: list[Portal] = []
         self.interaction_distance: float = 64.0
         self._portals_player_inside: set[str] = set()
@@ -142,17 +139,14 @@ class PortalManager(BaseSystem):
         Args:
             context: Game context providing access to event bus.
         """
-        self.event_bus = context.event_bus
-
         self.interaction_distance = settings.PORTAL_INTERACTION_DISTANCE
-
+        self.context = context
         logger.debug("PortalManager setup complete (interaction_distance=%.1f)", self.interaction_distance)
 
     def load_from_tiled(
         self,
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
-        context: GameContext,
     ) -> None:
         """Load portals from Tiled map object layer."""
         self.clear()  # Clear old portals
@@ -239,7 +233,7 @@ class PortalManager(BaseSystem):
         Args:
             player_sprite: The player's arcade Sprite for position checking.
         """
-        if not self.event_bus or not player_sprite:
+        if not self.context.event_bus or not player_sprite:
             return
 
         currently_inside: set[str] = set()
@@ -264,7 +258,7 @@ class PortalManager(BaseSystem):
                     distance,
                     self.interaction_distance,
                 )
-                self.event_bus.publish(PortalEnteredEvent(portal_name=portal.name))
+                self.context.event_bus.publish(PortalEnteredEvent(portal_name=portal.name))
 
         # Update tracking for next frame
         self._portals_player_inside = currently_inside

@@ -76,9 +76,7 @@ from pedre.systems.npc.events import (
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.events import EventBus
     from pedre.systems.game_context import GameContext
-    from pedre.systems.pathfinding.base import PathfindingBaseManager
 logger = logging.getLogger(__name__)
 
 
@@ -137,11 +135,9 @@ class NPCManager(NPCBaseManager):
         self.npcs: dict[str, NPCState] = {}
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
-        self.pathfinding: PathfindingBaseManager | None = None
         self.interaction_distance = 50
         self.waypoint_threshold = 2
         self.npc_speed = 80.0
-        self.event_bus: EventBus | None = None
         self.interacted_npcs: set[str] = set()
 
     def setup(self, context: GameContext) -> None:
@@ -155,12 +151,7 @@ class NPCManager(NPCBaseManager):
             context: Game context providing access to other systems.
             settings: Game configuration containing NPC-related settings.
         """
-        # Get required dependencies from context
-        pathfinding_manager = context.pathfinding_manager
-        if pathfinding_manager:
-            self.pathfinding = pathfinding_manager
-
-        self.event_bus = context.event_bus
+        self.context = context
 
         # Apply settings if available
         if hasattr(settings, "NPC_INTERACTION_DISTANCE"):
@@ -170,12 +161,7 @@ class NPCManager(NPCBaseManager):
 
         logger.debug("NPCManager setup complete")
 
-    def load_from_tiled(
-        self,
-        tile_map: arcade.TileMap,
-        arcade_scene: arcade.Scene,
-        context: GameContext,
-    ) -> None:
+    def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load NPCs from Tiled object layer."""
         npc_layer = tile_map.object_lists.get("NPCs")
         if not npc_layer:
@@ -183,11 +169,7 @@ class NPCManager(NPCBaseManager):
             return
 
         # Use existing method
-        self.load_npcs_from_objects(
-            npc_layer,
-            arcade_scene,
-            context,
-        )
+        self.load_npcs_from_objects(npc_layer, arcade_scene)
 
     def cleanup(self) -> None:
         """Clean up NPC resources when the scene unloads.
@@ -398,7 +380,7 @@ class NPCManager(NPCBaseManager):
 
         return None
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle interaction input for NPCs.
 
         Args:
@@ -410,7 +392,7 @@ class NPCManager(NPCBaseManager):
             True if interaction occurred.
         """
         if symbol == arcade.key.SPACE:
-            player_sprite = context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_manager.get_player_sprite()
 
             if player_sprite:
                 nearby = self.get_nearby_npc(player_sprite)
@@ -423,16 +405,15 @@ class NPCManager(NPCBaseManager):
                 )
                 if nearby:
                     _sprite, name, _dialog_level = nearby
-                    if self.interact_with_npc(name, context):
+                    if self.interact_with_npc(name):
                         return True
         return False
 
-    def interact_with_npc(self, name: str, context: GameContext) -> bool:
+    def interact_with_npc(self, name: str) -> bool:
         """Trigger interaction with a specific NPC.
 
         Args:
             name: Name of the NPC to interact with.
-            context: GameContext for access to other systems.
 
         Returns:
             True if interaction started (dialog shown).
@@ -442,12 +423,12 @@ class NPCManager(NPCBaseManager):
         if not npc:
             return False
 
-        dialog_manager = context.dialog_manager
+        dialog_manager = self.context.dialog_manager
 
         # Get dialog
-        current_scene = context.scene_manager.get_current_scene()
+        current_scene = self.context.scene_manager.get_current_scene()
 
-        dialog_data = self.get_dialog(name, npc.dialog_level, current_scene, context)
+        dialog_data = self.get_dialog(name, npc.dialog_level, current_scene)
         if not dialog_data:
             return False
 
@@ -495,7 +476,7 @@ class NPCManager(NPCBaseManager):
         """
         return npc_name in self.interacted_npcs
 
-    def _check_dialog_conditions(self, conditions: list[dict[str, Any]], context: GameContext) -> bool:
+    def _check_dialog_conditions(self, conditions: list[dict[str, Any]]) -> bool:
         """Check if all dialog conditions are met using ConditionRegistry.
 
         Args:
@@ -512,13 +493,13 @@ class NPCManager(NPCBaseManager):
                 return False
 
             # Delegate to ConditionRegistry
-            if not ConditionRegistry.check(check_type, condition, context):
+            if not ConditionRegistry.check(check_type, condition, self.context):
                 return False
 
         return True
 
     def get_dialog(
-        self, npc_name: str, dialog_level: int, scene: str = "default", context: GameContext | None = None
+        self, npc_name: str, dialog_level: int, scene: str = "default"
     ) -> tuple[NPCDialogConfig | None, list[dict[str, Any]] | None]:
         """Get dialog for an NPC at a specific conversation level in a scene.
 
@@ -526,7 +507,6 @@ class NPCManager(NPCBaseManager):
             npc_name: The NPC name.
             dialog_level: The conversation level.
             scene: The current scene name (defaults to "default" for backwards compatibility).
-            context: Game context for checking conditions. If None, conditions are not checked.
 
         Returns:
             Tuple of (dialog_config, on_condition_fail_actions):
@@ -548,7 +528,7 @@ class NPCManager(NPCBaseManager):
         if dialog_level in available_dialogs:
             exact_match = available_dialogs[dialog_level]
             if exact_match.conditions:
-                if context and self._check_dialog_conditions(exact_match.conditions, context):
+                if self._check_dialog_conditions(exact_match.conditions):
                     # Conditions met, return the dialog
                     return exact_match, None
                 # Conditions failed or no context, return on_condition_fail actions
@@ -567,7 +547,7 @@ class NPCManager(NPCBaseManager):
 
             # Check if this dialog's conditions are met
             if dialog_config.conditions:
-                if context and self._check_dialog_conditions(dialog_config.conditions, context):
+                if self._check_dialog_conditions(dialog_config.conditions):
                     candidates.append((state, dialog_config))
             else:
                 # No conditions means always available
@@ -627,8 +607,8 @@ class NPCManager(NPCBaseManager):
         if not npc:
             logger.warning("Cannot move unknown NPC: %s", npc_name)
             return
-
-        if not self.pathfinding:
+        pathfinding = self.context.pathfinding_manager
+        if not pathfinding:
             logger.warning("Cannot move NPC %s: pathfinding not available", npc_name)
             return
 
@@ -639,7 +619,7 @@ class NPCManager(NPCBaseManager):
         # Collect all moving NPCs to exclude from pathfinding obstacles
         moving_npc_sprites = [other_npc.sprite for other_npc in self.npcs.values() if other_npc.is_moving]
 
-        path = self.pathfinding.find_path(
+        path = pathfinding.find_path(
             npc.sprite.center_x,
             npc.sprite.center_y,
             tile_x,
@@ -655,12 +635,11 @@ class NPCManager(NPCBaseManager):
         npc.path = path
         npc.is_moving = bool(path)
 
-    def show_npcs(self, npc_names: list[str], context: GameContext) -> None:
+    def show_npcs(self, npc_names: list[str]) -> None:
         """Make hidden NPCs visible and add them to collision.
 
         Args:
             npc_names: List of NPC names to reveal.
-            context: Game Context.
         """
         for npc_name in npc_names:
             npc = self.npcs.get(npc_name)
@@ -670,12 +649,12 @@ class NPCManager(NPCBaseManager):
                 # Start appear animation for animated NPCs
                 if isinstance(npc.sprite, AnimatedNPC):
                     npc.sprite.start_appear_animation()
-                scene_manager = context.scene_manager
+                scene_manager = self.context.scene_manager
                 if scene_manager:
                     scene_manager.add_to_wall_list(npc.sprite)
                 logger.info("Showing hidden NPC: %s", npc_name)
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update NPC movements along their paths.
 
         Args:
@@ -689,15 +668,15 @@ class NPCManager(NPCBaseManager):
 
                 # Check if appear animation just completed
                 if npc.sprite.appear_complete and not npc.appear_event_emitted:
-                    if self.event_bus:
-                        self.event_bus.publish(NPCAppearCompleteEvent(npc_name=npc.name))
+                    if self.context.event_bus:
+                        self.context.event_bus.publish(NPCAppearCompleteEvent(npc_name=npc.name))
                         logger.info("%s appear animation complete, event emitted", npc.name)
                     npc.appear_event_emitted = True
 
                 # Check if disappear animation just completed
                 if npc.sprite.disappear_complete and not npc.disappear_event_emitted:
-                    if self.event_bus:
-                        self.event_bus.publish(NPCDisappearCompleteEvent(npc_name=npc.name))
+                    if self.context.event_bus:
+                        self.context.event_bus.publish(NPCDisappearCompleteEvent(npc_name=npc.name))
                         logger.info("%s disappear animation complete, event emitted", npc.name)
                     npc.disappear_event_emitted = True
 
@@ -730,8 +709,8 @@ class NPCManager(NPCBaseManager):
                     npc.is_moving = False
 
                     # Emit movement complete event
-                    if self.event_bus:
-                        self.event_bus.publish(NPCMovementCompleteEvent(npc_name=npc.name))
+                    if self.context.event_bus:
+                        self.context.event_bus.publish(NPCMovementCompleteEvent(npc_name=npc.name))
                         logger.info("%s movement complete, event emitted", npc.name)
 
             # Move NPC (only if distance > 0 to avoid division by zero)
@@ -830,12 +809,7 @@ class NPCManager(NPCBaseManager):
         """
         return any(npc.is_moving for npc in self.npcs.values())
 
-    def load_npcs_from_objects(
-        self,
-        npc_objects: list,
-        scene: arcade.Scene | None,
-        context: GameContext,
-    ) -> None:
+    def load_npcs_from_objects(self, npc_objects: list, scene: arcade.Scene | None) -> None:
         """Load NPCs from Tiled object layer (like Player, Portals, etc.).
 
         Creates AnimatedNPC instances from object layer data and adds them to the scene.
@@ -905,7 +879,7 @@ class NPCManager(NPCBaseManager):
                 npc_sprite_list.append(animated_npc)
 
                 # Add to wall list if visible
-                scene_manager = context.scene_manager
+                scene_manager = self.context.scene_manager
                 if scene_manager and animated_npc.visible:
                     scene_manager.add_to_wall_list(animated_npc)
 

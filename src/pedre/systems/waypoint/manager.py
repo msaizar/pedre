@@ -36,6 +36,7 @@ class WaypointManager(WaypointBaseManager):
 
     def setup(self, context: GameContext) -> None:
         """Initialize waypoint manager."""
+        self.context = context
 
     def reset(self) -> None:
         """Reset waypoint manager."""
@@ -49,7 +50,6 @@ class WaypointManager(WaypointBaseManager):
         self,
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
-        context: GameContext,
     ) -> None:
         """Load waypoints from Tiled map object layer."""
         self.waypoints = {}

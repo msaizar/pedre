@@ -95,7 +95,6 @@ class GameView(arcade.View):
         debug_mode: Whether to display debug overlays (NPC positions, etc.).
 
         State tracking:
-        spawn_waypoint: Waypoint to spawn at (set by portals).
         initialized: Whether setup() has been called.
     """
 
@@ -120,9 +119,6 @@ class GameView(arcade.View):
         self.view_manager = view_manager
         self.map_file = map_file
 
-        # Portal tracking (deprecated - now using context.next_spawn_waypoint)
-        self.spawn_waypoint: str | None = None
-
         # Track if game has been initialized
         self.initialized: bool = False
 
@@ -133,7 +129,7 @@ class GameView(arcade.View):
         if target_map and self.view_manager.game_context:
             scene_manager = self.view_manager.game_context.scene_manager
             if scene_manager:
-                scene_manager.load_level(target_map, self.spawn_waypoint, self.view_manager.game_context)
+                scene_manager.load_level(target_map)
 
     def on_show_view(self) -> None:
         """Called when this view becomes active (arcade lifecycle callback).
@@ -166,12 +162,12 @@ class GameView(arcade.View):
         # Handle scene transitions
         scene_manager = self.view_manager.game_context.scene_manager
         if scene_manager and scene_manager.get_transition_state() != TransitionState.NONE:
-            scene_manager.update(delta_time, self.view_manager.game_context)
+            scene_manager.update(delta_time)
             # During transition, skip other game logic
             return
 
         # Update ALL systems generically via system_loader
-        self.view_manager.system_loader.update_all(delta_time, self.view_manager.game_context)
+        self.view_manager.system_loader.update_all(delta_time)
 
     def on_draw(self) -> None:
         """Render the game world (arcade lifecycle callback).
@@ -189,13 +185,13 @@ class GameView(arcade.View):
             camera_manager.use()
 
         # Draw ALL systems (world coordinates) via system_loader
-        self.view_manager.system_loader.draw_all(self.view_manager.game_context)
+        self.view_manager.system_loader.draw_all()
 
         # Draw UI in screen coordinates
         arcade.camera.Camera2D().use()
 
         # Draw ALL systems (screen coordinates) via system_loader
-        self.view_manager.system_loader.draw_ui_all(self.view_manager.game_context)
+        self.view_manager.system_loader.draw_ui_all()
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key presses (arcade lifecycle callback).
@@ -203,19 +199,19 @@ class GameView(arcade.View):
         Processes keyboard input. Most input handling is delegated to specific systems
         via the SystemLoader. This view handles global hotkeys (like menus).
         """
-        if not self.view_manager.system_loader or not self.view_manager.game_context:
+        if not self.view_manager.system_loader:
             return None
 
         # Delegate to systems first (e.g., Dialog might consume input)
-        if self.view_manager.system_loader.on_key_press_all(symbol, modifiers, self.view_manager.game_context):
+        if self.view_manager.system_loader.on_key_press_all(symbol, modifiers):
             return True
 
         return None
 
     def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key releases (arcade lifecycle callback)."""
-        if self.view_manager.system_loader and self.view_manager.game_context:
-            self.view_manager.system_loader.on_key_release_all(symbol, modifiers, self.view_manager.game_context)
+        if self.view_manager.system_loader:
+            self.view_manager.system_loader.on_key_release_all(symbol, modifiers)
         return None
 
     def cleanup(self) -> None:
@@ -248,7 +244,7 @@ class GameView(arcade.View):
                 cache_manager.cache_scene(current_map, self.view_manager.game_context)
 
         # Reset ALL pluggable systems generically (clears session state but keeps wiring)
-        self.view_manager.system_loader.reset_all(self.view_manager.game_context)
+        self.view_manager.system_loader.reset_all()
 
         # Reset initialization flag so game will be set up again on next show
         self.initialized = False

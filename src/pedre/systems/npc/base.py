@@ -10,8 +10,6 @@ from pedre.systems.base import BaseSystem
 if TYPE_CHECKING:
     import arcade
 
-    from pedre.systems.game_context import GameContext
-
 
 @dataclass
 class NPCDialogConfig:
@@ -144,6 +142,6 @@ class NPCBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def show_npcs(self, npc_names: list[str], context: GameContext) -> None:
+    def show_npcs(self, npc_names: list[str]) -> None:
         """Make hidden NPCs visible and add them to collision."""
         ...

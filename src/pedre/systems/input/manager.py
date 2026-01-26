@@ -112,6 +112,7 @@ class InputManager(InputBaseManager):
         Args:
             context: Game context providing access to other systems.
         """
+        self.context = context
         logger.debug("InputManager setup complete with speed=%s", self.movement_speed)
 
     def cleanup(self) -> None:
@@ -133,13 +134,12 @@ class InputManager(InputBaseManager):
         """Restore state from save data (BaseSystem interface)."""
         self.movement_speed = state.get("movement_speed", settings.PLAYER_MOVEMENT_SPEED)
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Register a key press event.
 
         Args:
             symbol: The arcade key constant for the pressed key..
             modifiers: Bitfield of modifier keys held.
-            context: Game context.
 
         Returns:
             False (allows other systems to process if needed, though typically input manager is low-level).
@@ -148,12 +148,12 @@ class InputManager(InputBaseManager):
 
         # Handle Pause Menu - publish event instead of calling view_manager directly
         if symbol == arcade.key.ESCAPE:
-            context.event_bus.publish(ShowMenuEvent(from_game_pause=True))
+            self.context.event_bus.publish(ShowMenuEvent(from_game_pause=True))
             return True
 
         return False
 
-    def on_key_release(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_release(self, symbol: int, modifiers: int) -> bool:
         """Register a key release event.
 
         Args:

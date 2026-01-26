@@ -133,8 +133,7 @@ class AudioManager(AudioBaseManager):
         Args:
             context: Game context (not used by AudioManager).
         """
-        # AudioManager doesn't need context, but settings could be used
-        # for initial volume configuration if settings had audio settings
+        self.context = context
         logger.debug("AudioManager setup complete")
 
     def cleanup(self) -> None:
@@ -631,12 +630,7 @@ class AudioManager(AudioBaseManager):
 
         logger.debug("Restored audio settings from save data")
 
-    def load_from_tiled(
-        self,
-        tile_map: arcade.TileMap,
-        arcade_scene: arcade.Scene,
-        context: GameContext,
-    ) -> None:
+    def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load and play background music from Tiled map property.
 
         Automatically starts playing music if a 'music' property is set on the
@@ -655,7 +649,6 @@ class AudioManager(AudioBaseManager):
         Args:
             tile_map: Loaded TileMap with properties.
             arcade_scene: Scene created from tile_map (unused).
-            context: GameContext (unused).
         """
         # Check if tile_map has properties attribute (defensive)
         if not hasattr(tile_map, "properties") or tile_map.properties is None:

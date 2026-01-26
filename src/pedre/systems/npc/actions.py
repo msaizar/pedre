@@ -134,7 +134,7 @@ class RevealNPCsAction(Action):
         if not self.executed:
             npc_manager = context.npc_manager
             if npc_manager:
-                npc_manager.show_npcs(self.npc_names, context)
+                npc_manager.show_npcs(self.npc_names)
 
             self.executed = True
             logger.debug("RevealNPCsAction: Revealed NPCs %s", self.npc_names)

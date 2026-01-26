@@ -2,12 +2,8 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from pedre.systems.base import BaseSystem
-
-if TYPE_CHECKING:
-    from pedre.systems.game_context import GameContext
 
 
 @dataclass
@@ -114,7 +110,7 @@ class InventoryBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def emit_closed_event(self, context: GameContext) -> None:
+    def emit_closed_event(self) -> None:
         """Emit InventoryClosedEvent when inventory view closes."""
         ...
 

@@ -32,10 +32,9 @@ class TestAudioManager(unittest.TestCase):
         mock_asset_path.return_value = "/path/to/music/village_theme.ogg"
 
         mock_scene = MagicMock()
-        mock_context = MagicMock()
 
         # Call load_from_tiled (no longer needs settings parameter)
-        self.manager.load_from_tiled(mock_tile_map, mock_scene, mock_context)
+        self.manager.load_from_tiled(mock_tile_map, mock_scene)
 
         # Verify music was loaded and played
         mock_asset_path.assert_called_once_with("audio/music/village_theme.ogg")
@@ -49,10 +48,9 @@ class TestAudioManager(unittest.TestCase):
         mock_tile_map.properties = {}  # No music property
 
         mock_scene = MagicMock()
-        mock_context = MagicMock()
 
         # Should not raise exception
-        self.manager.load_from_tiled(mock_tile_map, mock_scene, mock_context)
+        self.manager.load_from_tiled(mock_tile_map, mock_scene)
 
         # No music should be playing
         assert self.manager.current_music is None
@@ -61,10 +59,9 @@ class TestAudioManager(unittest.TestCase):
         """Test handling of tile_map without properties attribute."""
         mock_tile_map = MagicMock(spec=[])  # No properties attribute
         mock_scene = MagicMock()
-        mock_context = MagicMock()
 
         # Should not raise exception
-        self.manager.load_from_tiled(mock_tile_map, mock_scene, mock_context)
+        self.manager.load_from_tiled(mock_tile_map, mock_scene)
 
         assert self.manager.current_music is None
 
@@ -74,9 +71,8 @@ class TestAudioManager(unittest.TestCase):
         mock_tile_map.properties = {"music": ""}  # Empty string
 
         mock_scene = MagicMock()
-        mock_context = MagicMock()
 
-        self.manager.load_from_tiled(mock_tile_map, mock_scene, mock_context)
+        self.manager.load_from_tiled(mock_tile_map, mock_scene)
 
         assert self.manager.current_music is None
 
@@ -88,10 +84,9 @@ class TestAudioManager(unittest.TestCase):
         mock_tile_map.properties = {"music": "village_theme.ogg"}
 
         mock_scene = MagicMock()
-        mock_context = MagicMock()
 
         # Should not play music when disabled
-        self.manager.load_from_tiled(mock_tile_map, mock_scene, mock_context)
+        self.manager.load_from_tiled(mock_tile_map, mock_scene)
 
         assert self.manager.current_music is None
 

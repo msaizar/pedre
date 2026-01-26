@@ -91,10 +91,9 @@ class TestInteractionManager(unittest.TestCase):
         mock_layer.__iter__.return_value = [mock_obj]
         mock_tile_map.object_lists = {"Interactive": mock_layer}
 
-        mock_context = MagicMock()
         mock_scene = MagicMock()  # arcade.Scene
 
-        self.manager.load_from_tiled(mock_tile_map, mock_scene, mock_context)
+        self.manager.load_from_tiled(mock_tile_map, mock_scene)
 
         assert "testobj" in self.manager.interactive_objects
         obj = self.manager.interactive_objects["testobj"]

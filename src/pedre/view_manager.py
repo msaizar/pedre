@@ -295,7 +295,7 @@ class ViewManager:
             inventory_manager = self.game_context.inventory_manager
             if inventory_manager:
                 logger.info("Calling emit_closed_event on inventory_manager")
-                inventory_manager.emit_closed_event(self.game_context)
+                inventory_manager.emit_closed_event()
         else:
             logger.info(
                 "Not calling trigger (flag=%s, game_view=%s)",
@@ -457,7 +457,7 @@ class ViewManager:
             return
 
         # Restore all state from save data
-        context.save_manager.restore_game_data(save_data, context)
+        context.save_manager.restore_game_data(save_data)
 
         # Restore cache state for persistence across scene transitions
         if "_scene_caches" in save_data.save_states:

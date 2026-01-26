@@ -98,40 +98,39 @@ class SaveManager(SaveBaseManager):
 
     def setup(self, context: GameContext) -> None:
         """Initialize the save system with settings."""
-        return
+        self.context = context
 
     def cleanup(self) -> None:
         """Clean up save system resources."""
         return
 
-    def on_key_press(self, symbol: int, modifiers: int, context: GameContext) -> bool:
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle quick save/load hotkeys.
 
         Args:
             symbol: Keyboard symbol.
             modifiers: Key modifiers.
-            context: Game context.
 
         Returns:
             True if hotkey was handled.
         """
         if symbol == arcade.key.F5:
-            self._handle_quick_save(context)
+            self._handle_quick_save()
             return True
         if symbol == arcade.key.F9:
-            self._handle_quick_load(context)
+            self._handle_quick_load()
             return True
         return False
 
-    def _handle_quick_save(self, context: GameContext) -> None:
+    def _handle_quick_save(self) -> None:
         """Perform a quick save using current context state."""
-        scene_manager = context.scene_manager
+        scene_manager = self.context.scene_manager
         if not scene_manager or not hasattr(scene_manager, "current_map"):
             return
 
-        success = self.auto_save(context)
+        success = self.auto_save()
 
-        audio_manager = context.audio_manager
+        audio_manager = self.context.audio_manager
         if success:
             if audio_manager:
                 audio_manager.play_sfx("save.wav")
@@ -139,7 +138,7 @@ class SaveManager(SaveBaseManager):
         else:
             logger.warning("Quick save failed")
 
-    def _handle_quick_load(self, context: GameContext) -> None:
+    def _handle_quick_load(self) -> None:
         """Perform a quick load from auto-save."""
         # Note: game_view check removed - quick load handled by ViewManager.load_game()
         save_data = self.load_auto_save()
@@ -148,30 +147,30 @@ class SaveManager(SaveBaseManager):
             return
 
         # Reload map if different
-        scene_manager = context.scene_manager
+        scene_manager = self.context.scene_manager
         current_map = ""
         if scene_manager and hasattr(scene_manager, "current_map"):
             current_map = scene_manager.current_map
 
         if save_data.current_map != current_map:
             if scene_manager and hasattr(scene_manager, "load_level"):
-                scene_manager.load_level(save_data.current_map, None, context)
+                scene_manager.load_level(save_data.current_map)
             else:
                 logger.warning("Cannot reload map: SceneManager.load_level not available")
                 return
 
         # Restore state from save providers
-        self.restore_game_data(save_data, context)
+        self.restore_game_data(save_data)
 
         # Reposition player
-        context.player_manager.set_player_position(save_data.player_x, save_data.player_y)
+        self.context.player_manager.set_player_position(save_data.player_x, save_data.player_y)
 
-        audio_manager = context.audio_manager
+        audio_manager = self.context.audio_manager
         if audio_manager:
             audio_manager.play_sfx("save.wav")
         logger.info("Quick load completed")
 
-    def save_game(self, slot: int, context: GameContext) -> bool:
+    def save_game(self, slot: int) -> bool:
         """Save game to a slot.
 
         Creates a complete snapshot of the current game state and writes it to a JSON
@@ -186,12 +185,11 @@ class SaveManager(SaveBaseManager):
 
         Args:
             slot: Save slot number (0 for auto-save, 1-3 for manual saves).
-            context: Game context providing access to game state.
 
         Returns:
             True if save succeeded and file was written, False if any error occurred.
         """
-        scene_manager = context.scene_manager
+        scene_manager = self.context.scene_manager
         if not scene_manager or not hasattr(scene_manager, "current_map"):
             logger.error("SceneManager not available")
             return False
@@ -199,7 +197,7 @@ class SaveManager(SaveBaseManager):
         try:
             # Gather state from all systems
             save_states: dict[str, Any] = {}
-            for system in context.get_systems().values():
+            for system in self.context.get_systems().values():
                 state = system.get_save_state()
                 if state:
                     save_states[system.name] = state
@@ -211,7 +209,7 @@ class SaveManager(SaveBaseManager):
                 save_states["_scene_caches"] = cache_state
 
             # Create save data
-            player_sprite = context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_manager.get_player_sprite()
             if player_sprite:
                 save_data = GameSaveData(
                     player_x=player_sprite.center_x,
@@ -268,22 +266,21 @@ class SaveManager(SaveBaseManager):
             logger.info("Game loaded from slot %d", slot)
             return save_data
 
-    def restore_game_data(self, save_data: GameSaveData, context: GameContext) -> None:
+    def restore_game_data(self, save_data: GameSaveData) -> None:
         """Restore all state from save data to save providers.
 
         Args:
             save_data: The GameSaveData object loaded from a save file.
-            context: Game context for accessing managers.
         """
         # Restore cache manager state first
         if "_scene_caches" in save_data.save_states:
-            scene_manager = context.scene_manager
+            scene_manager = self.context.scene_manager
             if scene_manager:
                 scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
                 logger.debug("Restored cache manager state")
 
         # Restore each system's state
-        for system in context.get_systems().values():
+        for system in self.context.get_systems().values():
             if system.name in save_data.save_states:
                 system.restore_save_state(save_data.save_states[system.name])
                 logger.debug("Restored save state to system: %s", system.name)
@@ -361,16 +358,13 @@ class SaveManager(SaveBaseManager):
                 "version": data.get("save_version", "Unknown"),
             }
 
-    def auto_save(self, context: GameContext) -> bool:
+    def auto_save(self) -> bool:
         """Auto-save to a special auto-save slot.
-
-        Args:
-            context: Game context providing access to game state.
 
         Returns:
             True if auto-save succeeded, False if it failed.
         """
-        return self.save_game(0, context)
+        return self.save_game(0)
 
     def load_auto_save(self) -> GameSaveData | None:
         """Load from auto-save slot.

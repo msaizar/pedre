@@ -45,6 +45,7 @@ class PlayerManager(PlayerBaseManager):
 
     def setup(self, context: GameContext) -> None:
         """Initialize player system for the current scene."""
+        self.context = context
 
     def get_player_sprite(self) -> AnimatedPlayer | None:
         """Get the player sprite."""
@@ -54,7 +55,6 @@ class PlayerManager(PlayerBaseManager):
         self,
         tile_map: arcade.TileMap,
         arcade_scene: arcade.Scene,
-        context: GameContext,
     ) -> None:
         """Load player from Tiled map object layer."""
         # Get Player object layer
@@ -72,14 +72,14 @@ class PlayerManager(PlayerBaseManager):
 
         # Check for portal spawn override (defaults to True)
         spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
-        next_spawn_waypoint = context.scene_manager.get_next_spawn_waypoint()
+        next_spawn_waypoint = self.context.scene_manager.get_next_spawn_waypoint()
         logger.debug(
             "PlayerManager: spawn_at_portal=%s, next_spawn_waypoint=%s",
             spawn_at_portal,
             next_spawn_waypoint,
         )
         if spawn_at_portal and next_spawn_waypoint:
-            waypoints = context.waypoint_manager.get_waypoints()
+            waypoints = self.context.waypoint_manager.get_waypoints()
             logger.debug(
                 "PlayerManager: Available waypoints: %s",
                 list(waypoints.keys()) if waypoints else [],
@@ -98,7 +98,7 @@ class PlayerManager(PlayerBaseManager):
                     settings.TILE_SIZE,
                 )
                 # Clear the spawn waypoint
-                context.scene_manager.clear_next_spawn_waypoint()
+                self.context.scene_manager.clear_next_spawn_waypoint()
             else:
                 logger.warning(
                     "PlayerManager: Waypoint '%s' not found in available waypoints",
@@ -140,17 +140,17 @@ class PlayerManager(PlayerBaseManager):
 
         logger.info("Player loaded at (%.1f, %.1f)", spawn_x, spawn_y)
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update player movement and animation."""
         if not self.player_sprite:
             return
 
         # Check if dialog is showing (blocking movement)
-        dialog_manager = context.dialog_manager
+        dialog_manager = self.context.dialog_manager
         dialog_showing = dialog_manager.is_showing() if dialog_manager else False
 
         # Get input manager
-        input_manager = context.input_manager
+        input_manager = self.context.input_manager
 
         # Determine movement
         dx, dy = 0.0, 0.0
