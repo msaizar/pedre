@@ -75,11 +75,10 @@ class PathfindingManager(PathfindingBaseManager):
     The manager works entirely in pixel coordinates for simplicity:
     - Input: start and end positions in pixel coordinates
     - Output: path as deque of pixel coordinates
-    - Grid size: configurable (default 32 pixels from settings.TILE_SIZE)
 
     Key responsibilities:
     - Calculate optimal paths between start and end positions
-    - Check tile walkability using wall sprite collision detection
+    - Check walkability using wall sprite collision detection
     - Exclude specific sprites from collision (e.g., the moving entity itself)
     - Automatic retry with NPC passthrough when paths are blocked
 
