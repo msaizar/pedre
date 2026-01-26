@@ -117,6 +117,58 @@ DIALOG_AUTO_CLOSE_DEFAULT = False
 DIALOG_AUTO_CLOSE_DURATION = 0.5
 """Seconds to wait after text is fully revealed before auto-closing dialog."""
 
+# Dialog UI Layout Settings
+DIALOG_BOX_WIDTH_PERCENT = 0.75
+"""Dialog box width as fraction of window width (0.0-1.0). Default: 75% of window width."""
+
+DIALOG_BOX_MAX_WIDTH = 800
+"""Maximum dialog box width in pixels."""
+
+DIALOG_BOX_MIN_WIDTH = 400
+"""Minimum dialog box width in pixels."""
+
+DIALOG_BOX_HEIGHT_PERCENT = 0.25
+"""Dialog box height as fraction of window height (0.0-1.0). Default: 25% of window height."""
+
+DIALOG_BOX_MIN_HEIGHT = 150
+"""Minimum dialog box height in pixels."""
+
+DIALOG_VERTICAL_POSITION = 0.25
+"""Dialog box vertical position from bottom as fraction of window height (0.0-1.0).
+Maintains current behavior at 25% from bottom.
+"""
+
+DIALOG_OVERLAY_ALPHA = 128
+"""Transparency of the dialog overlay background (0-255)."""
+
+DIALOG_BORDER_WIDTH = 3
+"""Width of dialog box border in pixels."""
+
+DIALOG_PADDING_HORIZONTAL = 20
+"""Horizontal padding inside dialog box in pixels."""
+
+DIALOG_PADDING_VERTICAL = 20
+"""Vertical padding inside dialog box in pixels."""
+
+DIALOG_NPC_NAME_OFFSET = 30
+"""Vertical offset of NPC name from top of dialog box in pixels."""
+
+DIALOG_FOOTER_OFFSET = 20
+"""Vertical offset of footer elements from bottom of dialog box in pixels."""
+
+# Dialog Font Sizes
+DIALOG_NPC_NAME_FONT_SIZE = 20
+"""Font size for NPC name text."""
+
+DIALOG_TEXT_FONT_SIZE = 16
+"""Font size for dialog message text."""
+
+DIALOG_INSTRUCTION_FONT_SIZE = 12
+"""Font size for instruction text."""
+
+DIALOG_PAGE_INDICATOR_FONT_SIZE = 10
+"""Font size for page indicator text."""
+
 # Installed systems (like Django's INSTALLED_APPS)
 INSTALLED_SYSTEMS = [
     "pedre.systems.audio",

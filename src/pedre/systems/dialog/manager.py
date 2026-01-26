@@ -492,14 +492,20 @@ class DialogManager(DialogBaseManager):
             window.width,
             0,
             window.height,
-            (0, 0, 0, 128),
+            (0, 0, 0, settings.DIALOG_OVERLAY_ALPHA),
         )
 
-        # Dialog box dimensions
-        box_width = min(600, window.width - 100)
-        box_height = 200
+        # Dialog box dimensions (responsive to window size)
+        box_width = min(
+            settings.DIALOG_BOX_MAX_WIDTH,
+            max(settings.DIALOG_BOX_MIN_WIDTH, int(window.width * settings.DIALOG_BOX_WIDTH_PERCENT)),
+        )
+        box_height = max(
+            settings.DIALOG_BOX_MIN_HEIGHT,
+            int(window.height * settings.DIALOG_BOX_HEIGHT_PERCENT),
+        )
         box_x = window.width // 2
-        box_y = window.height // 4
+        box_y = int(window.height * settings.DIALOG_VERTICAL_POSITION)
 
         # Calculate box corners
         left = box_x - box_width // 2
@@ -511,23 +517,25 @@ class DialogManager(DialogBaseManager):
         arcade.draw_lrbt_rectangle_filled(left, right, bottom, top, arcade.color.DARK_BLUE_GRAY)
 
         # Draw dialog box border
-        arcade.draw_lrbt_rectangle_outline(left, right, bottom, top, arcade.color.WHITE, border_width=3)
+        arcade.draw_lrbt_rectangle_outline(
+            left, right, bottom, top, arcade.color.WHITE, border_width=settings.DIALOG_BORDER_WIDTH
+        )
 
         # Create or update NPC name text
         if self.npc_name_text is None:
             self.npc_name_text = arcade.Text(
                 current_page.npc_name,
                 box_x,
-                top - 30,
+                top - settings.DIALOG_NPC_NAME_OFFSET,
                 arcade.color.YELLOW,
-                font_size=20,
+                font_size=settings.DIALOG_NPC_NAME_FONT_SIZE,
                 anchor_x="center",
                 bold=True,
             )
         else:
             self.npc_name_text.text = current_page.npc_name
             self.npc_name_text.x = box_x
-            self.npc_name_text.y = top - 30
+            self.npc_name_text.y = top - settings.DIALOG_NPC_NAME_OFFSET
 
         # Draw NPC name
         self.npc_name_text.draw()
@@ -539,18 +547,18 @@ class DialogManager(DialogBaseManager):
         if self.dialog_text is None:
             self.dialog_text = arcade.Text(
                 text_to_show,
-                left + 20,
+                left + settings.DIALOG_PADDING_HORIZONTAL,
                 box_y,
                 arcade.color.WHITE,
-                font_size=16,
-                width=box_width - 40,
+                font_size=settings.DIALOG_TEXT_FONT_SIZE,
+                width=box_width - (settings.DIALOG_PADDING_HORIZONTAL * 2),
                 multiline=True,
             )
         else:
             self.dialog_text.text = text_to_show
-            self.dialog_text.x = left + 20
+            self.dialog_text.x = left + settings.DIALOG_PADDING_HORIZONTAL
             self.dialog_text.y = box_y
-            self.dialog_text.width = box_width - 40
+            self.dialog_text.width = box_width - (settings.DIALOG_PADDING_HORIZONTAL * 2)
 
         # Draw dialog text
         self.dialog_text.draw()
@@ -564,15 +572,15 @@ class DialogManager(DialogBaseManager):
                 self.page_indicator_text = arcade.Text(
                     page_indicator,
                     right - 10,
-                    bottom + 20,
+                    bottom + settings.DIALOG_FOOTER_OFFSET,
                     arcade.color.LIGHT_GRAY,
-                    font_size=10,
+                    font_size=settings.DIALOG_PAGE_INDICATOR_FONT_SIZE,
                     anchor_x="right",
                 )
             else:
                 self.page_indicator_text.text = page_indicator
                 self.page_indicator_text.x = right - 10
-                self.page_indicator_text.y = bottom + 20
+                self.page_indicator_text.y = bottom + settings.DIALOG_FOOTER_OFFSET
 
             # Draw page indicator
             self.page_indicator_text.draw()
@@ -588,15 +596,15 @@ class DialogManager(DialogBaseManager):
             self.instruction_text = arcade.Text(
                 instruction,
                 box_x,
-                bottom + 20,
+                bottom + settings.DIALOG_FOOTER_OFFSET,
                 arcade.color.LIGHT_GRAY,
-                font_size=12,
+                font_size=settings.DIALOG_INSTRUCTION_FONT_SIZE,
                 anchor_x="center",
             )
         else:
             self.instruction_text.text = instruction
             self.instruction_text.x = box_x
-            self.instruction_text.y = bottom + 20
+            self.instruction_text.y = bottom + settings.DIALOG_FOOTER_OFFSET
 
         # Draw instruction
         self.instruction_text.draw()
