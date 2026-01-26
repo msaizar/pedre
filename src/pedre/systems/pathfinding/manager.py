@@ -88,7 +88,7 @@ class PathfindingManager(PathfindingBaseManager):
     """
 
     name: ClassVar[str] = "pathfinding"
-    dependencies: ClassVar[list[str]] = ["scene"]
+    dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
         """Initialize the pathfinding manager.
