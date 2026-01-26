@@ -190,15 +190,30 @@ class PlayerManager(PlayerBaseManager):
         return self.to_dict()
 
     def restore_save_state(self, state: dict[str, Any]) -> None:
-        """Restore save state."""
+        """Phase 1: No metadata to restore for player."""
+
+    def apply_entity_state(self, state: dict[str, Any]) -> None:
+        """Phase 2: Apply saved player position after sprite exists."""
         self.from_dict(state)
+        if self.player_sprite and "player_x" in state:
+            logger.info(
+                "Applied saved player position (%.1f, %.1f)",
+                self.player_sprite.center_x,
+                self.player_sprite.center_y,
+            )
+
+    def reset(self) -> None:
+        """Reset player manager state for new game."""
+        self.player_sprite = None
+        self.player_list = None
 
     def from_dict(self, data: dict[str, float]) -> None:
-        """Convert audio settings to dictionary for save data serialization."""
-        if "player_x" in data and self.player_sprite:
-            self.player_sprite.center_x = float(data.get("player_x", 0))
-        if "player_y" in data and self.player_sprite:
-            self.player_sprite.center_y = float(data.get("player_y", 0))
+        """Apply position to sprite if it exists."""
+        if "player_x" not in data or "player_y" not in data:
+            return
+        if self.player_sprite:
+            self.player_sprite.center_x = float(data["player_x"])
+            self.player_sprite.center_y = float(data["player_y"])
 
     def to_dict(self) -> dict[str, float]:
         """Load player coordinates from saved dictionary data."""

@@ -161,21 +161,6 @@ class TestDialogManager(unittest.TestCase):
         assert closed is False
         self.mock_event_bus.publish.assert_not_called()
 
-    def test_no_event_without_event_bus(self) -> None:
-        """Test that showing dialog without event_bus doesn't crash."""
-        # Create manager without event bus
-        manager_no_bus = DialogManager()
-        mock_context_no_bus = MagicMock()
-        mock_context_no_bus.event_bus = None
-
-        manager_no_bus.setup(mock_context_no_bus)
-
-        # Should not crash
-        manager_no_bus.show_dialog("TestNPC", ["Hello!"], dialog_level=0)
-
-        # Verify dialog is showing
-        assert manager_no_bus.showing is True
-
     def test_show_dialog_with_auto_close_sets_state(self) -> None:
         """Test that show_dialog with auto_close=True sets state correctly."""
         self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=True, dialog_level=0)

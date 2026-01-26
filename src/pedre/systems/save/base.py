@@ -15,24 +15,16 @@ class GameSaveData:
     It contains player position, current map, and all state from save providers.
 
     State categories:
-    1. Player state: Physical location in the world
-    2. World state: Which map the player is currently in
-    3. Save states: All state from configured save providers
-    4. Metadata: When the save was created and what format version
+    1. Save states: All state from configured save providers
+    2. Metadata: When the save was created and what format version
 
     The save_version field enables future migration if the save format needs to change.
 
     Attributes:
-        player_x: Player's X position in pixel coordinates.
-        player_y: Player's Y position in pixel coordinates.
-        current_map: Filename of the current map (e.g., "village.tmx").
         save_states: Dictionary mapping save provider names to their serialized state.
         save_timestamp: Unix timestamp when save was created (seconds since epoch).
         save_version: Save format version string for future compatibility.
     """
-
-    # Player state
-    current_map: str
 
     # All state from save providers
     save_states: dict[str, Any] = field(default_factory=dict)
@@ -60,7 +52,6 @@ class GameSaveData:
             New GameSaveData instance with values from the dictionary.
         """
         return cls(
-            current_map=data["current_map"],
             save_states=data.get("save_states", {}),
             save_timestamp=data.get("save_timestamp", 0.0),
             save_version=data.get("save_version", "2.0"),
@@ -100,4 +91,9 @@ class SaveBaseManager(BaseSystem, ABC):
     @abstractmethod
     def save_game(self, slot: int) -> bool:
         """Save game to a slot."""
+        ...
+
+    @abstractmethod
+    def apply_entity_states(self) -> None:
+        """Phase 2: Apply entity-specific state after sprites exist."""
         ...

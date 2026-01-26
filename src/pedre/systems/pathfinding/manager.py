@@ -104,7 +104,7 @@ class PathfindingManager(PathfindingBaseManager):
 
         Creates a pathfinding manager with default tile size.
         """
-        self.tile_size: int = 32
+        self.tile_size: int = settings.TILE_SIZE
 
     def setup(self, context: GameContext) -> None:
         """Initialize the pathfinding system with game context and settings.
@@ -115,8 +115,6 @@ class PathfindingManager(PathfindingBaseManager):
         Args:
             context: Game context providing access to other systems.
         """
-        if hasattr(settings, "TILE_SIZE"):
-            self.tile_size = settings.TILE_SIZE
         self.context = context
         logger.debug("PathfindingManager setup complete (tile_size=%d)", self.tile_size)
 

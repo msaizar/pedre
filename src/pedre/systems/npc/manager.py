@@ -135,9 +135,9 @@ class NPCManager(NPCBaseManager):
         self.npcs: dict[str, NPCState] = {}
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
-        self.interaction_distance = 50
+        self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
         self.waypoint_threshold = 2
-        self.npc_speed = 80.0
+        self.npc_speed = settings.NPC_SPEED
         self.interacted_npcs: set[str] = set()
 
     def setup(self, context: GameContext) -> None:
@@ -152,13 +152,6 @@ class NPCManager(NPCBaseManager):
             settings: Game configuration containing NPC-related settings.
         """
         self.context = context
-
-        # Apply settings if available
-        if hasattr(settings, "NPC_INTERACTION_DISTANCE"):
-            self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
-        if hasattr(settings, "NPC_SPEED"):
-            self.npc_speed = settings.NPC_SPEED
-
         logger.debug("NPCManager setup complete")
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
@@ -923,7 +916,14 @@ class NPCManager(NPCBaseManager):
         return state
 
     def restore_save_state(self, state: dict[str, Any]) -> None:
-        """Restore NPC state from save data.
+        """Phase 1: No metadata to restore for NPCs (sprites don't exist yet)."""
+
+    def apply_entity_state(self, state: dict[str, Any]) -> None:
+        """Phase 2: Apply saved NPC state after sprites exist."""
+        self._apply_npc_state(state)
+
+    def _apply_npc_state(self, state: dict[str, Any]) -> None:
+        """Apply NPC state from save data or scene cache.
 
         Restores NPC positions, visibility, dialog levels, and animation flags.
 
@@ -947,4 +947,12 @@ class NPCManager(NPCBaseManager):
                 npc.sprite.disappear_complete = npc_state.get("disappear_complete", False)
                 npc.sprite.interact_complete = npc_state.get("interact_complete", False)
 
-        logger.info("Restored state for %d NPCs", len(state))
+        logger.info("Applied state for %d NPCs", len(state))
+
+    def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
+        """Return state to cache during scene transitions."""
+        return self.get_save_state()
+
+    def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
+        """Restore cached state when returning to a scene."""
+        self._apply_npc_state(state)

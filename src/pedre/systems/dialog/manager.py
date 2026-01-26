@@ -149,9 +149,6 @@ class DialogManager(DialogBaseManager):
         self.page_indicator_text: arcade.Text | None = None
         self.instruction_text: arcade.Text | None = None
 
-        # Game context for event publishing
-        self.context: GameContext | None = None
-
     def is_showing(self) -> bool:
         """Verify if dialog is showing."""
         return self.showing
@@ -188,16 +185,11 @@ class DialogManager(DialogBaseManager):
         """
         if self.showing and symbol == arcade.key.SPACE:
             closed = self.advance_page()
-            if (
-                closed
-                and self.current_npc_name is not None
-                and hasattr(self.context, "event_bus")
-                and self.context.event_bus
-            ):
+            if closed and self.current_npc_name is not None:
                 # Get actual current level from NPC manager if available
                 current_level = self.current_dialog_level or 0
                 npc_manager = self.context.npc_manager
-                if npc_manager and hasattr(npc_manager, "npcs"):
+                if npc_manager:
                     npc_state = npc_manager.get_npcs().get(self.current_npc_name)
                     if npc_state:
                         current_level = npc_state.dialog_level
@@ -299,18 +291,17 @@ class DialogManager(DialogBaseManager):
         self._reset_text_reveal()
 
         # Publish DialogOpenedEvent
-        if self.context and hasattr(self.context, "event_bus") and self.context.event_bus:
-            self.context.event_bus.publish(
-                DialogOpenedEvent(
-                    npc_name=self.current_npc_name,
-                    dialog_level=dialog_level or 0,
-                )
+        self.context.event_bus.publish(
+            DialogOpenedEvent(
+                npc_name=self.current_npc_name,
+                dialog_level=dialog_level or 0,
             )
-            logger.debug(
-                "Published DialogOpenedEvent for %s at level %s",
-                self.current_npc_name,
-                dialog_level or 0,
-            )
+        )
+        logger.debug(
+            "Published DialogOpenedEvent for %s at level %s",
+            self.current_npc_name,
+            dialog_level or 0,
+        )
 
         # If instant mode, immediately reveal all text
         if instant:
@@ -459,17 +450,11 @@ class DialogManager(DialogBaseManager):
             self.auto_close_timer += delta_time
             if self.auto_close_timer >= settings.DIALOG_AUTO_CLOSE_DURATION:
                 closed = self.advance_page()
-                if (
-                    closed
-                    and self.current_npc_name
-                    and self.context
-                    and hasattr(self.context, "event_bus")
-                    and self.context.event_bus
-                ):
+                if closed and self.current_npc_name:
                     # Publish DialogClosedEvent (similar to on_key_press)
                     current_level = self.current_dialog_level or 0
                     npc_manager = self.context.npc_manager
-                    if npc_manager and hasattr(npc_manager, "npcs"):
+                    if npc_manager:
                         npc_state = npc_manager.get_npcs().get(self.current_npc_name)
                         if npc_state:
                             current_level = npc_state.dialog_level

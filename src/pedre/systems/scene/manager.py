@@ -98,7 +98,7 @@ class SceneManager(SceneBaseManager):
 
     def get_current_scene(self) -> str:
         """Get current scene."""
-        return self.current_scene or "default"
+        return self.current_map.replace(".tmx", "").lower()
 
     def get_transition_state(self) -> TransitionState:
         """Get transition state."""
@@ -106,7 +106,7 @@ class SceneManager(SceneBaseManager):
 
     def __init__(self) -> None:
         """Initialize the scene manager."""
-        self.current_scene: str = "default"
+        self.current_scene: str = ""
 
         # Transition state
         self.transition_state: TransitionState = TransitionState.NONE
@@ -130,7 +130,7 @@ class SceneManager(SceneBaseManager):
 
     def reset(self) -> None:
         """Reset scene manager state for new game."""
-        self.current_scene = "default"
+        self.current_scene = ""
         self.current_map = ""
         self.transition_state = TransitionState.NONE
         self.transition_alpha = 0.0
@@ -167,15 +167,16 @@ class SceneManager(SceneBaseManager):
         """Clear next spawn waypoint."""
         self.next_spawn_waypoint = ""
 
-    def load_level(self, map_file: str) -> None:
+    def load_level(self, map_file: str, *, initial: bool = False) -> None:
         """Central orchestration for loading a new map/level.
 
         Args:
             map_file: The .tmx filename.
+            initial: If it's the first level loading. Don't cache if not transitioning.
         """
         # Cache current scene state before transitioning
-        if self._cache_manager:
-            self._cache_manager.cache_scene(self.current_scene, self.context)
+        if self._cache_manager and not initial:
+            self._cache_manager.cache_scene(self.get_current_scene(), self.context)
 
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
@@ -183,6 +184,11 @@ class SceneManager(SceneBaseManager):
 
         # Load map
         self._load_map(map_file)
+
+        # Phase 2: Apply entity state from pending save data
+        save_manager = self.context.save_manager
+        if save_manager:
+            save_manager.apply_entity_states()
 
         # Get NPC and script managers for scene loading
         npc_manager = self.context.npc_manager
@@ -450,3 +456,22 @@ class SceneManager(SceneBaseManager):
             window.height,
             (0, 0, 0, alpha),
         )
+
+    def get_save_state(self) -> dict[str, Any]:
+        """Get save state."""
+        return self.to_dict()
+
+    def restore_save_state(self, state: dict[str, Any]) -> None:
+        """Restore save state."""
+        self.from_dict(state)
+
+    def from_dict(self, data: dict[str, str]) -> None:
+        """Convert audio settings to dictionary for save data serialization."""
+        if "current_map" in data:
+            self.current_map = data.get("current_map", "")
+
+    def to_dict(self) -> dict[str, str]:
+        """Load player coordinates from saved dictionary data."""
+        if self.current_map:
+            return {"current_map": self.current_map}
+        return {}
