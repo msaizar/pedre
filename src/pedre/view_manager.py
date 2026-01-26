@@ -449,12 +449,6 @@ class ViewManager:
         # Restore all state from save data
         context.save_manager.restore_game_data(save_data)
 
-        # Restore cache state for persistence across scene transitions
-        if "_scene_caches" in save_data.save_states:
-            scene_manager = context.scene_manager
-            if scene_manager:
-                scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
-
         self._game_view = GameView(self)
 
         # Show the game view
