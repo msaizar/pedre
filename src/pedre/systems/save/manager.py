@@ -162,9 +162,6 @@ class SaveManager(SaveBaseManager):
         # Restore state from save providers
         self.restore_game_data(save_data)
 
-        # Reposition player
-        self.context.player_manager.set_player_position(save_data.player_x, save_data.player_y)
-
         audio_manager = self.context.audio_manager
         if audio_manager:
             audio_manager.play_sfx("save.wav")
@@ -212,8 +209,6 @@ class SaveManager(SaveBaseManager):
             player_sprite = self.context.player_manager.get_player_sprite()
             if player_sprite:
                 save_data = GameSaveData(
-                    player_x=player_sprite.center_x,
-                    player_y=player_sprite.center_y,
                     current_map=scene_manager.get_current_map(),
                     save_states=save_states,
                     save_timestamp=datetime.now(UTC).timestamp(),

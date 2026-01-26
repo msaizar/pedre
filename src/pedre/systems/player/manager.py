@@ -8,7 +8,7 @@ from the main GameView.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
@@ -184,6 +184,27 @@ class PlayerManager(PlayerBaseManager):
 
             # Update animation
             self.player_sprite.update_animation(delta_time, moving=moving)
+
+    def get_save_state(self) -> dict[str, Any]:
+        """Get save state."""
+        return self.to_dict()
+
+    def restore_save_state(self, state: dict[str, Any]) -> None:
+        """Restore save state."""
+        self.from_dict(state)
+
+    def from_dict(self, data: dict[str, float]) -> None:
+        """Convert audio settings to dictionary for save data serialization."""
+        if "player_x" in data and self.player_sprite:
+            self.player_sprite.center_x = float(data.get("player_x", 0))
+        if "player_y" in data and self.player_sprite:
+            self.player_sprite.center_y = float(data.get("player_y", 0))
+
+    def to_dict(self) -> dict[str, float]:
+        """Load player coordinates from saved dictionary data."""
+        if self.player_sprite:
+            return {"player_x": self.player_sprite.center_x, "player_y": self.player_sprite.center_y}
+        return {}
 
     def set_player_position(self, player_x: float, player_y: float) -> None:
         """Set the player position."""
