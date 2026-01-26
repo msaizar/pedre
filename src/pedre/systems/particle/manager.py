@@ -420,6 +420,10 @@ class ParticleManager(ParticleBaseManager):
         """
         self.particles.clear()
 
+    def reset(self) -> None:
+        """Reset system state for a new game session."""
+        self.particles.clear()
+
     def toggle(self) -> bool:
         """Toggle particle effects on/off.
 
