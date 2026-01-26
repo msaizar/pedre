@@ -324,7 +324,7 @@ class InventoryManager(InventoryBaseManager):
                 arcade.LBWH(0, 0, window.width, window.height),
             )
 
-        # Calculate grid positioning (centered on screen)
+        # Calculate grid positioning (centered within the overlay area - bottom half of screen)
         grid_width = (
             settings.INVENTORY_GRID_COLS * settings.INVENTORY_BOX_SIZE
             + (settings.INVENTORY_GRID_COLS - 1) * settings.INVENTORY_BOX_SPACING
@@ -334,8 +334,9 @@ class InventoryManager(InventoryBaseManager):
             + (settings.INVENTORY_GRID_ROWS - 1) * settings.INVENTORY_BOX_SPACING
         )
 
+        overlay_height = window.height / 2  # Overlay covers bottom half of screen
         start_x = (window.width - grid_width) / 2
-        start_y = (window.height - grid_height) / 2 + 20  # Slight offset up
+        start_y = (overlay_height - grid_height) / 2 + 20  # Center within overlay, slight offset up
 
         # Draw grid boxes
         for row in range(settings.INVENTORY_GRID_ROWS):
@@ -353,55 +354,81 @@ class InventoryManager(InventoryBaseManager):
                 item = self.all_items[item_index] if has_item else None
                 is_selected = row == self.selected_row and col == self.selected_col
 
-                # Only draw slots that have items
-                if not item:
-                    continue
+                # Draw box background and border based on slot state
+                if item:
+                    # FILLED SLOT: Draw solid background with item icon
+                    bg_color = arcade.color.DARK_SLATE_GRAY
 
-                # Draw box background
-                bg_color = arcade.color.DARK_SLATE_GRAY
+                    arcade.draw_lrbt_rectangle_filled(
+                        x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, bg_color
+                    )
 
-                arcade.draw_lrbt_rectangle_filled(
-                    x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, bg_color
-                )
+                    # Draw border (yellow if selected, white otherwise)
+                    if is_selected:
+                        border_color = arcade.color.YELLOW
+                        border_width = settings.INVENTORY_BOX_BORDER_WIDTH + 1
+                    else:
+                        border_color = arcade.color.WHITE
+                        border_width = settings.INVENTORY_BOX_BORDER_WIDTH
 
-                # Draw border (yellow if selected, white otherwise)
-                if is_selected:
-                    border_color = arcade.color.YELLOW
-                    border_width = settings.INVENTORY_BOX_BORDER_WIDTH + 1
+                    arcade.draw_lrbt_rectangle_outline(
+                        x,
+                        x + settings.INVENTORY_BOX_SIZE,
+                        y,
+                        y + settings.INVENTORY_BOX_SIZE,
+                        border_color,
+                        border_width,
+                    )
+
+                    # Draw icon if available
+                    icon_texture = self.icon_textures.get(item.id)
+                    if icon_texture:
+                        # Scale icon to fit box with padding
+                        padding = 4
+                        max_icon_size = settings.INVENTORY_BOX_SIZE - (padding * 2)
+
+                        # Calculate scale to fit
+                        scale_x = max_icon_size / icon_texture.width
+                        scale_y = max_icon_size / icon_texture.height
+                        scale = min(scale_x, scale_y)
+
+                        # Draw centered icon
+                        icon_width = icon_texture.width * scale
+                        icon_height = icon_texture.height * scale
+                        icon_center_x = x + settings.INVENTORY_BOX_SIZE / 2
+                        icon_center_y = y + settings.INVENTORY_BOX_SIZE / 2
+
+                        arcade.draw_texture_rect(
+                            icon_texture,
+                            arcade.LRBT(
+                                icon_center_x - icon_width / 2,
+                                icon_center_x + icon_width / 2,
+                                icon_center_y - icon_height / 2,
+                                icon_center_y + icon_height / 2,
+                            ),
+                        )
                 else:
-                    border_color = arcade.color.WHITE
-                    border_width = settings.INVENTORY_BOX_BORDER_WIDTH
+                    # EMPTY SLOT: Draw semi-transparent dark background
+                    empty_bg_color = (30, 30, 35, 180)
+                    arcade.draw_lrbt_rectangle_filled(
+                        x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, empty_bg_color
+                    )
 
-                arcade.draw_lrbt_rectangle_outline(
-                    x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, border_color, border_width
-                )
+                    # Draw subdued border (yellow if selected, dim gray otherwise)
+                    if is_selected:
+                        border_color = arcade.color.YELLOW
+                        border_width = settings.INVENTORY_BOX_BORDER_WIDTH + 1
+                    else:
+                        border_color = arcade.color.DIM_GRAY
+                        border_width = 2
 
-                # Draw icon if available
-                icon_texture = self.icon_textures.get(item.id)
-                if icon_texture:
-                    # Scale icon to fit box with padding
-                    padding = 4
-                    max_icon_size = settings.INVENTORY_BOX_SIZE - (padding * 2)
-
-                    # Calculate scale to fit
-                    scale_x = max_icon_size / icon_texture.width
-                    scale_y = max_icon_size / icon_texture.height
-                    scale = min(scale_x, scale_y)
-
-                    # Draw centered icon
-                    icon_width = icon_texture.width * scale
-                    icon_height = icon_texture.height * scale
-                    icon_center_x = x + settings.INVENTORY_BOX_SIZE / 2
-                    icon_center_y = y + settings.INVENTORY_BOX_SIZE / 2
-
-                    arcade.draw_texture_rect(
-                        icon_texture,
-                        arcade.LRBT(
-                            icon_center_x - icon_width / 2,
-                            icon_center_x + icon_width / 2,
-                            icon_center_y - icon_height / 2,
-                            icon_center_y + icon_height / 2,
-                        ),
+                    arcade.draw_lrbt_rectangle_outline(
+                        x,
+                        x + settings.INVENTORY_BOX_SIZE,
+                        y,
+                        y + settings.INVENTORY_BOX_SIZE,
+                        border_color,
+                        border_width,
                     )
 
         # Draw selected item name at bottom
