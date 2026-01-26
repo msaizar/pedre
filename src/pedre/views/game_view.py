@@ -98,10 +98,7 @@ class GameView(arcade.View):
         initialized: Whether setup() has been called.
     """
 
-    def __init__(
-        self,
-        view_manager: ViewManager,
-    ) -> None:
+    def __init__(self, view_manager: ViewManager) -> None:
         """Initialize the game view.
 
         Creates all manager instances and initializes state, but does NOT load the map
@@ -120,11 +117,24 @@ class GameView(arcade.View):
         self.initialized: bool = False
 
     def setup(self) -> None:
-        """Set up the game. Called on first show or when resetting the game state."""
-        # Load the initial map
-        target_map = settings.INITIAL_MAP
+        """Set up the game. Called on first show or when resetting the game state.
+
+        For new games, loads the initial map from settings. For loaded games,
+        loads the map that was stored in current_map by save game restoration.
+        """
         scene_manager = self.view_manager.game_context.scene_manager
-        scene_manager.load_level(target_map, initial=True)
+
+        # Get the map to load (either from saved state or initial map)
+        current_map = scene_manager.get_current_map()
+
+        if current_map:
+            # Map name was restored from save game - load this map
+            logger.info("Loading saved map from save game: %s", current_map)
+            scene_manager.load_level(current_map, initial=True)
+        else:
+            # No map loaded yet - this is a new game, load the initial map
+            logger.info("Loading initial map for new game: %s", settings.INITIAL_MAP)
+            scene_manager.load_level(settings.INITIAL_MAP, initial=True)
 
     def on_show_view(self) -> None:
         """Called when this view becomes active (arcade lifecycle callback).
