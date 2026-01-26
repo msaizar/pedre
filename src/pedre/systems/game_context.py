@@ -100,7 +100,6 @@ class GameContext:
         self,
         event_bus: EventBus,
         window: arcade.Window,
-        next_spawn_waypoint: str | None = None,
     ) -> None:
         """Initialize game context with game state.
 
@@ -113,12 +112,10 @@ class GameContext:
                       Actions can publish events to trigger scripts or notify other systems.
             window: Reference to the arcade Window instance. Used by systems that need
                    to access window properties (size, rendering context, etc).
-            next_spawn_waypoint: Waypoint name for next spawn (set by SceneManager for
-                               portal transitions). Read by PlayerManager and cleared after use.
+
         """
         self.event_bus = event_bus
         self.window = window
-        self.next_spawn_waypoint = next_spawn_waypoint
 
         # Registry for all pluggable systems (accessed via get_system)
         self._systems: dict[str, BaseSystem] = {}

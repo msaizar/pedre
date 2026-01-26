@@ -33,6 +33,16 @@ class SceneBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
+    def get_next_spawn_waypoint(self) -> str:
+        """Get next spawn waypoint."""
+        ...
+
+    @abstractmethod
+    def clear_next_spawn_waypoint(self) -> None:
+        """Clear next spawn waypoint."""
+        ...
+
+    @abstractmethod
     def get_wall_list(self) -> arcade.SpriteList | None:
         """Get wall list."""
         ...

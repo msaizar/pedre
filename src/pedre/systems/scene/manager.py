@@ -123,6 +123,7 @@ class SceneManager(SceneBaseManager):
         self.waypoints: dict[str, tuple[float, float]] = {}
         self.current_map: str = ""
         self.wall_list: arcade.SpriteList = arcade.SpriteList()
+        self.next_spawn_waypoint: str = ""
 
     def setup(self, context: GameContext) -> None:
         """Initialize with context."""
@@ -158,6 +159,14 @@ class SceneManager(SceneBaseManager):
         """Get tile map."""
         return self.tile_map
 
+    def get_next_spawn_waypoint(self) -> str:
+        """Get next spawn waypoint."""
+        return self.next_spawn_waypoint
+
+    def clear_next_spawn_waypoint(self) -> None:
+        """Clear next spawn waypoint."""
+        self.next_spawn_waypoint = ""
+
     def load_level(self, map_file: str, spawn_waypoint: str | None, context: GameContext) -> None:
         """Central orchestration for loading a new map/level.
 
@@ -174,11 +183,9 @@ class SceneManager(SceneBaseManager):
         current_scene = map_file.replace(".tmx", "").lower()
         self.current_scene = current_scene
 
-        # Set next_spawn_waypoint in context BEFORE loading map, so PlayerManager.spawn_player()
-        # can use it to spawn the player at the correct position directly
         if spawn_waypoint:
-            context.next_spawn_waypoint = spawn_waypoint
-            logger.debug("SceneManager: Set context.next_spawn_waypoint to '%s'", spawn_waypoint)
+            self.next_spawn_waypoint = spawn_waypoint
+            logger.debug("SceneManager: Set next_spawn_waypoint to '%s'", spawn_waypoint)
 
         # Load map
         self._load_map(map_file, context)

@@ -72,24 +72,25 @@ class PlayerManager(PlayerBaseManager):
 
         # Check for portal spawn override (defaults to True)
         spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
+        next_spawn_waypoint = context.scene_manager.get_next_spawn_waypoint()
         logger.debug(
-            "PlayerManager: spawn_at_portal=%s, context.next_spawn_waypoint=%s",
+            "PlayerManager: spawn_at_portal=%s, next_spawn_waypoint=%s",
             spawn_at_portal,
-            context.next_spawn_waypoint,
+            next_spawn_waypoint,
         )
-        if spawn_at_portal and context.next_spawn_waypoint:
+        if spawn_at_portal and next_spawn_waypoint:
             waypoints = context.waypoint_manager.get_waypoints()
             logger.debug(
                 "PlayerManager: Available waypoints: %s",
                 list(waypoints.keys()) if waypoints else [],
             )
-            if waypoints and context.next_spawn_waypoint in waypoints:
-                tile_x, tile_y = waypoints[context.next_spawn_waypoint]
+            if waypoints and next_spawn_waypoint in waypoints:
+                tile_x, tile_y = waypoints[next_spawn_waypoint]
                 spawn_x = tile_x * settings.TILE_SIZE + settings.TILE_SIZE / 2
                 spawn_y = tile_y * settings.TILE_SIZE + settings.TILE_SIZE / 2
                 logger.debug(
                     "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
-                    context.next_spawn_waypoint,
+                    next_spawn_waypoint,
                     tile_x,
                     tile_y,
                     spawn_x,
@@ -97,11 +98,11 @@ class PlayerManager(PlayerBaseManager):
                     settings.TILE_SIZE,
                 )
                 # Clear the spawn waypoint
-                context.next_spawn_waypoint = None
+                context.scene_manager.clear_next_spawn_waypoint()
             else:
                 logger.warning(
                     "PlayerManager: Waypoint '%s' not found in available waypoints",
-                    context.next_spawn_waypoint,
+                    next_spawn_waypoint,
                 )
 
         # Get sprite sheet properties
@@ -189,97 +190,6 @@ class PlayerManager(PlayerBaseManager):
         if self.player_sprite:
             self.player_sprite.center_x = player_x
             self.player_sprite.center_y = player_y
-
-    def spawn_player(self, context: GameContext) -> None:
-        """Spawn player based on map data."""
-        scene_manager = context.scene_manager
-        if not scene_manager or not scene_manager.get_tile_map():
-            logger.warning("No tile map available for player spawning")
-            return
-
-        tile_map = scene_manager.get_tile_map()
-
-        # Get Player object layer
-        if tile_map:
-            player_layer = tile_map.object_lists.get("Player")
-            if not player_layer:
-                logger.warning("No 'Player' object layer found in map")
-                return
-
-        # Use first player object
-        player_obj = player_layer[0]
-
-        # Determine spawn position
-        spawn_x = float(player_obj.shape[0])
-        spawn_y = float(player_obj.shape[1])
-
-        # Check for portal spawn override (defaults to True)
-        spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
-        logger.debug(
-            "PlayerManager: spawn_at_portal=%s, context.next_spawn_waypoint=%s",
-            spawn_at_portal,
-            context.next_spawn_waypoint,
-        )
-        if spawn_at_portal and context.next_spawn_waypoint:
-            waypoints = context.waypoint_manager.get_waypoints()
-            logger.debug(
-                "PlayerManager: Available waypoints: %s",
-                list(waypoints.keys()),
-            )
-            if context.next_spawn_waypoint in waypoints:
-                tile_x, tile_y = waypoints[context.next_spawn_waypoint]
-                spawn_x = tile_x * settings.TILE_SIZE + settings.TILE_SIZE / 2
-                spawn_y = tile_y * settings.TILE_SIZE + settings.TILE_SIZE / 2
-                logger.debug(
-                    "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
-                    context.next_spawn_waypoint,
-                    tile_x,
-                    tile_y,
-                    spawn_x,
-                    spawn_y,
-                    settings.TILE_SIZE,
-                )
-                # Clear the spawn waypoint
-                context.next_spawn_waypoint = None
-            else:
-                logger.warning(
-                    "PlayerManager: Waypoint '%s' not found in available waypoints",
-                    context.next_spawn_waypoint,
-                )
-
-        # Get sprite sheet properties
-        sprite_sheet = player_obj.properties.get("sprite_sheet")
-        tile_size = player_obj.properties.get("tile_size")
-
-        if not sprite_sheet or not tile_size:
-            logger.error("Player object missing 'sprite_sheet' or 'tile_size' properties")
-            return
-
-        sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
-
-        # Helper to extract animation props
-        anim_props = self._get_animation_properties(player_obj.properties)
-
-        # Create sprite
-        self.player_sprite = AnimatedPlayer(
-            sprite_sheet_path,
-            tile_size=tile_size,
-            columns=12,
-            scale=1.0,
-            center_x=spawn_x,
-            center_y=spawn_y,
-            **anim_props,
-        )
-
-        self.player_list = arcade.SpriteList()
-        self.player_list.append(self.player_sprite)
-
-        # Add to scene
-        arcade_scene = scene_manager.get_arcade_scene()
-        if arcade_scene:
-            if "Player" in arcade_scene:
-                arcade_scene.remove_sprite_list_by_name("Player")
-            arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
 
     def _get_animation_properties(self, properties: dict) -> dict[str, int]:
         """Extract animation properties from dictionary."""
