@@ -38,15 +38,6 @@ class ShowMenuEvent(Event):
 
 
 @dataclass
-class ShowInventoryEvent(Event):
-    """Request to show the inventory view.
-
-    Published when a system wants to open the player's inventory, typically when
-    the player presses the I key or when a script triggers inventory display.
-    """
-
-
-@dataclass
 class ShowSaveGameEvent(Event):
     """Request to show the save game view.
 

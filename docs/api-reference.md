@@ -18,7 +18,6 @@ view_manager = ViewManager(window)
 
 - `show_menu(*, from_game_pause: bool = False)` - Switch to menu view
 - `show_game(*, trigger_post_inventory_dialog: bool = False)` - Switch to game view
-- `show_inventory()` - Switch to inventory view
 - `show_load_game()` - Switch to load game view
 - `show_save_game()` - Switch to save game view
 - `continue_game()` - Resume or load auto-save
@@ -30,7 +29,6 @@ view_manager = ViewManager(window)
 
 - `menu_view: MenuView` - Get or create menu view
 - `game_view: GameView` - Get or create game view
-- `inventory_view: InventoryView` - Get or create inventory view
 - `load_game_view: LoadGameView` - Get or create load game view
 - `save_game_view: SaveGameView` - Get or create save game view
 
@@ -73,16 +71,6 @@ Main menu with navigation and asset preloading.
 from pedre import MenuView
 
 menu_view = MenuView(view_manager)
-```
-
-### InventoryView
-
-Displays collected items in a grid layout.
-
-```python
-from pedre import InventoryView
-
-inventory_view = InventoryView(view_manager, inventory_manager)
 ```
 
 ## Sprite Classes

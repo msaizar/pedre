@@ -9,34 +9,42 @@ The Pedre framework follows a manager-based architecture where each system encap
 ## Core Infrastructure
 
 ### [SystemLoader](loader.md)
+
 Handles dynamic loading, initialization (setup), and lifecycle management (reset, cleanup) of all game systems.
 
 ### [GameContext](game_context.md)
+
 Central registry providing systems with access to shared game state (event bus, player, scene, wall list) and other systems.
 
 ## Extensibility
 
 ### [Actions](actions.md)
+
 How to create and register custom script actions using `ActionRegistry`.
 
 ### [Events](events.md)
+
 How to define and register custom events using `EventRegistry`.
 
 ## Core Systems
 
 ### [DialogManager](dialog.md)
+
 Manages dialog display with multi-page support and pagination. Handles NPC conversations and text-based interactions.
 
 **Key Features:**
+
 - Multi-page dialog support
 - Automatic pagination
 - Dialog overlay rendering
 - Event integration
 
 ### [NPCManager](npc.md)
+
 Manages NPC state, movement, pathfinding, and interactions. Controls all non-player character behavior and conversations.
 
 **Key Features:**
+
 - NPC registration and tracking
 - Dialog level progression
 - Pathfinding integration
@@ -44,9 +52,11 @@ Manages NPC state, movement, pathfinding, and interactions. Controls all non-pla
 - Event-driven interactions
 
 ### [ScriptManager](script.md)
+
 Event-driven scripting system for cutscenes and interactive sequences. Enables complex game logic without code changes.
 
 **Key Features:**
+
 - JSON-based scripting
 - Event-triggered actions
 - Conditional execution
@@ -54,18 +64,22 @@ Event-driven scripting system for cutscenes and interactive sequences. Enables c
 - Script reusability
 
 ### [PortalManager](portal.md)
+
 Handles map transitions and portal collision detection. Manages seamless movement between different game areas.
 
 **Key Features:**
+
 - Portal registration
 - Collision detection
 - Conditional portals
 - Target positioning
 
 ### [InventoryManager](inventory.md)
+
 Manages item collection and categorization. Tracks player possessions and supports various item types.
 
 **Key Features:**
+
 - Item storage by category
 - Inventory queries
 - Item validation
@@ -74,18 +88,22 @@ Manages item collection and categorization. Tracks player possessions and suppor
 ## Media & Effects
 
 ### [AudioManager](audio.md)
+
 Manages background music and sound effects with caching. Provides audio playback and volume control.
 
 **Key Features:**
+
 - Music playback with looping
 - Sound effect caching
 - Volume control
 - Multiple audio format support
 
 ### [ParticleManager](particle.md)
+
 Visual effects and particle systems. Creates visual feedback for game events.
 
 **Key Features:**
+
 - Particle emission
 - Effect types
 - Duration control
@@ -94,9 +112,11 @@ Visual effects and particle systems. Creates visual feedback for game events.
 ## Persistence & State
 
 ### [SaveManager](save.md)
+
 Handles game state persistence with auto-save and manual save slots. Manages game progress across sessions.
 
 **Key Features:**
+
 - Multiple save slots
 - JSON-based storage
 - Save/load operations
@@ -105,27 +125,33 @@ Handles game state persistence with auto-save and manual save slots. Manages gam
 ## Camera & Movement
 
 ### [CameraManager](camera.md)
+
 Smooth camera following with optional bounds. Controls viewport positioning and movement.
 
 **Key Features:**
+
 - Sprite following
 - Smooth transitions
 - Boundary constraints
 - Configurable smoothing
 
 ### [SceneManager](scene.md)
+
 Manages map loading and scene transitions. Handles the lifecycle of Tiled maps and connects game systems to the current level.
 
 **Key Features:**
+
 - Map loading (.tmx)
 - Smooth visual transitions (fade in/out)
 - Waypoint spawning
 - Collision layer extraction
 
 ### [PathfindingManager](pathfinding.md)
+
 A* pathfinding for NPC navigation. Enables intelligent movement around obstacles.
 
 **Key Features:**
+
 - A* algorithm
 - Grid-based navigation
 - Collision avoidance
@@ -134,18 +160,22 @@ A* pathfinding for NPC navigation. Enables intelligent movement around obstacles
 ## Interaction & Input
 
 ### [InteractionManager](interaction.md)
+
 Manages interactive objects that players can interact with. Handles object-based interactions.
 
 **Key Features:**
+
 - Object registration
 - Proximity detection
 - Multiple interaction types
 - Property-based configuration
 
 ### [InputManager](input.md)
+
 Keyboard input handling and movement vector calculation. Processes player input.
 
 **Key Features:**
+
 - Key state tracking
 - Movement vector calculation
 - Action mapping
@@ -154,9 +184,11 @@ Keyboard input handling and movement vector calculation. Processes player input.
 ## Communication
 
 ### [EventBus](event-bus.md)
+
 Publish-subscribe event system for loose coupling. Enables decoupled communication between systems.
 
 **Key Features:**
+
 - Event publishing
 - Subscriber management
 - Custom event support
