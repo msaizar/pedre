@@ -1,28 +1,28 @@
-"""Pathfinding system using A* algorithm.
+"""Pathfinding system using Arcade's built-in A* algorithm.
 
 This module provides efficient pathfinding for NPCs and other game entities that need
-to navigate around obstacles in the game world. It uses the A* algorithm with Manhattan
-distance heuristic for optimal path calculation on a tile-based grid.
+to navigate around obstacles in the game world. It leverages Arcade 3.3.3's built-in
+AStarBarrierList and astar_calculate_path for optimal path calculation on a grid.
 
 The pathfinding system consists of:
-- PathfindingManager: Coordinates path calculation and collision detection
-- A* algorithm implementation with tile-based navigation
+- PathfindingManager: Coordinates path calculation using Arcade's A* implementation
+- Dynamic sprite exclusion for flexible obstacle handling
 - Automatic retry logic with NPC passthrough for blocked paths
 
 Key features:
-- Efficient A* pathfinding with priority queue optimization
-- Tile-based collision detection against wall sprites
+- Arcade's optimized A* pathfinding with 4-directional movement
+- Grid-based collision detection against wall sprites (configurable grid size)
 - Sprite exclusion system to ignore specific entities during pathfinding
 - Automatic fallback to NPC passthrough when normal pathfinding fails
-- Converts tile paths to pixel coordinates for smooth sprite movement
+- Direct pixel-to-pixel pathfinding for clean coordinate handling
 
 NPCs can be excluded from collision checks
 to allow them to pathfind through each other when necessary.
 
 Pathfinding workflow:
-1. Convert start position (pixels) to tile coordinates
-2. Use A* to find optimal tile path avoiding walls
-3. Convert tile path back to pixel coordinates
+1. Filter wall sprites to exclude specified sprites (moving entity, other NPCs)
+2. Create AStarBarrierList with filtered obstacles and map boundaries
+3. Use Arcade's astar_calculate_path to find optimal pixel path avoiding walls
 4. Return path as deque for efficient pop operations during movement
 
 Integration with other systems:
@@ -34,14 +34,13 @@ Example usage:
     # Get pathfinding manager from context
     pathfinding = context.get_system("pathfinding")
 
-    # Find path from pixel position to tile coordinates
+    # Find path from pixel position to pixel position
     path = pathfinding.find_path(
         start_x=player.center_x,
         start_y=player.center_y,
-        end_tile_x=10,
-        end_tile_y=15,
+        end_x=320.0,
+        end_y=480.0,
         exclude_sprite=npc_sprite
-        context=context
     )
 
     # Path is a deque of (x, y) pixel positions
@@ -52,16 +51,14 @@ Example usage:
 
 import logging
 from collections import deque
-from heapq import heappop, heappush
 from typing import TYPE_CHECKING, ClassVar
 
-from pedre.conf import settings
+import arcade
+
 from pedre.systems.pathfinding.base import PathfindingBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    import arcade
-
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -69,18 +66,16 @@ logger = logging.getLogger(__name__)
 
 @SystemRegistry.register
 class PathfindingManager(PathfindingBaseManager):
-    """Manages pathfinding calculations using A* algorithm.
+    """Manages pathfinding calculations using Arcade's built-in A* algorithm.
 
-    The PathfindingManager provides efficient navigation for game entities across a
-    tile-based grid world. It uses the A* search algorithm with Manhattan distance
-    heuristic to find optimal paths while avoiding obstacles.
+    The PathfindingManager provides efficient navigation for game entities by
+    leveraging Arcade 3.3.3's AStarBarrierList and astar_calculate_path functions.
+    It handles dynamic sprite exclusion and automatic NPC passthrough.
 
-    The manager operates in two coordinate systems:
-    - Pixel coordinates: World positions used by sprites (e.g., 320.0, 240.0)
-    - Tile coordinates: Grid positions used for pathfinding (e.g., 10, 7)
-
-    All pathfinding happens in tile space for efficiency, then results are converted
-    back to pixel positions for sprite movement.
+    The manager works entirely in pixel coordinates for simplicity:
+    - Input: start and end positions in pixel coordinates
+    - Output: path as deque of pixel coordinates
+    - Grid size: configurable (default 32 pixels from settings.TILE_SIZE)
 
     Key responsibilities:
     - Calculate optimal paths between start and end positions
@@ -91,32 +86,29 @@ class PathfindingManager(PathfindingBaseManager):
     The NPC passthrough feature allows NPCs to pathfind through each other when
     their direct path is blocked by other NPCs. This prevents permanent deadlocks
     where NPCs block each other's paths.
-
-    Attributes:
-        tile_size: Size of each tile in pixels (default 32).
     """
 
     name: ClassVar[str] = "pathfinding"
-    dependencies: ClassVar[list[str]] = []
+    dependencies: ClassVar[list[str]] = ["scene"]
 
     def __init__(self) -> None:
-        """Initialize the pathfinding manager with default values.
+        """Initialize the pathfinding manager.
 
-        Creates a pathfinding manager with default tile size.
+        Creates a pathfinding manager. Tile size is dynamically retrieved from
+        the scene manager's current map during pathfinding operations.
         """
-        self.tile_size: int = settings.TILE_SIZE
 
     def setup(self, context: GameContext) -> None:
-        """Initialize the pathfinding system with game context and settings.
+        """Initialize the pathfinding system with game context.
 
         This method is called by the SystemLoader after all systems have been
-        instantiated. It configures the manager with tile size from settings.
+        instantiated.
 
         Args:
             context: Game context providing access to other systems.
         """
         self.context = context
-        logger.debug("PathfindingManager setup complete (tile_size=%d)", self.tile_size)
+        logger.debug("PathfindingManager setup complete")
 
     def cleanup(self) -> None:
         """Clean up pathfinding resources when the scene unloads.
@@ -125,84 +117,45 @@ class PathfindingManager(PathfindingBaseManager):
         """
         logger.debug("PathfindingManager cleanup complete")
 
-    def is_tile_walkable(
-        self,
-        tile_x: int | float,
-        tile_y: int | float,
-        exclude_sprite: arcade.Sprite | None = None,
-        exclude_sprites: list[arcade.Sprite] | None = None,
-    ) -> bool:
-        """Check if a tile position is walkable.
+    def _get_map_boundaries(self) -> tuple[float, float, float, float]:
+        """Get playfield boundaries for pathfinding.
 
-        Determines whether a given tile coordinate is free of obstacles. A tile is
-        considered walkable if no sprites from the wall_list overlap with its center point.
-
-        The exclusion system allows specific sprites to be ignored during the check:
-        - exclude_sprite: Single sprite to ignore (typically the moving entity itself)
-        - exclude_sprites: Multiple sprites to ignore (e.g., all NPCs during passthrough)
-
-        This is essential for preventing entities from blocking their own paths and
-        for implementing the NPC passthrough feature.
-
-        Implementation details:
-        - Converts tile coordinates to pixel center point
-        - Checks collision using sprite bounding boxes (width/height)
-        - Returns True if wall_list is not set (fail-safe behavior)
-
-        Args:
-            tile_x: Tile x coordinate in grid space.
-            tile_y: Tile y coordinate in grid space.
-            exclude_sprite: Single sprite to exclude from collision check, typically
-                           the sprite that is moving.
-            exclude_sprites: List of sprites to exclude from collision check, used
-                            during NPC passthrough retry.
+        Calculates the boundaries of the game world for pathfinding operations.
+        First tries to use the tile map dimensions, then falls back to estimating
+        from the wall sprite list, and finally uses a safe default.
 
         Returns:
-            True if the tile is walkable, False if blocked by any wall sprite.
+            Tuple of (left, right, bottom, top) in pixel coordinates.
         """
-        scene_manager = self.context.scene_manager
-        wall_list = scene_manager.get_wall_list()
-        if not wall_list:
-            return True
+        tile_map = self.context.scene_manager.get_tile_map()
+        if tile_map:
+            map_width = tile_map.width * tile_map.tile_width
+            map_height = tile_map.height * tile_map.tile_height
+            return (0, map_width, 0, map_height)
 
-        # Convert tile to pixel center
-        pixel_x = tile_x * self.tile_size + self.tile_size / 2
-        pixel_y = tile_y * self.tile_size + self.tile_size / 2
+        # Fallback: estimate from wall_list
+        wall_list = self.context.scene_manager.get_wall_list()
+        if wall_list:
+            max_x = max((s.center_x + s.width / 2 for s in wall_list), default=1000)
+            max_y = max((s.center_y + s.height / 2 for s in wall_list), default=1000)
+            return (0, max_x, 0, max_y)
 
-        # Build set of sprites to exclude for faster lookup
-        excluded = set()
-        if exclude_sprite:
-            excluded.add(exclude_sprite)
-        if exclude_sprites:
-            excluded.update(exclude_sprites)
-
-        # Check if any wall sprites overlap this position
-        for wall in wall_list:
-            if wall in excluded:
-                continue
-
-            dx = abs(wall.center_x - pixel_x)
-            dy = abs(wall.center_y - pixel_y)
-
-            if dx < (wall.width / 2) and dy < (wall.height / 2):
-                return False
-
-        return True
+        return (0, 1000, 0, 1000)  # Safe default
 
     def find_path(
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int | float,
-        end_tile_y: int | float,
+        end_x: float,
+        end_y: float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:
-        """Find a path using A* pathfinding with automatic retry logic.
+        """Find a path using Arcade's A* pathfinding with automatic retry logic.
 
-        Calculates the optimal path from a pixel position to a target tile using the
-        A* algorithm. If the initial pathfinding fails (typically due to NPC blocking),
-        automatically retries with NPC passthrough enabled.
+        Calculates the optimal path from a start position to a target position using
+        Arcade's built-in A* algorithm. If the initial pathfinding fails (typically
+        due to NPC blocking), automatically retries with NPC passthrough enabled.
 
         The two-phase approach:
         1. First attempt: Normal pathfinding with only specified exclusions
@@ -213,7 +166,7 @@ class PathfindingManager(PathfindingBaseManager):
         that NPCs will move out of the way before collision occurs.
 
         The returned path is a deque of pixel coordinates representing waypoints from
-        start to destination. The path excludes the starting tile but includes the
+        start to destination. The path excludes the starting position but includes the
         destination. Using a deque allows efficient removal of waypoints as they're
         reached via popleft().
 
@@ -228,8 +181,8 @@ class PathfindingManager(PathfindingBaseManager):
         Args:
             start_x: Starting pixel x position (world coordinates).
             start_y: Starting pixel y position (world coordinates).
-            end_tile_x: Target tile x coordinate (grid space).
-            end_tile_y: Target tile y coordinate (grid space).
+            end_x: Target pixel x position (world coordinates).
+            end_y: Target pixel y position (world coordinates).
             exclude_sprite: The sprite that is moving, excluded from blocking itself.
             exclude_sprites: Additional sprites to exclude from collision detection.
 
@@ -238,7 +191,7 @@ class PathfindingManager(PathfindingBaseManager):
             if no path exists even with NPC passthrough.
         """
         # Try normal pathfinding first
-        path = self._find_path_internal(start_x, start_y, end_tile_x, end_tile_y, exclude_sprite, exclude_sprites)
+        path = self._find_path_internal(start_x, start_y, end_x, end_y, exclude_sprite, exclude_sprites)
 
         # If no path found, retry with NPC passthrough enabled
         scene_manager = self.context.scene_manager
@@ -255,7 +208,7 @@ class PathfindingManager(PathfindingBaseManager):
                 if exclude_sprites:
                     all_npcs.extend(exclude_sprites)
 
-                path = self._find_path_internal(start_x, start_y, end_tile_x, end_tile_y, exclude_sprite, all_npcs)
+                path = self._find_path_internal(start_x, start_y, end_x, end_y, exclude_sprite, all_npcs)
                 if path:
                     logger.info("  Path found with NPC passthrough (length: %d)", len(path))
 
@@ -265,127 +218,89 @@ class PathfindingManager(PathfindingBaseManager):
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int | float,
-        end_tile_y: int | float,
+        end_x: float,
+        end_y: float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:
-        """Internal A* pathfinding implementation.
+        """Internal pathfinding implementation using Arcade's A* algorithm.
 
-        Core pathfinding algorithm using A* search with Manhattan distance heuristic.
-        This method is called internally by find_path() and should not be called directly.
+        Uses Arcade's built-in AStarBarrierList and astar_calculate_path to find
+        optimal paths. This method is called internally by find_path() and should
+        not be called directly.
 
-        A* Algorithm overview:
-        - Uses a priority queue (heap) to explore tiles in order of estimated total cost
-        - f_score = g_score + heuristic, where:
-          - g_score: Actual cost from start to current tile
-          - heuristic: Estimated cost from current to goal (Manhattan distance)
-        - Explores 4-directional movement (up, down, left, right)
-        - Maintains came_from map to reconstruct path when goal is reached
-
-        The algorithm only considers tiles that pass the is_tile_walkable check, which
-        respects the exclusion lists provided.
-
-        Path reconstruction:
-        - Starts at goal and follows came_from links back to start
-        - Reverses to get start-to-goal ordering
-        - Converts tile coordinates to pixel centers
-        - Skips starting tile (entity is already there)
+        The implementation:
+        - Creates a filtered sprite list excluding specified sprites
+        - Builds an AStarBarrierList with map boundaries
+        - Calls Arcade's astar_calculate_path with diagonal_movement=False
+        - Converts result to deque, skipping the start position
 
         Args:
             start_x: Starting pixel x position.
             start_y: Starting pixel y position.
-            end_tile_x: Target tile x coordinate.
-            end_tile_y: Target tile y coordinate.
+            end_x: Target pixel x position.
+            end_y: Target pixel y position.
             exclude_sprite: The sprite that is moving (excluded from collision).
             exclude_sprites: List of sprites to exclude (e.g., all moving NPCs).
 
         Returns:
             Deque of (x, y) pixel positions to follow. Empty deque if no path found.
         """
-        # Convert pixel positions to tile coordinates
-        start_tile_x = int(start_x / self.tile_size)
-        start_tile_y = int(start_y / self.tile_size)
+        logger.debug("  Finding path from (%.1f, %.1f) to (%.1f, %.1f)", start_x, start_y, end_x, end_y)
 
-        logger.debug("  Starting tile: (%d, %d)", start_tile_x, start_tile_y)
-        start_walkable = self.is_tile_walkable(start_tile_x, start_tile_y, exclude_sprite, exclude_sprites)
-        end_walkable = self.is_tile_walkable(end_tile_x, end_tile_y, exclude_sprite, exclude_sprites)
-        logger.debug("  Start tile walkable: %s", start_walkable)
-        logger.debug("  End tile walkable: %s", end_walkable)
+        # Get wall list
+        wall_list = self.context.scene_manager.get_wall_list()
+        if not wall_list:
+            # No obstacles - return direct path
+            logger.debug("  No wall list, returning direct path")
+            return deque([(end_x, end_y)])
 
-        if not end_walkable:
-            logger.warning("  End tile blocked at (%d, %d)!", end_tile_x, end_tile_y)
+        # Build excluded sprite set
+        excluded = set()
+        if exclude_sprite:
+            excluded.add(exclude_sprite)
+        if exclude_sprites:
+            excluded.update(exclude_sprites)
 
-        # A* pathfinding
-        def heuristic(ax: int | float, ay: int | float, bx: int | float, by: int | float) -> float:
-            """Manhattan distance heuristic.
+        # Create filtered blocking sprite list
+        blocking_sprites = arcade.SpriteList()
+        for sprite in wall_list:
+            if sprite not in excluded:
+                blocking_sprites.append(sprite)
 
-            Calculates the estimated cost from point A to point B using Manhattan
-            (taxicab) distance. This is optimal for 4-directional grid movement
-            where diagonal movement is not allowed.
+        # Get map boundaries and tile size
+        left, right, bottom, top = self._get_map_boundaries()
+        tile_size = self.context.scene_manager.get_tile_size()
+        logger.debug("  Map boundaries: left=%.1f, right=%.1f, bottom=%.1f, top=%.1f", left, right, bottom, top)
+        logger.debug("  Grid size (tile size): %d", tile_size)
 
-            Args:
-                ax: Point A x coordinate.
-                ay: Point A y coordinate.
-                bx: Point B x coordinate.
-                by: Point B y coordinate.
-
-            Returns:
-                Manhattan distance as number of tile steps.
-            """
-            return abs(ax - bx) + abs(ay - by)
-
-        # Priority queue: (f_score, tile_x, tile_y)
-        open_set: list[tuple[float, int, int]] = []
-        heappush(open_set, (0, start_tile_x, start_tile_y))
-
-        came_from: dict[tuple[int | float, int | float], tuple[int, int]] = {}
-        g_score: dict[tuple[int, int], float] = {(start_tile_x, start_tile_y): 0}
-
-        while open_set:
-            _, current_x, current_y = heappop(open_set)
-
-            # Reached goal
-            if current_x == end_tile_x and current_y == end_tile_y:
-                # Reconstruct path
-                tile_path = [(end_tile_x, end_tile_y)]
-                current = (end_tile_x, end_tile_y)
-                while current in came_from:
-                    current = came_from[current]
-                    tile_path.append(current)
-                tile_path.reverse()
-
-                # Convert tile path to pixel path
-                path: deque[tuple[float, float]] = deque()
-                for tx, ty in tile_path[1:]:  # Skip start tile
-                    pixel_x = tx * self.tile_size + self.tile_size / 2
-                    pixel_y = ty * self.tile_size + self.tile_size / 2
-                    path.append((pixel_x, pixel_y))
-
-                return path
-
-            # Check all 4 neighbors (up, down, left, right)
-            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-                neighbor_x = current_x + dx
-                neighbor_y = current_y + dy
-
-                if not self.is_tile_walkable(neighbor_x, neighbor_y, exclude_sprite, exclude_sprites):
-                    continue
-
-                tentative_g = g_score[(current_x, current_y)] + 1
-
-                if (neighbor_x, neighbor_y) not in g_score or tentative_g < g_score[(neighbor_x, neighbor_y)]:
-                    came_from[(neighbor_x, neighbor_y)] = (current_x, current_y)
-                    g_score[(neighbor_x, neighbor_y)] = tentative_g
-                    f_score = tentative_g + heuristic(neighbor_x, neighbor_y, end_tile_x, end_tile_y)
-                    heappush(open_set, (f_score, neighbor_x, neighbor_y))
-
-        # No path found
-        logger.warning(
-            "  No path found from (%d, %d) to (%d, %d)",
-            start_tile_x,
-            start_tile_y,
-            end_tile_x,
-            end_tile_y,
+        # Create AStarBarrierList
+        # Use exclude_sprite if available, otherwise create a dummy sprite
+        moving_sprite = exclude_sprite if exclude_sprite else arcade.Sprite()
+        barrier_list = arcade.AStarBarrierList(
+            moving_sprite=moving_sprite,
+            blocking_sprites=blocking_sprites,
+            grid_size=tile_size,
+            left=int(left),
+            right=int(right),
+            bottom=int(bottom),
+            top=int(top),
         )
-        return deque()
+
+        # Calculate path using Arcade's A* implementation
+        path_list = arcade.astar_calculate_path(
+            start_point=(start_x, start_y),
+            end_point=(end_x, end_y),
+            astar_barrier_list=barrier_list,
+            diagonal_movement=False,  # Preserve 4-directional movement
+        )
+
+        # Convert to deque, skip start point (match current behavior)
+        if path_list is None:
+            logger.warning("  No path found from (%.1f, %.1f) to (%.1f, %.1f)", start_x, start_y, end_x, end_y)
+            return deque()
+
+        # Skip first point (start position) to match existing behavior
+        path = deque(path_list[1:]) if len(path_list) > 1 else deque()
+        logger.debug("  Path found with %d waypoints", len(path))
+        return path

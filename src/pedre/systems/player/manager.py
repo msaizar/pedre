@@ -85,17 +85,12 @@ class PlayerManager(PlayerBaseManager):
                 list(waypoints.keys()) if waypoints else [],
             )
             if waypoints and next_spawn_waypoint in waypoints:
-                tile_x, tile_y = waypoints[next_spawn_waypoint]
-                spawn_x = tile_x * settings.TILE_SIZE + settings.TILE_SIZE / 2
-                spawn_y = tile_y * settings.TILE_SIZE + settings.TILE_SIZE / 2
+                spawn_x, spawn_y = waypoints[next_spawn_waypoint]
                 logger.debug(
-                    "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
+                    "PlayerManager: Spawning at waypoint '%s': position (%.1f, %.1f)",
                     next_spawn_waypoint,
-                    tile_x,
-                    tile_y,
                     spawn_x,
                     spawn_y,
-                    settings.TILE_SIZE,
                 )
                 # Clear the spawn waypoint
                 self.context.scene_manager.clear_next_spawn_waypoint()
