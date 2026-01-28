@@ -65,6 +65,7 @@ import arcade
 from PIL import Image
 
 from pedre.sprites.animated_player import AnimatedPlayer
+from pedre.sprites.helpers import load_animation_frames
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -406,36 +407,98 @@ class AnimatedNPC(AnimatedPlayer):
             # Generate appear by reversing disappear
             self.animation_textures["appear"] = list(reversed(self.animation_textures["disappear"]))
 
-        # Helper function to load interact frames from a row
-        def load_interact_frames(anim_name: str, frame_count: int, row_index: int, *, flip: bool = False) -> None:
-            """Load interact animation frames from sprite sheet row."""
-            for frame_num in range(frame_count):
-                left = frame_num * self.tile_size
-                top = row_index * self.tile_size
-                right = left + self.tile_size
-                bottom = top + self.tile_size
-
-                frame_image = sprite_sheet.crop((left, top, right, bottom))
-
-                if flip:
-                    frame_image = frame_image.transpose(Image.FLIP_LEFT_RIGHT)  # type: ignore[attr-defined]
-
-                texture = arcade.Texture(
-                    name=f"npc_{anim_name}_{frame_num}",
-                    image=frame_image,
-                )
-                self.animation_textures[anim_name].append(texture)
-
-        # Load all specified interact animations
+        # Load interact up/down animations (these don't have left/right pairs)
         for anim_name, frames, row in interact_configs:
-            if frames is not None and row is not None:
-                load_interact_frames(anim_name, frames, row)
+            if frames is not None and row is not None and anim_name in ["interact_up", "interact_down"]:
+                load_animation_frames(
+                    sprite_sheet,
+                    f"npc_{anim_name}",
+                    frames,
+                    row,
+                    self.tile_size,
+                    self.animation_textures,
+                )
 
-        # Auto-generate left interact from right if not explicitly provided
-        if not self.animation_textures["interact_left"] and self.animation_textures["interact_right"]:
-            logger.debug("Auto-generating interact_left by flipping interact_right")
+        # Load interact left/right with auto-generation logic (similar to appear/disappear)
+        if self.interact_left_frames is not None and self.interact_left_row is not None:
             if self.interact_right_frames is not None and self.interact_right_row is not None:
-                load_interact_frames("interact_left", self.interact_right_frames, self.interact_right_row, flip=True)
+                # Case 1: Both defined - load both independently
+                logger.debug(
+                    "Loading interact_left (%s frames, row %s)",
+                    self.interact_left_frames,
+                    self.interact_left_row,
+                )
+                logger.debug(
+                    "Loading interact_right (%s frames, row %s)",
+                    self.interact_right_frames,
+                    self.interact_right_row,
+                )
+                load_animation_frames(
+                    sprite_sheet,
+                    "npc_interact_left",
+                    self.interact_left_frames,
+                    self.interact_left_row,
+                    self.tile_size,
+                    self.animation_textures,
+                )
+                load_animation_frames(
+                    sprite_sheet,
+                    "npc_interact_right",
+                    self.interact_right_frames,
+                    self.interact_right_row,
+                    self.tile_size,
+                    self.animation_textures,
+                )
+            else:
+                # Case 2: Only left defined - load left and generate right by flipping
+                logger.debug(
+                    "Loading interact_left (%s frames, row %s)",
+                    self.interact_left_frames,
+                    self.interact_left_row,
+                )
+                logger.debug("Auto-generating interact_right by flipping interact_left")
+                load_animation_frames(
+                    sprite_sheet,
+                    "npc_interact_left",
+                    self.interact_left_frames,
+                    self.interact_left_row,
+                    self.tile_size,
+                    self.animation_textures,
+                )
+                load_animation_frames(
+                    sprite_sheet,
+                    "npc_interact_right",
+                    self.interact_left_frames,
+                    self.interact_left_row,
+                    self.tile_size,
+                    self.animation_textures,
+                    flip=True,
+                )
+        elif self.interact_right_frames is not None and self.interact_right_row is not None:
+            # Case 3: Only right defined - load right and generate left by flipping
+            logger.debug(
+                "Loading interact_right (%s frames, row %s)",
+                self.interact_right_frames,
+                self.interact_right_row,
+            )
+            logger.debug("Auto-generating interact_left by flipping interact_right")
+            load_animation_frames(
+                sprite_sheet,
+                "npc_interact_right",
+                self.interact_right_frames,
+                self.interact_right_row,
+                self.tile_size,
+                self.animation_textures,
+            )
+            load_animation_frames(
+                sprite_sheet,
+                "npc_interact_left",
+                self.interact_right_frames,
+                self.interact_right_row,
+                self.tile_size,
+                self.animation_textures,
+                flip=True,
+            )
 
         # Calculate totals for logging
         appear_count = self.appear_frames or 0
