@@ -159,16 +159,6 @@ class SceneManager(SceneBaseManager):
         """Get tile map."""
         return self.tile_map
 
-    def get_tile_size(self) -> int:
-        """Get tile size from the current map.
-
-        Returns:
-            Tile size in pixels (assumes square tiles). Returns 32 as default if no map is loaded.
-        """
-        if self.tile_map:
-            return int(self.tile_map.tile_width)
-        return 32  # Default fallback
-
     def get_next_spawn_waypoint(self) -> str:
         """Get next spawn waypoint."""
         return self.next_spawn_waypoint

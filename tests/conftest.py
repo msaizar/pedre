@@ -61,6 +61,7 @@ def configure_test_settings() -> Generator[None]:
     settings.configure(
         SCREEN_WIDTH=1280,
         SCREEN_HEIGHT=720,
+        TILE_SIZE=32,
         ASSETS_HANDLE="game_assets",
         WINDOW_TITLE="Test",
         MENU_TITLE="Test Menu",

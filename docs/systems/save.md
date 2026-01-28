@@ -6,6 +6,14 @@ Handles game state persistence with auto-save and manual save slots.
 
 `src/pedre/systems/save/manager.py`
 
+## Initialization
+
+```python
+from pedre.systems.save import SaveManager
+
+save_manager = SaveManager(save_directory="saves/")
+```
+
 ## Key Methods
 
 ### `save_game(slot: str, game_state: dict) -> bool`

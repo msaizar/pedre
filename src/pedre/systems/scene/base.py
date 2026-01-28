@@ -100,15 +100,6 @@ class SceneBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def get_tile_size(self) -> int:
-        """Get tile size from the current map.
-
-        Returns:
-            Tile size in pixels (assumes square tiles). Returns a default if no map is loaded.
-        """
-        ...
-
-    @abstractmethod
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map."""
         ...

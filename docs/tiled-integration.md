@@ -414,6 +414,7 @@ Player movement and interaction speeds are controlled by game settings. These ca
 | Property | Default | Description |
 | -------- | ------- | ----------- |
 | `PLAYER_MOVEMENT_SPEED` | 3 | Player movement speed (pixels per frame) |
+| `TILE_SIZE` | 32 | Size of each game tile (pixels) |
 | `INTERACTION_MANAGER_DISTANCE` | 50 | Distance for object interaction (pixels, ~1.5 tiles) |
 | `NPC_INTERACTION_DISTANCE` | 50 | Distance for NPC interaction (pixels, ~1.5 tiles) |
 | `PORTAL_INTERACTION_DISTANCE` | 50 | Distance for portal activation (pixels, ~1.5 tiles) |

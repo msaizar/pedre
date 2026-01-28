@@ -6,6 +6,17 @@ Smooth camera following with optional bounds.
 
 `src/pedre/systems/camera/manager.py`
 
+## Initialization
+
+```python
+from pedre.systems.camera import CameraManager
+
+camera_manager = CameraManager(
+    camera=arcade.Camera(window.width, window.height),
+    smoothing=0.1  # 0.0 (instant) to 1.0 (very smooth)
+)
+```
+
 ## Key Methods
 
 ### `smooth_follow(target_x: float, target_y: float) -> None`
