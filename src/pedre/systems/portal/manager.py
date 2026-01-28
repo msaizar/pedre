@@ -79,7 +79,7 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
-    from pedre.systems.player import AnimatedPlayer
+    from pedre.systems.player.sprites import AnimatedPlayer
 
 logger = logging.getLogger(__name__)
 
