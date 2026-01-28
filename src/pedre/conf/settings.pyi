@@ -26,6 +26,7 @@ MENU_TEXT_EXIT: str
 
 # Player settings
 PLAYER_MOVEMENT_SPEED: int
+TILE_SIZE: int
 INTERACTION_MANAGER_DISTANCE: int
 NPC_INTERACTION_DISTANCE: int
 PORTAL_INTERACTION_DISTANCE: int
@@ -78,7 +79,8 @@ def configure(**options: Any) -> None:  # noqa: ANN401
     Example:
         settings.configure(
             SCREEN_WIDTH=800,
-            SCREEN_HEIGHT=600
+            SCREEN_HEIGHT=600,
+            TILE_SIZE=64
         )
     """
 

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 from pedre.systems.registry import SystemRegistry
 
@@ -66,10 +67,14 @@ class DebugManager(BaseSystem):
         # Build debug text content
         debug_lines = []
         y_offset = 30
+        tile_size = settings.TILE_SIZE
 
         # Collect player position (from context)
         player_sprite = self.context.player_manager.get_player_sprite()
         if player_sprite:
+            player_tile_x = int(player_sprite.center_x / tile_size)
+            player_tile_y = int(player_sprite.center_y / tile_size)
+            debug_lines.append((f"Player: tile ({player_tile_x}, {player_tile_y})", arcade.color.GREEN))
             player_x = int(player_sprite.center_x)
             player_y = int(player_sprite.center_y)
             debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
@@ -78,8 +83,16 @@ class DebugManager(BaseSystem):
         if npc_manager:
             for npc_name, npc_state in npc_manager.get_npcs().items():
                 if npc_state.sprite and npc_state.sprite.visible:
+                    npc_tile_x = int(npc_state.sprite.center_x / tile_size)
+                    npc_tile_y = int(npc_state.sprite.center_y / tile_size)
                     npc_x = int(npc_state.sprite.center_x)
                     npc_y = int(npc_state.sprite.center_y)
+                    debug_lines.append(
+                        (
+                            f"{npc_name}: tile ({npc_tile_x}, {npc_tile_y}) level {npc_state.dialog_level}",
+                            arcade.color.YELLOW,
+                        )
+                    )
                     debug_lines.append(
                         (f"{npc_name}: coords ({npc_x}, {npc_y}) level {npc_state.dialog_level}", arcade.color.YELLOW)
                     )

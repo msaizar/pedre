@@ -6,6 +6,14 @@ Manages dialog display with multi-page support and pagination.
 
 `src/pedre/systems/dialog/manager.py`
 
+## Initialization
+
+```python
+from pedre.systems.dialog import DialogManager
+
+dialog_manager = DialogManager()
+```
+
 ## Key Methods
 
 ### `show_dialog(npc_name: str, text: list[str], *, instant: bool = False, auto_close: bool = False) -> None`
