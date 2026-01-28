@@ -275,6 +275,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     f"player_{anim_name}",
+                    anim_name,
                     frames,
                     row,
                     self.tile_size,
@@ -298,6 +299,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_idle_left",
+                    "idle_left",
                     self.idle_left_frames,
                     self.idle_left_row,
                     self.tile_size,
@@ -306,6 +308,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_idle_right",
+                    "idle_right",
                     self.idle_right_frames,
                     self.idle_right_row,
                     self.tile_size,
@@ -322,6 +325,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_idle_left",
+                    "idle_left",
                     self.idle_left_frames,
                     self.idle_left_row,
                     self.tile_size,
@@ -330,6 +334,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_idle_right",
+                    "idle_right",
                     self.idle_left_frames,
                     self.idle_left_row,
                     self.tile_size,
@@ -347,6 +352,7 @@ class AnimatedPlayer(arcade.Sprite):
             load_animation_frames(
                 sprite_sheet,
                 "player_idle_right",
+                "idle_right",
                 self.idle_right_frames,
                 self.idle_right_row,
                 self.tile_size,
@@ -355,6 +361,7 @@ class AnimatedPlayer(arcade.Sprite):
             load_animation_frames(
                 sprite_sheet,
                 "player_idle_left",
+                "idle_left",
                 self.idle_right_frames,
                 self.idle_right_row,
                 self.tile_size,
@@ -379,6 +386,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_walk_left",
+                    "walk_left",
                     self.walk_left_frames,
                     self.walk_left_row,
                     self.tile_size,
@@ -387,6 +395,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_walk_right",
+                    "walk_right",
                     self.walk_right_frames,
                     self.walk_right_row,
                     self.tile_size,
@@ -403,6 +412,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_walk_left",
+                    "walk_left",
                     self.walk_left_frames,
                     self.walk_left_row,
                     self.tile_size,
@@ -411,6 +421,7 @@ class AnimatedPlayer(arcade.Sprite):
                 load_animation_frames(
                     sprite_sheet,
                     "player_walk_right",
+                    "walk_right",
                     self.walk_left_frames,
                     self.walk_left_row,
                     self.tile_size,
@@ -428,6 +439,7 @@ class AnimatedPlayer(arcade.Sprite):
             load_animation_frames(
                 sprite_sheet,
                 "player_walk_right",
+                "walk_right",
                 self.walk_right_frames,
                 self.walk_right_row,
                 self.tile_size,
@@ -436,6 +448,7 @@ class AnimatedPlayer(arcade.Sprite):
             load_animation_frames(
                 sprite_sheet,
                 "player_walk_left",
+                "walk_left",
                 self.walk_right_frames,
                 self.walk_right_row,
                 self.tile_size,

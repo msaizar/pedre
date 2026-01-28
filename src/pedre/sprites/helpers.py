@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 
 def load_animation_frames(
     sprite_sheet: Image.Image,
-    anim_name: str,
+    texture_name_prefix: str,
+    dict_key: str,
     frame_count: int,
     row_index: int,
     tile_size: int,
@@ -23,7 +24,8 @@ def load_animation_frames(
 
     Args:
         sprite_sheet: The PIL Image object of the sprite sheet.
-        anim_name: Name of the animation (e.g., "idle_left", "walk_right").
+        texture_name_prefix: Prefix for texture names (e.g., "player_idle_left").
+        dict_key: Key to use in animation_textures dict (e.g., "idle_left").
         frame_count: Number of frames to load from the row.
         row_index: Row index in the sprite sheet.
         tile_size: Size of each frame in pixels.
@@ -42,7 +44,7 @@ def load_animation_frames(
             frame_image = frame_image.transpose(Transpose.FLIP_LEFT_RIGHT)
 
         texture = arcade.Texture(
-            name=f"{anim_name}_{frame_num}",
+            name=f"{texture_name_prefix}_{frame_num}",
             image=frame_image,
         )
-        animation_textures[anim_name].append(texture)
+        animation_textures[dict_key].append(texture)

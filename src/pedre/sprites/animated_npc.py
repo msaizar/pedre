@@ -413,6 +413,7 @@ class AnimatedNPC(AnimatedPlayer):
                 load_animation_frames(
                     sprite_sheet,
                     f"npc_{anim_name}",
+                    anim_name,
                     frames,
                     row,
                     self.tile_size,
@@ -436,6 +437,7 @@ class AnimatedNPC(AnimatedPlayer):
                 load_animation_frames(
                     sprite_sheet,
                     "npc_interact_left",
+                    "interact_left",
                     self.interact_left_frames,
                     self.interact_left_row,
                     self.tile_size,
@@ -444,6 +446,7 @@ class AnimatedNPC(AnimatedPlayer):
                 load_animation_frames(
                     sprite_sheet,
                     "npc_interact_right",
+                    "interact_right",
                     self.interact_right_frames,
                     self.interact_right_row,
                     self.tile_size,
@@ -460,6 +463,7 @@ class AnimatedNPC(AnimatedPlayer):
                 load_animation_frames(
                     sprite_sheet,
                     "npc_interact_left",
+                    "interact_left",
                     self.interact_left_frames,
                     self.interact_left_row,
                     self.tile_size,
@@ -468,6 +472,7 @@ class AnimatedNPC(AnimatedPlayer):
                 load_animation_frames(
                     sprite_sheet,
                     "npc_interact_right",
+                    "interact_right",
                     self.interact_left_frames,
                     self.interact_left_row,
                     self.tile_size,
@@ -485,6 +490,7 @@ class AnimatedNPC(AnimatedPlayer):
             load_animation_frames(
                 sprite_sheet,
                 "npc_interact_right",
+                "interact_right",
                 self.interact_right_frames,
                 self.interact_right_row,
                 self.tile_size,
@@ -493,6 +499,7 @@ class AnimatedNPC(AnimatedPlayer):
             load_animation_frames(
                 sprite_sheet,
                 "npc_interact_left",
+                "interact_left",
                 self.interact_right_frames,
                 self.interact_right_row,
                 self.tile_size,
