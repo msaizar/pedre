@@ -398,7 +398,7 @@ class AnimatedSprite(arcade.Sprite):
             total_count,
         )
 
-    def update_animation(self, delta_time: float = 1 / 60, *, moving: bool = False) -> None:
+    def update_animation(self, delta_time: float = 1 / 60, *args: object, **kwargs: object) -> None:
         """Update animation state and advance frames.
 
         Called each frame to update the sprite's texture based on movement state. Automatically
@@ -410,7 +410,10 @@ class AnimatedSprite(arcade.Sprite):
 
         Args:
             delta_time: Time elapsed since last update in seconds. Default is 1/60.
-            moving: Whether the character is currently moving. Defaults to False.
+            *args: First positional argument can be moving (bool), indicating whether the
+                  character is currently moving.
+            **kwargs: Keyword arguments. Can include 'moving' (bool) as an alternative to
+                     passing it as a positional argument.
 
         Side effects:
             - Updates self.texture to current animation frame (if animation exists)
@@ -418,6 +421,9 @@ class AnimatedSprite(arcade.Sprite):
             - Increments self.animation_timer by delta_time
             - Resets frame if it exceeds animation length
         """
+        # Extract moving parameter from args or kwargs (default to False if not provided)
+        moving = bool(args[0]) if args else kwargs.get("moving", False)
+
         # Determine animation state
         state_prefix = "walk" if moving else "idle"
         animation_key = f"{state_prefix}_{self.current_direction}"
