@@ -444,7 +444,7 @@ class AnimatedNPC(AnimatedSprite):
                 interact_count,
             )
 
-    def update_animation(self, delta_time: float = 1 / 60, *args: object, **kwargs: object) -> None:
+    def update_animation(self, delta_time: float = 1 / 60, *, moving: bool = False) -> None:
         """Update animation state and advance frames.
 
         Called each frame to update the sprite's texture based on the current animation state.
@@ -462,9 +462,7 @@ class AnimatedNPC(AnimatedSprite):
 
         Args:
             delta_time: Time elapsed since last update in seconds. Default is 1/60.
-            *args: Positional arguments (unused, for compatibility with base class).
-            **kwargs: Keyword arguments. Should include 'moving' (bool) to indicate if the
-                     character is currently moving.
+            moving: Whether the character is currently moving. Defaults to False.
 
         Side effects:
             - Updates self.texture to current animation frame
@@ -534,7 +532,7 @@ class AnimatedNPC(AnimatedSprite):
             return
 
         # No special animation active - delegate to parent for normal idle/walk animations
-        super().update_animation(delta_time, *args, **kwargs)
+        super().update_animation(delta_time, moving=moving)
 
     def start_appear_animation(self) -> None:
         """Start the appear animation (invisible to visible).
