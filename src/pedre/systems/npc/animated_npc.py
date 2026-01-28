@@ -64,7 +64,7 @@ from typing import TYPE_CHECKING
 import arcade
 from PIL import Image
 
-from pedre.sprites.animated_player import AnimatedPlayer
+from pedre.sprites.animated_sprite import AnimatedSprite
 from pedre.sprites.helpers import load_animation_frames
 
 if TYPE_CHECKING:
@@ -74,10 +74,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class AnimatedNPC(AnimatedPlayer):
+class AnimatedNPC(AnimatedSprite):
     """NPC sprite with walking animations for all 4 directions and special animations.
 
-    Extends AnimatedPlayer with support for special animation types: appear, disappear,
+    Extends AnimatedSprite with support for special animation types: appear, disappear,
         and interact. Inherits all idle and walk animation functionality (including 4-directional
         support) from the base class.
 
@@ -87,7 +87,7 @@ class AnimatedNPC(AnimatedPlayer):
         Only 4-directional mode supported - all idle and walk animations must be specified
         for each direction explicitly.
 
-        Additional attributes (beyond AnimatedPlayer):
+        Additional attributes (beyond AnimatedSprite):
             is_appearing: Whether appear animation is currently playing.
             appear_complete: Whether appear animation has finished.
             is_disappearing: Whether disappear animation is currently playing.
@@ -95,7 +95,7 @@ class AnimatedNPC(AnimatedPlayer):
             is_interacting: Whether interact animation is currently playing.
             interact_complete: Whether interact animation has finished.
 
-        Additional animation texture keys (beyond AnimatedPlayer):
+        Additional animation texture keys (beyond AnimatedSprite):
             - "appear": Materialization animation (direction-agnostic)
             - "disappear": Dematerialization animation (direction-agnostic)
             - "interact_up", "interact_down", "interact_left", "interact_right": Interaction
@@ -111,7 +111,7 @@ class AnimatedNPC(AnimatedPlayer):
         scale: float = 1.0,
         center_x: float = 0,
         center_y: float = 0,
-        # 4-directional parameters (inherited from AnimatedPlayer)
+        # 4-directional parameters (inherited from AnimatedSprite)
         idle_up_frames: int | None = None,
         idle_up_row: int | None = None,
         idle_down_frames: int | None = None,
@@ -144,7 +144,7 @@ class AnimatedNPC(AnimatedPlayer):
     ) -> None:
         """Initialize the animated NPC sprite.
 
-        Extends AnimatedPlayer with additional special animations (appear, disappear, interact).
+        Extends AnimatedSprite with additional special animations (appear, disappear, interact).
         Inherits all idle and walk animation functionality (including 4-directional support)
         from the parent class.
 
@@ -156,7 +156,7 @@ class AnimatedNPC(AnimatedPlayer):
             center_x: Initial X position in world coordinates.
             center_y: Initial Y position in world coordinates.
 
-            4-directional idle/walk parameters (same as AnimatedPlayer):
+            4-directional idle/walk parameters (same as AnimatedSprite):
             idle_up_frames: Number of frames for up idle animation.
             idle_up_row: Row index for up idle animation.
             idle_down_frames: Number of frames for down idle animation.
@@ -280,7 +280,7 @@ class AnimatedNPC(AnimatedPlayer):
         """Load NPC-specific animation textures (appear, disappear, interact in 4 directions).
 
         Loads only the special animations unique to NPCs. Base animations (idle, walk)
-        are loaded by the parent AnimatedPlayer class.
+        are loaded by the parent AnimatedSprite class.
 
         For appear/disappear animations, frames are loaded in reverse order for the appear
         animation (creating a fade-in effect) and forward order for the disappear animation

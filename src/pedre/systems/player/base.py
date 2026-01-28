@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from pedre.systems.base import BaseSystem
 
 if TYPE_CHECKING:
-    from pedre.sprites.animated_player import AnimatedPlayer
+    from pedre.systems.player.animated_player import AnimatedPlayer
 
 
 class PlayerBaseManager(BaseSystem, ABC):

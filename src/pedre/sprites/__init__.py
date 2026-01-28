@@ -1,6 +1,11 @@
-"""Sprite classes for the game."""
+"""Sprite classes for the game.
 
-from pedre.sprites.animated_npc import AnimatedNPC
-from pedre.sprites.animated_player import AnimatedPlayer
+This module provides base sprite classes. AnimatedPlayer and AnimatedNPC
+have been moved to their respective system modules:
+- pedre.systems.player.AnimatedPlayer
+- pedre.systems.npc.AnimatedNPC
+"""
 
-__all__ = ["AnimatedNPC", "AnimatedPlayer"]
+from pedre.sprites.animated_sprite import AnimatedSprite
+
+__all__ = ["AnimatedSprite"]

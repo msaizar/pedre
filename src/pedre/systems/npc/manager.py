@@ -66,7 +66,7 @@ import arcade
 from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import ALL_ANIMATION_PROPERTIES, asset_path
-from pedre.sprites import AnimatedNPC
+from pedre.systems.npc.animated_npc import AnimatedNPC
 from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,

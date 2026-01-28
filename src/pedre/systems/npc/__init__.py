@@ -8,6 +8,7 @@ The NPC system consists of:
 - NPCManager: Main system for managing NPC state and behavior
 - NPCState: Runtime state tracking for individual NPCs
 - NPCDialogConfig: Configuration for NPC dialog at specific levels
+- AnimatedNPC: Animated sprite class for NPCs with special animations
 - NPC Actions: Script actions for NPC movement, dialog, and animations
 - NPC Events: Events fired for NPC interactions and animation completions
 """
@@ -23,6 +24,7 @@ from pedre.systems.npc.actions import (
     WaitForNPCsAppearAction,
     WaitForNPCsDisappearAction,
 )
+from pedre.systems.npc.animated_npc import AnimatedNPC
 from pedre.systems.npc.base import NPCBaseManager, NPCState
 from pedre.systems.npc.conditions import check_npc_dialog_level, check_npc_interacted
 from pedre.systems.npc.events import (
@@ -35,6 +37,7 @@ from pedre.systems.npc.manager import NPCDialogConfig, NPCManager
 
 __all__ = [
     "AdvanceDialogAction",
+    "AnimatedNPC",
     "MoveNPCAction",
     "NPCAppearCompleteEvent",
     "NPCBaseManager",

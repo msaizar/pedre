@@ -78,8 +78,8 @@ from pedre.systems.portal.events import PortalEnteredEvent
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    from pedre.sprites.animated_player import AnimatedPlayer
     from pedre.systems.game_context import GameContext
+    from pedre.systems.player import AnimatedPlayer
 
 logger = logging.getLogger(__name__)
 
