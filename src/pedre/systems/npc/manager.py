@@ -65,7 +65,7 @@ import arcade
 
 from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
-from pedre.constants import asset_path
+from pedre.constants import ALL_ANIMATION_PROPERTIES, asset_path
 from pedre.sprites import AnimatedNPC
 from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.events import (
@@ -844,7 +844,7 @@ class NPCManager(NPCBaseManager):
             anim_props = {
                 key: val
                 for key, val in npc_obj.properties.items()
-                if key.startswith(("idle_", "walk_")) and isinstance(val, int)
+                if key in ALL_ANIMATION_PROPERTIES and isinstance(val, int)
             }
 
             try:

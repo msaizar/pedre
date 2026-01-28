@@ -8,6 +8,48 @@ import arcade
 
 from pedre.conf import settings
 
+# Animation property names for Tiled integration
+# These properties are extracted from Tiled objects when creating animated sprites
+
+# Base animation properties (used by Player and NPC)
+BASE_ANIMATION_PROPERTIES = [
+    "idle_up_frames",
+    "idle_up_row",
+    "idle_down_frames",
+    "idle_down_row",
+    "idle_left_frames",
+    "idle_left_row",
+    "idle_right_frames",
+    "idle_right_row",
+    "walk_up_frames",
+    "walk_up_row",
+    "walk_down_frames",
+    "walk_down_row",
+    "walk_left_frames",
+    "walk_left_row",
+    "walk_right_frames",
+    "walk_right_row",
+]
+
+# NPC-specific special animation properties
+NPC_SPECIAL_ANIMATION_PROPERTIES = [
+    "appear_frames",
+    "appear_row",
+    "disappear_frames",
+    "disappear_row",
+    "interact_up_frames",
+    "interact_up_row",
+    "interact_down_frames",
+    "interact_down_row",
+    "interact_left_frames",
+    "interact_left_row",
+    "interact_right_frames",
+    "interact_right_row",
+]
+
+# All animation properties for NPCs (base + special)
+ALL_ANIMATION_PROPERTIES = BASE_ANIMATION_PROPERTIES + NPC_SPECIAL_ANIMATION_PROPERTIES
+
 
 def asset_path(relative_path: str, assets_handle: str | None = None) -> str:
     """Get the resolved absolute path for an asset file.

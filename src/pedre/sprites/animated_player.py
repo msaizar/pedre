@@ -93,7 +93,6 @@ class AnimatedPlayer(arcade.Sprite):
         center_x: float = 0,
         center_y: float = 0,
         # Parameters for 4-directional animations
-        # New parameters for 4-directional animations
         idle_up_frames: int | None = None,
         idle_up_row: int | None = None,
         idle_down_frames: int | None = None,
