@@ -201,6 +201,106 @@ class AnimatedSprite(arcade.Sprite):
             placeholder = Image.new("RGBA", (self.tile_size, self.tile_size), (0, 255, 0, 255))
             self.texture = arcade.Texture(name="sprite_placeholder", image=placeholder)
 
+    def _load_paired_animations(
+        self,
+        sprite_sheet: Image.Image,
+        texture_prefix: str,
+        base_name: str,
+        left_frames: int | None,
+        left_row: int | None,
+        right_frames: int | None,
+        right_row: int | None,
+    ) -> None:
+        """Load left/right animation pair with auto-generation support.
+
+        Handles three cases:
+        1. Both left and right defined - loads both independently
+        2. Only left defined - loads left, generates right by flipping
+        3. Only right defined - loads right, generates left by flipping
+
+        Args:
+            sprite_sheet: PIL Image of the sprite sheet.
+            texture_prefix: Prefix for texture names (e.g., "sprite", "npc").
+            base_name: Base animation name (e.g., "idle", "walk").
+            left_frames: Number of frames for left animation.
+            left_row: Row index for left animation.
+            right_frames: Number of frames for right animation.
+            right_row: Row index for right animation.
+
+        Side effects:
+            Populates self.animation_textures for "{base_name}_left" and "{base_name}_right".
+            Logs debug messages about loading and auto-generation.
+        """
+        if left_frames is not None and left_row is not None:
+            if right_frames is not None and right_row is not None:
+                # Case 1: Both defined - load both independently
+                logger.debug("Loading %s_left (%s frames, row %s)", base_name, left_frames, left_row)
+                logger.debug("Loading %s_right (%s frames, row %s)", base_name, right_frames, right_row)
+                load_animation_frames(
+                    sprite_sheet,
+                    f"{texture_prefix}_{base_name}_left",
+                    f"{base_name}_left",
+                    left_frames,
+                    left_row,
+                    self.tile_size,
+                    self.animation_textures,
+                )
+                load_animation_frames(
+                    sprite_sheet,
+                    f"{texture_prefix}_{base_name}_right",
+                    f"{base_name}_right",
+                    right_frames,
+                    right_row,
+                    self.tile_size,
+                    self.animation_textures,
+                )
+            else:
+                # Case 2: Only left defined - load left and generate right by flipping
+                logger.debug("Loading %s_left (%s frames, row %s)", base_name, left_frames, left_row)
+                logger.debug("Auto-generating %s_right by flipping %s_left", base_name, base_name)
+                load_animation_frames(
+                    sprite_sheet,
+                    f"{texture_prefix}_{base_name}_left",
+                    f"{base_name}_left",
+                    left_frames,
+                    left_row,
+                    self.tile_size,
+                    self.animation_textures,
+                )
+                load_animation_frames(
+                    sprite_sheet,
+                    f"{texture_prefix}_{base_name}_right",
+                    f"{base_name}_right",
+                    left_frames,
+                    left_row,
+                    self.tile_size,
+                    self.animation_textures,
+                    flip=True,
+                )
+        elif right_frames is not None and right_row is not None:
+            # Case 3: Only right defined - load right and generate left by flipping
+            logger.debug("Loading %s_right (%s frames, row %s)", base_name, right_frames, right_row)
+            logger.debug("Auto-generating %s_left by flipping %s_right", base_name, base_name)
+            load_animation_frames(
+                sprite_sheet,
+                f"{texture_prefix}_{base_name}_right",
+                f"{base_name}_right",
+                right_frames,
+                right_row,
+                self.tile_size,
+                self.animation_textures,
+            )
+            load_animation_frames(
+                sprite_sheet,
+                f"{texture_prefix}_{base_name}_left",
+                f"{base_name}_left",
+                right_frames,
+                right_row,
+                self.tile_size,
+                self.animation_textures,
+                flip=True,
+            )
+
     def _load_textures(self, sprite_sheet_path: Path | str) -> None:
         """Load animation textures from the sprite sheet (internal implementation).
 
@@ -224,18 +324,20 @@ class AnimatedSprite(arcade.Sprite):
 
         # Build list of animations to load for logging
         animations_to_load = []
-        animation_configs = [
+        vertical_animations = [
             ("idle_up", self.idle_up_frames, self.idle_up_row),
             ("idle_down", self.idle_down_frames, self.idle_down_row),
-            ("idle_left", self.idle_left_frames, self.idle_left_row),
-            ("idle_right", self.idle_right_frames, self.idle_right_row),
             ("walk_up", self.walk_up_frames, self.walk_up_row),
             ("walk_down", self.walk_down_frames, self.walk_down_row),
+        ]
+        horizontal_animations = [
+            ("idle_left", self.idle_left_frames, self.idle_left_row),
+            ("idle_right", self.idle_right_frames, self.idle_right_row),
             ("walk_left", self.walk_left_frames, self.walk_left_row),
             ("walk_right", self.walk_right_frames, self.walk_right_row),
         ]
 
-        for anim_name, frames, row in animation_configs:
+        for anim_name, frames, row in vertical_animations + horizontal_animations:
             if frames is not None and row is not None:
                 animations_to_load.append(f"{anim_name} ({frames} frames, row {row})")
 
@@ -247,9 +349,9 @@ class AnimatedSprite(arcade.Sprite):
             ", ".join(animations_to_load) if animations_to_load else "none",
         )
 
-        # Load up/down animations (these don't have left/right pairs)
-        for anim_name, frames, row in animation_configs:
-            if frames is not None and row is not None and anim_name in ["idle_up", "idle_down", "walk_up", "walk_down"]:
+        # Load vertical animations (up/down - no flipping needed)
+        for anim_name, frames, row in vertical_animations:
+            if frames is not None and row is not None:
                 load_animation_frames(
                     sprite_sheet,
                     f"sprite_{anim_name}",
@@ -260,179 +362,25 @@ class AnimatedSprite(arcade.Sprite):
                     self.animation_textures,
                 )
 
-        # Load idle left/right with auto-generation logic
-        if self.idle_left_frames is not None and self.idle_left_row is not None:
-            if self.idle_right_frames is not None and self.idle_right_row is not None:
-                # Case 1: Both defined - load both independently
-                logger.debug(
-                    "Loading idle_left (%s frames, row %s)",
-                    self.idle_left_frames,
-                    self.idle_left_row,
-                )
-                logger.debug(
-                    "Loading idle_right (%s frames, row %s)",
-                    self.idle_right_frames,
-                    self.idle_right_row,
-                )
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_idle_left",
-                    "idle_left",
-                    self.idle_left_frames,
-                    self.idle_left_row,
-                    self.tile_size,
-                    self.animation_textures,
-                )
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_idle_right",
-                    "idle_right",
-                    self.idle_right_frames,
-                    self.idle_right_row,
-                    self.tile_size,
-                    self.animation_textures,
-                )
-            else:
-                # Case 2: Only left defined - load left and generate right by flipping
-                logger.debug(
-                    "Loading idle_left (%s frames, row %s)",
-                    self.idle_left_frames,
-                    self.idle_left_row,
-                )
-                logger.debug("Auto-generating idle_right by flipping idle_left")
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_idle_left",
-                    "idle_left",
-                    self.idle_left_frames,
-                    self.idle_left_row,
-                    self.tile_size,
-                    self.animation_textures,
-                )
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_idle_right",
-                    "idle_right",
-                    self.idle_left_frames,
-                    self.idle_left_row,
-                    self.tile_size,
-                    self.animation_textures,
-                    flip=True,
-                )
-        elif self.idle_right_frames is not None and self.idle_right_row is not None:
-            # Case 3: Only right defined - load right and generate left by flipping
-            logger.debug(
-                "Loading idle_right (%s frames, row %s)",
-                self.idle_right_frames,
-                self.idle_right_row,
-            )
-            logger.debug("Auto-generating idle_left by flipping idle_right")
-            load_animation_frames(
-                sprite_sheet,
-                "sprite_idle_right",
-                "idle_right",
-                self.idle_right_frames,
-                self.idle_right_row,
-                self.tile_size,
-                self.animation_textures,
-            )
-            load_animation_frames(
-                sprite_sheet,
-                "sprite_idle_left",
-                "idle_left",
-                self.idle_right_frames,
-                self.idle_right_row,
-                self.tile_size,
-                self.animation_textures,
-                flip=True,
-            )
-
-        # Load walk left/right with auto-generation logic
-        if self.walk_left_frames is not None and self.walk_left_row is not None:
-            if self.walk_right_frames is not None and self.walk_right_row is not None:
-                # Case 1: Both defined - load both independently
-                logger.debug(
-                    "Loading walk_left (%s frames, row %s)",
-                    self.walk_left_frames,
-                    self.walk_left_row,
-                )
-                logger.debug(
-                    "Loading walk_right (%s frames, row %s)",
-                    self.walk_right_frames,
-                    self.walk_right_row,
-                )
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_walk_left",
-                    "walk_left",
-                    self.walk_left_frames,
-                    self.walk_left_row,
-                    self.tile_size,
-                    self.animation_textures,
-                )
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_walk_right",
-                    "walk_right",
-                    self.walk_right_frames,
-                    self.walk_right_row,
-                    self.tile_size,
-                    self.animation_textures,
-                )
-            else:
-                # Case 2: Only left defined - load left and generate right by flipping
-                logger.debug(
-                    "Loading walk_left (%s frames, row %s)",
-                    self.walk_left_frames,
-                    self.walk_left_row,
-                )
-                logger.debug("Auto-generating walk_right by flipping walk_left")
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_walk_left",
-                    "walk_left",
-                    self.walk_left_frames,
-                    self.walk_left_row,
-                    self.tile_size,
-                    self.animation_textures,
-                )
-                load_animation_frames(
-                    sprite_sheet,
-                    "sprite_walk_right",
-                    "walk_right",
-                    self.walk_left_frames,
-                    self.walk_left_row,
-                    self.tile_size,
-                    self.animation_textures,
-                    flip=True,
-                )
-        elif self.walk_right_frames is not None and self.walk_right_row is not None:
-            # Case 3: Only right defined - load right and generate left by flipping
-            logger.debug(
-                "Loading walk_right (%s frames, row %s)",
-                self.walk_right_frames,
-                self.walk_right_row,
-            )
-            logger.debug("Auto-generating walk_left by flipping walk_right")
-            load_animation_frames(
-                sprite_sheet,
-                "sprite_walk_right",
-                "walk_right",
-                self.walk_right_frames,
-                self.walk_right_row,
-                self.tile_size,
-                self.animation_textures,
-            )
-            load_animation_frames(
-                sprite_sheet,
-                "sprite_walk_left",
-                "walk_left",
-                self.walk_right_frames,
-                self.walk_right_row,
-                self.tile_size,
-                self.animation_textures,
-                flip=True,
-            )
+        # Load horizontal animation pairs (left/right - with auto-flip support)
+        self._load_paired_animations(
+            sprite_sheet,
+            "sprite",
+            "idle",
+            self.idle_left_frames,
+            self.idle_left_row,
+            self.idle_right_frames,
+            self.idle_right_row,
+        )
+        self._load_paired_animations(
+            sprite_sheet,
+            "sprite",
+            "walk",
+            self.walk_left_frames,
+            self.walk_left_row,
+            self.walk_right_frames,
+            self.walk_right_row,
+        )
 
         # Calculate totals for logging
         total_count = sum(len(textures) for textures in self.animation_textures.values())
