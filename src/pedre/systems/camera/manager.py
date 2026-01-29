@@ -130,9 +130,6 @@ class CameraManager(CameraBaseManager):
         self.follow_smooth: bool = True
         # Tiled configuration (applied after camera is set)
         self._follow_config: dict[str, Any] | None = None
-        # Map dimensions for camera creation
-        self._pending_map_width: float | None = None
-        self._pending_map_height: float | None = None
 
     def setup(self, context: GameContext) -> None:
         """Initialize the camera system with game context and settings.
@@ -150,8 +147,6 @@ class CameraManager(CameraBaseManager):
         self.follow_mode = None
         self.follow_target_npc = None
         self._follow_config = None
-        self._pending_map_width = None
-        self._pending_map_height = None
         logger.debug("CameraManager cleanup complete")
 
     def get_save_state(self) -> dict[str, Any]:
@@ -435,14 +430,15 @@ class CameraManager(CameraBaseManager):
             tile_map: Loaded TileMap with properties.
             arcade_scene: Scene created from tile_map (unused).
         """
-        # Store map dimensions for camera creation
-        self._pending_map_width = tile_map.width * tile_map.tile_width
-        self._pending_map_height = tile_map.height * tile_map.tile_height
+        # Calculate map dimensions for camera creation
+        map_width = tile_map.width * tile_map.tile_width
+        map_height = tile_map.height * tile_map.tile_height
+
         # Check if tile_map has properties
         if not hasattr(tile_map, "properties") or tile_map.properties is None:
             logger.debug("TileMap does not have properties, using defaults")
             self._follow_config = {"mode": "player", "smooth": True}
-            self._create_camera()
+            self._create_camera(map_width, map_height)
             return
 
         # Get camera properties with defaults
@@ -496,8 +492,8 @@ class CameraManager(CameraBaseManager):
         self._follow_config = config
         logger.debug("Camera follow config loaded: %s", config)
 
-        # Create camera now that configuration and map dimensions are loaded
-        self._create_camera()
+        # Create camera now that configuration is loaded
+        self._create_camera(map_width, map_height)
 
     def get_follow_config(self) -> dict[str, Any] | None:
         """Get the stored follow config."""
@@ -533,18 +529,18 @@ class CameraManager(CameraBaseManager):
             else:
                 logger.error("NPC mode but no target specified")
 
-    def _create_camera(self) -> None:
+    def _create_camera(self, map_width: float, map_height: float) -> None:
         """Create and configure camera based on loaded map data.
 
         Called from load_from_tiled() after dependencies are satisfied.
         Creates the Camera2D object, sets bounds, and applies follow configuration.
-        """
-        if not self._pending_map_width or not self._pending_map_height:
-            logger.warning("Cannot create camera - map dimensions not loaded")
-            return
 
+        Args:
+            map_width: Width of the map in pixels.
+            map_height: Height of the map in pixels.
+        """
         # Determine initial position based on follow configuration
-        initial_pos = self._get_initial_position()
+        initial_pos = self._get_initial_position(map_width, map_height)
 
         # Create camera object
         self.camera = arcade.camera.Camera2D(position=initial_pos)
@@ -552,17 +548,12 @@ class CameraManager(CameraBaseManager):
 
         # Set bounds
         window = arcade.get_window()
-        self.set_bounds(
-            self._pending_map_width,
-            self._pending_map_height,
-            window.width,
-            window.height,
-        )
+        self.set_bounds(map_width, map_height, window.width, window.height)
 
         # Apply follow configuration
         self.apply_follow_config()
 
-    def _get_initial_position(self) -> tuple[float, float]:
+    def _get_initial_position(self, map_width: float, map_height: float) -> tuple[float, float]:
         """Determine initial camera position based on follow configuration.
 
         Requires player_manager and npc_manager dependencies to be satisfied.
@@ -599,9 +590,9 @@ class CameraManager(CameraBaseManager):
             return (player_sprite.center_x, player_sprite.center_y)
 
         # Fallback: center of map
-        if self._pending_map_width and self._pending_map_height:
-            fallback_x = self._pending_map_width / 2
-            fallback_y = self._pending_map_height / 2
+        if map_width and map_height:
+            fallback_x = map_width / 2
+            fallback_y = map_height / 2
             logger.debug("Initial camera position: Map center at (%.1f, %.1f)", fallback_x, fallback_y)
             return (fallback_x, fallback_y)
 
