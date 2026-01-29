@@ -558,6 +558,10 @@ class CameraManager(CameraBaseManager):
 
         Requires player_manager and npc_manager dependencies to be satisfied.
 
+        Args:
+            map_width: Width of the map in pixels.
+            map_height: Height of the map in pixels.
+
         Returns:
             Tuple of (x, y) position for initial camera placement.
         """
