@@ -6,15 +6,6 @@ Manages scene transitions, map loading, and lifecycle.
 
 `src/pedre/systems/scene/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.scene import SceneManager
-
-scene_manager = SceneManager()
-# SceneManager is typically initialized by SystemLoader
-```
-
 ## Key Methods
 
 ### `load_level(map_file: str, spawn_waypoint: str | None, context: GameContext) -> None`

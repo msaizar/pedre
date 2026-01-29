@@ -6,14 +6,6 @@ Manages interactive objects that players can interact with.
 
 `src/pedre/systems/interaction/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.interaction import InteractionManager
-
-interaction_manager = InteractionManager()
-```
-
 ## Key Methods
 
 ### `register_object(obj: InteractiveObject) -> None`

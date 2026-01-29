@@ -6,17 +6,6 @@ A* pathfinding for NPC navigation.
 
 `src/pedre/systems/pathfinding/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.pathfinding import PathfindingManager
-
-pathfinding_manager = PathfindingManager(
-    wall_list=self.wall_list,
-    grid_size=32  # Should match tile size
-)
-```
-
 ## Key Methods
 
 ### `find_path(start_x: float, start_y: float, end_tile_x: int, end_tile_y: int) -> deque[tuple[float, float]]`

@@ -6,14 +6,6 @@ Event-driven scripting system for cutscenes and interactive sequences.
 
 `src/pedre/systems/script/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.script import ScriptManager
-
-script_manager = ScriptManager(event_bus=event_bus)
-```
-
 ## Key Methods
 
 ### `load_scripts(script_path: str, npc_dialogs: dict) -> None`

@@ -6,21 +6,6 @@ Manages NPC state, movement, pathfinding, and interactions.
 
 `src/pedre/systems/npc/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.npc import NPCManager
-
-npc_manager = NPCManager(
-    pathfinding_manager=pathfinding_mgr,
-    interaction_distance=50,  # pixels
-    waypoint_threshold=2,     # pixels
-    npc_speed=80.0,          # pixels/second
-    inventory_manager=inventory_mgr,  # optional
-    event_bus=event_bus               # optional
-)
-```
-
 ## Key Methods
 
 ### `add_npc(name: str, sprite: arcade.Sprite, dialog_level: int = 0) -> None`
