@@ -15,8 +15,8 @@ class TestDialogAction(unittest.TestCase):
 
         assert action.speaker == "TestNPC"
         assert action.text == ["Hello!"]
-        assert action.instant is False
-        assert action.auto_close is None  # None means use settings default
+        assert action.instant is False  # Default from settings.DIALOG_INSTANT_TEXT_DEFAULT
+        assert action.auto_close is False  # Default from settings.DIALOG_AUTO_CLOSE_DEFAULT
         assert action.started is False
 
     def test_init_with_instant(self) -> None:
@@ -24,7 +24,7 @@ class TestDialogAction(unittest.TestCase):
         action = DialogAction("TestNPC", ["Hello!"], instant=True)
 
         assert action.instant is True
-        assert action.auto_close is None  # None means use settings default
+        assert action.auto_close is False  # Default from settings
 
     def test_init_with_auto_close_true(self) -> None:
         """Test DialogAction initialization with auto_close=True."""
@@ -54,8 +54,8 @@ class TestDialogAction(unittest.TestCase):
 
         assert action.speaker == "Merchant"
         assert action.text == ["Welcome!"]
-        assert action.instant is False
-        assert action.auto_close is None  # None means use settings default
+        assert action.instant is False  # Default from settings
+        assert action.auto_close is False  # Default from settings
 
     def test_from_dict_with_instant(self) -> None:
         """Test creating DialogAction from dict with instant=true."""
@@ -64,7 +64,7 @@ class TestDialogAction(unittest.TestCase):
 
         assert action.speaker == "Narrator"
         assert action.instant is True
-        assert action.auto_close is None  # None means use settings default
+        assert action.auto_close is False  # Default from settings
 
     def test_from_dict_with_auto_close_true(self) -> None:
         """Test creating DialogAction from dict with auto_close=true."""
@@ -115,7 +115,7 @@ class TestDialogAction(unittest.TestCase):
         result = action.execute(context)
 
         assert result is True
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=None)
+        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=False)
         assert action.started is True
 
     def test_execute_passes_instant_flag(self) -> None:
@@ -127,7 +127,7 @@ class TestDialogAction(unittest.TestCase):
 
         action.execute(context)
 
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=None)
+        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=False)
 
     def test_execute_passes_auto_close_flag(self) -> None:
         """Test that execute passes auto_close flag to DialogManager."""

@@ -140,6 +140,10 @@ Dialog system behavior, timing, and appearance.
 | ------- | ---- | ------- | ----------- |
 | `DIALOG_AUTO_CLOSE_DEFAULT` | bool | False | Default auto-close behavior for dialogs when not explicitly specified |
 | `DIALOG_AUTO_CLOSE_DURATION` | float | 0.5 | Seconds to wait after text is fully revealed before auto-closing |
+| `DIALOG_CHAR_REVEAL_SPEED` | int | 20 | Characters per second for text reveal animation |
+| `DIALOG_INSTANT_TEXT_DEFAULT` | bool | False | Whether text appears instantly by default (skips reveal animation) |
+| `DIALOG_SHOW_HELP` | bool | True | Whether to show instruction text at the bottom of the dialog |
+| `DIALOG_SHOW_PAGINATION` | bool | True | Whether to show page indicators (e.g., "Page 1/3") |
 
 #### Layout Settings
 
@@ -167,14 +171,25 @@ Dialog system behavior, timing, and appearance.
 | `DIALOG_INSTRUCTION_FONT_SIZE` | int | 12 | Font size for instruction text (e.g., "Press SPACE") |
 | `DIALOG_PAGE_INDICATOR_FONT_SIZE` | int | 10 | Font size for page indicator text (e.g., "Page 1/3") |
 
+#### Text Labels
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `DIALOG_TEXT_NEXT_PAGE` | string | "Press SPACE for next page" | Instruction text shown when there are more pages |
+| `DIALOG_TEXT_CLOSE` | string | "Press SPACE to close" | Instruction text shown on the last page |
+| `DIALOG_TEXT_PAGE` | string | "Page" | Label for page indicator (e.g., "Page 1/3") |
+
 **Notes:**
 
 - **Auto-close behavior**: `DIALOG_AUTO_CLOSE_DEFAULT` controls whether dialogs auto-close by default. The timer starts after the text reveal animation completes. Useful for cutscenes where you want dialogs to automatically advance.
+- **Text reveal animation**: `DIALOG_CHAR_REVEAL_SPEED` controls how fast text appears (characters per second). Set `DIALOG_INSTANT_TEXT_DEFAULT=True` to disable the reveal animation globally, or use the `instant` parameter in `show_dialog()` for specific dialogs.
+- **UI toggles**: Use `DIALOG_SHOW_HELP` and `DIALOG_SHOW_PAGINATION` to control which UI elements are displayed. Hiding these can create a cleaner look for cutscenes.
 - **Responsive sizing**: Dialog box dimensions scale with window size using percentage-based values, constrained by min/max limits for readability
 - **Width calculation**: Actual width = `min(DIALOG_BOX_MAX_WIDTH, max(DIALOG_BOX_MIN_WIDTH, window_width × DIALOG_BOX_WIDTH_PERCENT))`
 - **Height calculation**: Actual height = `max(DIALOG_BOX_MIN_HEIGHT, window_height × DIALOG_BOX_HEIGHT_PERCENT)`
 - **Position**: `DIALOG_VERTICAL_POSITION` of 0.25 means the dialog center is at 25% from the bottom of the screen
 - **Overlay**: Semi-transparent overlay covers the entire screen behind the dialog. Alpha value of 128 = 50% transparency
+- **Localization**: The `DIALOG_TEXT_*` settings allow you to customize instruction text for different languages or game styles
 
 ### Audio Settings
 
@@ -338,6 +353,13 @@ INVENTORY_BOX_BORDER_WIDTH: int = 3
 INVENTORY_BACKGROUND_IMAGE: str = ""
 DIALOG_AUTO_CLOSE_DEFAULT: bool = False
 DIALOG_AUTO_CLOSE_DURATION: float = 0.5
+DIALOG_CHAR_REVEAL_SPEED: int = 20
+DIALOG_INSTANT_TEXT_DEFAULT: bool = False
+DIALOG_SHOW_HELP: bool = True
+DIALOG_SHOW_PAGINATION: bool = True
+DIALOG_TEXT_NEXT_PAGE: str = "Press SPACE for next page"
+DIALOG_TEXT_CLOSE: str = "Press SPACE to close"
+DIALOG_TEXT_PAGE: str = "Page"
 DIALOG_BOX_WIDTH_PERCENT: float = 0.75
 DIALOG_BOX_MAX_WIDTH: int = 800
 DIALOG_BOX_MIN_WIDTH: int = 400
