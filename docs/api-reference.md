@@ -251,6 +251,31 @@ script_manager = ScriptManager(game_context, scripts_path="scripts.json")
 - `follow_npc` - Camera follows NPC
 - `stop_camera_follow` - Stop camera following
 
+### InputManager
+
+Manages keyboard input state and movement calculation.
+
+```python
+from pedre import InputManager
+
+input_manager = InputManager()
+```
+
+**Methods:**
+
+- `on_key_press(symbol: int, modifiers: int) -> bool` - Register key press event
+- `on_key_release(symbol: int, modifiers: int) -> bool` - Register key release event
+- `get_movement_vector() -> tuple[float, float]` - Calculate normalized movement vector
+- `is_key_pressed(symbol: int) -> bool` - Check if specific key is pressed
+- `clear()` - Clear all pressed keys from input state
+
+**Properties:**
+
+- `movement_speed: float` - Base movement speed in pixels per frame
+- `keys_pressed: set[int]` - Set of currently pressed key symbols
+
+See [InputManager documentation](systems/input.md) for detailed usage.
+
 ### AudioManager
 
 Manages background music and sound effects.

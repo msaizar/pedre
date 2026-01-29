@@ -11,7 +11,7 @@ Configure your game by creating a `settings.py` file in your project root:
 SCREEN_WIDTH=1280
 SCREEN_HEIGHT=720
 WINDOW_TITLE="My RPG Game"
-PLAYER_MOVEMENT_SPEED=3
+PLAYER_MOVEMENT_SPEED=3.0
 TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=50
 NPC_INTERACTION_DISTANCE=50
@@ -55,13 +55,28 @@ Control window and display properties.
 | `SCREEN_HEIGHT` | int | 720 | Window height in pixels |
 | `WINDOW_TITLE` | string | "Pedre Game" | Window title text |
 
-### Player Settings
+### Input Settings
 
-Player character movement and interaction settings.
+Input handling and player movement configuration.
 
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
-| `PLAYER_MOVEMENT_SPEED` | int | 3 | Player movement speed in pixels per frame |
+| `PLAYER_MOVEMENT_SPEED` | float | 3.0 | Base movement speed in pixels per frame |
+
+**Notes:**
+
+- `PLAYER_MOVEMENT_SPEED` controls how fast the player moves per frame when movement keys are pressed
+- Applied to the normalized movement vector returned by `InputManager.get_movement_vector()`
+- At 60 FPS, a speed of 3.0 results in 180 pixels per second
+- Typical values range from 2.0 (slow) to 5.0 (fast)
+- For more details, see the [InputManager documentation](systems/input.md)
+
+### Player Settings
+
+Player character interaction settings.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
 | `TILE_SIZE` | int | 32 | Base tile size for grid-based movement |
 | `INTERACTION_MANAGER_DISTANCE` | int | 50 | Maximum distance for player to interact with objects |
 | `NPC_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to interact with NPCs |
@@ -70,7 +85,6 @@ Player character movement and interaction settings.
 
 **Notes:**
 
-- `PLAYER_MOVEMENT_SPEED` affects how fast the player moves when clicking to move
 - `INTERACTION_MANAGER_DISTANCE` determines how close the player must be to interact with objects
 - `NPC_INTERACTION_DISTANCE` determines how close the player must be to interact with NPCs
 - `PORTAL_INTERACTION_DISTANCE` determines how close the player must be to activate portals
@@ -275,8 +289,10 @@ SCREEN_WIDTH=1600
 SCREEN_HEIGHT=900
 WINDOW_TITLE="Mystic Quest"
 
+# Input settings
+PLAYER_MOVEMENT_SPEED=4.0
+
 # Player settings
-PLAYER_MOVEMENT_SPEED=4
 TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=60
 NPC_INTERACTION_DISTANCE=60
@@ -336,7 +352,7 @@ MENU_OPTION_SIZE: int = 24
 MENU_SPACING: int = 50
 MENU_BACKGROUND_IMAGE: str = ""
 MENU_MUSIC_FILES: list[str] = []
-PLAYER_MOVEMENT_SPEED: int = 3
+PLAYER_MOVEMENT_SPEED: float = 3.0
 TILE_SIZE: int = 32
 INTERACTION_MANAGER_DISTANCE: int = 50
 NPC_INTERACTION_DISTANCE: int = 50
