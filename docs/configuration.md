@@ -38,6 +38,7 @@ AUDIO_MUSIC_VOLUME=0.5
 AUDIO_MUSIC_ENABLED=True
 AUDIO_SFX_VOLUME=0.7
 AUDIO_SFX_ENABLED=True
+CAMERA_LERP_SPEED=0.1
 ASSETS_HANDLE="game_assets"
 INITIAL_MAP="start.tmx"
 ```
@@ -194,6 +195,24 @@ Audio system default values for music and sound effects.
 - Changes made at runtime are not persisted unless explicitly saved
 - For more details, see the [AudioManager documentation](systems/audio.md)
 
+### Camera Settings
+
+Camera system behavior and movement configuration.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `CAMERA_LERP_SPEED` | float | 0.1 | Camera interpolation speed for smooth following (0.0 to 1.0) |
+
+**Notes:**
+
+- `CAMERA_LERP_SPEED` controls how quickly the camera catches up to its target
+  - Lower values (e.g., 0.05): Slower, more dramatic camera movement
+  - Default (0.1): Smooth, balanced camera following
+  - Higher values (e.g., 0.2): More responsive, tighter camera
+  - 1.0: Instant following with no smoothing
+- The lerp speed determines what fraction of the remaining distance the camera moves each frame
+- For more details, see the [CameraManager documentation](systems/camera.md)
+
 ### Asset Settings
 
 Asset management configuration.
@@ -278,6 +297,9 @@ DIALOG_TEXT_FONT_SIZE=18
 AUDIO_MUSIC_VOLUME=0.3
 AUDIO_SFX_VOLUME=0.9
 
+# Camera settings
+CAMERA_LERP_SPEED=0.15
+
 # Asset settings
 ASSETS_HANDLE="mystic_quest_assets"
 
@@ -336,6 +358,7 @@ AUDIO_MUSIC_VOLUME: float = 0.5
 AUDIO_MUSIC_ENABLED: bool = True
 AUDIO_SFX_VOLUME: float = 0.7
 AUDIO_SFX_ENABLED: bool = True
+CAMERA_LERP_SPEED: float = 0.1
 ```
 
 ## See Also

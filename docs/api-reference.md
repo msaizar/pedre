@@ -295,20 +295,34 @@ inventory = save_data.inventory_items
 
 ### CameraManager
 
-Controls camera movement and bounds.
+Controls camera movement with smooth following and boundary constraints.
 
 ```python
 from pedre import CameraManager
 
-camera_manager = CameraManager(window_width, window_height)
+camera_manager = CameraManager(camera, lerp_speed=0.1)
 ```
 
 **Methods:**
 
-- `update(player_x: float, player_y: float)` - Center on player
+- `smooth_follow(target_x: float, target_y: float)` - Smoothly follow target using interpolation
+- `instant_follow(target_x: float, target_y: float)` - Instantly move camera to target
+- `set_follow_player(*, smooth: bool = True)` - Automatically follow player sprite
+- `set_follow_npc(npc_name: str, *, smooth: bool = True)` - Automatically follow NPC sprite
+- `stop_follow()` - Stop following, keep camera at current position
+- `set_bounds(map_width: float, map_height: float, viewport_width: float, viewport_height: float)` - Set camera boundaries
 - `use()` - Activate camera for rendering
-- `set_bounds(min_x: float, min_y: float, max_x: float, max_y: float)` - Limit camera area
-- `smooth_follow(target_x: float, target_y: float)` - Smoothly follow target position
+- `update(delta_time: float)` - Update camera position (called automatically)
+- `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene)` - Load camera config from map
+
+**Properties:**
+
+- `camera: arcade.Camera2D` - The managed camera object
+- `lerp_speed: float` - Interpolation speed (0.0 to 1.0)
+- `bounds: tuple[float, float, float, float] | None` - Boundary constraints (min_x, max_x, min_y, max_y)
+- `follow_mode: str | None` - Current follow mode (`"player"`, `"npc"`, or `None`)
+
+See [CameraManager documentation](systems/camera.md) for detailed usage.
 
 ### PortalManager
 
