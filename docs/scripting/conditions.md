@@ -27,7 +27,7 @@ Conditions can be specified in two places:
 
 ## Trigger Conditions
 
-Basic event matching goes in the `trigger` object. These fields depend on the event type:
+The `trigger` object specifies which event to react to and can include fields to match specific event data. These fields filter the event when it fires and depend on the event type:
 
 ### npc_interacted
 
@@ -53,13 +53,13 @@ Basic event matching goes in the `trigger` object. These fields depend on the ev
 }
 ```
 
-### object_interacted
+### object_interacted (event)
 
 ```json
 {
   "trigger": {
     "event": "object_interacted",
-    "object_name": "chest"       // Required: which object
+    "object_name": "chest"       // Required: which object was just interacted with
   }
 }
 ```
@@ -100,15 +100,15 @@ Basic event matching goes in the `trigger` object. These fields depend on the ev
 
 ## Additional Conditions
 
-For more complex checks, use the `conditions` array. All conditions must be true for the script to run.
+For checking game state beyond event matching, use the `conditions` array. These conditions check persistent state (what has happened before, current values, etc.) rather than the event that just fired. All conditions must be true for the script to run.
 
 ### Available Condition Checks
 
 | Check Type | Fields | Description | Example |
 | ---------- | ------ | ----------- | ------- |
 | `npc_dialog_level` | `npc`, `equals`/`gte`/`gt`/`lte`/`lt` | Match NPC conversation level | `{"check": "npc_dialog_level", "npc": "merchant", "gte": 2}` |
-| `inventory_accessed` | `equals` | Check if inventory was opened | `{"check": "inventory_accessed", "equals": true}` |
-| `object_interacted` | `object`, `equals` | Check if object was interacted with | `{"check": "object_interacted", "object": "sink", "equals": true}` |
+| `inventory_accessed` | `equals` | Check if inventory was ever opened | `{"check": "inventory_accessed", "equals": true}` |
+| `object_interacted` | `object`, `equals` | Check if object was ever interacted with (state check) | `{"check": "object_interacted", "object": "sink", "equals": true}` |
 | `script_completed` | `script` | Check if a run_once script has completed | `{"check": "script_completed", "script": "intro_cutscene"}` |
 | `item_acquired` | `item_id` | Check if an item was acquired | `{"check": "item_acquired", "item_id": "golden_key"}` |
 
@@ -177,15 +177,15 @@ Check if the player has opened their inventory.
 - Achievement triggers
 - First-time inventory checks
 
-### object_interacted
+### object_interacted (state check)
 
-Check if a specific object has been interacted with.
+Check if a specific object has been interacted with at any point in the past. This is different from the `object_interacted` event trigger, which fires when an interaction happens. This condition checks persistent state.
 
 **Parameters:**
 
 - `check`: `"object_interacted"`
 - `object`: Object name
-- `equals`: `true` or `false`
+- `equals`: `true` (has been interacted with) or `false` (has not been interacted with)
 
 **Example:**
 
@@ -201,15 +201,24 @@ Check if a specific object has been interacted with.
       "object": "royal_seal",
       "equals": true
     }
+  ],
+  "actions": [
+    {
+      "type": "dialog",
+      "speaker": "Guard",
+      "text": ["I see you found the royal seal. You may pass."]
+    }
   ]
 }
 ```
 
+This script triggers when talking to the guard, but only if the player has previously interacted with the royal seal object.
+
 **Use Cases:**
 
-- Requiring items for dialog
+- Requiring prior object interactions for dialog
 - Quest prerequisite checks
-- Conditional NPC responses
+- Conditional NPC responses based on exploration
 
 ### script_completed
 
