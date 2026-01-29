@@ -182,6 +182,16 @@ AUDIO_SFX_VOLUME = 0.7
 AUDIO_SFX_ENABLED = True
 """Whether sound effects are enabled by default."""
 
+# Camera settings
+CAMERA_LERP_SPEED = 0.1
+"""Camera interpolation speed for smooth following (0.0 to 1.0).
+Higher values make the camera catch up faster to the target.
+- 0.05: Very slow, dramatic following
+- 0.1: Default smooth following (recommended)
+- 0.2: Responsive following
+- 1.0: Instant following (no smoothing)
+"""
+
 # Installed systems (like Django's INSTALLED_APPS)
 INSTALLED_SYSTEMS = [
     "pedre.systems.audio",

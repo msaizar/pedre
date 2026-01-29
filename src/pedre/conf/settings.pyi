@@ -75,6 +75,9 @@ AUDIO_MUSIC_ENABLED: bool
 AUDIO_SFX_VOLUME: float
 AUDIO_SFX_ENABLED: bool
 
+# Camera settings
+CAMERA_LERP_SPEED: float
+
 # Installed systems
 INSTALLED_SYSTEMS: list[str]
 

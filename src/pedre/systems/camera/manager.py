@@ -26,7 +26,7 @@ Boundary System:
 
 Usage Example:
     # Initialize camera manager
-    camera_manager = CameraManager(camera, lerp_speed=0.1)
+    camera_manager = CameraManager(camera)
 
     # Set boundaries based on map size
     camera_manager.set_bounds(
@@ -53,6 +53,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from pedre.conf import settings
 from pedre.systems.camera.base import CameraBaseManager
 from pedre.systems.registry import SystemRegistry
 
@@ -84,7 +85,6 @@ class CameraManager(CameraBaseManager):
             - 0.1: Default smooth following
             - 0.2: Responsive following
             - 1.0: Instant following (no smoothing)
-        use_bounds: Whether boundary constraints are active.
         bounds: Boundary limits as (min_x, max_x, min_y, max_y) or None.
 
     Technical Details:
@@ -100,9 +100,7 @@ class CameraManager(CameraBaseManager):
     def __init__(
         self,
         camera: arcade.camera.Camera2D | None = None,
-        lerp_speed: float = 0.1,
-        *,
-        use_bounds: bool = False,
+        lerp_speed: float = settings.CAMERA_LERP_SPEED,
     ) -> None:
         """Initialize the camera manager.
 
@@ -114,21 +112,18 @@ class CameraManager(CameraBaseManager):
                 will be positioned and used for rendering. Can be None if
                 the camera will be set later via set_camera().
             lerp_speed: Speed of camera interpolation (0.0 to 1.0).
-                Higher values make the camera catch up faster. Default 0.1
-                provides a good balance between smooth and responsive.
-            use_bounds: Whether to initially enable boundary constraints.
-                Default False. Use set_bounds() to configure and enable.
+                Higher values make the camera catch up faster. Default comes
+                from CAMERA_LERP_SPEED setting (0.1).
 
         Example:
             # Create smooth camera with default settings
-            camera_manager = CameraManager(camera, lerp_speed=0.1)
+            camera_manager = CameraManager(camera)
 
             # Create more responsive camera
             camera_manager = CameraManager(camera, lerp_speed=0.2)
         """
         self.camera: arcade.camera.Camera2D | None = camera
         self.lerp_speed = lerp_speed
-        self.use_bounds = use_bounds
         self.bounds: tuple[float, float, float, float] | None = None  # (min_x, max_x, min_y, max_y)
         self.follow_mode: str | None = None  # None, "player", "npc"
         self.follow_target_npc: str | None = None
@@ -149,7 +144,6 @@ class CameraManager(CameraBaseManager):
         """Clean up camera resources when the scene unloads."""
         self.camera = None
         self.bounds = None
-        self.use_bounds = False
         self.follow_mode = None
         self.follow_target_npc = None
         self._follow_config = None
@@ -163,7 +157,6 @@ class CameraManager(CameraBaseManager):
         """
         return {
             "lerp_speed": self.lerp_speed,
-            "use_bounds": self.use_bounds,
             "follow_mode": self.follow_mode,
             "follow_target_npc": self.follow_target_npc,
             "follow_smooth": self.follow_smooth,
@@ -171,8 +164,7 @@ class CameraManager(CameraBaseManager):
 
     def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data (BaseSystem interface)."""
-        self.lerp_speed = state.get("lerp_speed", 0.1)
-        self.use_bounds = state.get("use_bounds", False)
+        self.lerp_speed = state.get("lerp_speed", settings.CAMERA_LERP_SPEED)
         self.follow_mode = state.get("follow_mode")
         self.follow_target_npc = state.get("follow_target_npc")
         self.follow_smooth = state.get("follow_smooth", True)
@@ -250,7 +242,6 @@ class CameraManager(CameraBaseManager):
             min_y = max_y = map_height / 2
 
         self.bounds = (min_x, max_x, min_y, max_y)
-        self.use_bounds = True
 
     def smooth_follow(self, target_x: float, target_y: float) -> None:
         """Smoothly move camera towards target position.
@@ -297,7 +288,7 @@ class CameraManager(CameraBaseManager):
         current_x, current_y = self.camera.position
 
         # Apply bounds if enabled
-        if self.use_bounds and self.bounds:
+        if self.bounds:
             min_x, max_x, min_y, max_y = self.bounds
             target_x = max(min_x, min(max_x, target_x))
             target_y = max(min_y, min(max_y, target_y))
@@ -346,7 +337,7 @@ class CameraManager(CameraBaseManager):
             return
 
         # Apply bounds if enabled
-        if self.use_bounds and self.bounds:
+        if self.bounds:
             min_x, max_x, min_y, max_y = self.bounds
             target_x = max(min_x, min(max_x, target_x))
             target_y = max(min_y, min(max_y, target_y))
