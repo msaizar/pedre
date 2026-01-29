@@ -169,6 +169,19 @@ DIALOG_INSTRUCTION_FONT_SIZE = 12
 DIALOG_PAGE_INDICATOR_FONT_SIZE = 10
 """Font size for page indicator text."""
 
+# Audio settings
+AUDIO_MUSIC_VOLUME = 0.5
+"""Default music volume (0.0 to 1.0)."""
+
+AUDIO_MUSIC_ENABLED = True
+"""Whether music is enabled by default."""
+
+AUDIO_SFX_VOLUME = 0.7
+"""Default sound effects volume (0.0 to 1.0)."""
+
+AUDIO_SFX_ENABLED = True
+"""Whether sound effects are enabled by default."""
+
 # Installed systems (like Django's INSTALLED_APPS)
 INSTALLED_SYSTEMS = [
     "pedre.systems.audio",

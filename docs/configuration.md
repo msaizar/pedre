@@ -34,6 +34,10 @@ DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
 DIALOG_BOX_WIDTH_PERCENT=0.75
 DIALOG_BOX_HEIGHT_PERCENT=0.25
+AUDIO_MUSIC_VOLUME=0.5
+AUDIO_MUSIC_ENABLED=True
+AUDIO_SFX_VOLUME=0.7
+AUDIO_SFX_ENABLED=True
 ASSETS_HANDLE="game_assets"
 INITIAL_MAP="start.tmx"
 ```
@@ -171,6 +175,25 @@ Dialog system behavior, timing, and appearance.
 - **Position**: `DIALOG_VERTICAL_POSITION` of 0.25 means the dialog center is at 25% from the bottom of the screen
 - **Overlay**: Semi-transparent overlay covers the entire screen behind the dialog. Alpha value of 128 = 50% transparency
 
+### Audio Settings
+
+Audio system default values for music and sound effects.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `AUDIO_MUSIC_VOLUME` | float | 0.5 | Default music volume (0.0 = silent, 1.0 = full volume) |
+| `AUDIO_MUSIC_ENABLED` | bool | True | Whether music is enabled by default |
+| `AUDIO_SFX_VOLUME` | float | 0.7 | Default sound effects volume (0.0 = silent, 1.0 = full volume) |
+| `AUDIO_SFX_ENABLED` | bool | True | Whether sound effects are enabled by default |
+
+**Notes:**
+
+- These settings control the initial state of the AudioManager when it's initialized
+- Volume values are clamped to the range 0.0 to 1.0
+- Players can change these values at runtime using the AudioManager methods
+- Changes made at runtime are not persisted unless explicitly saved
+- For more details, see the [AudioManager documentation](systems/audio.md)
+
 ### Asset Settings
 
 Asset management configuration.
@@ -251,6 +274,10 @@ DIALOG_AUTO_CLOSE_DURATION=0.5
 DIALOG_BOX_WIDTH_PERCENT=0.8
 DIALOG_TEXT_FONT_SIZE=18
 
+# Audio settings
+AUDIO_MUSIC_VOLUME=0.3
+AUDIO_SFX_VOLUME=0.9
+
 # Asset settings
 ASSETS_HANDLE="mystic_quest_assets"
 
@@ -305,6 +332,10 @@ DIALOG_NPC_NAME_FONT_SIZE: int = 20
 DIALOG_TEXT_FONT_SIZE: int = 16
 DIALOG_INSTRUCTION_FONT_SIZE: int = 12
 DIALOG_PAGE_INDICATOR_FONT_SIZE: int = 10
+AUDIO_MUSIC_VOLUME: float = 0.5
+AUDIO_MUSIC_ENABLED: bool = True
+AUDIO_SFX_VOLUME: float = 0.7
+AUDIO_SFX_ENABLED: bool = True
 ```
 
 ## See Also
