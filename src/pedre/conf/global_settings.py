@@ -200,3 +200,94 @@ Example:
         "myproject.systems.combat",
     ]
 """
+
+# Installed actions (modules containing @ActionRegistry.register decorators)
+INSTALLED_ACTIONS = [
+    "pedre.systems.audio.actions",
+    "pedre.systems.camera.actions",
+    "pedre.systems.dialog.actions",
+    "pedre.systems.inventory.actions",
+    "pedre.systems.particle.actions",
+    "pedre.systems.scene.actions",
+    "pedre.systems.npc.actions",
+]
+"""List of module paths to import for action registration.
+
+Users can add custom actions by extending this list in their settings.py:
+
+Example:
+    INSTALLED_ACTIONS = [
+        *global_settings.INSTALLED_ACTIONS,
+        "myproject.custom_actions",
+        "myproject.systems.weather.actions",
+    ]
+
+Or replace system actions with custom implementations:
+    INSTALLED_ACTIONS = [
+        "pedre.systems.audio.actions",
+        "pedre.systems.camera.actions",
+        # Replace dialog actions with custom version
+        "myproject.custom_dialog_actions",
+        "pedre.systems.inventory.actions",
+        # ... rest of actions
+    ]
+"""
+
+# Installed events (modules containing @EventRegistry.register decorators)
+INSTALLED_EVENTS = [
+    "pedre.systems.interaction.events",
+    "pedre.systems.inventory.events",
+    "pedre.systems.npc.events",
+    "pedre.systems.portal.events",
+    "pedre.systems.scene.events",
+    "pedre.systems.script.events",
+    "pedre.systems.dialog.events",
+]
+"""List of module paths to import for event registration.
+
+Users can add custom events by extending this list in their settings.py:
+
+Example:
+    INSTALLED_EVENTS = [
+        *global_settings.INSTALLED_EVENTS,
+        "myproject.custom_events",
+        "myproject.systems.weather.events",
+    ]
+
+Or replace system events with custom implementations:
+    INSTALLED_EVENTS = [
+        "pedre.systems.interaction.events",
+        "pedre.systems.inventory.events",
+        # Replace dialog events with custom version
+        "myproject.custom_dialog_events",
+        # ... rest of events
+    ]
+"""
+
+# Installed conditions (modules containing @ConditionRegistry.register decorators)
+INSTALLED_CONDITIONS = [
+    "pedre.systems.interaction.conditions",
+    "pedre.systems.inventory.conditions",
+    "pedre.systems.npc.conditions",
+    "pedre.systems.script.conditions",
+]
+"""List of module paths to import for condition registration.
+
+Users can add custom conditions by extending this list in their settings.py:
+
+Example:
+    INSTALLED_CONDITIONS = [
+        *global_settings.INSTALLED_CONDITIONS,
+        "myproject.custom_conditions",
+        "myproject.systems.weather.conditions",
+    ]
+
+Or replace system conditions with custom implementations:
+    INSTALLED_CONDITIONS = [
+        "pedre.systems.interaction.conditions",
+        # Replace inventory conditions with custom version
+        "myproject.custom_inventory_conditions",
+        "pedre.systems.npc.conditions",
+        "pedre.systems.script.conditions",
+    ]
+"""

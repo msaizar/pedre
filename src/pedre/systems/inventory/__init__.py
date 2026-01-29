@@ -2,26 +2,26 @@
 
 This package provides:
 - InventoryManager: Core inventory management system
-- Actions: Script actions for inventory operations
-- Events: Events related to inventory state changes
+- InventoryItem: Data class for inventory items
+
+Actions (registered via INSTALLED_ACTIONS):
+- AcquireItemAction, WaitForInventoryAccessAction
+
+Events (registered via INSTALLED_EVENTS):
+- InventoryClosedEvent, ItemAcquiredEvent
+
+Conditions (registered via INSTALLED_CONDITIONS):
+- check_inventory_accessed: Check if inventory has been accessed
+- check_item_acquired: Check if a specific item has been acquired
 
 The inventory system tracks which items player has collected,
 provides methods for item acquisition and querying, and supports
 save/load functionality for persistent state.
 """
 
-from pedre.systems.inventory.actions import AcquireItemAction, WaitForInventoryAccessAction
-from pedre.systems.inventory.conditions import check_inventory_accessed, check_item_acquired
-from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
 from pedre.systems.inventory.manager import InventoryItem, InventoryManager
 
 __all__ = [
-    "AcquireItemAction",
-    "InventoryClosedEvent",
     "InventoryItem",
     "InventoryManager",
-    "ItemAcquiredEvent",
-    "WaitForInventoryAccessAction",
-    "check_inventory_accessed",
-    "check_item_acquired",
 ]
