@@ -361,6 +361,37 @@ camera_manager = CameraManager(camera, lerp_speed=0.1)
 
 See [CameraManager documentation](systems/camera.md) for detailed usage.
 
+### InteractionManager
+
+Manages interactive objects that players can activate in the game world.
+
+```python
+from pedre import InteractionManager
+
+interaction_manager = InteractionManager()
+```
+
+**Methods:**
+
+- `register_object(sprite: arcade.Sprite, name: str, properties: dict)` - Register an interactive object
+- `get_nearby_object(player_sprite: arcade.Sprite) -> InteractiveObject | None` - Get nearest interactive object within interaction distance
+- `get_interactive_objects() -> dict[str, InteractiveObject]` - Get all registered interactive objects
+- `handle_interaction(obj: InteractiveObject) -> bool` - Handle interaction with an object by publishing an event
+- `mark_as_interacted(object_name: str)` - Mark an object as interacted with
+- `has_interacted_with(object_name: str) -> bool` - Check if an object has been interacted with
+- `clear()` - Clear all registered interactive objects
+- `reset()` - Reset both interactive objects and interaction state
+- `on_key_press(symbol: int, modifiers: int) -> bool` - Handle interaction input (SPACE key)
+- `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene)` - Load interactive objects from Tiled map
+
+**Properties:**
+
+- `interaction_distance: float` - Maximum distance in pixels for interaction
+- `interactive_objects: dict[str, InteractiveObject]` - Dictionary mapping object names to InteractiveObject instances
+- `interacted_objects: set[str]` - Set of object names that have been interacted with
+
+See [InteractionManager documentation](systems/interaction.md) for detailed usage.
+
 ### PortalManager
 
 Handles map transitions through an event-driven system.
