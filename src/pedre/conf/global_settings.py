@@ -117,6 +117,27 @@ DIALOG_AUTO_CLOSE_DEFAULT = False
 DIALOG_AUTO_CLOSE_DURATION = 0.5
 """Seconds to wait after text is fully revealed before auto-closing dialog."""
 
+DIALOG_SHOW_HELP = True
+"""Whether to show help instructions in the dialog box."""
+
+DIALOG_SHOW_PAGINATION = True
+"""Whether to show page numbers in multi-page dialogs."""
+
+DIALOG_TEXT_NEXT_PAGE = "Press SPACE for next page"
+"""Help instruction text shown when there are more pages."""
+
+DIALOG_TEXT_CLOSE = "Press SPACE to close"
+"""Help instruction text shown on the last page."""
+
+DIALOG_TEXT_PAGE = "Page"
+"""Text label for page indicator (e.g., 'Page 1/3')."""
+
+DIALOG_CHAR_REVEAL_SPEED = 20
+"""Characters revealed per second during text animation."""
+
+DIALOG_INSTANT_TEXT_DEFAULT = False
+"""Default instant text behavior for dialogs. If True, text appears immediately without reveal animation."""
+
 # Dialog UI Layout Settings
 DIALOG_BOX_WIDTH_PERCENT = 0.75
 """Dialog box width as fraction of window width (0.0-1.0). Default: 75% of window width."""
