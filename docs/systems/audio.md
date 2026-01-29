@@ -2,9 +2,28 @@
 
 Manages background music and sound effects with caching.
 
+
 ## Location
 
 `src/pedre/systems/audio/manager.py`
+
+## Configuration
+
+The AudioManager uses the following settings from `pedre.conf.settings`:
+
+- `AUDIO_MUSIC_VOLUME` - Default music volume (0.0 to 1.0, default: 0.5)
+- `AUDIO_MUSIC_ENABLED` - Whether music is enabled by default (default: True)
+- `AUDIO_SFX_VOLUME` - Default sound effects volume (0.0 to 1.0, default: 0.7)
+- `AUDIO_SFX_ENABLED` - Whether sound effects are enabled by default (default: True)
+
+These can be overridden in your project's `settings.py`:
+
+```python
+# Custom audio settings
+AUDIO_MUSIC_VOLUME = 0.8
+AUDIO_SFX_VOLUME = 0.5
+AUDIO_MUSIC_ENABLED = False  # Start with music muted
+```
 
 ## Key Methods
 

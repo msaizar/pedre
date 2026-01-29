@@ -56,6 +56,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.systems.audio.base import AudioBaseManager
 from pedre.systems.registry import SystemRegistry
@@ -99,10 +100,11 @@ class AudioManager(AudioBaseManager):
     def __init__(self) -> None:
         """Initialize the audio manager.
 
-        Creates an audio manager with default settings:
-        - Music volume: 0.5 (50%)
-        - SFX volume: 0.7 (70%)
-        - Both music and SFX enabled
+        Creates an audio manager with settings from configuration:
+        - Music volume: from AUDIO_MUSIC_VOLUME setting
+        - SFX volume: from AUDIO_SFX_VOLUME setting
+        - Music enabled: from AUDIO_MUSIC_ENABLED setting
+        - SFX enabled: from AUDIO_SFX_ENABLED setting
         - Empty caches ready for lazy loading
         """
         # Current music player
@@ -116,13 +118,13 @@ class AudioManager(AudioBaseManager):
         # Sound effect cache
         self.sfx_cache: dict[str, arcade.Sound] = {}
 
-        # Volume settings (0.0 to 1.0)
-        self.music_volume = 0.5
-        self.sfx_volume = 0.7
+        # Volume settings (0.0 to 1.0) - loaded from settings
+        self.music_volume = settings.AUDIO_MUSIC_VOLUME
+        self.sfx_volume = settings.AUDIO_SFX_VOLUME
 
-        # Track if music is enabled
-        self.music_enabled = True
-        self.sfx_enabled = True
+        # Track if music is enabled - loaded from settings
+        self.music_enabled = settings.AUDIO_MUSIC_ENABLED
+        self.sfx_enabled = settings.AUDIO_SFX_ENABLED
 
     def setup(self, context: GameContext) -> None:
         """Initialize the audio system with game settings.
