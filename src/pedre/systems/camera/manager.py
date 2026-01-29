@@ -26,7 +26,7 @@ Boundary System:
 
 Usage Example:
     # Initialize camera manager
-    camera_manager = CameraManager(camera, lerp_speed=0.1)
+    camera_manager = CameraManager(camera)
 
     # Set boundaries based on map size
     camera_manager.set_bounds(
@@ -53,12 +53,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
+import arcade
+
+from pedre.conf import settings
 from pedre.systems.camera.base import CameraBaseManager
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
-    import arcade
-
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -84,7 +85,6 @@ class CameraManager(CameraBaseManager):
             - 0.1: Default smooth following
             - 0.2: Responsive following
             - 1.0: Instant following (no smoothing)
-        use_bounds: Whether boundary constraints are active.
         bounds: Boundary limits as (min_x, max_x, min_y, max_y) or None.
 
     Technical Details:
@@ -95,14 +95,12 @@ class CameraManager(CameraBaseManager):
     """
 
     name: ClassVar[str] = "camera"
-    dependencies: ClassVar[list[str]] = ["npc"]  # Need NPC system for validation
+    dependencies: ClassVar[list[str]] = ["player", "npc"]  # Need player for positioning, NPC for validation
 
     def __init__(
         self,
         camera: arcade.camera.Camera2D | None = None,
-        lerp_speed: float = 0.1,
-        *,
-        use_bounds: bool = False,
+        lerp_speed: float = settings.CAMERA_LERP_SPEED,
     ) -> None:
         """Initialize the camera manager.
 
@@ -114,21 +112,18 @@ class CameraManager(CameraBaseManager):
                 will be positioned and used for rendering. Can be None if
                 the camera will be set later via set_camera().
             lerp_speed: Speed of camera interpolation (0.0 to 1.0).
-                Higher values make the camera catch up faster. Default 0.1
-                provides a good balance between smooth and responsive.
-            use_bounds: Whether to initially enable boundary constraints.
-                Default False. Use set_bounds() to configure and enable.
+                Higher values make the camera catch up faster. Default comes
+                from CAMERA_LERP_SPEED setting (0.1).
 
         Example:
             # Create smooth camera with default settings
-            camera_manager = CameraManager(camera, lerp_speed=0.1)
+            camera_manager = CameraManager(camera)
 
             # Create more responsive camera
             camera_manager = CameraManager(camera, lerp_speed=0.2)
         """
         self.camera: arcade.camera.Camera2D | None = camera
         self.lerp_speed = lerp_speed
-        self.use_bounds = use_bounds
         self.bounds: tuple[float, float, float, float] | None = None  # (min_x, max_x, min_y, max_y)
         self.follow_mode: str | None = None  # None, "player", "npc"
         self.follow_target_npc: str | None = None
@@ -149,7 +144,6 @@ class CameraManager(CameraBaseManager):
         """Clean up camera resources when the scene unloads."""
         self.camera = None
         self.bounds = None
-        self.use_bounds = False
         self.follow_mode = None
         self.follow_target_npc = None
         self._follow_config = None
@@ -163,7 +157,6 @@ class CameraManager(CameraBaseManager):
         """
         return {
             "lerp_speed": self.lerp_speed,
-            "use_bounds": self.use_bounds,
             "follow_mode": self.follow_mode,
             "follow_target_npc": self.follow_target_npc,
             "follow_smooth": self.follow_smooth,
@@ -171,8 +164,7 @@ class CameraManager(CameraBaseManager):
 
     def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore state from save data (BaseSystem interface)."""
-        self.lerp_speed = state.get("lerp_speed", 0.1)
-        self.use_bounds = state.get("use_bounds", False)
+        self.lerp_speed = state.get("lerp_speed", settings.CAMERA_LERP_SPEED)
         self.follow_mode = state.get("follow_mode")
         self.follow_target_npc = state.get("follow_target_npc")
         self.follow_smooth = state.get("follow_smooth", True)
@@ -250,7 +242,6 @@ class CameraManager(CameraBaseManager):
             min_y = max_y = map_height / 2
 
         self.bounds = (min_x, max_x, min_y, max_y)
-        self.use_bounds = True
 
     def smooth_follow(self, target_x: float, target_y: float) -> None:
         """Smoothly move camera towards target position.
@@ -297,7 +288,7 @@ class CameraManager(CameraBaseManager):
         current_x, current_y = self.camera.position
 
         # Apply bounds if enabled
-        if self.use_bounds and self.bounds:
+        if self.bounds:
             min_x, max_x, min_y, max_y = self.bounds
             target_x = max(min_x, min(max_x, target_x))
             target_y = max(min_y, min(max_y, target_y))
@@ -346,7 +337,7 @@ class CameraManager(CameraBaseManager):
             return
 
         # Apply bounds if enabled
-        if self.use_bounds and self.bounds:
+        if self.bounds:
             min_x, max_x, min_y, max_y = self.bounds
             target_x = max(min_x, min(max_x, target_x))
             target_y = max(min_y, min(max_y, target_y))
@@ -408,11 +399,15 @@ class CameraManager(CameraBaseManager):
                         self.instant_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
-        """Load camera configuration from Tiled map properties.
+        """Load camera configuration from Tiled and create camera.
 
-        Reads camera_follow and camera_smooth properties to configure
-        camera behavior. Configuration is stored and applied later via
-        apply_follow_config() after the camera object is created.
+        This method:
+        1. Reads camera_follow and camera_smooth properties
+        2. Stores map dimensions for bounds calculation
+        3. Creates the camera with correct initial position
+        4. Sets bounds and applies follow configuration
+
+        Dependencies are satisfied at this point (player and npc managers loaded).
 
         Map Property Configuration in Tiled:
             1. Click on the map name in Layers panel (deselect any layers)
@@ -435,10 +430,15 @@ class CameraManager(CameraBaseManager):
             tile_map: Loaded TileMap with properties.
             arcade_scene: Scene created from tile_map (unused).
         """
+        # Calculate map dimensions for camera creation
+        map_width = tile_map.width * tile_map.tile_width
+        map_height = tile_map.height * tile_map.tile_height
+
         # Check if tile_map has properties
         if not hasattr(tile_map, "properties") or tile_map.properties is None:
             logger.debug("TileMap does not have properties, using defaults")
             self._follow_config = {"mode": "player", "smooth": True}
+            self._create_camera(map_width, map_height)
             return
 
         # Get camera properties with defaults
@@ -492,6 +492,9 @@ class CameraManager(CameraBaseManager):
         self._follow_config = config
         logger.debug("Camera follow config loaded: %s", config)
 
+        # Create camera now that configuration is loaded
+        self._create_camera(map_width, map_height)
+
     def get_follow_config(self) -> dict[str, Any] | None:
         """Get the stored follow config."""
         return self._follow_config
@@ -525,6 +528,81 @@ class CameraManager(CameraBaseManager):
                 logger.info("Camera following NPC '%s' (smooth=%s)", npc_name, smooth)
             else:
                 logger.error("NPC mode but no target specified")
+
+    def _create_camera(self, map_width: float, map_height: float) -> None:
+        """Create and configure camera based on loaded map data.
+
+        Called from load_from_tiled() after dependencies are satisfied.
+        Creates the Camera2D object, sets bounds, and applies follow configuration.
+
+        Args:
+            map_width: Width of the map in pixels.
+            map_height: Height of the map in pixels.
+        """
+        # Determine initial position based on follow configuration
+        initial_pos = self._get_initial_position(map_width, map_height)
+
+        # Create camera object
+        self.camera = arcade.camera.Camera2D(position=initial_pos)
+        logger.debug("Camera created at position (%.1f, %.1f)", initial_pos[0], initial_pos[1])
+
+        # Set bounds
+        window = arcade.get_window()
+        self.set_bounds(map_width, map_height, window.width, window.height)
+
+        # Apply follow configuration
+        self.apply_follow_config()
+
+    def _get_initial_position(self, map_width: float, map_height: float) -> tuple[float, float]:
+        """Determine initial camera position based on follow configuration.
+
+        Requires player_manager and npc_manager dependencies to be satisfied.
+
+        Args:
+            map_width: Width of the map in pixels.
+            map_height: Height of the map in pixels.
+
+        Returns:
+            Tuple of (x, y) position for initial camera placement.
+        """
+        follow_config = self._follow_config
+
+        # Try NPC follow mode
+        if follow_config and follow_config.get("mode") == "npc":
+            npc_name = follow_config.get("target")
+            if npc_name:
+                npc_manager = self.context.npc_manager
+                if npc_manager:
+                    npc_state = npc_manager.get_npc_by_name(npc_name)
+                    if npc_state:
+                        logger.debug(
+                            "Initial camera position: NPC '%s' at (%.1f, %.1f)",
+                            npc_name,
+                            npc_state.sprite.center_x,
+                            npc_state.sprite.center_y,
+                        )
+                        return (npc_state.sprite.center_x, npc_state.sprite.center_y)
+
+        # Default: position at player
+        player_sprite = self.context.player_manager.get_player_sprite()
+        if player_sprite:
+            logger.debug(
+                "Initial camera position: Player at (%.1f, %.1f)",
+                player_sprite.center_x,
+                player_sprite.center_y,
+            )
+            return (player_sprite.center_x, player_sprite.center_y)
+
+        # Fallback: center of map
+        if map_width and map_height:
+            fallback_x = map_width / 2
+            fallback_y = map_height / 2
+            logger.debug("Initial camera position: Map center at (%.1f, %.1f)", fallback_x, fallback_y)
+            return (fallback_x, fallback_y)
+
+        # Last resort: origin
+        logger.warning("Could not determine initial camera position, using origin")
+        return (0.0, 0.0)
 
     def shake(self, intensity: float = 10.0, duration: float = 0.5) -> None:
         """Add camera shake effect (for future implementation).

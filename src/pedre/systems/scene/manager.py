@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from typing import Any
 
     from pedre.systems.cache_manager import CacheManager
-    from pedre.systems.camera.base import CameraBaseManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -235,15 +234,12 @@ class SceneManager(SceneBaseManager):
         self.wall_list = self._extract_collision_layers(self.arcade_scene)
 
         # 3. Let systems load their Tiled data (in dependency order)
-        # This includes waypoints, portals, interactions, player, NPCs
+        # This includes waypoints, portals, interactions, player, NPCs, and camera
         self._load_systems_from_tiled()
 
         # 4. Invalidate physics engine (needs new player/walls)
         physics_manager = self.context.physics_manager
         physics_manager.invalidate()
-
-        # 5. Setup camera with map bounds
-        self._setup_camera()
 
     def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
         """Extract collision layers into a wall list."""
@@ -267,80 +263,6 @@ class SceneManager(SceneBaseManager):
                     self.arcade_scene,
                 )
                 logger.debug("Loaded Tiled data for system: %s", system.name)
-
-    def _setup_camera(self) -> None:
-        """Setup camera with map bounds after loading."""
-        camera_manager = self.context.camera_manager
-        if not camera_manager or not self.tile_map:
-            return
-
-        # Determine initial camera position based on follow configuration
-        initial_pos = self._get_initial_camera_position(camera_manager)
-
-        camera = arcade.camera.Camera2D(position=initial_pos)
-        camera_manager.set_camera(camera)
-
-        # Set bounds based on map size
-        map_width = self.tile_map.width * self.tile_map.tile_width
-        map_height = self.tile_map.height * self.tile_map.tile_height
-        window = arcade.get_window()
-        camera_manager.set_bounds(map_width, map_height, window.width, window.height)
-
-        # Apply camera following configuration from map properties
-        camera_manager.apply_follow_config()
-
-    def _get_initial_camera_position(self, camera_manager: CameraBaseManager) -> tuple[float, float]:
-        """Determine initial camera position based on follow configuration.
-
-        Checks the camera's follow config (loaded from Tiled map properties) to
-        determine where the camera should start. This prevents flickering when
-        the camera should follow an NPC instead of the player.
-
-        Args:
-            camera_manager: The camera manager with follow config.
-
-        Returns:
-            Tuple of (x, y) position for initial camera placement.
-        """
-        # Check if camera has follow config from Tiled
-        follow_config = camera_manager.get_follow_config()
-
-        if follow_config and follow_config.get("mode") == "npc":
-            # Camera should follow NPC - position at NPC initially
-            npc_name = follow_config.get("target")
-            if npc_name:
-                npc_manager = self.context.npc_manager
-                if npc_manager:
-                    npc_state = npc_manager.get_npc_by_name(npc_name)
-                    if npc_state:
-                        logger.debug(
-                            "Initial camera position set to NPC '%s' at (%.1f, %.1f)",
-                            npc_name,
-                            npc_state.sprite.center_x,
-                            npc_state.sprite.center_y,
-                        )
-                        return (npc_state.sprite.center_x, npc_state.sprite.center_y)
-
-        # Default: position at player (or map center if no player)
-        player_sprite = self.context.player_manager.get_player_sprite()
-        if player_sprite:
-            logger.debug(
-                "Initial camera position set to player at (%.1f, %.1f)",
-                player_sprite.center_x,
-                player_sprite.center_y,
-            )
-            return (player_sprite.center_x, player_sprite.center_y)
-        # Center of map
-        if self.tile_map:
-            map_width = self.tile_map.width * self.tile_map.tile_width
-            map_height = self.tile_map.height * self.tile_map.tile_height
-            logger.debug(
-                "Initial camera position set to map center at (%.1f, %.1f)",
-                map_width / 2,
-                map_height / 2,
-            )
-            return (map_width / 2, map_height / 2)
-        return (0.0, 0.0)
 
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map.

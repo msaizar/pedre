@@ -1,44 +1,14 @@
 """Base class for CameraManager."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
 
 from pedre.systems.base import BaseSystem
-
-if TYPE_CHECKING:
-    import arcade
 
 
 class CameraBaseManager(BaseSystem, ABC):
     """Base class for CameraManager."""
 
     role = "camera_manager"
-
-    @abstractmethod
-    def set_camera(self, camera: arcade.camera.Camera2D) -> None:
-        """Set the camera to manage."""
-        ...
-
-    @abstractmethod
-    def set_bounds(
-        self,
-        map_width: float,
-        map_height: float,
-        viewport_width: float,
-        viewport_height: float,
-    ) -> None:
-        """Set camera bounds based on map and viewport size."""
-        ...
-
-    @abstractmethod
-    def get_follow_config(self) -> dict[str, Any] | None:
-        """Get the stored follow config."""
-        ...
-
-    @abstractmethod
-    def apply_follow_config(self) -> None:
-        """Apply camera following configuration loaded from Tiled."""
-        ...
 
     @abstractmethod
     def use(self) -> None:
