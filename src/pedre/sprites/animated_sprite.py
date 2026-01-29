@@ -430,7 +430,6 @@ class AnimatedSprite(arcade.Sprite):
 
         # If this animation doesn't exist, skip update
         if not self.animation_textures[animation_key]:
-            logger.warning("Animation %s does not exist, skipping update", animation_key)
             return
 
         # Reset frame if it exceeds the number of frames in current animation
