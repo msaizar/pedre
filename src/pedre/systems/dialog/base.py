@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 
 
@@ -54,8 +55,8 @@ class DialogBaseManager(BaseSystem, ABC):
         npc_name: str,
         text: list[str],
         *,
-        instant: bool = False,
-        auto_close: bool | None = None,
+        instant: bool = settings.DIALOG_INSTANT_TEXT_DEFAULT,
+        auto_close: bool = settings.DIALOG_AUTO_CLOSE_DEFAULT,
         dialog_level: int | None = None,
         npc_key: str | None = None,
     ) -> None:

@@ -303,20 +303,19 @@ class TestDialogManager(unittest.TestCase):
 
     def test_auto_close_uses_settings_default_when_none(self) -> None:
         """Test that auto_close=None uses settings default (False)."""
-        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=None, dialog_level=0)
+        self.manager.show_dialog("TestNPC", ["Hello!"], dialog_level=0)
 
         # With default False, auto_close should be disabled
         assert self.manager.auto_close_enabled is False
 
-    def test_auto_close_uses_settings_default_when_true(self) -> None:
-        """Test that auto_close=None uses settings default when set to True."""
-        # Change settings default to True
-        settings.configure(DIALOG_AUTO_CLOSE_DEFAULT=True)
+    def test_auto_close_uses_settings_default_when_not_specified(self) -> None:
+        """Test that auto_close uses settings default when not specified."""
+        # When auto_close is not explicitly passed, it uses the default from settings
+        # The default is False (from settings.DIALOG_AUTO_CLOSE_DEFAULT)
+        self.manager.show_dialog("TestNPC", ["Hello!"], dialog_level=0)
 
-        self.manager.show_dialog("TestNPC", ["Hello!"], auto_close=None, dialog_level=0)
-
-        # Should use settings default (True)
-        assert self.manager.auto_close_enabled is True
+        # Should use settings default (False)
+        assert self.manager.auto_close_enabled is False
 
     def test_auto_close_explicit_false_overrides_settings_default(self) -> None:
         """Test that explicit auto_close=False overrides settings default."""

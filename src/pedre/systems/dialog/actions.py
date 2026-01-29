@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionRegistry
+from pedre.conf import settings
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
@@ -55,8 +56,8 @@ class DialogAction(Action):
         speaker: str,
         text: list[str],
         *,
-        instant: bool = False,
-        auto_close: bool | None = None,
+        instant: bool = settings.DIALOG_INSTANT_TEXT_DEFAULT,
+        auto_close: bool = settings.DIALOG_AUTO_CLOSE_DEFAULT,
     ) -> None:
         """Initialize dialog action.
 
@@ -64,9 +65,9 @@ class DialogAction(Action):
             speaker: Name of the character speaking.
             text: List of dialog pages to show.
             instant: If True, text appears immediately without letter-by-letter reveal.
+                Defaults to settings.DIALOG_INSTANT_TEXT_DEFAULT.
             auto_close: If True, dialog automatically closes after configured duration.
-                If False, player must manually close. If None (default), uses the default
-                from settings.DIALOG_AUTO_CLOSE_DEFAULT.
+                If False, player must manually close. Defaults to settings.DIALOG_AUTO_CLOSE_DEFAULT.
         """
         self.speaker = speaker
         self.text = text
@@ -102,8 +103,8 @@ class DialogAction(Action):
         return cls(
             speaker=data.get("speaker", ""),
             text=data.get("text", []),
-            instant=data.get("instant", False),
-            auto_close=data.get("auto_close"),  # None if not specified, uses settings default
+            instant=data.get("instant", settings.DIALOG_INSTANT_TEXT_DEFAULT),
+            auto_close=data.get("auto_close", settings.DIALOG_AUTO_CLOSE_DEFAULT),
         )
 
 

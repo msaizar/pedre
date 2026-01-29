@@ -143,17 +143,29 @@ Displays conversations with pagination.
 ```python
 from pedre import DialogManager
 
-dialog_manager = DialogManager(game_context)
+dialog_manager = DialogManager()
 ```
 
 **Methods:**
 
-- `show_dialog(speaker: str, pages: list[str], *, instant: bool = False, auto_close: bool = False)` - Display dialog
-  - `instant`: If True, text appears immediately without letter-by-letter reveal
-  - `auto_close`: If True, dialog automatically closes after configured duration (useful for cutscenes)
-- `next_page()` - Advance to next dialog page
+- `show_dialog(npc_name: str, text: list[str], *, instant: bool = settings.DIALOG_INSTANT_TEXT_DEFAULT, auto_close: bool = settings.DIALOG_AUTO_CLOSE_DEFAULT, dialog_level: int | None = None, npc_key: str | None = None)` - Display dialog
+  - `npc_name`: Display name of the character speaking (shown at top of dialog box)
+  - `text`: List of dialog text strings, one per page
+  - `instant`: If True, text appears immediately without letter-by-letter reveal. Defaults to settings.DIALOG_INSTANT_TEXT_DEFAULT
+  - `auto_close`: If True, dialog automatically closes after configured duration. If False, player must manually close. Defaults to settings.DIALOG_AUTO_CLOSE_DEFAULT
+  - `dialog_level`: Optional dialog level for event tracking
+  - `npc_key`: Optional NPC key name for event tracking
+- `advance_page() -> bool` - Advance to next dialog page or close if on last page (returns True if closed)
 - `close_dialog()` - Close dialog box
-- `is_active() -> bool` - Check if dialog is showing
+- `is_showing() -> bool` - Check if dialog is showing
+- `get_current_page() -> DialogPage | None` - Get the currently displayed page
+- `set_current_dialog_level(dialog_level: int)` - Set current dialog level for event tracking
+- `set_current_npc_name(npc_name: str)` - Set current NPC name for event tracking
+- `speed_up_text()` - Instantly reveal all text on the current page
+- `setup(context: GameContext)` - Initialize the dialog system
+- `cleanup()` - Clean up dialog resources
+- `update(delta_time: float)` - Update text reveal animation and auto-close timer
+- `on_key_press(symbol: int, modifiers: int) -> bool` - Handle input for dialog advancement
 - `on_draw_ui()` - Render dialog box
 
 ### SystemLoader

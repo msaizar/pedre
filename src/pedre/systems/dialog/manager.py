@@ -135,12 +135,12 @@ class DialogManager(DialogBaseManager):
 
         # Text reveal animation state
         self.revealed_chars = 0
-        self.char_reveal_speed = 20  # characters per second
+        self.char_reveal_speed = settings.DIALOG_CHAR_REVEAL_SPEED
         self.char_timer = 0.0
         self.text_fully_revealed = False
 
         # Auto-close state
-        self.auto_close_enabled = False
+        self.auto_close_enabled = settings.DIALOG_AUTO_CLOSE_DEFAULT
         self.auto_close_timer = 0.0
 
         # Text objects for dialog (created on first draw)
@@ -218,8 +218,8 @@ class DialogManager(DialogBaseManager):
         npc_name: str,
         text: list[str],
         *,
-        instant: bool = False,
-        auto_close: bool | None = None,
+        instant: bool = settings.DIALOG_INSTANT_TEXT_DEFAULT,
+        auto_close: bool = settings.DIALOG_AUTO_CLOSE_DEFAULT,
         dialog_level: int | None = None,
         npc_key: str | None = None,
     ) -> None:
@@ -243,11 +243,10 @@ class DialogManager(DialogBaseManager):
                 multiple lines and will be wrapped automatically to fit the dialog box.
             instant: If True, text appears immediately without letter-by-letter reveal.
                 Useful for narration, system messages, or cutscenes where the reveal
-                animation would be distracting.
+                animation would be distracting. Defaults to settings.DIALOG_INSTANT_TEXT_DEFAULT.
             auto_close: If True, dialog automatically closes after configured duration.
-                If False, player must manually close. If None, uses the default from
-                settings.DIALOG_AUTO_CLOSE_DEFAULT. Useful for cutscenes and
-                scripted sequences. The timer starts after text is fully revealed.
+                If False, player must manually close. Defaults to settings.DIALOG_AUTO_CLOSE_DEFAULT.
+                Useful for cutscenes and scripted sequences. The timer starts after text is fully revealed.
             dialog_level: Optional dialog level for event tracking. Used when emitting
                 DialogClosedEvent.
             npc_key: Optional NPC key name for event tracking. If provided, this is used
@@ -282,11 +281,7 @@ class DialogManager(DialogBaseManager):
         self.showing = True
         self.current_npc_name = npc_key or npc_name
         self.current_dialog_level = dialog_level
-        # Use default from settings if auto_close not explicitly specified
-        if auto_close is None:
-            self.auto_close_enabled = settings.DIALOG_AUTO_CLOSE_DEFAULT
-        else:
-            self.auto_close_enabled = auto_close
+        self.auto_close_enabled = auto_close
         self.auto_close_timer = 0.0
         self._reset_text_reveal()
 
@@ -564,8 +559,8 @@ class DialogManager(DialogBaseManager):
         self.dialog_text.draw()
 
         # Draw page indicator if multiple pages
-        if current_page.total_pages > 1:
-            page_indicator = f"Page {current_page.page_num + 1}/{current_page.total_pages}"
+        if settings.DIALOG_SHOW_PAGINATION and current_page.total_pages > 1:
+            page_indicator = f"{settings.DIALOG_TEXT_PAGE} {current_page.page_num + 1}/{current_page.total_pages}"
 
             # Create or update page indicator text
             if self.page_indicator_text is None:
@@ -586,25 +581,26 @@ class DialogManager(DialogBaseManager):
             self.page_indicator_text.draw()
 
         # Draw instruction
-        if self.current_page_index < len(self.pages) - 1:
-            instruction = "Press SPACE for next page"
-        else:
-            instruction = "Press SPACE to close"
+        if settings.DIALOG_SHOW_HELP:
+            if self.current_page_index < len(self.pages) - 1:
+                instruction = settings.DIALOG_TEXT_NEXT_PAGE
+            else:
+                instruction = settings.DIALOG_TEXT_CLOSE
 
-        # Create or update instruction text
-        if self.instruction_text is None:
-            self.instruction_text = arcade.Text(
-                instruction,
-                box_x,
-                bottom + settings.DIALOG_FOOTER_OFFSET,
-                arcade.color.LIGHT_GRAY,
-                font_size=settings.DIALOG_INSTRUCTION_FONT_SIZE,
-                anchor_x="center",
-            )
-        else:
-            self.instruction_text.text = instruction
-            self.instruction_text.x = box_x
-            self.instruction_text.y = bottom + settings.DIALOG_FOOTER_OFFSET
+            # Create or update instruction text
+            if self.instruction_text is None:
+                self.instruction_text = arcade.Text(
+                    instruction,
+                    box_x,
+                    bottom + settings.DIALOG_FOOTER_OFFSET,
+                    arcade.color.LIGHT_GRAY,
+                    font_size=settings.DIALOG_INSTRUCTION_FONT_SIZE,
+                    anchor_x="center",
+                )
+            else:
+                self.instruction_text.text = instruction
+                self.instruction_text.x = box_x
+                self.instruction_text.y = bottom + settings.DIALOG_FOOTER_OFFSET
 
-        # Draw instruction
-        self.instruction_text.draw()
+            # Draw instruction
+            self.instruction_text.draw()
