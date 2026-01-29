@@ -830,8 +830,6 @@ class NPCManager(NPCBaseManager):
         Args:
             npc_objects: List of Tiled objects from tile_map.object_lists["NPCs"].
             scene: The arcade Scene to add NPC sprites to.
-            settings: Game settings for asset paths.
-            context: Game Context.
         """
         # Create NPCs sprite list for the scene if needed
         npc_sprite_list = arcade.SpriteList()
