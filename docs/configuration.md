@@ -86,6 +86,9 @@ Player character interaction settings.
 **Notes:**
 
 - `INTERACTION_MANAGER_DISTANCE` determines how close the player must be to interact with objects
+  - Common values: 32 (1 tile), 50 (default, ~1.5 tiles), 64 (2 tiles), 96 (3 tiles)
+  - Uses Euclidean distance from player center to object center
+  - For more details, see the [InteractionManager documentation](systems/interaction.md)
 - `NPC_INTERACTION_DISTANCE` determines how close the player must be to interact with NPCs
 - `PORTAL_INTERACTION_DISTANCE` determines how close the player must be to activate portals
 - `WAYPOINT_THRESHOLD` controls pathfinding precision (lower = more precise)
