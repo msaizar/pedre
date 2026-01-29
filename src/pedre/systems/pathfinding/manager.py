@@ -93,7 +93,7 @@ class PathfindingManager(PathfindingBaseManager):
     where NPCs block each other's paths.
 
     Attributes:
-        tile_size: Size of each tile in pixels (default 32).
+        tile_size: Size of each tile in pixels (default settings.TILE_SIZE).
     """
 
     name: ClassVar[str] = "pathfinding"

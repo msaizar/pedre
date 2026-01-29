@@ -65,6 +65,7 @@ import arcade
 
 from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
+from pedre.conf.exceptions import ConfigurationError
 from pedre.constants import ALL_ANIMATION_PROPERTIES, asset_path
 from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.events import (
@@ -77,6 +78,8 @@ from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
+    from pedre.systems.npc.types import NPCInitKwargs
+
 logger = logging.getLogger(__name__)
 
 
@@ -849,29 +852,60 @@ class NPCManager(NPCBaseManager):
 
             # Get sprite sheet properties
             sprite_sheet = npc_obj.properties.get("sprite_sheet")
-            tile_size = npc_obj.properties.get("tile_size", 32)
-
             if not sprite_sheet:
-                logger.warning("NPC %s missing 'sprite_sheet' property", npc_name)
-                continue
+                error_msg = f"NPC '{npc_name}' missing required 'sprite_sheet' property"
+                logger.error(error_msg)
+                raise ConfigurationError(error_msg)
 
             sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
 
+            # Validate tile_size if present (optional)
+            tile_size = npc_obj.properties.get("tile_size")
+            if tile_size is not None and not isinstance(tile_size, int):
+                error_msg = (
+                    f"NPC '{npc_name}': Property 'tile_size' must be of type int, "
+                    f"got {type(tile_size).__name__}: {tile_size}"
+                )
+                logger.error(error_msg)
+                raise ConfigurationError(error_msg)
+
+            # Validate scale if present (optional)
+            scale = npc_obj.properties.get("scale")
+            if scale is not None and not isinstance(scale, (int, float)):
+                error_msg = (
+                    f"NPC '{npc_name}': Property 'scale' must be of type float, got {type(scale).__name__}: {scale}"
+                )
+                logger.error(error_msg)
+                raise ConfigurationError(error_msg)
+
             # Extract animation props
-            anim_props = {
-                key: val
-                for key, val in npc_obj.properties.items()
-                if key in ALL_ANIMATION_PROPERTIES and isinstance(val, int)
+            anim_props = {}
+            for key, val in npc_obj.properties.items():
+                if key in ALL_ANIMATION_PROPERTIES:
+                    if isinstance(val, int):
+                        anim_props[key] = val
+                    else:
+                        error_msg = (
+                            f"NPC '{npc_name}': Animation property '{key}' must be of type int, "
+                            f"got {type(val).__name__}: {val}"
+                        )
+                        logger.error(error_msg)
+                        raise ConfigurationError(error_msg)
+
+            # Build sprite kwargs
+            kwargs: NPCInitKwargs = {
+                "center_x": spawn_x,
+                "center_y": spawn_y,
             }
+            if scale is not None:
+                kwargs["scale"] = scale
+            if tile_size is not None:
+                kwargs["tile_size"] = tile_size
 
             try:
                 animated_npc = AnimatedNPC(
                     sprite_sheet_path,
-                    tile_size=tile_size,
-                    columns=12,
-                    scale=1.0,
-                    center_x=spawn_x,
-                    center_y=spawn_y,
+                    **kwargs,
                     **anim_props,
                 )
 

@@ -64,6 +64,7 @@ from typing import TYPE_CHECKING
 import arcade
 from PIL import Image
 
+from pedre.conf import settings
 from pedre.sprites.animated_sprite import AnimatedSprite
 from pedre.sprites.helpers import load_animation_frames
 
@@ -106,8 +107,7 @@ class AnimatedNPC(AnimatedSprite):
         self,
         sprite_sheet_path: Path | str,
         *,
-        tile_size: int = 64,
-        columns: int = 12,
+        tile_size: int = settings.TILE_SIZE,
         scale: float = 1.0,
         center_x: float = 0,
         center_y: float = 0,
@@ -150,8 +150,7 @@ class AnimatedNPC(AnimatedSprite):
 
         Args:
             sprite_sheet_path: Path to the sprite sheet PNG file.
-            tile_size: Size of each frame in pixels (width and height). Default is 64x64.
-            columns: Total number of columns in the sprite sheet. Default is 12.
+            tile_size: Size of each frame in pixels. Default is settings.TILE_SIZE.
             scale: Sprite scale multiplier for rendering. Default is 1.0.
             center_x: Initial X position in world coordinates.
             center_y: Initial Y position in world coordinates.
@@ -207,7 +206,6 @@ class AnimatedNPC(AnimatedSprite):
         super().__init__(
             sprite_sheet_path,
             tile_size=tile_size,
-            columns=columns,
             scale=scale,
             center_x=center_x,
             center_y=center_y,

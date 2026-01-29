@@ -3,6 +3,9 @@
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.conf.exceptions import ConfigurationError
 from pedre.constants import (
     ALL_ANIMATION_PROPERTIES,
     BASE_ANIMATION_PROPERTIES,
@@ -93,21 +96,15 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
         assert "spawn_at_portal" not in result
 
     def test_ignores_non_integer_properties(self) -> None:
-        """Test that non-integer animation properties are ignored."""
+        """Test that non-integer animation properties raise a ConfigurationError."""
         properties = {
             "idle_up_frames": "4",  # String instead of int
             "idle_up_row": 0,
             "idle_down_frames": 4.5,  # Float instead of int
             "idle_down_row": 1,
         }
-
-        result = self.manager._get_animation_properties(properties)
-
-        assert len(result) == 2
-        assert result["idle_up_row"] == 0
-        assert result["idle_down_row"] == 1
-        assert "idle_up_frames" not in result
-        assert "idle_down_frames" not in result
+        with pytest.raises(ConfigurationError):
+            self.manager._get_animation_properties(properties)
 
     def test_handles_empty_properties(self) -> None:
         """Test that empty properties dict returns empty result."""

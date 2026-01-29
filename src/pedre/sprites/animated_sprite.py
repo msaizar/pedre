@@ -29,6 +29,8 @@ from typing import TYPE_CHECKING
 import arcade
 from PIL import Image
 
+from pedre.conf import settings
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -50,7 +52,6 @@ class AnimatedSprite(arcade.Sprite):
 
     Attributes:
         tile_size: Size of each frame in the sprite sheet (pixels).
-        columns: Number of columns in the sprite sheet.
         current_direction: Current facing direction ("up", "down", "left", or "right").
         current_frame: Current frame index in the active animation.
         animation_speed: Time between animation frames in seconds.
@@ -66,8 +67,7 @@ class AnimatedSprite(arcade.Sprite):
         self,
         sprite_sheet_path: Path | str,
         *,
-        tile_size: int = 64,
-        columns: int = 12,
+        tile_size: int = settings.TILE_SIZE,
         scale: float = 1.0,
         center_x: float = 0,
         center_y: float = 0,
@@ -100,8 +100,7 @@ class AnimatedSprite(arcade.Sprite):
 
         Args:
             sprite_sheet_path: Path to the sprite sheet PNG file.
-            tile_size: Size of each frame in pixels (width and height). Default is 64x64.
-            columns: Total number of columns in the sprite sheet. Default is 12.
+            tile_size: Size of each frame in pixels (width and height). Default is settings.TILE_SIZE.
             scale: Sprite scale multiplier for rendering. Default is 1.0.
             center_x: Initial X position in world coordinates.
             center_y: Initial Y position in world coordinates.
@@ -142,7 +141,6 @@ class AnimatedSprite(arcade.Sprite):
         super().__init__(scale=scale)
 
         self.tile_size = tile_size
-        self.columns = columns
         self.center_x = center_x
         self.center_y = center_y
 
