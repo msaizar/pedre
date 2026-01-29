@@ -26,6 +26,10 @@ How to create and register custom script actions using `ActionRegistry`.
 
 How to define and register custom events using `EventRegistry`.
 
+### [Conditions](conditions.md)
+
+How to define and register custom conditions using `ConditionRegistry`.
+
 ## Core Systems
 
 ### [DialogManager](dialog.md)

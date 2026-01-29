@@ -556,7 +556,7 @@ Look for condition check messages in console output.
 
  Pedre supports adding custom condition logic using the `ConditionRegistry`.
 
- ### 1. Define the Checker Function
+### 1. Define the Checker Function
 
  Create a function that initiates the check. It receives the condition parameters (from JSON) and the `GameContext`.
 
@@ -576,7 +576,7 @@ Look for condition check messages in console output.
      return weather_system.current_weather == required_weather
  ```
 
- ### 2. Use in Scripts
+### 2. Use in Scripts
 
  ```json
  {
@@ -593,8 +593,8 @@ Look for condition check messages in console output.
  }
  ```
 
- ## Next Steps
+## Next Steps
 
- - Learn about [Actions](../systems/actions.md) to see what happens when conditions are met
- - Explore [Advanced Patterns](advanced.md) for complex conditional sequences
- - Browse [Examples](examples.md) for practical conditional script examples
+- Learn about [Actions](../systems/actions.md) to see what happens when conditions are met
+- Explore [Advanced Patterns](advanced.md) for complex conditional sequences
+- Browse [Examples](examples.md) for practical conditional script examples
