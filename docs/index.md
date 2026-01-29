@@ -59,8 +59,8 @@ loader = SystemLoader()
 loader.setup_all(context)
 
 # Systems access each other via context
-def update(self, delta_time, context):
-    audio = context.get_system("audio")
+def update(self, delta_time):
+    audio = self.context.get_system("audio")
 ```
 
 ## Documentation Overview

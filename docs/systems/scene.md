@@ -6,18 +6,9 @@ Manages scene transitions, map loading, and lifecycle.
 
 `src/pedre/systems/scene/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.scene import SceneManager
-
-scene_manager = SceneManager()
-# SceneManager is typically initialized by SystemLoader
-```
-
 ## Key Methods
 
-### `load_level(map_file: str, spawn_waypoint: str | None, context: GameContext) -> None`
+### `load_level(map_file: str, spawn_waypoint: str | None) -> None`
 
 Immediately loads a new map level. In most cases, you should use `request_transition` for a smooth visual transition.
 
@@ -25,7 +16,6 @@ Immediately loads a new map level. In most cases, you should use `request_transi
 
 - `map_file` - Filename of the .tmx map to load (e.g. "village.tmx")
 - `spawn_waypoint` - Optional waypoint name to spawn the player at
-- `context` - The GameContext
 
 ### `request_transition(map_file: str, spawn_waypoint: str | None = None) -> None`
 

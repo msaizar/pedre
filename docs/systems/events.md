@@ -2,6 +2,44 @@
 
 The Pedre framework uses an event-driven architecture to decouple systems. The `EventRegistry` allows dynamic discovery and registration of event types by name.
 
+## How Events Are Loaded
+
+Pedre uses a plugin-style architecture for loading events. When the game initializes, the `EventLoader` automatically imports event modules specified in your settings, which triggers their `@EventRegistry.register` decorators to execute and register the events.
+
+### INSTALLED_EVENTS Setting
+
+Events are configured through the `INSTALLED_EVENTS` setting, which is a list of Python module paths containing event classes.
+
+**Default built-in events:**
+
+```python
+INSTALLED_EVENTS = [
+    "pedre.systems.audio.events",
+    "pedre.systems.camera.events",
+    "pedre.systems.dialog.events",
+    "pedre.systems.inventory.events",
+    "pedre.systems.particle.events",
+    "pedre.systems.scene.events",
+    "pedre.systems.npc.events",
+]
+```
+
+### Adding Custom Events
+
+To add your own custom events, extend the list in your project's `settings.py`:
+
+```python
+from pedre.conf import global_settings
+
+INSTALLED_EVENTS = [
+    *global_settings.INSTALLED_EVENTS,  # Include built-in events
+    "myproject.custom_events",           # Your custom events module
+    "myproject.systems.weather.events",  # System-specific events
+]
+```
+
+You can also replace built-in events with your own implementations by omitting the built-in module and adding your custom one instead.
+
 ## EventRegistry
 
 The `EventRegistry` maps string names (like `"npc_interacted"`) to Event classes. This enables the scripting system to subscribe to events defined in JSON without importing the actual Python classes.

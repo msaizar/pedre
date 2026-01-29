@@ -6,17 +6,9 @@ Keyboard input handling and movement vector calculation.
 
 `src/pedre/systems/input/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.input import InputManager
-
-input_manager = InputManager()
-```
-
 ## Key Methods
 
-### `on_key_press(symbol: int, modifiers: int, context: GameContext) -> bool`
+### `on_key_press(symbol: int, modifiers: int) -> bool`
 
 Register a key press event.
 
@@ -24,9 +16,8 @@ Register a key press event.
 
 - `symbol` - Arcade key constant (e.g., `arcade.key.UP`)
 - `modifiers` - Modifier keys bitfield
-- `context` - The GameContext
 
-### `on_key_release(symbol: int, modifiers: int, context: GameContext) -> bool`
+### `on_key_release(symbol: int, modifiers: int) -> bool`
 
 Register a key release event.
 

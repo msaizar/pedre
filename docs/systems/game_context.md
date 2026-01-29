@@ -13,11 +13,6 @@ Unlike a global singleton, `GameContext` is explicitly passed to methods that ne
 ## Key Attributes
 
 - **event_bus**: Central event system (`EventBus`)
-- **player_sprite**: Reference to the player's sprite
-- **current_scene**: Name of the active map/scene
-- **wall_list**: Collision sprites for the current map
-- **waypoints**: Named locations on the map
-- **interacted_objects**: Set of object IDs the player has interacted with
 
 ## Key Methods
 
@@ -31,21 +26,10 @@ if dialog_manager:
     dialog_manager.show_dialog("Hello!")
 ```
 
-### `update_player(player_sprite)`
-
-Update the reference to the player sprite (e.g., after spawning).
-
-### `update_scene(scene_name)`
-
-Update the current scene identifier.
-
 ## Usage in Systems
 
 ```python
-def update(self, delta_time, context: GameContext):
+def update(self, delta_time):
     # Access other systems
-    audio = context.get_system("audio")
-
-    # Access game state
-    player = context.player_sprite
+    audio = self.context.get_system("audio")
 ```

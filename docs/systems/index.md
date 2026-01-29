@@ -14,7 +14,7 @@ Handles dynamic loading, initialization (setup), and lifecycle management (reset
 
 ### [GameContext](game_context.md)
 
-Central registry providing systems with access to shared game state (event bus, player, scene, wall list) and other systems.
+Central registry providing systems with access to event bus and other systems.
 
 ## Extensibility
 
@@ -25,6 +25,10 @@ How to create and register custom script actions using `ActionRegistry`.
 ### [Events](events.md)
 
 How to define and register custom events using `EventRegistry`.
+
+### [Conditions](conditions.md)
+
+How to define and register custom conditions using `ConditionRegistry`.
 
 ## Core Systems
 
@@ -195,22 +199,6 @@ Publish-subscribe event system for loose coupling. Enables decoupled communicati
 - Type-safe events
 
 ## Best Practices
-
-### Manager Coordination
-
-Use `GameContext` to pass managers to actions and systems:
-
-```python
-from pedre.systems.game_context import GameContext
-
-game_context = GameContext(
-    event_bus=event_bus,
-    npc_manager=npc_manager,
-    dialog_manager=dialog_manager,
-    inventory_manager=inventory_manager,
-    # ... other managers
-)
-```
 
 ### Event-Driven Design
 

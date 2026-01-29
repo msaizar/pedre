@@ -6,14 +6,6 @@ Manages item collection and categorization.
 
 `src/pedre/systems/inventory/manager.py`
 
-## Initialization
-
-```python
-from pedre.systems.inventory import InventoryManager
-
-inventory_manager = InventoryManager()
-```
-
 ## Key Methods
 
 ### `add_item(item_name: str, category: str = "items") -> None`
