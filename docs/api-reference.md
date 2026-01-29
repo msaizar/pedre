@@ -154,7 +154,7 @@ dialog_manager = DialogManager(game_context)
 - `next_page()` - Advance to next dialog page
 - `close_dialog()` - Close dialog box
 - `is_active() -> bool` - Check if dialog is showing
-- `on_draw_ui(context: GameContext)` - Render dialog box
+- `on_draw_ui()` - Render dialog box
 
 ### SystemLoader
 
@@ -179,7 +179,7 @@ from pedre.systems import SceneManager
 **Methods:**
 
 - `request_transition(map_file: str, spawn_waypoint: str | None = None)` - Request smooth transition
-- `load_level(map_file: str, spawn_waypoint: str | None, context: GameContext)` - Load map immediately
+- `load_level(map_file: str, spawn_waypoint: str | None)` - Load map immediately
 
 ### InventoryManager
 
@@ -379,8 +379,6 @@ from pedre import GameContext
 context = GameContext(
     view_manager=view_manager,
     event_bus=event_bus,
-    current_scene="village",
-    current_map="village.tmx"
 )
 ```
 
@@ -388,8 +386,6 @@ context = GameContext(
 
 - `view_manager: ViewManager` - View controller
 - `event_bus: EventBus` - Event system
-- `current_scene: str` - Current scene identifier
-- `current_map: str` - Current map file
 
 ## Events
 

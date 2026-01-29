@@ -90,19 +90,15 @@ if key == arcade.key.ESCAPE:
     dialog_manager.close_dialog()
 ```
 
-### `on_draw_ui(context: GameContext) -> None`
+### `on_draw_ui() -> None`
 
 Draw the dialog overlay (called automatically by system loader).
-
-**Parameters:**
-
-- `context` - The GameContext
 
 **Example:**
 
 ```python
 # Typically called automatically, but can be manual:
-dialog_manager.on_draw_ui(game_context)
+dialog_manager.on_draw_ui()
 ```
 
 ## Properties

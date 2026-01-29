@@ -26,14 +26,13 @@ script_manager.load_scripts(
 )
 ```
 
-### `update(delta_time: float, context: GameContext) -> None`
+### `update(delta_time: float) -> None`
 
 Update active action sequences (call every frame).
 
 **Parameters:**
 
 - `delta_time` - Time since last update in seconds
-- `context` - GameContext with all managers
 
 **Example:**
 
