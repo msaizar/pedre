@@ -2,6 +2,44 @@
 
 Pedre uses an extensible action system where all script actions are managed by a central registry. This allows you to create custom actions that integrate seamlessly with the event-driven scripting system.
 
+## How Actions Are Loaded
+
+Pedre uses a plugin-style architecture for loading actions. When the game initializes, the `ActionLoader` automatically imports action modules specified in your settings, which triggers their `@ActionRegistry.register` decorators to execute and register the actions.
+
+### INSTALLED_ACTIONS Setting
+
+Actions are configured through the `INSTALLED_ACTIONS` setting, which is a list of Python module paths containing action classes.
+
+**Default built-in actions:**
+
+```python
+INSTALLED_ACTIONS = [
+    "pedre.systems.audio.actions",
+    "pedre.systems.camera.actions",
+    "pedre.systems.dialog.actions",
+    "pedre.systems.inventory.actions",
+    "pedre.systems.particle.actions",
+    "pedre.systems.scene.actions",
+    "pedre.systems.npc.actions",
+]
+```
+
+### Adding Custom Actions
+
+To add your own custom actions, extend the list in your project's `settings.py`:
+
+```python
+from pedre.conf import global_settings
+
+INSTALLED_ACTIONS = [
+    *global_settings.INSTALLED_ACTIONS,  # Include built-in actions
+    "myproject.custom_actions",           # Your custom actions module
+    "myproject.systems.weather.actions",  # System-specific actions
+]
+```
+
+You can also replace built-in actions with your own implementations by omitting the built-in module and adding your custom one instead.
+
 ## ActionRegistry
 
 The `ActionRegistry` maps action type strings (like `"dialog"`, `"move_npc"`) to Action classes.
