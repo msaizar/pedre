@@ -92,7 +92,7 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
         assert "name" not in result
         assert "spawn_at_portal" not in result
 
-    def test_ignores_non_integer_properties(self) -> None:
+    def test_raise_exception_on_non_integer_properties(self) -> None:
         """Test that non-integer animation properties raise a ConfigurationError."""
         properties = {
             "idle_up_frames": "4",  # String instead of int
