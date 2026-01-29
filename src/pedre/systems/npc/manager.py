@@ -65,14 +65,14 @@ import arcade
 
 from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
-from pedre.constants import asset_path
-from pedre.sprites import AnimatedNPC
+from pedre.constants import ALL_ANIMATION_PROPERTIES, asset_path
 from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
     NPCMovementCompleteEvent,
 )
+from pedre.systems.npc.sprites import AnimatedNPC
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -655,9 +655,66 @@ class NPCManager(NPCBaseManager):
             context: Game context (provides access to wall_list if needed).
         """
         for npc in self.npcs.values():
-            # Update animation for animated NPCs
+            # Process pathfinding movement first
+            moving = False  # Track if NPC is actually moving this frame
+
+            if npc.is_moving and npc.path:
+                # Get next waypoint
+                target_x, target_y = npc.path[0]
+
+                # Calculate direction to target
+                dx = target_x - npc.sprite.center_x
+                dy = target_y - npc.sprite.center_y
+                distance = (dx**2 + dy**2) ** 0.5
+
+                # Update direction for animated NPCs based on movement (prioritize horizontal)
+                if isinstance(npc.sprite, AnimatedNPC):
+                    # Determine new direction from movement vector
+                    if dx > 0:
+                        new_direction = "right"
+                    elif dx < 0:
+                        new_direction = "left"
+                    elif dy > 0:
+                        new_direction = "up"
+                    elif dy < 0:
+                        new_direction = "down"
+                    else:
+                        new_direction = npc.sprite.current_direction
+
+                    # Only update if direction changed (prevents unnecessary animation resets)
+                    if new_direction != npc.sprite.current_direction:
+                        npc.sprite.set_direction(new_direction)
+
+                # Move towards target
+                if distance < self.waypoint_threshold:
+                    # Close enough to waypoint, move to next
+                    npc.path.popleft()
+                    if not npc.path:
+                        # Path completed
+                        npc.sprite.center_x = target_x
+                        npc.sprite.center_y = target_y
+                        npc.is_moving = False
+                        moving = False
+
+                        # Emit movement complete event
+                        if self.context.event_bus:
+                            self.context.event_bus.publish(NPCMovementCompleteEvent(npc_name=npc.name))
+                            logger.info("%s movement complete, event emitted", npc.name)
+                    else:
+                        # More waypoints remaining, NPC is still moving
+                        moving = True
+
+                # Move NPC (only if distance > 0 to avoid division by zero)
+                elif distance > 0:
+                    move_distance = self.npc_speed * delta_time
+                    move_distance = min(move_distance, distance)
+                    npc.sprite.center_x += (dx / distance) * move_distance
+                    npc.sprite.center_y += (dy / distance) * move_distance
+                    moving = True  # NPC is actively moving
+
+            # Update animation for animated NPCs (after movement logic)
             if isinstance(npc.sprite, AnimatedNPC):
-                npc.sprite.update_animation(delta_time, moving=npc.is_moving)
+                npc.sprite.update_animation(delta_time, moving=moving)
 
                 # Check if appear animation just completed
                 if npc.sprite.appear_complete and not npc.appear_event_emitted:
@@ -672,46 +729,6 @@ class NPCManager(NPCBaseManager):
                         self.context.event_bus.publish(NPCDisappearCompleteEvent(npc_name=npc.name))
                         logger.info("%s disappear animation complete, event emitted", npc.name)
                     npc.disappear_event_emitted = True
-
-            if not npc.is_moving or not npc.path:
-                continue
-
-            # Get next waypoint
-            target_x, target_y = npc.path[0]
-
-            # Calculate direction to target
-            dx = target_x - npc.sprite.center_x
-            dy = target_y - npc.sprite.center_y
-            distance = (dx**2 + dy**2) ** 0.5
-
-            # Update direction for animated NPCs based on horizontal movement
-            if isinstance(npc.sprite, AnimatedNPC):
-                if dx > 0 and npc.sprite.current_direction != "right":
-                    npc.sprite.set_direction("right")
-                elif dx < 0 and npc.sprite.current_direction != "left":
-                    npc.sprite.set_direction("left")
-
-            # Move towards target
-            if distance < self.waypoint_threshold:
-                # Close enough to waypoint, move to next
-                npc.path.popleft()
-                if not npc.path:
-                    # Path completed
-                    npc.sprite.center_x = target_x
-                    npc.sprite.center_y = target_y
-                    npc.is_moving = False
-
-                    # Emit movement complete event
-                    if self.context.event_bus:
-                        self.context.event_bus.publish(NPCMovementCompleteEvent(npc_name=npc.name))
-                        logger.info("%s movement complete, event emitted", npc.name)
-
-            # Move NPC (only if distance > 0 to avoid division by zero)
-            elif distance > 0:
-                move_distance = self.npc_speed * delta_time
-                move_distance = min(move_distance, distance)
-                npc.sprite.center_x += (dx / distance) * move_distance
-                npc.sprite.center_y += (dy / distance) * move_distance
 
     def get_npc_positions(self) -> dict[str, dict[str, float | bool]]:
         """Get current positions and visibility for all NPCs.
@@ -844,7 +861,7 @@ class NPCManager(NPCBaseManager):
             anim_props = {
                 key: val
                 for key, val in npc_obj.properties.items()
-                if key.startswith(("idle_", "walk_")) and isinstance(val, int)
+                if key in ALL_ANIMATION_PROPERTIES and isinstance(val, int)
             }
 
             try:

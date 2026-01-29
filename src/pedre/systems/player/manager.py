@@ -13,9 +13,9 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.constants import asset_path
-from pedre.sprites import AnimatedPlayer
+from pedre.constants import BASE_ANIMATION_PROPERTIES, asset_path
 from pedre.systems.player.base import PlayerBaseManager
+from pedre.systems.player.sprites import AnimatedPlayer
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -227,24 +227,7 @@ class PlayerManager(PlayerBaseManager):
         if not properties:
             return animation_props
 
-        for key in [
-            "idle_up_frames",
-            "idle_up_row",
-            "idle_down_frames",
-            "idle_down_row",
-            "idle_left_frames",
-            "idle_left_row",
-            "idle_right_frames",
-            "idle_right_row",
-            "walk_up_frames",
-            "walk_up_row",
-            "walk_down_frames",
-            "walk_down_row",
-            "walk_left_frames",
-            "walk_left_row",
-            "walk_right_frames",
-            "walk_right_row",
-        ]:
+        for key in BASE_ANIMATION_PROPERTIES:
             if key in properties and isinstance(properties[key], int):
                 animation_props[key] = properties[key]
 

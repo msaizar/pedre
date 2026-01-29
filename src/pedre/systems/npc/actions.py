@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionRegistry
-from pedre.sprites import AnimatedNPC
+from pedre.systems.npc.sprites import AnimatedNPC
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
+
 
 logger = logging.getLogger(__name__)
 

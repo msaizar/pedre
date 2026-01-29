@@ -8,6 +8,7 @@ The NPC system consists of:
 - NPCManager: Main system for managing NPC state and behavior
 - NPCState: Runtime state tracking for individual NPCs
 - NPCDialogConfig: Configuration for NPC dialog at specific levels
+- AnimatedNPC: Animated sprite class for NPCs with special animations
 - NPC Actions: Script actions for NPC movement, dialog, and animations
 - NPC Events: Events fired for NPC interactions and animation completions
 """
