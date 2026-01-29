@@ -6,14 +6,14 @@ registration, proximity detection, and event publishing when players enter porta
 The portal system consists of:
 - PortalManager: Main system for managing portals and publishing events
 - Portal: Data class representing a single portal
+
+Events (registered via INSTALLED_EVENTS):
 - PortalEnteredEvent: Event fired when player enters a portal zone
 """
 
-from pedre.systems.portal.events import PortalEnteredEvent
 from pedre.systems.portal.manager import Portal, PortalManager
 
 __all__ = [
     "Portal",
-    "PortalEnteredEvent",
     "PortalManager",
 ]

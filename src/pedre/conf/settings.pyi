@@ -72,6 +72,11 @@ DIALOG_PAGE_INDICATOR_FONT_SIZE: int
 # Installed systems
 INSTALLED_SYSTEMS: list[str]
 
+# Installed actions, events, and conditions
+INSTALLED_ACTIONS: list[str]
+INSTALLED_EVENTS: list[str]
+INSTALLED_CONDITIONS: list[str]
+
 # Methods
 def configure(**options: Any) -> None:  # noqa: ANN401
     """Manually configure settings (useful for testing).

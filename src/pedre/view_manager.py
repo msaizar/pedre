@@ -49,12 +49,15 @@ from typing import TYPE_CHECKING
 
 import arcade
 
+from pedre.actions.loader import ActionLoader
+from pedre.conditions.loader import ConditionLoader
 from pedre.events import (
     EventBus,
     ShowLoadGameEvent,
     ShowMenuEvent,
     ShowSaveGameEvent,
 )
+from pedre.events.loader import EventLoader
 from pedre.systems.game_context import GameContext
 from pedre.systems.loader import SystemLoader
 from pedre.views.game_view import GameView
@@ -112,6 +115,21 @@ class ViewManager:
             event_bus=self.event_bus,
             window=self.window,
         )
+
+        # Load actions, events, and conditions BEFORE systems (systems may depend on them)
+        action_loader = ActionLoader()
+        action_loader.load_modules()
+        logger.debug("Loaded action modules from settings.INSTALLED_ACTIONS")
+
+        event_loader = EventLoader()
+        event_loader.load_modules()
+        logger.debug("Loaded event modules from settings.INSTALLED_EVENTS")
+
+        condition_loader = ConditionLoader()
+        condition_loader.load_modules()
+        logger.debug("Loaded condition modules from settings.INSTALLED_CONDITIONS")
+
+        # Load and instantiate systems
         self.system_loader = SystemLoader()
         system_instances = self.system_loader.instantiate_all()
 

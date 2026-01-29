@@ -6,11 +6,12 @@ state management.
 
 The audio system consists of:
 - AudioManager: Main system for managing music and SFX playback
+
+Actions (registered via INSTALLED_ACTIONS):
 - PlayMusicAction: Script action to play background music
 - PlaySFXAction: Script action to play sound effects
 """
 
-from pedre.systems.audio.actions import PlayMusicAction, PlaySFXAction
 from pedre.systems.audio.manager import AudioBaseManager, AudioManager
 
-__all__ = ["AudioBaseManager", "AudioManager", "PlayMusicAction", "PlaySFXAction"]
+__all__ = ["AudioBaseManager", "AudioManager"]

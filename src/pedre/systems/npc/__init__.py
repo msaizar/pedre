@@ -9,49 +9,27 @@ The NPC system consists of:
 - NPCState: Runtime state tracking for individual NPCs
 - NPCDialogConfig: Configuration for NPC dialog at specific levels
 - AnimatedNPC: Animated sprite class for NPCs with special animations
-- NPC Actions: Script actions for NPC movement, dialog, and animations
-- NPC Events: Events fired for NPC interactions and animation completions
+
+Actions (registered via INSTALLED_ACTIONS):
+- AdvanceDialogAction, MoveNPCAction, RevealNPCsAction, SetCurrentNPCAction
+- SetDialogLevelAction, StartDisappearAnimationAction, WaitForNPCMovementAction
+- WaitForNPCsAppearAction, WaitForNPCsDisappearAction
+
+Events (registered via INSTALLED_EVENTS):
+- NPCAppearCompleteEvent, NPCDisappearCompleteEvent, NPCInteractedEvent
+- NPCMovementCompleteEvent
+
+Conditions (registered via INSTALLED_CONDITIONS):
+- check_npc_dialog_level: Check NPC's current dialog level
+- check_npc_interacted: Check if an NPC has been interacted with
 """
 
-from pedre.systems.npc.actions import (
-    AdvanceDialogAction,
-    MoveNPCAction,
-    RevealNPCsAction,
-    SetCurrentNPCAction,
-    SetDialogLevelAction,
-    StartDisappearAnimationAction,
-    WaitForNPCMovementAction,
-    WaitForNPCsAppearAction,
-    WaitForNPCsDisappearAction,
-)
 from pedre.systems.npc.base import NPCBaseManager, NPCState
-from pedre.systems.npc.conditions import check_npc_dialog_level, check_npc_interacted
-from pedre.systems.npc.events import (
-    NPCAppearCompleteEvent,
-    NPCDisappearCompleteEvent,
-    NPCInteractedEvent,
-    NPCMovementCompleteEvent,
-)
 from pedre.systems.npc.manager import NPCDialogConfig, NPCManager
 
 __all__ = [
-    "AdvanceDialogAction",
-    "MoveNPCAction",
-    "NPCAppearCompleteEvent",
     "NPCBaseManager",
     "NPCDialogConfig",
-    "NPCDisappearCompleteEvent",
-    "NPCInteractedEvent",
     "NPCManager",
-    "NPCMovementCompleteEvent",
     "NPCState",
-    "RevealNPCsAction",
-    "SetCurrentNPCAction",
-    "SetDialogLevelAction",
-    "StartDisappearAnimationAction",
-    "WaitForNPCMovementAction",
-    "WaitForNPCsAppearAction",
-    "WaitForNPCsDisappearAction",
-    "check_npc_dialog_level",
-    "check_npc_interacted",
 ]
