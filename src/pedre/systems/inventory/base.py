@@ -90,31 +90,6 @@ class InventoryBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def get_icon_path(self, item: InventoryItem) -> str | None:
-        """Get the full absolute path to an item's icon/thumbnail image file."""
-        ...
-
-    @abstractmethod
-    def get_image_path(self, item: InventoryItem) -> str | None:
-        """Get the full absolute path to an item's full-size image file."""
-        ...
-
-    @abstractmethod
-    def get_acquired_items(self, category: str | None = None) -> list[InventoryItem]:
-        """Get all items the player has acquired, optionally filtered by category."""
-        ...
-
-    @abstractmethod
-    def mark_as_accessed(self) -> None:
-        """Mark the inventory as having been accessed by the player."""
-        ...
-
-    @abstractmethod
-    def emit_closed_event(self) -> None:
-        """Emit InventoryClosedEvent when inventory view closes."""
-        ...
-
-    @abstractmethod
     def has_item(self, item_id: str) -> bool:
         """Check if the player has acquired a specific item."""
         ...
