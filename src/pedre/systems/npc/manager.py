@@ -65,18 +65,22 @@ import arcade
 
 from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
+from pedre.conf.exceptions import ConfigurationError
 from pedre.constants import asset_path
-from pedre.sprites import AnimatedNPC
 from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
+from pedre.systems.npc.constants import ALL_ANIMATION_PROPERTIES
 from pedre.systems.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
     NPCMovementCompleteEvent,
 )
+from pedre.systems.npc.sprites import AnimatedNPC
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
+    from pedre.systems.npc.types import NPCInitKwargs
+
 logger = logging.getLogger(__name__)
 
 
@@ -655,9 +659,66 @@ class NPCManager(NPCBaseManager):
             context: Game context (provides access to wall_list if needed).
         """
         for npc in self.npcs.values():
-            # Update animation for animated NPCs
+            # Process pathfinding movement first
+            moving = False  # Track if NPC is actually moving this frame
+
+            if npc.is_moving and npc.path:
+                # Get next waypoint
+                target_x, target_y = npc.path[0]
+
+                # Calculate direction to target
+                dx = target_x - npc.sprite.center_x
+                dy = target_y - npc.sprite.center_y
+                distance = (dx**2 + dy**2) ** 0.5
+
+                # Update direction for animated NPCs based on movement (prioritize horizontal)
+                if isinstance(npc.sprite, AnimatedNPC):
+                    # Determine new direction from movement vector
+                    if dx > 0:
+                        new_direction = "right"
+                    elif dx < 0:
+                        new_direction = "left"
+                    elif dy > 0:
+                        new_direction = "up"
+                    elif dy < 0:
+                        new_direction = "down"
+                    else:
+                        new_direction = npc.sprite.current_direction
+
+                    # Only update if direction changed (prevents unnecessary animation resets)
+                    if new_direction != npc.sprite.current_direction:
+                        npc.sprite.set_direction(new_direction)
+
+                # Move towards target
+                if distance < self.waypoint_threshold:
+                    # Close enough to waypoint, move to next
+                    npc.path.popleft()
+                    if not npc.path:
+                        # Path completed
+                        npc.sprite.center_x = target_x
+                        npc.sprite.center_y = target_y
+                        npc.is_moving = False
+                        moving = False
+
+                        # Emit movement complete event
+                        if self.context.event_bus:
+                            self.context.event_bus.publish(NPCMovementCompleteEvent(npc_name=npc.name))
+                            logger.info("%s movement complete, event emitted", npc.name)
+                    else:
+                        # More waypoints remaining, NPC is still moving
+                        moving = True
+
+                # Move NPC (only if distance > 0 to avoid division by zero)
+                elif distance > 0:
+                    move_distance = self.npc_speed * delta_time
+                    move_distance = min(move_distance, distance)
+                    npc.sprite.center_x += (dx / distance) * move_distance
+                    npc.sprite.center_y += (dy / distance) * move_distance
+                    moving = True  # NPC is actively moving
+
+            # Update animation for animated NPCs (after movement logic)
             if isinstance(npc.sprite, AnimatedNPC):
-                npc.sprite.update_animation(delta_time, moving=npc.is_moving)
+                npc.sprite.update_animation(delta_time, moving=moving)
 
                 # Check if appear animation just completed
                 if npc.sprite.appear_complete and not npc.appear_event_emitted:
@@ -672,46 +733,6 @@ class NPCManager(NPCBaseManager):
                         self.context.event_bus.publish(NPCDisappearCompleteEvent(npc_name=npc.name))
                         logger.info("%s disappear animation complete, event emitted", npc.name)
                     npc.disappear_event_emitted = True
-
-            if not npc.is_moving or not npc.path:
-                continue
-
-            # Get next waypoint
-            target_x, target_y = npc.path[0]
-
-            # Calculate direction to target
-            dx = target_x - npc.sprite.center_x
-            dy = target_y - npc.sprite.center_y
-            distance = (dx**2 + dy**2) ** 0.5
-
-            # Update direction for animated NPCs based on horizontal movement
-            if isinstance(npc.sprite, AnimatedNPC):
-                if dx > 0 and npc.sprite.current_direction != "right":
-                    npc.sprite.set_direction("right")
-                elif dx < 0 and npc.sprite.current_direction != "left":
-                    npc.sprite.set_direction("left")
-
-            # Move towards target
-            if distance < self.waypoint_threshold:
-                # Close enough to waypoint, move to next
-                npc.path.popleft()
-                if not npc.path:
-                    # Path completed
-                    npc.sprite.center_x = target_x
-                    npc.sprite.center_y = target_y
-                    npc.is_moving = False
-
-                    # Emit movement complete event
-                    if self.context.event_bus:
-                        self.context.event_bus.publish(NPCMovementCompleteEvent(npc_name=npc.name))
-                        logger.info("%s movement complete, event emitted", npc.name)
-
-            # Move NPC (only if distance > 0 to avoid division by zero)
-            elif distance > 0:
-                move_distance = self.npc_speed * delta_time
-                move_distance = min(move_distance, distance)
-                npc.sprite.center_x += (dx / distance) * move_distance
-                npc.sprite.center_y += (dy / distance) * move_distance
 
     def get_npc_positions(self) -> dict[str, dict[str, float | bool]]:
         """Get current positions and visibility for all NPCs.
@@ -810,8 +831,6 @@ class NPCManager(NPCBaseManager):
         Args:
             npc_objects: List of Tiled objects from tile_map.object_lists["NPCs"].
             scene: The arcade Scene to add NPC sprites to.
-            settings: Game settings for asset paths.
-            context: Game Context.
         """
         # Create NPCs sprite list for the scene if needed
         npc_sprite_list = arcade.SpriteList()
@@ -832,29 +851,60 @@ class NPCManager(NPCBaseManager):
 
             # Get sprite sheet properties
             sprite_sheet = npc_obj.properties.get("sprite_sheet")
-            tile_size = npc_obj.properties.get("tile_size", 32)
-
             if not sprite_sheet:
-                logger.warning("NPC %s missing 'sprite_sheet' property", npc_name)
-                continue
+                error_msg = f"NPC '{npc_name}' missing required 'sprite_sheet' property"
+                logger.error(error_msg)
+                raise ConfigurationError(error_msg)
 
             sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
 
+            # Validate tile_size if present (optional)
+            tile_size = npc_obj.properties.get("tile_size")
+            if tile_size is not None and not isinstance(tile_size, int):
+                error_msg = (
+                    f"NPC '{npc_name}': Property 'tile_size' must be of type int, "
+                    f"got {type(tile_size).__name__}: {tile_size}"
+                )
+                logger.error(error_msg)
+                raise ConfigurationError(error_msg)
+
+            # Validate scale if present (optional)
+            scale = npc_obj.properties.get("scale")
+            if scale is not None and not isinstance(scale, (int, float)):
+                error_msg = (
+                    f"NPC '{npc_name}': Property 'scale' must be of type float, got {type(scale).__name__}: {scale}"
+                )
+                logger.error(error_msg)
+                raise ConfigurationError(error_msg)
+
             # Extract animation props
-            anim_props = {
-                key: val
-                for key, val in npc_obj.properties.items()
-                if key.startswith(("idle_", "walk_")) and isinstance(val, int)
+            anim_props = {}
+            for key, val in npc_obj.properties.items():
+                if key in ALL_ANIMATION_PROPERTIES:
+                    if isinstance(val, int):
+                        anim_props[key] = val
+                    else:
+                        error_msg = (
+                            f"NPC '{npc_name}': Animation property '{key}' must be of type int, "
+                            f"got {type(val).__name__}: {val}"
+                        )
+                        logger.error(error_msg)
+                        raise ConfigurationError(error_msg)
+
+            # Build sprite kwargs
+            kwargs: NPCInitKwargs = {
+                "center_x": spawn_x,
+                "center_y": spawn_y,
             }
+            if scale is not None:
+                kwargs["scale"] = scale
+            if tile_size is not None:
+                kwargs["tile_size"] = tile_size
 
             try:
                 animated_npc = AnimatedNPC(
                     sprite_sheet_path,
-                    tile_size=tile_size,
-                    columns=12,
-                    scale=1.0,
-                    center_x=spawn_x,
-                    center_y=spawn_y,
+                    **kwargs,
                     **anim_props,
                 )
 
