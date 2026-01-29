@@ -14,7 +14,8 @@ import arcade
 
 from pedre.conf import settings
 from pedre.conf.exceptions import ConfigurationError
-from pedre.constants import BASE_ANIMATION_PROPERTIES, asset_path
+from pedre.constants import asset_path
+from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
 from pedre.systems.player.base import PlayerBaseManager
 from pedre.systems.player.sprites import AnimatedPlayer
 from pedre.systems.registry import SystemRegistry

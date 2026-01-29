@@ -6,11 +6,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from pedre.conf.exceptions import ConfigurationError
-from pedre.constants import (
-    ALL_ANIMATION_PROPERTIES,
-    BASE_ANIMATION_PROPERTIES,
-    NPC_SPECIAL_ANIMATION_PROPERTIES,
-)
+from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
+from pedre.systems.npc.constants import ALL_ANIMATION_PROPERTIES, NPC_SPECIAL_ANIMATION_PROPERTIES
 from pedre.systems.npc.manager import NPCManager
 from pedre.systems.player.manager import PlayerManager
 
