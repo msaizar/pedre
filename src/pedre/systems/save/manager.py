@@ -80,18 +80,9 @@ class SaveManager(SaveBaseManager):
 
     name: ClassVar[str] = "save"
 
-    def __init__(self, saves_dir: Path | None = None) -> None:
-        """Initialize the save manager.
-
-        Args:
-            saves_dir: Optional custom path to save files directory. If None, uses
-                      the folder specified in settings.SAVE_FOLDER.
-        """
-        if saves_dir is None:
-            # Default to configured save folder in project root
-            saves_dir = Path.cwd() / settings.SAVE_FOLDER
-
-        self.saves_dir = saves_dir
+    def __init__(self) -> None:
+        """Initialize the save manager."""
+        self.saves_dir = Path.cwd() / settings.SAVE_FOLDER
         self.saves_dir.mkdir(exist_ok=True)
 
         self.current_slot: int | None = None
