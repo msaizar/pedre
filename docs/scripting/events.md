@@ -425,8 +425,7 @@ Triggered when an NPC finishes moving to a waypoint.
 
 **Available Trigger Fields:**
 
-- `npc` - Which NPC finished moving
-- `waypoint` - Waypoint name that was reached (optional)
+- `npc` - Which NPC finished moving (optional, omit to trigger for any NPC)
 
 **Example:**
 
@@ -436,8 +435,7 @@ Triggered when an NPC finishes moving to a waypoint.
     "scene": "village",
     "trigger": {
       "event": "npc_movement_complete",
-      "npc": "merchant",
-      "waypoint": "market_spot"
+      "npc": "merchant"
     },
     "actions": [
       {

@@ -106,11 +106,67 @@ For checking game state beyond event matching, use the `conditions` array. These
 
 | Check Type | Fields | Description | Example |
 | ---------- | ------ | ----------- | ------- |
+| `npc_interacted` | `npc`, `scene`, `equals` | Check if NPC was interacted with in a scene | `{"check": "npc_interacted", "npc": "guard", "equals": true}` |
 | `npc_dialog_level` | `npc`, `equals`/`gte`/`gt`/`lte`/`lt` | Match NPC conversation level | `{"check": "npc_dialog_level", "npc": "merchant", "gte": 2}` |
 | `inventory_accessed` | `equals` | Check if inventory was ever opened | `{"check": "inventory_accessed", "equals": true}` |
 | `object_interacted` | `object`, `equals` | Check if object was ever interacted with (state check) | `{"check": "object_interacted", "object": "sink", "equals": true}` |
 | `script_completed` | `script` | Check if a run_once script has completed | `{"check": "script_completed", "script": "intro_cutscene"}` |
 | `item_acquired` | `item_id` | Check if an item was acquired | `{"check": "item_acquired", "item_id": "golden_key"}` |
+
+### npc_interacted (state check)
+
+Check if an NPC has been interacted with in a specific scene. This is different from the `npc_interacted` event trigger, which fires when an interaction happens. This condition checks persistent state.
+
+**Parameters:**
+
+- `check`: `"npc_interacted"`
+- `npc`: NPC identifier
+- `scene`: Optional scene name (defaults to current scene)
+- `equals`: `true` (has been interacted with) or `false` (has not been interacted with)
+
+**Example:**
+
+```json
+{
+  "trigger": {
+    "event": "portal_entered",
+    "portal": "exit"
+  },
+  "conditions": [
+    {
+      "check": "npc_interacted",
+      "npc": "guard"
+    }
+  ]
+}
+```
+
+**Check if NOT interacted:**
+
+```json
+{
+  "check": "npc_interacted",
+  "npc": "guard",
+  "equals": false
+}
+```
+
+**Check interaction in specific scene:**
+
+```json
+{
+  "check": "npc_interacted",
+  "npc": "guard",
+  "scene": "castle"
+}
+```
+
+**Use Cases:**
+
+- Gating progression behind conversations
+- Quest prerequisites
+- Conditional scene transitions
+- Ensuring player talked to key NPCs
 
 ### npc_dialog_level
 

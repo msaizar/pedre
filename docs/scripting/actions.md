@@ -168,7 +168,7 @@ Move NPC(s) to a waypoint using pathfinding.
 
 ### reveal_npcs
 
-Make NPCs visible with appear animation and particle effects.
+Make NPCs visible with appear animation.
 
 **Parameters:**
 
@@ -185,10 +185,11 @@ Make NPCs visible with appear animation and particle effects.
 
 **Details:**
 
-- NPCs fade in over time
-- Plays sparkle particle effect
+- Makes sprite.visible = True
+- Starts appear animation for AnimatedNPCs
+- Adds NPCs to collision wall list
 - Use for dramatic entrances
-- Triggers `npc_appear_complete` event when done
+- Publishes `NPCAppearCompleteEvent` when animation done
 
 **Use Cases:**
 
@@ -216,11 +217,11 @@ Play disappear animation for NPC(s).
 
 **Details:**
 
-- NPCs fade out over time
-- Can trigger particle effects
-- Triggers `npc_disappear_complete` event when done
+- Starts disappear animation for AnimatedNPCs
 - Waits for all animations to complete before finishing
+- Publishes `NPCDisappearCompleteEvent` when animation done
 - Automatically removes NPCs from collision walls when animation completes
+- Only AnimatedNPC sprites have disappear animations
 
 **Use Cases:**
 
@@ -749,6 +750,52 @@ Pause until NPCs finish their appear animation.
 - After revealing NPCs
 - Timing dramatic entrances
 - Coordinating appearance effects
+
+### wait_for_npcs_disappear
+
+Pause until NPCs finish their disappear animation.
+
+**Parameters:**
+
+- `npcs` (array of strings) - List of NPC identifiers
+
+**Example:**
+
+```json
+{
+  "type": "wait_for_npcs_disappear",
+  "npcs": ["ghost", "spirit"]
+}
+```
+
+**Use Case:**
+
+```json
+{
+  "actions": [
+    {
+      "type": "start_disappear_animation",
+      "npcs": ["ghost"]
+    },
+    {
+      "type": "wait_for_npcs_disappear",
+      "npcs": ["ghost"]
+    },
+    {
+      "type": "dialog",
+      "speaker": "Narrator",
+      "text": ["The ghost has vanished..."]
+    }
+  ]
+}
+```
+
+**When to Use:**
+
+- After starting disappear animations
+- Timing dramatic exits
+- Coordinating disappearance effects
+- Before scene transitions
 
 ### wait_for_inventory_access
 
