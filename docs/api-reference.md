@@ -474,26 +474,30 @@ See [InteractionManager documentation](systems/interaction.md) for detailed usag
 Handles map transitions through an event-driven system.
 
 ```python
-from pedre.systems.portal import PortalManager
-from pedre.systems.events import EventBus
-
-event_bus = EventBus()
-portal_manager = PortalManager(
-    event_bus=event_bus,
-    interaction_distance=64.0
-)
+# Access via game context
+portal_manager = context.portal_manager
 ```
 
-**Methods:**
+**Key Methods:**
 
 - `register_portal(sprite: arcade.Sprite, name: str)` - Register a portal from Tiled map data
-- `check_portals(player_sprite: arcade.Sprite)` - Check player proximity and publish events on entry
+- `check_portals(player_sprite: arcade.Sprite | None)` - Check player proximity and publish events on entry
 - `clear()` - Clear all registered portals
+- `setup(context: GameContext)` - Initialize the portal system
+- `update(delta_time: float)` - Update portal system each frame
+- `cleanup()` - Clean up portal resources
+- `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene)` - Load portals from Tiled map
+
+**Configuration:**
+
+Portal behavior is controlled via settings:
+
+- `PORTAL_INTERACTION_DISTANCE` - Maximum distance in pixels for portal activation (default: 50)
 
 **Portal:**
 
 ```python
-from pedre.systems.portal import Portal
+from pedre.systems.portal.base import Portal
 
 @dataclass
 class Portal:
@@ -501,7 +505,26 @@ class Portal:
     name: str              # Unique identifier for script triggers
 ```
 
-Portal transitions are handled via scripts using `portal_entered` events and `change_scene` actions.
+**Example:**
+
+```python
+# Portals are typically loaded automatically from Tiled maps
+# Manual registration if needed:
+portal_manager.register_portal(
+    sprite=portal_sprite,
+    name="forest_entrance"
+)
+
+# Check portals each frame (done automatically via update())
+portal_manager.check_portals(player_sprite)
+```
+
+**Notes:**
+
+- Portal transitions are handled via scripts using `portal_entered` events and `change_scene` actions
+- Events only fire when player enters a portal zone (not while standing in it)
+- Uses Euclidean distance calculation with `PORTAL_INTERACTION_DISTANCE`
+- Portals are automatically loaded from Tiled "Portals" object layer
 
 **See Also:** [Portal System Documentation](systems/portal.md)
 

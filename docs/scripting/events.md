@@ -545,7 +545,7 @@ Triggered when the player enters a portal zone.
 
 **Available Trigger Fields:**
 
-- `portal` - Which portal was entered (optional, omit to trigger for any portal)
+- `portal` - Which portal was entered (optional, omit entirely to trigger for any portal)
 
 **Example:**
 
@@ -566,6 +566,31 @@ Triggered when the player enters a portal zone.
   }
 }
 ```
+
+**Example without portal filter (triggers for ANY portal):**
+
+```json
+{
+  "any_portal_sfx": {
+    "trigger": {
+      "event": "portal_entered"
+    },
+    "actions": [
+      {
+        "type": "play_sfx",
+        "file": "portal_whoosh.wav"
+      }
+    ]
+  }
+}
+```
+
+**Notes:**
+
+- Events only fire when player enters the portal zone (not while standing in it)
+- Won't re-fire until player leaves and re-enters
+- Uses `PORTAL_INTERACTION_DISTANCE` setting
+- For more details, see the [Portal System Documentation](../systems/portal.md)
 
 **Use Cases:**
 
