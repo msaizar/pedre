@@ -77,23 +77,36 @@ menu_view = MenuView(view_manager)
 
 ### AnimatedPlayer
 
-Player character sprite with animation and movement.
+Player character sprite with 4-directional animation.
 
 ```python
-from pedre import AnimatedPlayer
+from pedre.systems.player.sprites import AnimatedPlayer
 
 player = AnimatedPlayer(
-    sprite_sheet_path="player.png",
-    sprite_width=32,
-    sprite_height=32,
-    movement_speed=3.0
+    sprite_sheet_path="characters/player.png",
+    tile_size=32,
+    scale=2.0,
+    center_x=320,
+    center_y=240,
+    # Idle animations
+    idle_up_frames=4, idle_up_row=0,
+    idle_down_frames=4, idle_down_row=1,
+    idle_left_frames=4, idle_left_row=2,
+    idle_right_frames=4, idle_right_row=3,
+    # Walk animations
+    walk_up_frames=6, walk_up_row=4,
+    walk_down_frames=6, walk_down_row=5,
+    walk_left_frames=6, walk_left_row=6,
+    walk_right_frames=6, walk_right_row=7
 )
 ```
 
 **Methods:**
 
-- `update_animation(delta_time: float)` - Update sprite animation
-- `move_to(x: float, y: float)` - Set target position for movement
+- `update_animation(delta_time: float, moving: bool = False)` - Update sprite animation
+- `set_direction(direction: str)` - Change facing direction ("up", "down", "left", "right")
+
+**See Also:** [Player System Documentation](systems/player.md)
 
 ### AnimatedNPC
 
@@ -145,6 +158,29 @@ npc_manager = context.npc_manager
 - `apply_entity_state(state: dict[str, Any])` - Restore NPC state after sprites exist
 
 **See Also:** [NPC System Documentation](systems/npc.md)
+
+### PlayerManager
+
+Manages player spawning, movement, animation, and state.
+
+```python
+# Access via game context
+player_manager = context.player_manager
+```
+
+**Key Methods:**
+
+- `get_player_sprite() -> AnimatedPlayer | None` - Get the player sprite instance
+- `update(delta_time: float)` - Update player movement and animation
+- `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene)` - Load player from Tiled map
+- `get_save_state() -> dict[str, Any]` - Get serializable state for saving
+- `apply_entity_state(state: dict[str, Any])` - Restore player state after sprites exist
+- `to_dict() -> dict[str, float]` - Serialize player position to dictionary
+- `from_dict(data: dict[str, float])` - Restore player position from dictionary
+- `setup(context: GameContext)` - Initialize the player system
+- `reset()` - Reset player manager state for new game
+
+**See Also:** [Player System Documentation](systems/player.md)
 
 ### DialogManager
 

@@ -55,6 +55,18 @@ Manages NPC state, movement, pathfinding, and interactions. Controls all non-pla
 - JSON-based dialog configuration
 - Event-driven interactions
 
+### [PlayerManager](player.md)
+
+Manages player spawning, movement, animation, and state. Handles player character lifecycle and input processing.
+
+**Key Features:**
+
+- Player sprite management
+- 4-directional animation
+- Input-based movement
+- Portal-based spawning
+- Save/load support
+
 ### [ScriptManager](script.md)
 
 Event-driven scripting system for cutscenes and interactive sequences. Enables complex game logic without code changes.
