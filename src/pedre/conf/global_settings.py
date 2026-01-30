@@ -110,6 +110,30 @@ INVENTORY_BOX_BORDER_WIDTH = 3
 INVENTORY_BACKGROUND_IMAGE = ""
 """Path to background image for inventory screen (empty string for no image)."""
 
+INVENTORY_MAX_SPACE = 12
+"""Maximum number of items that can be held in inventory."""
+
+INVENTORY_CAPACITY_FONT_SIZE = 14
+"""Font size for the inventory capacity counter display."""
+
+INVENTORY_ITEMS_FILE = "data/inventory_items.json"
+"""Path to the inventory items JSON data file."""
+
+INVENTORY_KEY_VIEW = "V"
+"""Key to view the selected item in detail (full-screen mode)."""
+
+INVENTORY_KEY_CONSUME = "C"
+"""Key to consume the selected item (if it's consumable)."""
+
+INVENTORY_HINT_VIEW = "[V] View"
+"""Help text shown for viewing an item."""
+
+INVENTORY_HINT_CONSUME = "[C] Consume"
+"""Help text shown for consuming an item."""
+
+INVENTORY_HINT_FONT_SIZE = 12
+"""Font size for inventory hint text."""
+
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT = False
 """Default auto-close behavior for dialogs."""

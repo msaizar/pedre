@@ -131,21 +131,51 @@ Main menu appearance and behavior.
 
 ### Inventory Settings
 
-Inventory grid layout and appearance.
+Inventory grid layout, capacity, and appearance.
+
+#### Grid Layout Settings
 
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
 | `INVENTORY_GRID_COLS` | int | 4 | Number of columns in inventory grid |
 | `INVENTORY_GRID_ROWS` | int | 3 | Number of rows in inventory grid |
 | `INVENTORY_BOX_SIZE` | int | 100 | Size of each inventory slot in pixels |
-| `INVENTORY_BOX_SPACING` | int | 15 | Spacing between inventory slots |
-| `INVENTORY_BOX_BORDER_WIDTH` | int | 3 | Border width for inventory slots |
+| `INVENTORY_BOX_SPACING` | int | 15 | Spacing between inventory slots in pixels |
+| `INVENTORY_BOX_BORDER_WIDTH` | int | 3 | Border width for inventory slots in pixels |
+
+#### Capacity and Display Settings
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `INVENTORY_MAX_SPACE` | int | 12 | Maximum number of items the inventory can hold |
+| `INVENTORY_CAPACITY_FONT_SIZE` | int | 14 | Font size for capacity counter (e.g., "8/12") |
 | `INVENTORY_BACKGROUND_IMAGE` | string | "" | Path to background image (optional) |
+
+#### Data and Input Settings
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `INVENTORY_ITEMS_FILE` | string | "data/inventory_items.json" | Path to JSON file with item definitions |
+| `INVENTORY_KEY_VIEW` | string | "V" | Key to view selected item in detail |
+| `INVENTORY_KEY_CONSUME` | string | "C" | Key to consume selected item |
+
+#### Hint Text Settings
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `INVENTORY_HINT_VIEW` | string | "[V] View" | Hint text for viewing items |
+| `INVENTORY_HINT_CONSUME` | string | "[C] Consume" | Hint text for consuming items |
+| `INVENTORY_HINT_FONT_SIZE` | int | 12 | Font size for hint text |
 
 **Notes:**
 
-- Total inventory capacity = `inventory_grid_cols` × `inventory_grid_rows`
-- `inventory_background_image` is optional; leave empty for default background
+- Total inventory capacity is controlled by `INVENTORY_MAX_SPACE`, not grid size
+  - Grid can show fewer items than capacity (e.g., 4×3 grid = 12 slots, but capacity can be higher)
+  - This allows for scrolling or pagination in custom implementations
+- `INVENTORY_BACKGROUND_IMAGE` is optional; leave empty for semi-transparent default background
+- Item definitions in `INVENTORY_ITEMS_FILE` are loaded on setup
+- Key bindings can use single characters (e.g., "V") or arcade key constants
+- For more details, see the [InventoryManager documentation](systems/inventory.md)
 
 ### Dialog Settings
 

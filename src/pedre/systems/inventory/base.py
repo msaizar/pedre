@@ -40,11 +40,17 @@ class InventoryItem:
                   This is displayed in the inventory grid as a preview. If None, the grid
                   slot will be empty (just the background color). Default is None.
         category: Item category for filtering and organization. Common categories include
-                 "photo", "note", "key", "general". Categories are user-defined strings
-                 and can be extended as needed. Default is "general".
+                 "photo", "note", "key", "potion", "general". Categories are user-defined strings
+                 and can be extended as needed. Used for script filtering and applying effects.
+                 Default is "general".
         acquired: Whether the player has collected this item. True means the item is in
                  the player's possession, False means it hasn't been found yet. Can be
                  set to True initially for starting items. Default is False.
+        consumed: Whether the item has been consumed/used. Consumed items don't appear in
+                 the inventory display. Default is False.
+        consumable: Whether the item can be consumed from the inventory overlay UI. When True,
+                   the player can press the consume key (default: C) to consume the item, which
+                   triggers an ItemConsumedEvent. Default is False.
 
     Example:
         # A collectible photograph with icon
@@ -77,6 +83,8 @@ class InventoryItem:
     icon_path: str | None = None  # Path to icon/thumbnail image (relative to assets/images/)
     category: str = "general"  # Item category (photo, note, key, etc.)
     acquired: bool = False  # Whether the player has this item
+    consumed: bool = False  # Whether the item has been consumed/used
+    consumable: bool = False  # Whether the item can be consumed from the inventory overlay
 
 
 class InventoryBaseManager(BaseSystem, ABC):
@@ -90,31 +98,21 @@ class InventoryBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def get_icon_path(self, item: InventoryItem) -> str | None:
-        """Get the full absolute path to an item's icon/thumbnail image file."""
-        ...
-
-    @abstractmethod
-    def get_image_path(self, item: InventoryItem) -> str | None:
-        """Get the full absolute path to an item's full-size image file."""
-        ...
-
-    @abstractmethod
-    def get_acquired_items(self, category: str | None = None) -> list[InventoryItem]:
-        """Get all items the player has acquired, optionally filtered by category."""
-        ...
-
-    @abstractmethod
-    def mark_as_accessed(self) -> None:
-        """Mark the inventory as having been accessed by the player."""
-        ...
-
-    @abstractmethod
-    def emit_closed_event(self) -> None:
-        """Emit InventoryClosedEvent when inventory view closes."""
-        ...
-
-    @abstractmethod
     def has_item(self, item_id: str) -> bool:
         """Check if the player has acquired a specific item."""
+        ...
+
+    @abstractmethod
+    def acquire_item(self, item_id: str) -> bool:
+        """Mark an item as acquired by the player."""
+        ...
+
+    @abstractmethod
+    def consume_item(self, item_id: str) -> bool:
+        """Mark an item as consumed by the player."""
+        ...
+
+    @abstractmethod
+    def add_item(self, item: InventoryItem) -> bool:
+        """Add a new item to the inventory system and optionally acquire it."""
         ...

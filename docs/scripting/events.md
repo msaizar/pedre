@@ -187,6 +187,192 @@ Use the `conditions` array for checking inventory state.
 - Item verification
 - Inventory-related achievements
 
+### item_acquired
+
+Triggered when player acquires an inventory item for the first time.
+
+**Available Trigger Fields:**
+
+- `item_id` - Which item was acquired (optional)
+
+**Example:**
+
+```json
+{
+  "found_key": {
+    "scene": "dungeon",
+    "trigger": {
+      "event": "item_acquired",
+      "item_id": "rusty_key"
+    },
+    "actions": [
+      {
+        "type": "dialog",
+        "speaker": "Narrator",
+        "text": ["This key might unlock something..."]
+      },
+      {
+        "type": "play_sfx",
+        "file": "item_get.wav"
+      }
+    ]
+  }
+}
+```
+
+**Example without item_id filter (triggers for any item):**
+
+```json
+{
+  "any_item_found": {
+    "scene": "village",
+    "trigger": {
+      "event": "item_acquired"
+    },
+    "actions": [
+      {
+        "type": "play_sfx",
+        "file": "item_pickup.wav"
+      }
+    ]
+  }
+}
+```
+
+**Use Cases:**
+
+- Playing sound effects on item pickup
+- Showing notifications or messages
+- Triggering quest progression
+- Unlocking new areas or features
+- Achievement tracking
+
+### item_consumed
+
+Triggered when player consumes an inventory item.
+
+**Available Trigger Fields:**
+
+- `item_id` - Which item was consumed (optional)
+- `category` - Category of consumed item (optional)
+
+**Example filtering by item_id:**
+
+```json
+{
+  "used_health_potion": {
+    "scene": "dungeon",
+    "trigger": {
+      "event": "item_consumed",
+      "item_id": "health_potion_1"
+    },
+    "actions": [
+      {
+        "type": "dialog",
+        "speaker": "Narrator",
+        "text": ["You feel refreshed!"]
+      },
+      {
+        "type": "play_sfx",
+        "file": "potion_drink.wav"
+      }
+    ]
+  }
+}
+```
+
+**Example filtering by category:**
+
+```json
+{
+  "consumed_any_potion": {
+    "scene": "dungeon",
+    "trigger": {
+      "event": "item_consumed",
+      "category": "consumable"
+    },
+    "actions": [
+      {
+        "type": "play_sfx",
+        "file": "consume.wav"
+      }
+    ]
+  }
+}
+```
+
+**Use Cases:**
+
+- Applying item effects (healing, buffs)
+- Playing consumption sound effects
+- Tracking item usage statistics
+- Quest objectives requiring item use
+- Achievement triggers
+
+### item_acquisition_failed
+
+Triggered when an attempt to acquire an item fails.
+
+**Available Trigger Fields:**
+
+- `item_id` - Which item failed to be acquired (optional)
+- `reason` - Reason for failure: `"capacity"`, `"unknown_item"`, or `"already_owned"` (optional)
+
+**Example showing inventory full message:**
+
+```json
+{
+  "inventory_full": {
+    "scene": "village",
+    "trigger": {
+      "event": "item_acquisition_failed",
+      "reason": "capacity"
+    },
+    "actions": [
+      {
+        "type": "dialog",
+        "speaker": "Narrator",
+        "text": ["Your inventory is full! You can't carry any more items."]
+      },
+      {
+        "type": "play_sfx",
+        "file": "error.wav"
+      }
+    ]
+  }
+}
+```
+
+**Example for specific item:**
+
+```json
+{
+  "key_already_owned": {
+    "scene": "dungeon",
+    "trigger": {
+      "event": "item_acquisition_failed",
+      "item_id": "dungeon_key",
+      "reason": "already_owned"
+    },
+    "actions": [
+      {
+        "type": "dialog",
+        "speaker": "Narrator",
+        "text": ["You already have this key."]
+      }
+    ]
+  }
+}
+```
+
+**Use Cases:**
+
+- Showing "inventory full" messages
+- Handling duplicate item pickups
+- Error feedback to player
+- Tutorial hints about inventory management
+- Preventing progression until inventory space available
+
 ### object_interacted
 
 Triggered when the player interacts with an interactive object.
