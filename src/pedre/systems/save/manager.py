@@ -128,8 +128,7 @@ class SaveManager(SaveBaseManager):
 
         audio_manager = self.context.audio_manager
         if success:
-            if audio_manager:
-                audio_manager.play_sfx("save.wav")
+            audio_manager.play_sfx("save.wav")
             logger.info("Quick save completed")
         else:
             logger.warning("Quick save failed")
@@ -145,8 +144,7 @@ class SaveManager(SaveBaseManager):
         self.restore_game_data(save_data)
 
         audio_manager = self.context.audio_manager
-        if audio_manager:
-            audio_manager.play_sfx("save.wav")
+        audio_manager.play_sfx("save.wav")
         logger.info("Quick load completed")
 
     def save_game(self, slot: int) -> bool:
