@@ -117,7 +117,7 @@ class NPCManager(NPCBaseManager):
         pathfinding: PathfindingManager instance used for calculating NPC movement paths.
         interaction_distance: Maximum distance in pixels for player to interact with NPCs.
         waypoint_threshold: Distance in pixels to consider an NPC has reached a waypoint.
-        npc_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
+        npc_movement_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
         inventory_manager: Optional reference for checking inventory conditions in dialog.
         event_bus: Optional EventBus for publishing NPC lifecycle events.
         interacted_npcs: Dictionary mapping scene names to sets of NPC names that have
@@ -142,7 +142,7 @@ class NPCManager(NPCBaseManager):
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
         self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
         self.waypoint_threshold = settings.NPC_WAYPOINT_THRESHOLD
-        self.npc_speed = settings.NPC_SPEED
+        self.npc_movement_speed = settings.NPC_MOVEMENT_SPEED
         self.interacted_npcs: dict[str, set[str]] = {}
 
     def setup(self, context: GameContext) -> None:
@@ -722,7 +722,7 @@ class NPCManager(NPCBaseManager):
 
                 # Move NPC (only if distance > 0 to avoid division by zero)
                 elif distance > 0:
-                    move_distance = self.npc_speed * delta_time
+                    move_distance = self.npc_movement_speed * delta_time
                     move_distance = min(move_distance, distance)
                     npc.sprite.center_x += (dx / distance) * move_distance
                     npc.sprite.center_y += (dy / distance) * move_distance
@@ -976,9 +976,7 @@ class NPCManager(NPCBaseManager):
             npc_states[npc_name] = npc_state
 
         # Convert interacted_npcs sets to lists for JSON serialization
-        interacted_npcs_serialized = {
-            scene: list(npcs) for scene, npcs in self.interacted_npcs.items()
-        }
+        interacted_npcs_serialized = {scene: list(npcs) for scene, npcs in self.interacted_npcs.items()}
 
         return {
             "npcs": npc_states,
@@ -993,9 +991,7 @@ class NPCManager(NPCBaseManager):
         self._apply_npc_state(state["npcs"])
         # Restore interacted NPCs
         if "interacted_npcs" in state:
-            self.interacted_npcs = {
-                scene: set(npcs) for scene, npcs in state["interacted_npcs"].items()
-            }
+            self.interacted_npcs = {scene: set(npcs) for scene, npcs in state["interacted_npcs"].items()}
             logger.debug("Restored interacted NPCs for %d scenes", len(self.interacted_npcs))
 
     def _apply_npc_state(self, state: dict[str, Any]) -> None:

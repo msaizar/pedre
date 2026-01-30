@@ -80,7 +80,7 @@ WAYPOINT_THRESHOLD = 2
 """Distance threshold in pixels for reaching a waypoint."""
 
 # NPC settings
-NPC_SPEED = 80.0
+NPC_MOVEMENT_SPEED = 80.0
 """Default NPC movement speed in pixels per second."""
 
 NPC_WAYPOINT_THRESHOLD = 2
