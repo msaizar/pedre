@@ -331,7 +331,7 @@ class ParticleManager(ParticleBaseManager):
             )
             self.particles.append(particle)
 
-    def update(self, delta_time: float, context: GameContext | None = None) -> None:
+    def update(self, delta_time: float) -> None:
         """Update all active particles.
 
         Updates particle ages, positions, and velocities for the current frame. This
@@ -366,7 +366,7 @@ class ParticleManager(ParticleBaseManager):
             # Apply gravity (slight downward acceleration for realism)
             particle.velocity_y -= 50 * delta_time
 
-    def on_draw(self, context: GameContext | None = None) -> None:
+    def on_draw(self) -> None:
         """Draw all active particles (BaseSystem interface).
 
         Args:
