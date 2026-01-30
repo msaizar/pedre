@@ -119,6 +119,21 @@ INVENTORY_CAPACITY_FONT_SIZE = 14
 INVENTORY_ITEMS_FILE = "data/inventory_items.json"
 """Path to the inventory items JSON data file."""
 
+INVENTORY_KEY_VIEW = "V"
+"""Key to view the selected item in detail (full-screen mode)."""
+
+INVENTORY_KEY_CONSUME = "C"
+"""Key to consume the selected item (if it's consumable)."""
+
+INVENTORY_HINT_VIEW = "[V] View"
+"""Help text shown for viewing an item."""
+
+INVENTORY_HINT_CONSUME = "[C] Consume"
+"""Help text shown for consuming an item."""
+
+INVENTORY_HINT_FONT_SIZE = 12
+"""Font size for inventory hint text."""
+
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT = False
 """Default auto-close behavior for dialogs."""

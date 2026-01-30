@@ -208,6 +208,7 @@ class AddItemAction(Action):
             image_path: Optional path to full-size image (relative to assets/images/).
             icon_path: Optional path to icon/thumbnail (relative to assets/images/).
             category: Item category (e.g., "consumable", "key", "photo"). Default is "general".
+                     Items with category="consumable" can be consumed from the inventory overlay.
             acquired: Whether the item should be immediately acquired. Default is True.
         """
         self.item_id = item_id if item_id else str(uuid.uuid4())

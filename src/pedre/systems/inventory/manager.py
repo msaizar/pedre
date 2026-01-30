@@ -59,11 +59,13 @@ import arcade
 
 from pedre.conf import settings
 from pedre.constants import asset_path
+from pedre.helpers import matches_key
 from pedre.systems.inventory.base import InventoryBaseManager, InventoryItem
 from pedre.systems.inventory.events import (
     InventoryClosedEvent,
     ItemAcquiredEvent,
     ItemAcquisitionFailedEvent,
+    ItemConsumedEvent,
 )
 from pedre.systems.registry import SystemRegistry
 
@@ -145,6 +147,7 @@ class InventoryManager(InventoryBaseManager):
         self.photo_title_text: arcade.Text | None = None
         self.photo_description_text: arcade.Text | None = None
         self.capacity_text: arcade.Text | None = None
+        self.hint_text: arcade.Text | None = None
 
     def setup(self, context: GameContext) -> None:
         """Initialize the inventory system with game context and settings.
@@ -188,7 +191,7 @@ class InventoryManager(InventoryBaseManager):
         if self.showing:
             if self.viewing_photo:
                 # Close photo view
-                if symbol in (arcade.key.ESCAPE, arcade.key.ENTER, arcade.key.RETURN):
+                if symbol == arcade.key.ESCAPE:
                     self.viewing_photo = False
                     self.current_photo_texture = None
                     return True
@@ -213,8 +216,11 @@ class InventoryManager(InventoryBaseManager):
             elif symbol == arcade.key.RIGHT:
                 self._move_selection(1, 0)
                 return True
-            elif symbol in (arcade.key.ENTER, arcade.key.RETURN):
+            elif matches_key(symbol, settings.INVENTORY_KEY_VIEW):
                 self._view_selected_item()
+                return True
+            elif matches_key(symbol, settings.INVENTORY_KEY_CONSUME):
+                self._consume_selected_item()
                 return True
             return True  # Consume all input when overlay is showing
 
@@ -263,6 +269,43 @@ class InventoryManager(InventoryBaseManager):
         """Move selection in the grid with wrapping."""
         self.selected_col = (self.selected_col + delta_col) % settings.INVENTORY_GRID_COLS
         self.selected_row = (self.selected_row + delta_row) % settings.INVENTORY_GRID_ROWS
+
+    def _consume_selected_item(self) -> None:
+        """Consume the currently selected item if it's consumable."""
+        selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
+
+        if selected_index >= len(self.all_items):
+            return
+
+        item = self.all_items[selected_index]
+
+        # Check if item is consumable (category == "consumable")
+        if item.category != "consumable":
+            logger.debug("Item %s is not consumable (category: %s)", item.id, item.category)
+            return
+
+        # Consume the item
+        if self.consume_item(item.id):
+            logger.info("Consumed item from inventory overlay: %s", item.name)
+
+            # Publish event for scripts to react to
+            self.context.event_bus.publish(
+                ItemConsumedEvent(item_id=item.id, item_name=item.name, category=item.category)
+            )
+
+            # Refresh the item list to remove consumed item from display
+            self.all_items = self._get_acquired_items()
+
+            # Adjust selection if we're now beyond the end of the list
+            max_index = len(self.all_items) - 1
+            if max_index >= 0:
+                current_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
+                if current_index > max_index:
+                    # Move selection to last item
+                    self.selected_row = max_index // settings.INVENTORY_GRID_COLS
+                    self.selected_col = max_index % settings.INVENTORY_GRID_COLS
+        else:
+            logger.debug("Failed to consume item: %s", item.id)
 
     def _view_selected_item(self) -> None:
         """View the currently selected item (photo) in full-screen mode."""
@@ -421,16 +464,17 @@ class InventoryManager(InventoryBaseManager):
                         border_width,
                     )
 
-        # Draw selected item name at bottom
+        # Draw selected item name and hints at bottom
         selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
         if selected_index < len(self.all_items):
             selected_item = self.all_items[selected_index]
 
+            # Draw item name
             if self.selected_item_text is None:
                 self.selected_item_text = arcade.Text(
                     selected_item.name,
                     window.width / 2,
-                    10,
+                    30,
                     arcade.color.WHITE,
                     font_size=16,
                     anchor_x="center",
@@ -442,6 +486,31 @@ class InventoryManager(InventoryBaseManager):
                 self.selected_item_text.x = window.width / 2
 
             self.selected_item_text.draw()
+
+            # Draw hints
+            hints = []
+            if selected_item.image_path:
+                hints.append(settings.INVENTORY_HINT_VIEW)
+            if selected_item.category == "consumable":
+                hints.append(settings.INVENTORY_HINT_CONSUME)
+
+            if hints:
+                hint_text_str = "  ".join(hints)
+                if self.hint_text is None:
+                    self.hint_text = arcade.Text(
+                        hint_text_str,
+                        window.width / 2,
+                        10,
+                        arcade.color.LIGHT_GRAY,
+                        font_size=settings.INVENTORY_HINT_FONT_SIZE,
+                        anchor_x="center",
+                        anchor_y="bottom",
+                    )
+                else:
+                    self.hint_text.text = hint_text_str
+                    self.hint_text.x = window.width / 2
+
+                self.hint_text.draw()
 
         # Draw inventory capacity at bottom-right
         current_count = len(self.all_items)

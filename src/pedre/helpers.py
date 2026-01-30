@@ -88,6 +88,42 @@ def create_game() -> arcade.Window:
     return window
 
 
+def matches_key(symbol: int, key_name: str) -> bool:
+    """Check if a pressed key matches a key setting string.
+
+    This helper function converts a key name from settings (like "V" or "C")
+    to an arcade key constant and checks if it matches the pressed key symbol.
+
+    Args:
+        symbol: The arcade key symbol that was pressed.
+        key_name: The key name from settings (e.g., "V", "C", "SPACE").
+
+    Returns:
+        True if the key matches, False otherwise.
+
+    Example:
+        >>> from arcade import key
+        >>> matches_key(key.V, "V")
+        True
+        >>> matches_key(key.C, "V")
+        False
+        >>> matches_key(key.SPACE, "SPACE")
+        True
+    """
+    if not key_name:
+        return False
+
+    # Convert settings key name to arcade key constant
+    key_upper = key_name.upper()
+
+    # Try to get the key from arcade.key module
+    expected_symbol = getattr(arcade.key, key_upper, None)
+    if expected_symbol is not None:
+        return expected_symbol == symbol
+
+    return False
+
+
 def run_game() -> None:
     """Create and run a Pedre game.
 

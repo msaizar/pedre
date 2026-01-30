@@ -108,3 +108,53 @@ class ItemAcquisitionFailedEvent(Event):
     def get_script_data(self) -> dict[str, Any]:
         """Get data for script triggers."""
         return {"item_id": self.item_id, "reason": self.reason}
+
+
+@EventRegistry.register("item_consumed")
+@dataclass
+class ItemConsumedEvent(Event):
+    """Fired when player consumes an inventory item.
+
+    This event is published by the inventory manager when an item is consumed
+    by the player, typically through the inventory overlay UI. This allows scripts
+    to react to item consumption, such as restoring health for a potion or
+    triggering special effects.
+
+    The event includes both the item ID and category to allow scripts to filter
+    based on item type (e.g., all consumable potions).
+
+    Script trigger example:
+        {
+            "trigger": {
+                "event": "item_consumed",
+                "item_id": "health_potion_1"
+            },
+            "actions": [
+                {"type": "dialog", "speaker": "Narrator", "text": ["You feel refreshed!"]}
+            ]
+        }
+
+        # Or filter by category
+        {
+            "trigger": {
+                "event": "item_consumed",
+                "category": "consumable"
+            },
+            "actions": [
+                {"type": "play_sound", "sound": "potion_drink.wav"}
+            ]
+        }
+
+    Attributes:
+        item_id: Unique identifier of the item that was consumed.
+        item_name: Display name of the item (for logging/debugging).
+        category: Category of the consumed item (e.g., "consumable").
+    """
+
+    item_id: str
+    item_name: str
+    category: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"item_id": self.item_id, "category": self.category}
