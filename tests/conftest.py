@@ -77,6 +77,8 @@ def configure_test_settings() -> Generator[None]:
         INVENTORY_BOX_SIZE=100,
         INVENTORY_BOX_SPACING=15,
         INVENTORY_BOX_BORDER_WIDTH=3,
+        INVENTORY_MAX_SPACE=12,
+        INVENTORY_CAPACITY_FONT_SIZE=14,
         DIALOG_AUTO_CLOSE_DEFAULT=False,
         DIALOG_AUTO_CLOSE_DURATION=0.5,
         MENU_TITLE_SIZE=48,

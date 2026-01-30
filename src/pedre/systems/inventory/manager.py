@@ -60,7 +60,11 @@ import arcade
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.systems.inventory.base import InventoryBaseManager, InventoryItem
-from pedre.systems.inventory.events import InventoryClosedEvent, ItemAcquiredEvent
+from pedre.systems.inventory.events import (
+    InventoryClosedEvent,
+    ItemAcquiredEvent,
+    ItemAcquisitionFailedEvent,
+)
 from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
@@ -140,6 +144,7 @@ class InventoryManager(InventoryBaseManager):
         self.selected_item_text: arcade.Text | None = None
         self.photo_title_text: arcade.Text | None = None
         self.photo_description_text: arcade.Text | None = None
+        self.capacity_text: arcade.Text | None = None
 
     def setup(self, context: GameContext) -> None:
         """Initialize the inventory system with game context and settings.
@@ -438,6 +443,27 @@ class InventoryManager(InventoryBaseManager):
 
             self.selected_item_text.draw()
 
+        # Draw inventory capacity at bottom-right
+        current_count = len(self.all_items)
+        max_space = settings.INVENTORY_MAX_SPACE
+        capacity_label = f"{current_count}/{max_space}"
+
+        if self.capacity_text is None:
+            self.capacity_text = arcade.Text(
+                capacity_label,
+                window.width - 10,
+                10,
+                arcade.color.WHITE,
+                font_size=settings.INVENTORY_CAPACITY_FONT_SIZE,
+                anchor_x="right",
+                anchor_y="bottom",
+            )
+        else:
+            self.capacity_text.text = capacity_label
+            self.capacity_text.x = window.width - 10
+
+        self.capacity_text.draw()
+
     def _draw_photo_view(self, window: arcade.Window) -> None:
         """Draw the photo viewing overlay."""
         if not self.current_photo_texture:
@@ -568,6 +594,9 @@ class InventoryManager(InventoryBaseManager):
         method is typically called when the player finds, picks up, or earns an item through
         gameplay actions.
 
+        The method enforces inventory capacity limits. If the inventory is at maximum capacity
+        (INVENTORY_MAX_SPACE setting), the acquisition will fail and False is returned.
+
         The method includes logic to detect whether the item is being acquired for the first
         time or was already in the player's possession. This distinction is useful for:
         - Showing "item acquired" notifications only on first pickup
@@ -588,8 +617,8 @@ class InventoryManager(InventoryBaseManager):
 
         Returns:
             True if the item was newly acquired (transitioned from unacquired to acquired),
-            False if the item was not found or was already acquired. Use this return value
-            to trigger "new item" feedback to the player.
+            False if the item was not found, was already acquired, or inventory is at capacity.
+            Use this return value to trigger "new item" feedback to the player.
 
         Example:
             # When player picks up an item
@@ -599,14 +628,27 @@ class InventoryManager(InventoryBaseManager):
                 audio_mgr.play_sfx("item_get.wav")
                 particle_mgr.emit_sparkles(player.center_x, player.center_y)
             else:
-                # Item was already owned or doesn't exist
+                # Item was already owned, doesn't exist, or inventory is full
                 pass
         """
         if item_id not in self.items:
             logger.warning("Attempted to acquire unknown item: %s", item_id)
+            self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item_id, reason="unknown_item"))
             return False
 
         if not self.items[item_id].acquired:
+            # Check inventory capacity before acquiring
+            current_count = len(self._get_acquired_items())
+            if current_count >= settings.INVENTORY_MAX_SPACE:
+                logger.warning(
+                    "Cannot acquire item %s: inventory is at maximum capacity (%d/%d)",
+                    item_id,
+                    current_count,
+                    settings.INVENTORY_MAX_SPACE,
+                )
+                self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item_id, reason="capacity"))
+                return False
+
             item = self.items[item_id]
             item.acquired = True
             logger.info("Player acquired item: %s (%s)", item_id, item.name)
@@ -614,6 +656,44 @@ class InventoryManager(InventoryBaseManager):
             # Publish event if event bus is available
             self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
 
+            return True
+
+        # Item already owned
+        self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item_id, reason="already_owned"))
+        return False
+
+    def consume_item(self, item_id: str) -> bool:
+        """Mark an item as consumed by the player.
+
+        Consumes a specified item by setting its consumed flag to True. This method can only
+        consume items that have been acquired and not already consumed. Once consumed, items
+        will no longer appear in the inventory display.
+
+        Args:
+            item_id: The unique identifier of the item to consume (e.g., "health_potion",
+                    "key_card"). Must match an item previously added to the manager.
+
+        Returns:
+            True if the item was successfully consumed (was acquired and not already consumed),
+            False if the item doesn't exist, hasn't been acquired, or was already consumed.
+
+        Example:
+            # When player uses a consumable item
+            if inventory_mgr.consume_item("health_potion"):
+                # Item was consumed successfully
+                restore_player_health(50)
+            else:
+                # Item couldn't be consumed (not available)
+                show_message("You don't have that item!")
+        """
+        if item_id not in self.items:
+            logger.warning("Attempted to consume unknown item: %s", item_id)
+            return False
+
+        item = self.items[item_id]
+        if item.acquired and not item.consumed:
+            item.consumed = True
+            logger.info("Player consumed item: %s (%s)", item_id, item.name)
             return True
 
         return False
@@ -655,11 +735,13 @@ class InventoryManager(InventoryBaseManager):
         return item_id in self.items and self.items[item_id].acquired
 
     def _get_acquired_items(self, category: str | None = None) -> list[InventoryItem]:
-        """Get all items the player has acquired, optionally filtered by category.
+        """Get all items the player has acquired and not consumed, optionally filtered by category.
 
-        Returns a list of all items where acquired=True, maintaining the insertion order
-        from when items were added to the manager. This method is commonly used to display
-        the player's inventory in UI screens.
+        Returns a list of all items where acquired=True and consumed=False, maintaining the
+        insertion order from when items were added to the manager. This method is commonly used
+        to display the player's inventory in UI screens.
+
+        Consumed items are excluded from the results, so only available (usable) items are returned.
 
         The optional category filter allows for displaying specific types of items, such
         as showing only photos in a gallery view or only keys in a key ring interface.
@@ -670,15 +752,15 @@ class InventoryManager(InventoryBaseManager):
 
         Args:
             category: Optional category string to filter results (e.g., "photo", "key",
-                     "note"). If None, returns all acquired items regardless of category.
-                     Category matching is exact and case-sensitive.
+                     "note"). If None, returns all acquired, unconsumed items regardless of
+                     category. Category matching is exact and case-sensitive.
 
         Returns:
-            List of InventoryItem instances where acquired=True, filtered by category if
-            specified. Returns empty list if no items match the criteria. The list maintains
-            insertion order from the items dictionary.
+            List of InventoryItem instances where acquired=True and consumed=False, filtered
+            by category if specified. Returns empty list if no items match the criteria.
+            The list maintains insertion order from the items dictionary.
         """
-        acquired = [item for item in self.items.values() if item.acquired]
+        acquired = [item for item in self.items.values() if item.acquired and not item.consumed]
 
         if category:
             acquired = [item for item in acquired if item.category == category]
@@ -703,19 +785,21 @@ class InventoryManager(InventoryBaseManager):
         """Check if inventory has been accessed."""
         return self.accessed
 
-    def to_dict(self) -> dict[str, bool]:
+    def to_dict(self) -> dict[str, dict[str, bool]]:
         """Convert inventory state to dictionary for save data serialization.
 
-        Exports the acquisition status of all items as a dictionary mapping item IDs to
-        boolean acquired flags. This dictionary can be serialized to JSON or other formats
-        for persistent storage.
+        Exports the acquisition and consumption status of all items as a dictionary mapping
+        item IDs to state dictionaries. This dictionary can be serialized to JSON or other
+        formats for persistent storage.
 
-        Only the acquired status is saved - item definitions (name, description, image)
-        are considered part of the game's code/data and are loaded via _initialize_default_items().
+        Only the acquired and consumed status is saved - item definitions (name, description,
+        image) are considered part of the game's code/data and are loaded via
+        _initialize_default_items().
 
         Returns:
-            Dictionary mapping item ID strings to boolean acquired status. Example:
-            {"photo_01": True, "secret_key": False, "quest_note": True}
+            Dictionary mapping item ID strings to state dictionaries containing acquired and
+            consumed flags. Example:
+            {"photo_01": {"acquired": True, "consumed": False}, "key": {"acquired": True, "consumed": True}}
 
         Example:
             # Save to JSON file
@@ -728,22 +812,24 @@ class InventoryManager(InventoryBaseManager):
             with open("save.json", "w") as f:
                 json.dump(save_data, f)
         """
-        return {item_id: item.acquired for item_id, item in self.items.items()}
+        return {item_id: {"acquired": item.acquired, "consumed": item.consumed} for item_id, item in self.items.items()}
 
-    def from_dict(self, data: dict[str, bool]) -> None:
+    def from_dict(self, data: dict[str, dict[str, bool]]) -> None:
         """Load inventory state from saved dictionary data.
 
-        Restores the acquisition status of items from a previously saved dictionary.
-        This method updates the acquired flags of existing items but doesn't create
-        new items - items must already exist in the registry (from initialization.
+        Restores the acquisition and consumption status of items from a previously saved
+        dictionary. This method updates the acquired and consumed flags of existing items
+        but doesn't create new items - items must already exist in the registry (from
+        initialization).
 
         If the save data contains item IDs that don't exist in the current registry,
         those entries are skipped with a warning. This handles cases where items were
         added/removed between game versions.
 
         Args:
-            data: Dictionary mapping item ID strings to boolean acquired status, typically
-                 loaded from a JSON save file. Example: {"photo_01": True, "key_02": False}
+            data: Dictionary mapping item ID strings to state dictionaries containing acquired
+                 and consumed flags, typically loaded from a JSON save file.
+                 Example: {"photo_01": {"acquired": True, "consumed": False}}
 
         Example:
             # Load from JSON file
@@ -754,8 +840,9 @@ class InventoryManager(InventoryBaseManager):
             inventory_mgr.from_dict(save_data["inventory"])
             # Player's inventory is now restored
         """
-        for item_id, acquired in data.items():
+        for item_id, state in data.items():
             if item_id in self.items:
-                self.items[item_id].acquired = acquired
+                self.items[item_id].acquired = state.get("acquired", False)
+                self.items[item_id].consumed = state.get("consumed", False)
             else:
                 logger.warning("Unknown item in save data: %s", item_id)

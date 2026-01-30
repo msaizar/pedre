@@ -73,3 +73,38 @@ class ItemAcquiredEvent(Event):
     def get_script_data(self) -> dict[str, Any]:
         """Get data for script triggers."""
         return {"item_id": self.item_id}
+
+
+@EventRegistry.register("item_acquisition_failed")
+@dataclass
+class ItemAcquisitionFailedEvent(Event):
+    """Fired when an attempt to acquire an item fails.
+
+    This event is published by the inventory manager when an item cannot be acquired,
+    which can happen for several reasons:
+    - Inventory is at maximum capacity
+    - Item doesn't exist in the registry
+    - Item is already acquired
+
+    This event allows scripts to provide feedback to the player about why the
+    acquisition failed, such as showing a "Your inventory is full!" message.
+
+    Script trigger example:
+        {
+            "trigger": {
+                "event": "item_acquisition_failed",
+                "reason": "capacity"
+            }
+        }
+
+    Attributes:
+        item_id: Unique identifier of the item that failed to be acquired.
+        reason: Reason for failure ("capacity", "unknown_item", or "already_owned").
+    """
+
+    item_id: str
+    reason: str
+
+    def get_script_data(self) -> dict[str, Any]:
+        """Get data for script triggers."""
+        return {"item_id": self.item_id, "reason": self.reason}

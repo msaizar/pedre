@@ -110,6 +110,12 @@ INVENTORY_BOX_BORDER_WIDTH = 3
 INVENTORY_BACKGROUND_IMAGE = ""
 """Path to background image for inventory screen (empty string for no image)."""
 
+INVENTORY_MAX_SPACE = 12
+"""Maximum number of items that can be held in inventory."""
+
+INVENTORY_CAPACITY_FONT_SIZE = 14
+"""Font size for the inventory capacity counter display."""
+
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT = False
 """Default auto-close behavior for dialogs."""

@@ -54,14 +54,13 @@ class AcquireItemAction(Action):
     inventory manager's acquire_item() method. The item must already be defined
     in the inventory manager - this action only marks it as acquired.
 
-    When the item is successfully acquired, an ItemAcquiredEvent is published
-    (if the inventory manager has an event bus), which can trigger follow-up
-    scripts or reactions.
+    When the item is successfully acquired, an ItemAcquiredEvent is published.
+    If acquisition fails (inventory full, unknown item, or already owned), an
+    ItemAcquisitionFailedEvent is published instead, and the action returns False,
+    blocking script progression.
 
-    The action completes immediately after attempting to acquire the item. It
-    returns True regardless of whether the item was newly acquired or already
-    owned, so it can be used safely in scripts without worrying about double
-    acquisition.
+    Scripts can listen for ItemAcquisitionFailedEvent to show appropriate feedback
+    to the player (e.g., "Your inventory is full!").
 
     Example usage:
         {
@@ -77,6 +76,17 @@ class AcquireItemAction(Action):
                 {"type": "wait_for_dialog_close"}
             ]
         }
+
+        # Script that listens for failure and shows message
+        {
+            "trigger": {
+                "event": "item_acquisition_failed",
+                "reason": "capacity"
+            },
+            "actions": [
+                {"type": "dialog", "speaker": "Narrator", "text": ["Your inventory is full!"]}
+            ]
+        }
     """
 
     def __init__(self, item_id: str) -> None:
@@ -88,14 +98,87 @@ class AcquireItemAction(Action):
         """
         self.item_id = item_id
         self.started = False
+        self.success = False
 
     def execute(self, context: GameContext) -> bool:
-        """Acquire the item if not already started."""
+        """Acquire the item if not already started.
+
+        Returns:
+            True if item was successfully acquired, False otherwise (blocks script progression).
+        """
         if not self.started:
             inventory_manager = context.inventory_manager
-            inventory_manager.acquire_item(self.item_id)
+            self.success = inventory_manager.acquire_item(self.item_id)
             self.started = True
-            logger.debug("AcquireItemAction: Acquired item %s", self.item_id)
+
+            if self.success:
+                logger.debug("AcquireItemAction: Successfully acquired item %s", self.item_id)
+            else:
+                logger.debug("AcquireItemAction: Failed to acquire item %s", self.item_id)
+
+        return self.success
+
+    def reset(self) -> None:
+        """Reset the action."""
+        self.started = False
+        self.success = False
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AcquireItemAction:
+        """Create AcquireItemAction from a dictionary."""
+        return cls(item_id=data.get("item_id", ""))
+
+
+@ActionRegistry.register("consume_item")
+class ConsumeItemAction(Action):
+    """Consume an item from the player's inventory.
+
+    This action consumes a specified item by calling the inventory manager's consume_item()
+    method. The item must already be acquired and not previously consumed. Once consumed,
+    the item will no longer appear in the inventory display.
+
+    Consuming an item is typically used for:
+    - Consumable items (health potions, food, temporary buffs)
+    - Quest items that are used once (key cards, tokens)
+    - Resources that get depleted (ammunition, materials)
+
+    The action completes immediately after attempting to consume the item. It returns True
+    regardless of whether the item was successfully consumed, so it can be used safely in
+    scripts without blocking progression.
+
+    Example usage:
+        {
+            "type": "consume_item",
+            "item_id": "health_potion"
+        }
+
+        # In a script for using a consumable
+        {
+            "actions": [
+                {"type": "consume_item", "item_id": "ancient_key"},
+                {"type": "dialog", "speaker": "Narrator", "text": ["The key dissolves into dust..."]},
+                {"type": "wait_for_dialog_close"}
+            ]
+        }
+    """
+
+    def __init__(self, item_id: str) -> None:
+        """Initialize consume item action.
+
+        Args:
+            item_id: Unique identifier of the item to consume. Must match an item
+                    ID in the inventory manager's registry.
+        """
+        self.item_id = item_id
+        self.started = False
+
+    def execute(self, context: GameContext) -> bool:
+        """Consume the item if not already started."""
+        if not self.started:
+            inventory_manager = context.inventory_manager
+            inventory_manager.consume_item(self.item_id)
+            self.started = True
+            logger.debug("ConsumeItemAction: Consumed item %s", self.item_id)
 
         # Action completes immediately
         return True
@@ -105,6 +188,6 @@ class AcquireItemAction(Action):
         self.started = False
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> AcquireItemAction:
-        """Create AcquireItemAction from a dictionary."""
+    def from_dict(cls, data: dict[str, Any]) -> ConsumeItemAction:
+        """Create ConsumeItemAction from a dictionary."""
         return cls(item_id=data.get("item_id", ""))

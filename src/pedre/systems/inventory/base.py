@@ -77,6 +77,7 @@ class InventoryItem:
     icon_path: str | None = None  # Path to icon/thumbnail image (relative to assets/images/)
     category: str = "general"  # Item category (photo, note, key, etc.)
     acquired: bool = False  # Whether the player has this item
+    consumed: bool = False  # Whether the item has been consumed/used
 
 
 class InventoryBaseManager(BaseSystem, ABC):
@@ -97,4 +98,9 @@ class InventoryBaseManager(BaseSystem, ABC):
     @abstractmethod
     def acquire_item(self, item_id: str) -> bool:
         """Mark an item as acquired by the player."""
+        ...
+
+    @abstractmethod
+    def consume_item(self, item_id: str) -> bool:
+        """Mark an item as consumed by the player."""
         ...
