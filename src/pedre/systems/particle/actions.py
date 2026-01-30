@@ -24,7 +24,7 @@ class EmitParticlesAction(Action):
 
     This action creates visual particle effects at a specified location. Particles can
     be emitted at an NPC's position, the player's position, or an interactive object's
-    position. Available particle types include hearts, sparkles, and colored bursts.
+    position. Available particle types include hearts, sparkles, trail, and colored bursts.
 
     Exactly one location parameter must be provided (npc_name, player, or interactive_object).
 
@@ -43,11 +43,19 @@ class EmitParticlesAction(Action):
             "player": true
         }
 
-        # Burst at interactive object location
+        # Trail at interactive object location
+        {
+            "type": "emit_particles",
+            "particle_type": "trail",
+            "interactive_object": "waypoint"
+        }
+
+        # Burst at interactive object location with custom color
         {
             "type": "emit_particles",
             "particle_type": "burst",
-            "interactive_object": "treasure_chest"
+            "interactive_object": "treasure_chest",
+            "color": [255, 215, 0]
         }
     """
 
@@ -63,7 +71,7 @@ class EmitParticlesAction(Action):
         """Initialize particle emission action.
 
         Args:
-            particle_type: Type of particles (hearts, sparkles, burst).
+            particle_type: Type of particles (hearts, sparkles, trail, burst).
             npc_name: NPC name to emit particles at (mutually exclusive).
             player: If True, emit at player location (mutually exclusive).
             interactive_object: Interactive object name to emit at (mutually exclusive).
@@ -153,6 +161,11 @@ class EmitParticlesAction(Action):
                         particle_manager.emit_sparkles(emit_x, emit_y, color=self.color)
                     else:
                         particle_manager.emit_sparkles(emit_x, emit_y)
+                elif self.particle_type == "trail":
+                    if self.color:
+                        particle_manager.emit_trail(emit_x, emit_y, color=self.color)
+                    else:
+                        particle_manager.emit_trail(emit_x, emit_y)
                 elif self.particle_type == "burst":
                     if self.color:
                         particle_manager.emit_burst(emit_x, emit_y, color=self.color)
