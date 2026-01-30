@@ -11,7 +11,7 @@ Configure your game by creating a `settings.py` file in your project root:
 SCREEN_WIDTH=1280
 SCREEN_HEIGHT=720
 WINDOW_TITLE="My RPG Game"
-PLAYER_MOVEMENT_SPEED=3.0
+PLAYER_MOVEMENT_SPEED=180.0
 TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=50
 NPC_INTERACTION_DISTANCE=50
@@ -61,14 +61,14 @@ Input handling and player movement configuration.
 
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
-| `PLAYER_MOVEMENT_SPEED` | float | 3.0 | Base movement speed in pixels per frame |
+| `PLAYER_MOVEMENT_SPEED` | float | 180.0 | Base movement speed in pixels per second |
 
 **Notes:**
 
-- `PLAYER_MOVEMENT_SPEED` controls how fast the player moves per frame when movement keys are pressed
-- Applied to the normalized movement vector returned by `InputManager.get_movement_vector()`
-- At 60 FPS, a speed of 3.0 results in 180 pixels per second
-- Typical values range from 2.0 (slow) to 5.0 (fast)
+- `PLAYER_MOVEMENT_SPEED` controls how fast the player moves per second when movement keys are pressed
+- Applied to the normalized movement vector returned by `InputManager.get_movement_vector(delta_time)`
+- Movement is frame-rate independent, ensuring consistent speed across different devices
+- Typical values range from 100.0 (slow) to 300.0 (fast)
 - For more details, see the [InputManager documentation](systems/input.md)
 
 ### Player Settings
@@ -328,7 +328,7 @@ SCREEN_HEIGHT=900
 WINDOW_TITLE="Mystic Quest"
 
 # Input settings
-PLAYER_MOVEMENT_SPEED=4.0
+PLAYER_MOVEMENT_SPEED=200.0
 
 # Player settings
 TILE_SIZE=32
@@ -392,7 +392,7 @@ MENU_OPTION_SIZE: int = 24
 MENU_SPACING: int = 50
 MENU_BACKGROUND_IMAGE: str = ""
 MENU_MUSIC_FILES: list[str] = []
-PLAYER_MOVEMENT_SPEED: float = 3.0
+PLAYER_MOVEMENT_SPEED: float = 180.0
 TILE_SIZE: int = 32
 INTERACTION_MANAGER_DISTANCE: int = 50
 NPC_INTERACTION_DISTANCE: int = 50

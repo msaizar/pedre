@@ -11,13 +11,13 @@ Manages keyboard input state and movement calculation for player control.
 
 The InputManager uses the following settings from `pedre.conf.settings`:
 
-- `PLAYER_MOVEMENT_SPEED` - Base movement speed in pixels per frame (default: 3.0)
+- `PLAYER_MOVEMENT_SPEED` - Base movement speed in pixels per second (default: 180.0)
 
 This can be overridden in your project's `settings.py`:
 
 ```python
 # Custom input settings
-PLAYER_MOVEMENT_SPEED = 5.0  # Faster player movement
+PLAYER_MOVEMENT_SPEED = 250.0  # Faster player movement
 ```
 
 ## Public API
@@ -82,23 +82,27 @@ def on_key_release(symbol, modifiers):
 
 ### Movement Calculation
 
-#### `get_movement_vector() -> tuple[float, float]`
+#### `get_movement_vector(delta_time: float) -> tuple[float, float]`
 
 Calculate normalized movement vector from currently pressed keys.
 
+**Parameters:**
+
+- `delta_time` - Time elapsed since last frame in seconds
+
 **Returns:**
 
-- Tuple of `(dx, dy)` representing the movement delta in pixels per frame
+- Tuple of `(dx, dy)` representing the movement delta in pixels
   - `(0, 0)` if no movement keys are pressed
-  - Values scaled by `movement_speed` and normalized for diagonal movement
-  - Example: `(3.0, 0)` for rightward movement at speed 3.0
-  - Example: `(2.12, 2.12)` for diagonal up-right at speed 3.0 (≈3.0 magnitude)
+  - Values scaled by `movement_speed`, `delta_time`, and normalized for diagonal movement
+  - Example: `(3.0, 0)` for rightward movement at 180 px/s with delta_time=1/60
+  - Example: `(2.12, 2.12)` for diagonal up-right at 180 px/s with delta_time=1/60
 
 **Example:**
 
 ```python
 # In update loop, get movement
-dx, dy = input_manager.get_movement_vector()
+dx, dy = input_manager.get_movement_vector(delta_time)
 player.center_x += dx
 player.center_y += dy
 ```
@@ -276,8 +280,12 @@ class CustomInputManager(InputBaseManager):
     name = "input"
     dependencies = []
 
-    def get_movement_vector(self) -> tuple[float, float]:
-        """Calculate normalized movement vector."""
+    def get_movement_vector(self, delta_time: float) -> tuple[float, float]:
+        """Calculate normalized movement vector.
+
+        Args:
+            delta_time: Time elapsed since last frame in seconds.
+        """
         # Your custom implementation
         ...
 ```
@@ -366,7 +374,7 @@ class GamepadInputManager(InputBaseManager):
     def restore_save_state(self, state):
         self.movement_speed = state.get("movement_speed", settings.PLAYER_MOVEMENT_SPEED)
 
-    def get_movement_vector(self) -> tuple[float, float]:
+    def get_movement_vector(self, delta_time: float) -> tuple[float, float]:
         if not self.gamepad:
             return 0.0, 0.0
 
@@ -379,9 +387,9 @@ class GamepadInputManager(InputBaseManager):
         if abs(stick_y) < 0.15:
             stick_y = 0
 
-        # Scale by movement speed
-        dx = stick_x * self.movement_speed
-        dy = stick_y * self.movement_speed
+        # Scale by movement speed and delta_time
+        dx = stick_x * self.movement_speed * delta_time
+        dy = stick_y * self.movement_speed * delta_time
 
         return dx, dy
 
@@ -428,7 +436,7 @@ In your update loop, use the InputManager to move the player:
 ```python
 def on_update(self, delta_time: float):
     # Get movement from input manager
-    dx, dy = self.input_manager.get_movement_vector()
+    dx, dy = self.input_manager.get_movement_vector(delta_time)
 
     # Apply to player position
     self.player.center_x += dx
@@ -481,7 +489,7 @@ input_manager.setup(context)
 ```python
 def on_update(self, delta_time: float):
     # Get movement vector
-    dx, dy = self.input_manager.get_movement_vector()
+    dx, dy = self.input_manager.get_movement_vector(delta_time)
 
     # Apply to player
     self.player.center_x += dx

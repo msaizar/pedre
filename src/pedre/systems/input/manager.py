@@ -23,7 +23,7 @@ same speed as cardinal movement. Without normalization, moving diagonally would 
 
 Example usage:
     # Create input manager with movement speed
-    input_mgr = InputManager(movement_speed=3.0)
+    input_mgr = InputManager(movement_speed=180.0)
 
     # Wire up to arcade window events
     def on_key_press(symbol, modifiers):
@@ -33,7 +33,7 @@ Example usage:
         input_mgr.on_key_release(symbol)
 
     # In update loop, get movement
-    dx, dy = input_mgr.get_movement_vector()
+    dx, dy = input_mgr.get_movement_vector(delta_time)
     player.center_x += dx
     player.center_y += dy
 
@@ -80,7 +80,7 @@ class InputManager(InputBaseManager):
     common game feel issue where diagonal movement is faster.
 
     Attributes:
-        movement_speed: Base movement speed in pixels per frame (default 3.0).
+        movement_speed: Base movement speed in pixels per second (default 180.0).
         keys_pressed: Set of currently pressed key symbols (arcade.key constants).
     """
 
@@ -91,17 +91,16 @@ class InputManager(InputBaseManager):
         """Initialize the input manager with configurable movement speed.
 
         Creates a new InputManager with an empty key state. The movement speed determines
-        how many pixels the player moves per frame when a movement key is held. This speed
+        how many pixels the player moves per second when a movement key is held. This speed
         is applied to the normalized movement vector returned by get_movement_vector().
 
-        The default speed of 3.0 pixels per frame provides smooth movement at 60 FPS,
-        resulting in 180 pixels per second. Adjust this value to make the player feel
-        faster or slower.
+        The default speed of 180.0 pixels per second provides smooth movement.
+        Adjust this value to make the player feel faster or slower.
 
         Args:
-            movement_speed: Base movement speed in pixels per frame. Higher values make
-                          movement faster. Typical values range from 2.0 (slow) to 5.0 (fast).
-                          Default is 3.0 for moderate speed.
+            movement_speed: Base movement speed in pixels per second. Higher values make
+                          movement faster. Typical values range from 100.0 (slow) to 300.0 (fast).
+                          Default is 180.0 for moderate speed.
         """
         self.movement_speed = settings.PLAYER_MOVEMENT_SPEED
         self.keys_pressed: set[int] = set()
@@ -167,7 +166,7 @@ class InputManager(InputBaseManager):
         self.keys_pressed.discard(symbol)
         return False
 
-    def get_movement_vector(self) -> tuple[float, float]:
+    def get_movement_vector(self, delta_time: float) -> tuple[float, float]:
         """Calculate normalized movement vector from currently pressed keys.
 
         This is the core method for player movement. It examines the current key state
@@ -192,14 +191,18 @@ class InputManager(InputBaseManager):
         - Cardinal movement: speed = movement_speed
         - Diagonal movement: speed = movement_speed (same speed)
 
-        The final vector is scaled by movement_speed before being returned.
+        The final vector is scaled by movement_speed and delta_time for frame-rate
+        independent movement.
+
+        Args:
+            delta_time: Time elapsed since last frame in seconds.
 
         Returns:
-            Tuple of (dx, dy) representing the movement delta in pixels per frame.
+            Tuple of (dx, dy) representing the movement delta in pixels.
             - (0, 0) if no movement keys are pressed
-            - Values scaled by movement_speed and normalized for diagonal movement
-            - Example: (3.0, 0) for rightward movement at speed 3.0
-            - Example: (2.12, 2.12) for diagonal up-right at speed 3.0 (≈3.0 magnitude)
+            - Values scaled by movement_speed, delta_time, and normalized for diagonal movement
+            - Example: (3.0, 0) for rightward movement at 180 px/s with delta_time=1/60
+            - Example: (2.12, 2.12) for diagonal up-right at 180 px/s with delta_time=1/60
         """
         dx = 0.0
         dy = 0.0
@@ -224,9 +227,9 @@ class InputManager(InputBaseManager):
             dx *= normalizer
             dy *= normalizer
 
-        # Apply movement speed
-        dx *= self.movement_speed
-        dy *= self.movement_speed
+        # Apply movement speed and delta_time for frame-rate independent movement
+        dx *= self.movement_speed * delta_time
+        dy *= self.movement_speed * delta_time
 
         return dx, dy
 
