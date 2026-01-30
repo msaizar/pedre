@@ -54,8 +54,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
-import arcade
-
+from pedre.conf import settings
+from pedre.helpers import matches_key
 from pedre.systems.registry import SystemRegistry
 from pedre.systems.save.base import GameSaveData, SaveBaseManager
 
@@ -85,11 +85,11 @@ class SaveManager(SaveBaseManager):
 
         Args:
             saves_dir: Optional custom path to save files directory. If None, uses
-                      default 'saves' directory in project root.
+                      the folder specified in settings.SAVE_FOLDER.
         """
         if saves_dir is None:
-            # Default to saves/ directory in project root
-            saves_dir = Path.cwd() / "saves"
+            # Default to configured save folder in project root
+            saves_dir = Path.cwd() / settings.SAVE_FOLDER
 
         self.saves_dir = saves_dir
         self.saves_dir.mkdir(exist_ok=True)
@@ -114,10 +114,10 @@ class SaveManager(SaveBaseManager):
         Returns:
             True if hotkey was handled.
         """
-        if symbol == arcade.key.F5:
+        if matches_key(symbol, settings.SAVE_QUICK_SAVE_KEY):
             self._handle_quick_save()
             return True
-        if symbol == arcade.key.F9:
+        if matches_key(symbol, settings.SAVE_QUICK_LOAD_KEY):
             self._handle_quick_load()
             return True
         return False
@@ -128,7 +128,7 @@ class SaveManager(SaveBaseManager):
 
         audio_manager = self.context.audio_manager
         if success:
-            audio_manager.play_sfx("save.wav")
+            audio_manager.play_sfx(settings.SAVE_SFX_FILE)
             logger.info("Quick save completed")
         else:
             logger.warning("Quick save failed")
@@ -144,7 +144,7 @@ class SaveManager(SaveBaseManager):
         self.restore_game_data(save_data)
 
         audio_manager = self.context.audio_manager
-        audio_manager.play_sfx("save.wav")
+        audio_manager.play_sfx(settings.SAVE_SFX_FILE)
         logger.info("Quick load completed")
 
     def save_game(self, slot: int) -> bool:
