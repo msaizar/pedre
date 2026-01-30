@@ -42,6 +42,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.conf import settings
 from pedre.systems.particle.base import Particle, ParticleBaseManager
 from pedre.systems.registry import SystemRegistry
 
@@ -93,7 +94,7 @@ class ParticleManager(ParticleBaseManager):
         consistent behavior independent of other game randomness.
         """
         self.particles: list[Particle] = []
-        self.enabled = True
+        self.enabled = settings.PARTICLE_ENABLED
         self._rng = Random()  # noqa: S311 - Non-cryptographic RNG for particle effects
 
     def setup(self, context: GameContext) -> None:
@@ -131,7 +132,7 @@ class ParticleManager(ParticleBaseManager):
         y: float,
         count: int = 10,
         *,
-        color: tuple[int, int, int] = (255, 105, 180),  # Hot pink
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_HEARTS,
     ) -> None:
         """Emit heart particles for romantic or affectionate moments.
 
@@ -152,7 +153,7 @@ class ParticleManager(ParticleBaseManager):
             x: X position to emit from (world coordinates).
             y: Y position to emit from (world coordinates).
             count: Number of particles to emit (default 10).
-            color: RGB color tuple (default hot pink 255, 105, 180).
+            color: RGB color tuple (defaults to settings.PARTICLE_COLOR_HEARTS).
         """
         if not self.enabled:
             return
@@ -183,7 +184,7 @@ class ParticleManager(ParticleBaseManager):
         y: float,
         count: int = 15,
         *,
-        color: tuple[int, int, int] = (255, 255, 100),  # Yellow
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_SPARKLES,
     ) -> None:
         """Emit sparkle particles for interactions and discoveries.
 
@@ -204,7 +205,7 @@ class ParticleManager(ParticleBaseManager):
             x: X position to emit from (world coordinates).
             y: Y position to emit from (world coordinates).
             count: Number of particles to emit (default 15).
-            color: RGB color tuple (default yellow 255, 255, 100).
+            color: RGB color tuple (defaults to settings.PARTICLE_COLOR_SPARKLES).
         """
         if not self.enabled:
             return
@@ -235,7 +236,7 @@ class ParticleManager(ParticleBaseManager):
         y: float,
         count: int = 3,
         *,
-        color: tuple[int, int, int] = (200, 200, 255),  # Light blue
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_TRAIL,
     ) -> None:
         """Emit subtle trail particles for player movement.
 
@@ -258,7 +259,7 @@ class ParticleManager(ParticleBaseManager):
             x: X position to emit from (world coordinates, typically player position).
             y: Y position to emit from (world coordinates, typically player position).
             count: Number of particles to emit per call (default 3, kept low for continuous use).
-            color: RGB color tuple (default light blue 200, 200, 255).
+            color: RGB color tuple (defaults to settings.PARTICLE_COLOR_TRAIL).
         """
         if not self.enabled:
             return
@@ -282,7 +283,7 @@ class ParticleManager(ParticleBaseManager):
         y: float,
         count: int = 20,
         *,
-        color: tuple[int, int, int] = (255, 200, 0),  # Orange
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_BURST,
     ) -> None:
         """Emit burst particles for dramatic events and reveals.
 
@@ -305,7 +306,7 @@ class ParticleManager(ParticleBaseManager):
             x: X position to emit from (world coordinates).
             y: Y position to emit from (world coordinates).
             count: Number of particles to emit (default 20 for dramatic effect).
-            color: RGB color tuple (default orange 255, 200, 0).
+            color: RGB color tuple (defaults to settings.PARTICLE_COLOR_BURST).
         """
         if not self.enabled:
             return

@@ -243,6 +243,22 @@ Higher values make the camera catch up faster to the target.
 - 1.0: Instant following (no smoothing)
 """
 
+# Particle settings
+PARTICLE_ENABLED = True
+"""Whether particle effects are enabled by default."""
+
+PARTICLE_COLOR_HEARTS = (255, 105, 180)
+"""Default color for heart particles (hot pink)."""
+
+PARTICLE_COLOR_SPARKLES = (255, 255, 100)
+"""Default color for sparkle particles (yellow)."""
+
+PARTICLE_COLOR_TRAIL = (200, 200, 255)
+"""Default color for trail particles (light blue)."""
+
+PARTICLE_COLOR_BURST = (255, 200, 0)
+"""Default color for burst particles (orange)."""
+
 # Installed systems (like Django's INSTALLED_APPS)
 INSTALLED_SYSTEMS = [
     "pedre.systems.audio",
