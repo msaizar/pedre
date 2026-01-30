@@ -451,17 +451,3 @@ class ParticleManager(ParticleBaseManager):
         if not self.enabled:
             self.clear()
         return self.enabled
-
-    def get_particle_count(self) -> int:
-        """Get the current number of active particles.
-
-        Returns the count of particles currently being updated and rendered.
-        This is useful for:
-        - Performance monitoring and debugging
-        - Visual effect intensity tracking
-        - Diagnostic information display
-
-        Returns:
-            Number of active particles currently in the system.
-        """
-        return len(self.particles)
