@@ -40,11 +40,17 @@ class InventoryItem:
                   This is displayed in the inventory grid as a preview. If None, the grid
                   slot will be empty (just the background color). Default is None.
         category: Item category for filtering and organization. Common categories include
-                 "photo", "note", "key", "general". Categories are user-defined strings
-                 and can be extended as needed. Default is "general".
+                 "photo", "note", "key", "potion", "general". Categories are user-defined strings
+                 and can be extended as needed. Used for script filtering and applying effects.
+                 Default is "general".
         acquired: Whether the player has collected this item. True means the item is in
                  the player's possession, False means it hasn't been found yet. Can be
                  set to True initially for starting items. Default is False.
+        consumed: Whether the item has been consumed/used. Consumed items don't appear in
+                 the inventory display. Default is False.
+        consumable: Whether the item can be consumed from the inventory overlay UI. When True,
+                   the player can press the consume key (default: C) to consume the item, which
+                   triggers an ItemConsumedEvent. Default is False.
 
     Example:
         # A collectible photograph with icon
@@ -78,6 +84,7 @@ class InventoryItem:
     category: str = "general"  # Item category (photo, note, key, etc.)
     acquired: bool = False  # Whether the player has this item
     consumed: bool = False  # Whether the item has been consumed/used
+    consumable: bool = False  # Whether the item can be consumed from the inventory overlay
 
 
 class InventoryBaseManager(BaseSystem, ABC):

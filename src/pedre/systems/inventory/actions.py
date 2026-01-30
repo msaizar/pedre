@@ -154,7 +154,8 @@ class AddItemAction(Action):
             "name": "Health Potion",
             "description": "Restores 50 HP",
             "icon_path": "items/potion.png",
-            "category": "consumable",
+            "category": "potion",
+            "consumable": true,
             "acquired": true
         }
 
@@ -179,7 +180,8 @@ class AddItemAction(Action):
                     "description": "Restores 50 HP",
                     "icon_path": "items/icons/potion.png",
                     "image_path": "items/potion.png",
-                    "category": "consumable",
+                    "category": "potion",
+                    "consumable": true,
                     "acquired": true
                 },
                 {"type": "wait_for_dialog_close"}
@@ -197,6 +199,7 @@ class AddItemAction(Action):
         category: str = "general",
         *,
         acquired: bool = True,
+        consumable: bool = False,
     ) -> None:
         """Initialize add item action.
 
@@ -207,9 +210,10 @@ class AddItemAction(Action):
                     a UUID will be auto-generated to ensure uniqueness.
             image_path: Optional path to full-size image (relative to assets/images/).
             icon_path: Optional path to icon/thumbnail (relative to assets/images/).
-            category: Item category (e.g., "consumable", "key", "photo"). Default is "general".
-                     Items with category="consumable" can be consumed from the inventory overlay.
+            category: Item category (e.g., "potion", "key", "photo"). Default is "general".
+                     Used to identify item types for script filtering and effects.
             acquired: Whether the item should be immediately acquired. Default is True.
+            consumable: Whether the item can be consumed from the inventory overlay. Default is False.
         """
         self.item_id = item_id if item_id else str(uuid.uuid4())
         self.name = name
@@ -218,6 +222,7 @@ class AddItemAction(Action):
         self.icon_path = icon_path
         self.category = category
         self.acquired = acquired
+        self.consumable = consumable
         self.started = False
         self.success = False
 
@@ -236,6 +241,7 @@ class AddItemAction(Action):
                 icon_path=self.icon_path,
                 category=self.category,
                 acquired=self.acquired,
+                consumable=self.consumable,
             )
 
             inventory_manager = context.inventory_manager
@@ -265,6 +271,7 @@ class AddItemAction(Action):
             icon_path=data.get("icon_path"),
             category=data.get("category", "general"),
             acquired=data.get("acquired", True),
+            consumable=data.get("consumable", False),
         )
 
 

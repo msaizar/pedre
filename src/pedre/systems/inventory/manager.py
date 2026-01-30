@@ -279,9 +279,9 @@ class InventoryManager(InventoryBaseManager):
 
         item = self.all_items[selected_index]
 
-        # Check if item is consumable (category == "consumable")
-        if item.category != "consumable":
-            logger.debug("Item %s is not consumable (category: %s)", item.id, item.category)
+        # Check if item is consumable
+        if not item.consumable:
+            logger.debug("Item %s is not consumable", item.id)
             return
 
         # Consume the item
@@ -491,7 +491,7 @@ class InventoryManager(InventoryBaseManager):
             hints = []
             if selected_item.image_path:
                 hints.append(settings.INVENTORY_HINT_VIEW)
-            if selected_item.category == "consumable":
+            if selected_item.consumable:
                 hints.append(settings.INVENTORY_HINT_CONSUME)
 
             if hints:
