@@ -77,6 +77,7 @@ class NPCMovementCompleteEvent(Event):
         return {"npc": self.npc_name}
 
 
+@EventRegistry.register("npc_appear_complete")
 @dataclass
 class NPCAppearCompleteEvent(Event):
     """Fired when an NPC completes appear animation.
@@ -85,11 +86,19 @@ class NPCAppearCompleteEvent(Event):
     animation. AnimatedNPCs play a special animation when they're revealed, and this
     event signals that the animation has completed.
 
-    This event is typically used internally by wait actions (WaitForNPCsAppearAction)
-    rather than as a direct script trigger, but it's available for custom event handling.
+    This event is typically used internally by wait actions (WaitForNPCsAppearAction),
+    but can also be used as a script trigger for custom logic after NPCs appear.
 
-    Note: This event is not currently used for script triggers, but is available
-    for programmatic event handling.
+    Script trigger example:
+        {
+            "trigger": {
+                "event": "npc_appear_complete",
+                "npc": "spirit"
+            }
+        }
+
+    The npc filter is optional:
+    - npc: Only trigger for specific NPC (omit to trigger for any NPC)
 
     Attributes:
         npc_name: Name of the NPC that appeared.
