@@ -831,11 +831,27 @@ Published when an NPC completes appear animation.
 
 - `npc_name: str` - Name of the NPC that appeared
 
+**Script Trigger Example:**
+
+```json
+{
+    "trigger": {
+        "event": "npc_appear_complete",
+        "npc": "spirit"
+    },
+    "actions": [
+        {"type": "play_sfx", "file": "materialize.wav"},
+        {"type": "dialog", "speaker": "Spirit", "text": ["I have been summoned!"]}
+    ]
+}
+```
+
 **Notes:**
 
 - Only AnimatedNPCs have appear animations
 - Used internally by WaitForNPCsAppearAction
-- Available for custom event handling
+- The `npc` filter is optional (omit to trigger for any NPC)
+- Useful for triggering dialog or effects after dramatic entrances
 
 ### NPCDisappearCompleteEvent
 
