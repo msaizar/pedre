@@ -288,9 +288,14 @@ class InventoryManager(InventoryBaseManager):
         if self.consume_item(item.id):
             logger.info("Consumed item from inventory overlay: %s", item.name)
 
-            # Publish event for scripts to react to
             self.context.event_bus.publish(
                 ItemConsumedEvent(item_id=item.id, item_name=item.name, category=item.category)
+            )
+            logger.info(
+                "Published ItemConsumedEvent (item_id=%s, item_name=%s, category=%s)",
+                item.id,
+                item.name,
+                item.category,
             )
 
             # Refresh the item list to remove consumed item from display
@@ -714,11 +719,13 @@ class InventoryManager(InventoryBaseManager):
                 )
                 # Don't publish event if capacity is exceeded
                 self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item.id, reason="capacity"))
+                logger.info("Published ItemAcquisitionFailedEvent (item_id=%s, reason=capacity)", item.id)
                 # Remove the item since it exceeds capacity
                 del self.items[item.id]
                 return False
 
             self.context.event_bus.publish(ItemAcquiredEvent(item_id=item.id, item_name=item.name))
+            logger.info("Published ItemAcquiredEvent (item_id=%s, item_name=%s)", item.id, item.name)
 
         return True
 
@@ -769,6 +776,7 @@ class InventoryManager(InventoryBaseManager):
         if item_id not in self.items:
             logger.warning("Attempted to acquire unknown item: %s", item_id)
             self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item_id, reason="unknown_item"))
+            logger.info("Published ItemAcquisitionFailedEvent (item_id=%s, reason=unknown_item)", item_id)
             return False
 
         if not self.items[item_id].acquired:
@@ -782,6 +790,7 @@ class InventoryManager(InventoryBaseManager):
                     settings.INVENTORY_MAX_SPACE,
                 )
                 self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item_id, reason="capacity"))
+                logger.info("Published ItemAcquisitionFailedEvent (item_id=%s, reason=capacity)", item_id)
                 return False
 
             item = self.items[item_id]
@@ -790,11 +799,13 @@ class InventoryManager(InventoryBaseManager):
 
             # Publish event if event bus is available
             self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
+            logger.info("Published ItemAcquiredEvent (item_id=%s, item_name=%s)", item_id, item.name)
 
             return True
 
         # Item already owned
         self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item_id, reason="already_owned"))
+        logger.info("Published ItemAcquisitionFailedEvent (item_id=%s, reason=already_owned)", item_id)
         return False
 
     def consume_item(self, item_id: str) -> bool:
