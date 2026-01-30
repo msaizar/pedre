@@ -467,6 +467,56 @@ class Portal:
 
 Portal transitions are handled via scripts using `portal_entered` events and `change_scene` actions.
 
+**See Also:** [Portal System Documentation](systems/portal.md)
+
+### ParticleManager
+
+Manages particle effects and visual polish for the game.
+
+```python
+# Access via game context
+particle_manager = context.particle_manager
+```
+
+**Key Methods:**
+
+- `emit_hearts(x: float, y: float, count: int = 10, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_HEARTS)` - Emit heart particles for romantic moments
+- `emit_sparkles(x: float, y: float, count: int = 15, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_SPARKLES)` - Emit sparkle particles for interactions
+- `emit_trail(x: float, y: float, count: int = 3, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_TRAIL)` - Emit subtle trail particles
+- `emit_burst(x: float, y: float, count: int = 20, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_BURST)` - Emit burst particles for dramatic events
+- `toggle() -> bool` - Toggle particle effects on/off
+- `clear()` - Remove all active particles
+- `update(delta_time: float)` - Update particle positions and lifetimes
+- `draw()` - Render all active particles
+- `get_save_state() -> dict[str, Any]` - Get serializable state for saving
+- `restore_save_state(state: dict[str, Any])` - Restore saved state
+
+**Configuration:**
+
+Particle behavior is controlled via settings:
+
+- `PARTICLE_ENABLED` - Whether particles are enabled by default (default: True)
+- `PARTICLE_COLOR_HEARTS` - Default color for heart particles (default: (255, 105, 180))
+- `PARTICLE_COLOR_SPARKLES` - Default color for sparkle particles (default: (255, 255, 100))
+- `PARTICLE_COLOR_TRAIL` - Default color for trail particles (default: (200, 200, 255))
+- `PARTICLE_COLOR_BURST` - Default color for burst particles (default: (255, 200, 0))
+
+**Example:**
+
+```python
+# Emit particles at player position
+player_sprite = context.player_manager.get_player_sprite()
+particle_manager.emit_hearts(player_sprite.center_x, player_sprite.center_y)
+
+# Emit custom colored sparkles
+particle_manager.emit_sparkles(x, y, count=20, color=(0, 191, 255))
+
+# Toggle particles for performance
+particle_manager.toggle()
+```
+
+**See Also:** [Particle System Documentation](systems/particle.md)
+
 ### EventBus
 
 Publish-subscribe event system for decoupled communication.
@@ -540,6 +590,11 @@ INVENTORY_GRID_ROWS=4
 INVENTORY_BOX_SIZE=30
 INVENTORY_BOX_SPACING=5
 DIALOG_AUTO_CLOSE_DURATION=0.5  # seconds to wait after text reveal before auto-closing
+PARTICLE_ENABLED=True
+PARTICLE_COLOR_HEARTS=(255, 105, 180)  # hot pink
+PARTICLE_COLOR_SPARKLES=(255, 255, 100)  # yellow
+PARTICLE_COLOR_TRAIL=(200, 200, 255)  # light blue
+PARTICLE_COLOR_BURST=(255, 200, 0)  # orange
 ```
 
 Access configuration:

@@ -280,6 +280,33 @@ Camera system behavior and movement configuration.
 - The lerp speed determines what fraction of the remaining distance the camera moves each frame
 - For more details, see the [CameraManager documentation](systems/camera.md)
 
+### Particle Settings
+
+Particle system configuration for visual effects.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `PARTICLE_ENABLED` | bool | True | Whether particle effects are enabled by default |
+| `PARTICLE_COLOR_HEARTS` | tuple[int, int, int] | (255, 105, 180) | Default RGB color for heart particles (hot pink) |
+| `PARTICLE_COLOR_SPARKLES` | tuple[int, int, int] | (255, 255, 100) | Default RGB color for sparkle particles (yellow) |
+| `PARTICLE_COLOR_TRAIL` | tuple[int, int, int] | (200, 200, 255) | Default RGB color for trail particles (light blue) |
+| `PARTICLE_COLOR_BURST` | tuple[int, int, int] | (255, 200, 0) | Default RGB color for burst particles (orange) |
+
+**Notes:**
+
+- `PARTICLE_ENABLED` controls whether particles are active on game start
+  - Can be toggled at runtime using `particle_manager.toggle()`
+  - Useful for performance optimization on low-end devices
+- Color settings define default colors for each particle type
+  - Colors can be overridden per-action using the `color` parameter in scripts
+  - RGB values range from 0 to 255
+  - Example custom colors:
+    - Deep pink hearts: `PARTICLE_COLOR_HEARTS = (255, 20, 147)`
+    - Gold sparkles: `PARTICLE_COLOR_SPARKLES = (255, 215, 0)`
+    - Green trail: `PARTICLE_COLOR_TRAIL = (0, 255, 100)`
+    - Red burst: `PARTICLE_COLOR_BURST = (255, 0, 0)`
+- For more details, see the [ParticleManager documentation](systems/particle.md)
+
 ### Asset Settings
 
 Asset management configuration.
