@@ -24,7 +24,7 @@ class EmitParticlesAction(Action):
 
     This action creates visual particle effects at a specified location. Particles can
     be emitted at an NPC's position, the player's position, or an interactive object's
-    position. Available particle types include hearts, sparkles, and colored bursts.
+    position. Available particle types include hearts, sparkles, trail, and colored bursts.
 
     Exactly one location parameter must be provided (npc_name, player, or interactive_object).
 
@@ -43,11 +43,19 @@ class EmitParticlesAction(Action):
             "player": true
         }
 
-        # Burst at interactive object location
+        # Trail at interactive object location
+        {
+            "type": "emit_particles",
+            "particle_type": "trail",
+            "interactive_object": "waypoint"
+        }
+
+        # Burst at interactive object location with custom color
         {
             "type": "emit_particles",
             "particle_type": "burst",
-            "interactive_object": "treasure_chest"
+            "interactive_object": "treasure_chest",
+            "color": [255, 215, 0]
         }
     """
 
@@ -58,14 +66,16 @@ class EmitParticlesAction(Action):
         *,
         player: bool = False,
         interactive_object: str | None = None,
+        color: tuple[int, int, int] | None = None,
     ) -> None:
         """Initialize particle emission action.
 
         Args:
-            particle_type: Type of particles (hearts, sparkles, burst).
+            particle_type: Type of particles (hearts, sparkles, trail, burst).
             npc_name: NPC name to emit particles at (mutually exclusive).
             player: If True, emit at player location (mutually exclusive).
             interactive_object: Interactive object name to emit at (mutually exclusive).
+            color: Optional RGB color tuple to override default particle color.
 
         Note:
             Exactly one location parameter must be provided.
@@ -74,6 +84,7 @@ class EmitParticlesAction(Action):
         self.npc_name = npc_name
         self.player = player
         self.interactive_object = interactive_object
+        self.color = color
         self.executed = False
 
     def execute(self, context: GameContext) -> bool:
@@ -117,46 +128,49 @@ class EmitParticlesAction(Action):
 
             elif self.npc_name:
                 npc_manager = context.npc_manager
-                if npc_manager:
-                    npc_state = npc_manager.get_npcs().get(self.npc_name)
-                    if npc_state:
-                        emit_x = npc_state.sprite.center_x
-                        emit_y = npc_state.sprite.center_y
-                    else:
-                        logger.warning("EmitParticlesAction: NPC '%s' not found", self.npc_name)
-                        return True
+                npc_state = npc_manager.get_npcs().get(self.npc_name)
+                if npc_state:
+                    emit_x = npc_state.sprite.center_x
+                    emit_y = npc_state.sprite.center_y
                 else:
-                    logger.warning("EmitParticlesAction: NPC system not available")
+                    logger.warning("EmitParticlesAction: NPC '%s' not found", self.npc_name)
                     return True
 
             elif self.interactive_object:
                 interaction_manager = context.interaction_manager
-                if interaction_manager:
-                    # Lowercase for case-insensitive matching
-                    obj_name = self.interactive_object.lower()
-                    interactive_obj = interaction_manager.get_interactive_objects().get(obj_name)
-                    if interactive_obj:
-                        emit_x = interactive_obj.sprite.center_x
-                        emit_y = interactive_obj.sprite.center_y
-                    else:
-                        logger.warning(
-                            "EmitParticlesAction: Interactive object '%s' not found", self.interactive_object
-                        )
-                        return True
+                # Lowercase for case-insensitive matching
+                obj_name = self.interactive_object.lower()
+                interactive_obj = interaction_manager.get_interactive_objects().get(obj_name)
+                if interactive_obj:
+                    emit_x = interactive_obj.sprite.center_x
+                    emit_y = interactive_obj.sprite.center_y
                 else:
-                    logger.warning("EmitParticlesAction: Interaction system not available")
+                    logger.warning("EmitParticlesAction: Interactive object '%s' not found", self.interactive_object)
                     return True
 
             # Emit particles
             if emit_x is not None and emit_y is not None:
                 particle_manager = context.particle_manager
-                if particle_manager:
-                    if self.particle_type == "hearts":
+                if self.particle_type == "hearts":
+                    if self.color:
+                        particle_manager.emit_hearts(emit_x, emit_y, color=self.color)
+                    else:
                         particle_manager.emit_hearts(emit_x, emit_y)
-                    elif self.particle_type == "sparkles":
+                elif self.particle_type == "sparkles":
+                    if self.color:
+                        particle_manager.emit_sparkles(emit_x, emit_y, color=self.color)
+                    else:
                         particle_manager.emit_sparkles(emit_x, emit_y)
-                    elif self.particle_type == "burst":
-                        particle_manager.emit_burst(emit_x, emit_y, color=(255, 215, 0))
+                elif self.particle_type == "trail":
+                    if self.color:
+                        particle_manager.emit_trail(emit_x, emit_y, color=self.color)
+                    else:
+                        particle_manager.emit_trail(emit_x, emit_y)
+                elif self.particle_type == "burst":
+                    if self.color:
+                        particle_manager.emit_burst(emit_x, emit_y, color=self.color)
+                    else:
+                        particle_manager.emit_burst(emit_x, emit_y)
 
                 self.executed = True
                 logger.debug("EmitParticlesAction: Emitted %s at (%s, %s)", self.particle_type, emit_x, emit_y)
@@ -172,10 +186,15 @@ class EmitParticlesAction(Action):
         """Create EmitParticlesAction from a dictionary.
 
         Accepts exactly one of: 'npc', 'player', or 'interactive_object'.
+        Optionally accepts 'color' as a list of 3 integers [R, G, B].
         """
+        color_data = data.get("color")
+        color = tuple(color_data) if color_data else None
+
         return cls(
             particle_type=data.get("particle_type", "burst"),
             npc_name=data.get("npc"),
             player=data.get("player", False),
             interactive_object=data.get("interactive_object"),
+            color=color,
         )

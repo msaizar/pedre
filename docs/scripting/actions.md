@@ -401,11 +401,12 @@ Spawn particle effects at an NPC, player, or interactive object location.
 
 **Parameters:**
 
-- `particle_type` (string) - Effect type: "hearts", "sparkles", or "burst"
+- `particle_type` (string) - Effect type: "hearts", "sparkles", "burst", or "trail"
 - **Exactly one of:**
   - `npc` (string) - NPC identifier
   - `player` (boolean) - Set to true for player location
   - `interactive_object` (string) - Interactive object name
+- `color` (array[int, int, int], optional) - RGB color tuple to override default color
 
 **Option 1 - At NPC Location:**
 
@@ -437,11 +438,37 @@ Spawn particle effects at an NPC, player, or interactive object location.
 }
 ```
 
+**Option 4 - With Custom Color:**
+
+```json
+{
+  "type": "emit_particles",
+  "particle_type": "hearts",
+  "npc": "yema",
+  "color": [255, 0, 0]
+}
+```
+
 **Particle Types:**
 
 - `"hearts"` - Pink heart particles floating up (affection, happiness)
-- `"sparkles"` - Glittering golden particles (magic, discovery)
-- `"burst"` - Explosive outward particles (impact, emphasis)
+  - Default color: (255, 105, 180) - hot pink
+  - Configurable via `PARTICLE_COLOR_HEARTS`
+- `"sparkles"` - Glittering yellow particles (magic, discovery)
+  - Default color: (255, 255, 100) - yellow
+  - Configurable via `PARTICLE_COLOR_SPARKLES`
+- `"burst"` - Explosive orange particles (impact, emphasis)
+  - Default color: (255, 200, 0) - orange
+  - Configurable via `PARTICLE_COLOR_BURST`
+- `"trail"` - Subtle blue trail particles (movement)
+  - Default color: (200, 200, 255) - light blue
+  - Configurable via `PARTICLE_COLOR_TRAIL`
+
+**Details:**
+
+- Default colors can be changed globally in `settings.py`
+- Per-action custom colors override the defaults
+- Colors are specified as `[R, G, B]` arrays with values 0-255
 
 **Use Cases:**
 
@@ -450,6 +477,7 @@ Spawn particle effects at an NPC, player, or interactive object location.
 - Player achievement celebrations
 - Quest completion effects
 - Magic effects at specific objects
+- Custom-colored particles for different moods/themes
 
 ## Inventory Actions
 

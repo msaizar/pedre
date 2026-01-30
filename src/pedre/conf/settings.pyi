@@ -97,6 +97,13 @@ AUDIO_SFX_ENABLED: bool
 # Camera settings
 CAMERA_LERP_SPEED: float
 
+# Particle settings
+PARTICLE_ENABLED: bool
+PARTICLE_COLOR_HEARTS: tuple[int, int, int]
+PARTICLE_COLOR_SPARKLES: tuple[int, int, int]
+PARTICLE_COLOR_TRAIL: tuple[int, int, int]
+PARTICLE_COLOR_BURST: tuple[int, int, int]
+
 # Installed systems
 INSTALLED_SYSTEMS: list[str]
 
