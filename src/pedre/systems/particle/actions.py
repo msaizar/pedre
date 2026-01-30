@@ -117,46 +117,35 @@ class EmitParticlesAction(Action):
 
             elif self.npc_name:
                 npc_manager = context.npc_manager
-                if npc_manager:
-                    npc_state = npc_manager.get_npcs().get(self.npc_name)
-                    if npc_state:
-                        emit_x = npc_state.sprite.center_x
-                        emit_y = npc_state.sprite.center_y
-                    else:
-                        logger.warning("EmitParticlesAction: NPC '%s' not found", self.npc_name)
-                        return True
+                npc_state = npc_manager.get_npcs().get(self.npc_name)
+                if npc_state:
+                    emit_x = npc_state.sprite.center_x
+                    emit_y = npc_state.sprite.center_y
                 else:
-                    logger.warning("EmitParticlesAction: NPC system not available")
+                    logger.warning("EmitParticlesAction: NPC '%s' not found", self.npc_name)
                     return True
 
             elif self.interactive_object:
                 interaction_manager = context.interaction_manager
-                if interaction_manager:
-                    # Lowercase for case-insensitive matching
-                    obj_name = self.interactive_object.lower()
-                    interactive_obj = interaction_manager.get_interactive_objects().get(obj_name)
-                    if interactive_obj:
-                        emit_x = interactive_obj.sprite.center_x
-                        emit_y = interactive_obj.sprite.center_y
-                    else:
-                        logger.warning(
-                            "EmitParticlesAction: Interactive object '%s' not found", self.interactive_object
-                        )
-                        return True
+                # Lowercase for case-insensitive matching
+                obj_name = self.interactive_object.lower()
+                interactive_obj = interaction_manager.get_interactive_objects().get(obj_name)
+                if interactive_obj:
+                    emit_x = interactive_obj.sprite.center_x
+                    emit_y = interactive_obj.sprite.center_y
                 else:
-                    logger.warning("EmitParticlesAction: Interaction system not available")
+                    logger.warning("EmitParticlesAction: Interactive object '%s' not found", self.interactive_object)
                     return True
 
             # Emit particles
             if emit_x is not None and emit_y is not None:
                 particle_manager = context.particle_manager
-                if particle_manager:
-                    if self.particle_type == "hearts":
-                        particle_manager.emit_hearts(emit_x, emit_y)
-                    elif self.particle_type == "sparkles":
-                        particle_manager.emit_sparkles(emit_x, emit_y)
-                    elif self.particle_type == "burst":
-                        particle_manager.emit_burst(emit_x, emit_y, color=(255, 215, 0))
+                if self.particle_type == "hearts":
+                    particle_manager.emit_hearts(emit_x, emit_y)
+                elif self.particle_type == "sparkles":
+                    particle_manager.emit_sparkles(emit_x, emit_y)
+                elif self.particle_type == "burst":
+                    particle_manager.emit_burst(emit_x, emit_y, color=(255, 215, 0))
 
                 self.executed = True
                 logger.debug("EmitParticlesAction: Emitted %s at (%s, %s)", self.particle_type, emit_x, emit_y)
