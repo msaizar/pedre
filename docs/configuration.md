@@ -326,6 +326,32 @@ Asset management configuration.
 - Used to load assets with `arcade.resources.resolve()`
 - Should match the handle used when registering your assets directory
 
+### Save System Settings
+
+Save system configuration for game persistence.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `SAVE_FOLDER` | string | "saves" | Directory where save files are stored |
+| `SAVE_QUICK_SAVE_KEY` | string | "F5" | Keybind for quick save action |
+| `SAVE_QUICK_LOAD_KEY` | string | "F9" | Keybind for quick load action |
+| `SAVE_SFX_FILE` | string | "save.wav" | Sound effect played when saving/loading |
+
+**Notes:**
+
+- `SAVE_FOLDER` specifies the directory path (relative to project root) where save files are stored
+  - Directory is created automatically if it doesn't exist
+  - Save files are JSON format: `autosave.json`, `save_slot_1.json`, etc.
+- `SAVE_QUICK_SAVE_KEY` and `SAVE_QUICK_LOAD_KEY` can be any arcade key constant
+  - Common values: "F5", "F6", "F7", "F8", "F9"
+  - Keys are matched using the `matches_key()` helper function
+  - Quick save uses the auto-save slot (slot 0)
+  - Quick load loads from the auto-save slot
+- `SAVE_SFX_FILE` is played on successful save/load operations
+  - Path is relative to the assets directory
+  - Only plays if AudioManager is enabled
+- For more details, see the [SaveManager documentation](systems/save.md)
+
 ### Game Settings
 
 Core game settings.
@@ -471,6 +497,10 @@ AUDIO_MUSIC_ENABLED: bool = True
 AUDIO_SFX_VOLUME: float = 0.7
 AUDIO_SFX_ENABLED: bool = True
 CAMERA_LERP_SPEED: float = 0.1
+SAVE_FOLDER: str = "saves"
+SAVE_QUICK_SAVE_KEY: str = "F5"
+SAVE_QUICK_LOAD_KEY: str = "F9"
+SAVE_SFX_FILE: str = "save.wav"
 ```
 
 ## See Also

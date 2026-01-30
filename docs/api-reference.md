@@ -374,38 +374,55 @@ audio_manager = AudioManager(game_context)
 
 ### SaveManager
 
-Handles game state persistence.
+Handles game state persistence with auto-save, manual save slots, and quick save/load.
 
 ```python
-from pedre import SaveManager
-
-save_manager = SaveManager(game_context)
+# Accessed via game context
+save_manager = context.save_manager
 ```
 
 **Methods:**
 
-- `save_game(slot: int, player_sprite: AnimatedPlayer)` - Save to slot 1-3
+- `save_game(slot: int) -> bool` - Save to slot (0 for auto-save, 1-3 for manual saves)
 - `load_game(slot: int) -> GameSaveData | None` - Load from slot
-- `auto_save(player_sprite: AnimatedPlayer)` - Save to auto-save slot
+- `auto_save() -> bool` - Save to auto-save slot (slot 0)
 - `load_auto_save() -> GameSaveData | None` - Load auto-save
-- `has_save(slot: int) -> bool` - Check if save exists
+- `restore_game_data(save_data: GameSaveData)` - Phase 1: Restore metadata state
+- `apply_entity_states()` - Phase 2: Apply entity state after sprites exist
+- `save_exists(slot: int) -> bool` - Check if save exists
 - `get_save_info(slot: int) -> dict | None` - Get save metadata
+- `delete_save(slot: int) -> bool` - Delete a save file
+- `on_key_press(symbol: int, modifiers: int) -> bool` - Handle quick save/load hotkeys
+
+**Configuration:**
+
+SaveManager can be customized via settings:
+
+- `SAVE_FOLDER` - Directory for save files (default: "saves")
+- `SAVE_QUICK_SAVE_KEY` - Quick save keybind (default: "F5")
+- `SAVE_QUICK_LOAD_KEY` - Quick load keybind (default: "F9")
+- `SAVE_SFX_FILE` - Save/load sound effect (default: "save.wav")
 
 **GameSaveData:**
 
 ```python
-from pedre import GameSaveData
+from pedre.systems.save.base import GameSaveData
 
 # Loaded from save file
 save_data = save_manager.load_game(slot=1)
 
 # Access saved state
-current_map = save_data.current_map
-player_x = save_data.player_x
-player_y = save_data.player_y
-npc_states = save_data.npc_dialog_levels
-inventory = save_data.inventory_items
+save_states = save_data.save_states  # Dict of system states
+timestamp = save_data.save_timestamp  # Unix timestamp
+version = save_data.save_version  # Save format version
+
+# Example: Access specific system state
+player_state = save_data.save_states.get("player", {})
+npc_state = save_data.save_states.get("npc", {})
+inventory_state = save_data.save_states.get("inventory", {})
 ```
+
+See [SaveManager documentation](systems/save.md) for detailed usage.
 
 ### CameraManager
 

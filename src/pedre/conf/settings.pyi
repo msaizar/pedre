@@ -104,6 +104,12 @@ PARTICLE_COLOR_SPARKLES: tuple[int, int, int]
 PARTICLE_COLOR_TRAIL: tuple[int, int, int]
 PARTICLE_COLOR_BURST: tuple[int, int, int]
 
+# Save system settings
+SAVE_FOLDER: str
+SAVE_QUICK_SAVE_KEY: str
+SAVE_QUICK_LOAD_KEY: str
+SAVE_SFX_FILE: str
+
 # Installed systems
 INSTALLED_SYSTEMS: list[str]
 

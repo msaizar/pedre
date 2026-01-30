@@ -259,6 +259,19 @@ PARTICLE_COLOR_TRAIL = (200, 200, 255)
 PARTICLE_COLOR_BURST = (255, 200, 0)
 """Default color for burst particles (orange)."""
 
+# Save system settings
+SAVE_FOLDER = "saves"
+"""Directory where save files are stored."""
+
+SAVE_QUICK_SAVE_KEY = "F5"
+"""Keybind for quick save action."""
+
+SAVE_QUICK_LOAD_KEY = "F9"
+"""Keybind for quick load action."""
+
+SAVE_SFX_FILE = "save.wav"
+"""Sound effect played when saving/loading."""
+
 # Installed systems (like Django's INSTALLED_APPS)
 INSTALLED_SYSTEMS = [
     "pedre.systems.audio",
