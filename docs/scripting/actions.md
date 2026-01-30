@@ -450,6 +450,169 @@ Spawn particle effects at an NPC, player, or interactive object location.
 - Quest completion effects
 - Magic effects at specific objects
 
+## Inventory Actions
+
+### acquire_item
+
+Give an item to the player's inventory.
+
+**Parameters:**
+
+- `item_id` (string) - Unique identifier of the item to acquire
+
+**Example:**
+
+```json
+{
+  "type": "acquire_item",
+  "item_id": "rusty_key"
+}
+```
+
+**In a script after finding a treasure chest:**
+
+```json
+{
+  "actions": [
+    {
+      "type": "dialog",
+      "speaker": "Narrator",
+      "text": ["You found a key!"]
+    },
+    {
+      "type": "acquire_item",
+      "item_id": "tower_key"
+    },
+    {
+      "type": "wait_for_dialog_close"
+    }
+  ]
+}
+```
+
+**Details:**
+
+- The item must already be defined in the inventory system
+- Publishes `ItemAcquiredEvent` on success
+- Publishes `ItemAcquisitionFailedEvent` on failure
+- Returns `False` and blocks script progression if acquisition fails
+
+**Use Cases:**
+
+- Giving items when player finds treasure
+- Quest rewards
+- Item pickups from objects
+- Story progression items
+
+### add_item
+
+Add a new item to the inventory system.
+
+**Parameters:**
+
+- `name` (string, required) - Display name of the item
+- `description` (string, required) - Description text for the item
+- `item_id` (string, optional) - Unique identifier (auto-generates UUID if omitted)
+- `image_path` (string, optional) - Path to full-size image
+- `icon_path` (string, optional) - Path to icon/thumbnail
+- `category` (string, optional) - Item category (default: "general")
+- `acquired` (boolean, optional) - Whether item is immediately acquired (default: true)
+- `consumable` (boolean, optional) - Whether item can be consumed (default: false)
+
+**Example without item_id (UUID auto-generated):**
+
+```json
+{
+  "type": "add_item",
+  "name": "Health Potion",
+  "description": "Restores 50 HP",
+  "icon_path": "items/potion.png",
+  "category": "potion",
+  "consumable": true,
+  "acquired": true
+}
+```
+
+**Example with explicit item_id:**
+
+```json
+{
+  "type": "add_item",
+  "item_id": "rusty_key",
+  "name": "Rusty Key",
+  "description": "Opens an old door",
+  "icon_path": "items/key.png",
+  "category": "key",
+  "acquired": true
+}
+```
+
+**Details:**
+
+- Dynamically creates items without requiring JSON definition
+- Useful for consumable items obtained through gameplay
+- Auto-generates UUID if `item_id` is omitted (prevents conflicts)
+- Publishes `ItemAcquiredEvent` if `acquired=true`
+- Can fail if inventory is at capacity
+
+**Use Cases:**
+
+- Adding consumable items (potions, food)
+- Dynamic loot generation
+- Quest items created on the fly
+- Multiple instances of same item type
+
+### consume_item
+
+Consume an item from the player's inventory.
+
+**Parameters:**
+
+- `item_id` (string) - Unique identifier of the item to consume
+
+**Example:**
+
+```json
+{
+  "type": "consume_item",
+  "item_id": "health_potion"
+}
+```
+
+**In a script for using a consumable:**
+
+```json
+{
+  "actions": [
+    {
+      "type": "consume_item",
+      "item_id": "ancient_key"
+    },
+    {
+      "type": "dialog",
+      "speaker": "Narrator",
+      "text": ["The key dissolves into dust..."]
+    },
+    {
+      "type": "wait_for_dialog_close"
+    }
+  ]
+}
+```
+
+**Details:**
+
+- Item must be acquired and not already consumed
+- Publishes `ItemConsumedEvent` when successful
+- Action completes immediately regardless of success
+
+**Use Cases:**
+
+- One-time-use keys
+- Quest items that get used
+- Story progression requirements
+- Item-based puzzles
+
 ## Wait Actions
 
 Wait actions pause script execution until a condition is met. This allows for timing and sequencing.

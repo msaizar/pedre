@@ -195,7 +195,7 @@ from pedre.systems import SceneManager
 
 ### InventoryManager
 
-Manages item collection and display.
+Manages player's inventory and item collection with a visual grid overlay.
 
 ```python
 from pedre import InventoryManager
@@ -205,23 +205,54 @@ inventory_manager = InventoryManager(game_context)
 
 **Methods:**
 
-- `add_item(item: InventoryItem)` - Add item to inventory
-- `has_item(item_name: str) -> bool` - Check if item exists
-- `get_items() -> list[InventoryItem]` - Get all items
-- `get_save_state() -> list[dict]` - Serialize inventory state
-- `restore_save_state(items_data: list[dict])` - Restore from saved state
+- `acquire_item(item_id: str) -> bool` - Mark an item as acquired by the player
+  - Returns `True` if newly acquired, `False` if already owned, doesn't exist, or inventory is full
+  - Publishes `ItemAcquiredEvent` on success, `ItemAcquisitionFailedEvent` on failure
+- `consume_item(item_id: str) -> bool` - Mark an item as consumed by the player
+  - Returns `True` if successfully consumed, `False` if not available
+  - Publishes `ItemConsumedEvent` when successful
+- `add_item(item: InventoryItem) -> bool` - Add a new item to the inventory system
+  - Returns `True` if successfully added, `False` if ID exists or capacity exceeded
+  - Useful for dynamically creating items not in JSON
+- `has_item(item_id: str) -> bool` - Check if player has acquired a specific item
+  - Returns `True` if item exists and is acquired (and not consumed)
+  - Pure query with no side effects
+- `has_been_accessed() -> bool` - Check if inventory has been opened at least once
+- `get_save_state() -> dict[str, Any]` - Serialize inventory state for saving
+- `restore_save_state(state: dict[str, Any])` - Restore from saved state
+- `to_dict() -> dict[str, dict[str, bool]]` - Convert inventory to dictionary (acquired/consumed flags)
+- `from_dict(data: dict[str, dict[str, bool]])` - Load inventory from dictionary
+- `setup(context: GameContext)` - Initialize the inventory system
+- `cleanup()` - Clean up inventory resources
+- `reset()` - Reset inventory state for new game
+- `on_key_press(symbol: int, modifiers: int) -> bool` - Handle key presses (I to toggle, arrows to navigate, V to view, C to consume, ESC to close)
+- `on_draw_ui()` - Render inventory overlay
 
 **InventoryItem:**
 
 ```python
-from pedre import InventoryItem
+from pedre.systems.inventory.base import InventoryItem
 
 item = InventoryItem(
-    name="potion",
-    image_path="items/potion.png",
-    category="consumable"
+    id="health_potion",              # Unique identifier
+    name="Health Potion",            # Display name
+    description="Restores 50 HP",   # Description text
+    image_path="items/potion.png",   # Full-size image path (optional)
+    icon_path="items/icons/potion.png",  # Icon/thumbnail path (optional)
+    category="consumable",           # Item category
+    acquired=False,                  # Whether player has this item
+    consumed=False,                  # Whether item has been used
+    consumable=True                  # Whether item can be consumed from UI
 )
 ```
+
+**Properties:**
+
+- `items: dict[str, InventoryItem]` - All available items (acquired and unacquired)
+- `accessed: bool` - Whether inventory has been accessed
+- `showing: bool` - Whether inventory overlay is currently visible
+
+See [InventoryManager documentation](systems/inventory.md) for detailed usage.
 
 ### ScriptManager
 
