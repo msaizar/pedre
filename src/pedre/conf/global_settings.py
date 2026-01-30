@@ -83,6 +83,12 @@ WAYPOINT_THRESHOLD = 2
 NPC_SPEED = 80.0
 """Default NPC movement speed in pixels per second."""
 
+NPC_WAYPOINT_THRESHOLD = 2
+"""Distance threshold in pixels for NPCs to reach a waypoint during movement."""
+
+NPC_INTERACTION_KEY = "SPACE"
+"""Key for interacting with NPCs."""
+
 # Asset settings
 ASSETS_HANDLE = "game_assets"
 """Resource handle name for asset loading."""

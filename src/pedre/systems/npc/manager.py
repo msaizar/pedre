@@ -67,6 +67,7 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.conf.exceptions import ConfigurationError
 from pedre.constants import asset_path
+from pedre.helpers import matches_key
 from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.constants import ALL_ANIMATION_PROPERTIES
 from pedre.systems.npc.events import (
@@ -140,7 +141,7 @@ class NPCManager(NPCBaseManager):
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
         self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
-        self.waypoint_threshold = 2
+        self.waypoint_threshold = settings.NPC_WAYPOINT_THRESHOLD
         self.npc_speed = settings.NPC_SPEED
         self.interacted_npcs: set[str] = set()
 
@@ -388,7 +389,7 @@ class NPCManager(NPCBaseManager):
         Returns:
             True if interaction occurred.
         """
-        if symbol == arcade.key.SPACE:
+        if matches_key(symbol, settings.NPC_INTERACTION_KEY):
             player_sprite = self.context.player_manager.get_player_sprite()
 
             if player_sprite:
