@@ -180,7 +180,7 @@ class PlayerManager(PlayerBaseManager):
         moving = False
 
         if input_manager and not dialog_showing:
-            dx, dy = input_manager.get_movement_vector()
+            dx, dy = input_manager.get_movement_vector(delta_time)
             moving = dx != 0 or dy != 0
 
         # Apply movement

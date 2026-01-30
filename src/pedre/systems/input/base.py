@@ -11,6 +11,10 @@ class InputBaseManager(BaseSystem, ABC):
     role = "input_manager"
 
     @abstractmethod
-    def get_movement_vector(self) -> tuple[float, float]:
-        """Calculate normalized movement vector from currently pressed keys."""
+    def get_movement_vector(self, delta_time: float) -> tuple[float, float]:
+        """Calculate normalized movement vector from currently pressed keys.
+
+        Args:
+            delta_time: Time elapsed since last frame in seconds.
+        """
         ...

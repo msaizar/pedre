@@ -61,8 +61,8 @@ MENU_TEXT_EXIT = "Exit"
 """Text for the Exit menu option."""
 
 # Player settings
-PLAYER_MOVEMENT_SPEED = 3
-"""Player movement speed in pixels per frame."""
+PLAYER_MOVEMENT_SPEED = 180.0
+"""Player movement speed in pixels per second."""
 
 TILE_SIZE = 32
 """Size of tiles in pixels (for grid-based movement and positioning)."""

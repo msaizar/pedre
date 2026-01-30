@@ -296,13 +296,13 @@ input_manager = InputManager()
 
 - `on_key_press(symbol: int, modifiers: int) -> bool` - Register key press event
 - `on_key_release(symbol: int, modifiers: int) -> bool` - Register key release event
-- `get_movement_vector() -> tuple[float, float]` - Calculate normalized movement vector
+- `get_movement_vector(delta_time: float) -> tuple[float, float]` - Calculate normalized movement vector with frame-rate independent movement
 - `is_key_pressed(symbol: int) -> bool` - Check if specific key is pressed
 - `clear()` - Clear all pressed keys from input state
 
 **Properties:**
 
-- `movement_speed: float` - Base movement speed in pixels per frame
+- `movement_speed: float` - Base movement speed in pixels per second
 - `keys_pressed: set[int]` - Set of currently pressed key symbols
 
 See [InputManager documentation](systems/input.md) for detailed usage.
@@ -520,7 +520,7 @@ Configuration is handled through the `settings.py` file:
 SCREEN_WIDTH=1280
 SCREEN_HEIGHT=720
 WINDOW_TITLE="My RPG"
-PLAYER_MOVEMENT_SPEED=3
+PLAYER_MOVEMENT_SPEED=180.0
 TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=50
 NPC_INTERACTION_DISTANCE=50
