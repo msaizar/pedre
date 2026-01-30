@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if an NPC has been interacted with."""
     npc_mgr = context.npc_manager
-    if not npc_mgr:
-        return False
     npc_name = condition_data.get("npc")
     expected = condition_data.get("equals", True)
     if not npc_name:
@@ -25,8 +23,6 @@ def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -
 def check_npc_dialog_level(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check an NPC's dialog level."""
     npc_mgr = context.npc_manager
-    if not npc_mgr:
-        return False
     npc_name = condition_data.get("npc")
     expected_level = condition_data.get("equals")
     if not npc_name or expected_level is None:

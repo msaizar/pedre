@@ -394,7 +394,7 @@ class NPCManager(NPCBaseManager):
             if player_sprite:
                 nearby = self.get_nearby_npc(player_sprite)
                 logger.debug(
-                    "NPCManager: SPACE pressed, player at (%.1f, %.1f), npcs=%d, nearby=%s",
+                    "NPCManager: Interaction, player at (%.1f, %.1f), npcs=%d, nearby=%s",
                     player_sprite.center_x,
                     player_sprite.center_y,
                     len(self.npcs),
