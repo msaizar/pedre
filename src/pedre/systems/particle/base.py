@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from pedre.conf import settings
 from pedre.systems.base import BaseSystem
 
 
@@ -53,7 +54,7 @@ class ParticleBaseManager(BaseSystem, ABC):
         y: float,
         count: int = 10,
         *,
-        color: tuple[int, int, int] = (255, 105, 180),  # Hot pink
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_HEARTS,
     ) -> None:
         """Emit heart particles for romantic or affectionate moments."""
         ...
@@ -65,7 +66,7 @@ class ParticleBaseManager(BaseSystem, ABC):
         y: float,
         count: int = 15,
         *,
-        color: tuple[int, int, int] = (255, 255, 100),  # Yellow
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_SPARKLES,
     ) -> None:
         """Emit sparkle particles for interactions and discoveries."""
         ...
@@ -77,7 +78,17 @@ class ParticleBaseManager(BaseSystem, ABC):
         y: float,
         count: int = 20,
         *,
-        color: tuple[int, int, int] = (255, 200, 0),  # Orange
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_BURST,
     ) -> None:
         """Emit burst particles for dramatic events and reveals."""
         ...
+
+    def emit_trail(
+        self,
+        x: float,
+        y: float,
+        count: int = 3,
+        *,
+        color: tuple[int, int, int] = settings.PARTICLE_COLOR_TRAIL,
+    ) -> None:
+        """Emit subtle trail particles for player movement."""
