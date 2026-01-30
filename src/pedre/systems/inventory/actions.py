@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionRegistry
-from pedre.systems.inventory.manager import InventoryManager
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
@@ -94,9 +93,7 @@ class AcquireItemAction(Action):
         """Acquire the item if not already started."""
         if not self.started:
             inventory_manager = context.inventory_manager
-            if inventory_manager and isinstance(inventory_manager, InventoryManager):
-                # Use acquire_item method directly since inventory manager is BaseSystem
-                inventory_manager.acquire_item(self.item_id)
+            inventory_manager.acquire_item(self.item_id)
             self.started = True
             logger.debug("AcquireItemAction: Acquired item %s", self.item_id)
 

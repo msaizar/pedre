@@ -23,8 +23,6 @@ flag that tracks whether the player has collected it. This approach supports bot
 showing acquired items to the player and tracking completion progress.
 
 Example usage:
-    # Initialize manager with event bus
-    inventory_mgr = InventoryManager(event_bus)
 
     # Add a custom item
     key_item = InventoryItem(
@@ -35,7 +33,6 @@ Example usage:
         icon_path="items/icons/key_icon.png",
         category="key"
     )
-    inventory_mgr.add_item(key_item)
 
     # Acquire item when player finds it (publishes ItemAcquiredEvent)
     if inventory_mgr.acquire_item("secret_key"):
@@ -44,11 +41,6 @@ Example usage:
     # Check if player has item (for puzzle logic)
     if inventory_mgr.has_item("secret_key"):
         unlock_door()
-
-    # Display acquired photos in UI
-    photos = inventory_mgr.get_acquired_items(category="photo")
-    for photo in photos:
-        display_photo(photo)
 
     # Save/load support
     save_data = inventory_mgr.to_dict()
@@ -197,7 +189,12 @@ class InventoryManager(InventoryBaseManager):
                     return True
             # Grid navigation
             elif symbol == arcade.key.ESCAPE:
-                self._hide_inventory()
+                self.showing = False
+                self.viewing_photo = False
+                self.current_photo_texture = None
+                self.context.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.accessed))
+                logger.info("Published InventoryClosedEvent (accessed=%s)", self.accessed)
+                logger.debug("Inventory overlay hidden")
                 return True
             elif symbol == arcade.key.UP:
                 self._move_selection(0, -1)
@@ -236,23 +233,26 @@ class InventoryManager(InventoryBaseManager):
                 logger.warning("Background image not found: %s", background_path)
 
         # Mark inventory as accessed
-        self.mark_as_accessed()
+        if not self.accessed:
+            self.accessed = True
+            logger.info("Inventory accessed for the first time")
 
         # Get only acquired items for grid display
-        self.all_items = self.get_acquired_items()
+        self.all_items = self._get_acquired_items()
 
         # Load icon textures for acquired items
-        self._load_icon_textures()
+        self.icon_textures.clear()
+
+        for item in self.all_items:
+            icon_path = self._get_icon_path(item)
+            if icon_path:
+                try:
+                    self.icon_textures[item.id] = arcade.load_texture(icon_path)
+                    logger.debug("Loaded icon for item: %s", item.id)
+                except (FileNotFoundError, OSError):
+                    logger.warning("Failed to load icon for item: %s at %s", item.id, icon_path)
 
         logger.debug("Inventory overlay shown")
-
-    def _hide_inventory(self) -> None:
-        """Hide the inventory overlay and emit closed event."""
-        self.showing = False
-        self.viewing_photo = False
-        self.current_photo_texture = None
-        self.emit_closed_event()
-        logger.debug("Inventory overlay hidden")
 
     def _move_selection(self, delta_col: int, delta_row: int) -> None:
         """Move selection in the grid with wrapping."""
@@ -269,7 +269,7 @@ class InventoryManager(InventoryBaseManager):
         item = self.all_items[selected_index]
 
         # Get image path
-        image_path = self.get_image_path(item)
+        image_path = self._get_image_path(item)
 
         if not image_path:
             logger.warning("No image path configured for item: %s", item.id)
@@ -282,19 +282,6 @@ class InventoryManager(InventoryBaseManager):
             logger.info("Loaded photo: %s", item.name)
         except Exception:
             logger.exception("Failed to load photo: %s", image_path)
-
-    def _load_icon_textures(self) -> None:
-        """Load icon textures for all acquired items."""
-        self.icon_textures.clear()
-
-        for item in self.all_items:
-            icon_path = self.get_icon_path(item)
-            if icon_path:
-                try:
-                    self.icon_textures[item.id] = arcade.load_texture(icon_path)
-                    logger.debug("Loaded icon for item: %s", item.id)
-                except (FileNotFoundError, OSError):
-                    logger.warning("Failed to load icon for item: %s at %s", item.id, icon_path)
 
     def on_draw_ui(self) -> None:
         """Draw the inventory overlay in screen coordinates."""
@@ -574,37 +561,6 @@ class InventoryManager(InventoryBaseManager):
             else:
                 logger.warning("Failed to load inventory items (continuing with empty inventory): %s", str(e))
 
-    def add_item(self, item: InventoryItem) -> None:
-        """Add an item to the manager's registry of available items.
-
-        Registers a new item in the inventory system, making it available for acquisition
-        and display. This method is used to dynamically add items beyond the default set,
-        such as items defined in game data files or created programmatically.
-
-        Items are stored by their unique ID. Adding an item with an ID that already exists
-        will overwrite the previous item, which can be used to update item properties.
-
-        This method does NOT automatically acquire the item for the player - it only makes
-        the item definition available. Use acquire_item() to actually give the item to
-        the player.
-
-        Args:
-            item: The InventoryItem instance to add. The item's ID will be used as the
-                 dictionary key for storage and lookups.
-
-        Example:
-            # Add a quest item dynamically
-            quest_item = InventoryItem(
-                id="magic_amulet",
-                name="Ancient Amulet",
-                description="Glows with mysterious power.",
-                category="key"
-            )
-            inventory_mgr.add_item(quest_item)
-        """
-        self.items[item.id] = item
-        logger.debug("Added item to inventory: %s", item.id)
-
     def acquire_item(self, item_id: str) -> bool:
         """Mark an item as acquired by the player.
 
@@ -699,7 +655,7 @@ class InventoryManager(InventoryBaseManager):
         """
         return item_id in self.items and self.items[item_id].acquired
 
-    def get_acquired_items(self, category: str | None = None) -> list[InventoryItem]:
+    def _get_acquired_items(self, category: str | None = None) -> list[InventoryItem]:
         """Get all items the player has acquired, optionally filtered by category.
 
         Returns a list of all items where acquired=True, maintaining the insertion order
@@ -722,21 +678,6 @@ class InventoryManager(InventoryBaseManager):
             List of InventoryItem instances where acquired=True, filtered by category if
             specified. Returns empty list if no items match the criteria. The list maintains
             insertion order from the items dictionary.
-
-        Example:
-            # Display all acquired photos in a gallery
-            photos = inventory_mgr.get_acquired_items(category="photo")
-            for i, photo in enumerate(photos):
-                display_photo_thumbnail(photo, position=i)
-
-            # Show all acquired items
-            all_items = inventory_mgr.get_acquired_items()
-            show_notification(f"Inventory: {len(all_items)} items")
-
-            # Check quest completion progress
-            notes_found = len(inventory_mgr.get_acquired_items(category="note"))
-            total_notes = len(inventory_mgr.get_all_items(category="note"))
-            print(f"Notes collected: {notes_found}/{total_notes}")
         """
         acquired = [item for item in self.items.values() if item.acquired]
 
@@ -745,54 +686,7 @@ class InventoryManager(InventoryBaseManager):
 
         return acquired
 
-    def get_all_items(self, category: str | None = None) -> list[InventoryItem]:
-        """Get all items regardless of acquisition status, optionally filtered by category.
-
-        Returns a list of all items in the registry, including both acquired and unacquired
-        items. This is useful for showing completion tracking ("5/10 photos found") or
-        displaying locked/grayed-out items that the player hasn't found yet.
-
-        Args:
-            category: Optional category string to filter results. If None, returns all items.
-
-        Returns:
-            List of all InventoryItem instances in insertion order, filtered by category
-            if specified.
-
-        Example:
-            # Show completion percentage
-            total = len(inventory_mgr.get_all_items(category="photo"))
-            found = len(inventory_mgr.get_acquired_items(category="photo"))
-            completion = (found / total) * 100
-            print(f"Photo album: {completion:.0f}% complete")
-        """
-        all_items = list(self.items.values())
-
-        if category:
-            all_items = [item for item in all_items if item.category == category]
-
-        return all_items
-
-    def get_item(self, item_id: str) -> InventoryItem | None:
-        """Get an item by its unique ID.
-
-        Direct lookup of an item by ID, useful when you need the full item object to
-        access its properties (name, description, image path, etc.).
-
-        Args:
-            item_id: The unique identifier of the item to retrieve.
-
-        Returns:
-            The InventoryItem instance if found, None if the ID doesn't exist.
-
-        Example:
-            item = inventory_mgr.get_item("ancient_scroll")
-            if item and item.acquired:
-                display_item_details(item.name, item.description, item.image_path)
-        """
-        return self.items.get(item_id)
-
-    def get_image_path(self, item: InventoryItem) -> str | None:
+    def _get_image_path(self, item: InventoryItem) -> str | None:
         """Get the full absolute path to an item's full-size image file.
 
         Resolves the item's relative image path to an absolute filesystem path using
@@ -806,20 +700,13 @@ class InventoryManager(InventoryBaseManager):
             Full absolute path to the image file (e.g., "/path/to/assets/images/photos/beach.jpg"),
             or None if the item has no image (image_path is None).
 
-        Example:
-            item = inventory_mgr.get_item("memory_photo")
-            if item:
-                img_path = inventory_mgr.get_image_path(item)
-                if img_path:
-                    texture = arcade.load_texture(img_path)
-                    display_texture(texture)
         """
         if not item.image_path:
             return None
 
         return asset_path(f"{item.image_path}")
 
-    def get_icon_path(self, item: InventoryItem) -> str | None:
+    def _get_icon_path(self, item: InventoryItem) -> str | None:
         """Get the full absolute path to an item's icon/thumbnail image file.
 
         Resolves the item's relative icon path to an absolute filesystem path using
@@ -832,21 +719,13 @@ class InventoryManager(InventoryBaseManager):
         Returns:
             Full absolute path to the icon file (e.g., "/path/to/assets/images/icons/key_icon.png"),
             or None if the item has no icon (icon_path is None).
-
-        Example:
-            item = inventory_mgr.get_item("rusty_key")
-            if item:
-                icon_path = inventory_mgr.get_icon_path(item)
-                if icon_path:
-                    icon_texture = arcade.load_texture(icon_path)
-                    display_icon(icon_texture)
         """
         if not item.icon_path:
             return None
 
         return asset_path(f"{item.icon_path}")
 
-    def get_acquired_count(self, category: str | None = None) -> int:
+    def _get_acquired_count(self, category: str | None = None) -> int:
         """Get the count of items the player has acquired.
 
         Convenience method that returns the number of acquired items, optionally filtered
@@ -857,73 +736,12 @@ class InventoryManager(InventoryBaseManager):
 
         Returns:
             Integer count of acquired items matching the filter.
-
-        Example:
-            photos_collected = inventory_mgr.get_acquired_count(category="photo")
-            print(f"You've collected {photos_collected} photos!")
         """
-        return len(self.get_acquired_items(category))
-
-    def get_total_count(self, category: str | None = None) -> int:
-        """Get the total count of all items in the registry.
-
-        Convenience method that returns the total number of items (acquired and unacquired),
-        optionally filtered by category. Equivalent to len(get_all_items(category)).
-
-        Args:
-            category: Optional category filter. If None, counts all items.
-
-        Returns:
-            Integer count of all items matching the filter.
-
-        Example:
-            total_photos = inventory_mgr.get_total_count(category="photo")
-            found_photos = inventory_mgr.get_acquired_count(category="photo")
-            print(f"Photo Album: {found_photos}/{total_photos}")
-        """
-        return len(self.get_all_items(category))
+        return len(self._get_acquired_items(category))
 
     def has_been_accessed(self) -> bool:
         """Check if inventory has been accessed."""
         return self.accessed
-
-    def mark_as_accessed(self) -> None:
-        """Mark the inventory as having been accessed by the player.
-
-        Sets the accessed flag to True, indicating the player has opened the
-        inventory view at least once. This is typically called by the inventory UI when
-        it's first displayed.
-
-        This flag is useful for:
-        - Tutorial systems that wait for the player to check their inventory
-        - Achievement tracking ("Opened inventory for the first time")
-        - Quest progression that requires viewing collected items
-        - First-time help tooltips that shouldn't show after initial access
-
-        The method is idempotent - calling it multiple times has no additional effect
-        beyond the first call. Only the first access is logged.
-
-        Example:
-            # In inventory view's on_show_view() method
-            def on_show_view(self):
-                self.inventory_mgr.mark_as_accessed()
-                # ... rest of UI setup
-        """
-        if not self.accessed:
-            self.accessed = True
-            logger.info("Inventory accessed for the first time")
-
-    def emit_closed_event(self) -> None:
-        """Emit InventoryClosedEvent when inventory view closes.
-
-        This allows the script system to react when the player finishes browsing
-        their items.
-
-        Args:
-            context: Game context for accessing event bus.
-        """
-        self.context.event_bus.publish(InventoryClosedEvent(has_been_accessed=self.accessed))
-        logger.info("Published InventoryClosedEvent (accessed=%s)", self.accessed)
 
     def to_dict(self) -> dict[str, bool]:
         """Convert inventory state to dictionary for save data serialization.
@@ -933,8 +751,7 @@ class InventoryManager(InventoryBaseManager):
         for persistent storage.
 
         Only the acquired status is saved - item definitions (name, description, image)
-        are considered part of the game's code/data and are loaded via _initialize_default_items()
-        or add_item() when the game starts.
+        are considered part of the game's code/data and are loaded via _initialize_default_items().
 
         Returns:
             Dictionary mapping item ID strings to boolean acquired status. Example:
@@ -958,8 +775,7 @@ class InventoryManager(InventoryBaseManager):
 
         Restores the acquisition status of items from a previously saved dictionary.
         This method updates the acquired flags of existing items but doesn't create
-        new items - items must already exist in the registry (from initialization or
-        add_item() calls).
+        new items - items must already exist in the registry (from initialization.
 
         If the save data contains item IDs that don't exist in the current registry,
         those entries are skipped with a warning. This handles cases where items were

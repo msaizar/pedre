@@ -93,3 +93,8 @@ class InventoryBaseManager(BaseSystem, ABC):
     def has_item(self, item_id: str) -> bool:
         """Check if the player has acquired a specific item."""
         ...
+
+    @abstractmethod
+    def acquire_item(self, item_id: str) -> bool:
+        """Mark an item as acquired by the player."""
+        ...

@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 def check_inventory_accessed(_condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if inventory has been accessed."""
     inventory = context.inventory_manager
-    if not inventory:
-        return False
     return inventory.has_been_accessed()
 
 
@@ -21,9 +19,6 @@ def check_inventory_accessed(_condition_data: dict[str, Any], context: GameConte
 def check_item_acquired(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if we've acquired an item."""
     inventory = context.inventory_manager
-    if not inventory:
-        return False
-
     item_id = condition_data.get("item_id")
     if not item_id:
         return False
