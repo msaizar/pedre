@@ -593,6 +593,57 @@ particle_manager.toggle()
 
 **See Also:** [Particle System Documentation](systems/particle.md)
 
+### DebugManager
+
+Displays development information overlays showing player and NPC positions.
+
+```python
+# Access via game context
+debug_manager = context.debug_manager
+```
+
+**Key Methods:**
+
+- `on_key_press(symbol: int, modifiers: int) -> bool` - Toggle debug mode with Shift+D
+- `on_draw_ui()` - Render debug overlay in screen coordinates
+- `setup(context: GameContext)` - Initialize the debug system
+- `cleanup()` - Clean up debug resources
+
+**Properties:**
+
+- `debug_mode: bool` - Whether debug overlay is currently enabled
+- `debug_text_objects: list[arcade.Text]` - Cached text objects for rendering
+
+**Debug Information Display:**
+
+When enabled with Shift+D, shows:
+
+- Player position in tile coordinates (e.g., "Player: tile (10, 15)")
+- Player position in pixel coordinates (e.g., "Player: coords (320, 480)")
+- Visible NPC positions in tile coordinates with dialog levels
+- Visible NPC positions in pixel coordinates with dialog levels
+
+**Example:**
+
+```python
+# Toggle debug mode by pressing Shift+D
+# Debug overlay shows:
+# - Player: tile (10, 15)
+# - Player: coords (320, 480)
+# - merchant: tile (12, 15) level 2
+# - merchant: coords (384, 480) level 2
+```
+
+**Notes:**
+
+- Debug mode toggles with Shift+D keyboard shortcut
+- Only visible NPCs are shown in the overlay
+- Text is rendered in screen coordinates (not world coordinates)
+- Player info displayed in green, NPC info in yellow
+- Minimal overhead when debug mode is disabled
+
+**See Also:** [Debug System Documentation](systems/debug.md)
+
 ### EventBus
 
 Publish-subscribe event system for decoupled communication.

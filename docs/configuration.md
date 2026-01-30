@@ -312,6 +312,25 @@ Particle system configuration for visual effects.
     - Red burst: `PARTICLE_COLOR_BURST = (255, 0, 0)`
 - For more details, see the [ParticleManager documentation](systems/particle.md)
 
+### Debug Settings
+
+Debug system configuration for development overlays.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `TILE_SIZE` | int | 32 | Size of tiles in pixels (used for tile coordinate calculation) |
+
+**Notes:**
+
+- `TILE_SIZE` is used by the debug system to convert pixel coordinates to tile coordinates
+  - Debug overlay displays both pixel coordinates and tile coordinates
+  - Tile coordinates are calculated as: `tile_x = int(pixel_x / TILE_SIZE)`
+- Debug mode is toggled with Shift+D keyboard shortcut
+  - Shows player position in tile and pixel coordinates
+  - Shows visible NPC positions in tile and pixel coordinates
+  - Shows NPC dialog levels
+- For more details, see the [DebugManager documentation](systems/debug.md)
+
 ### Asset Settings
 
 Asset management configuration.
