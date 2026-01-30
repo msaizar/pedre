@@ -104,3 +104,8 @@ class InventoryBaseManager(BaseSystem, ABC):
     def consume_item(self, item_id: str) -> bool:
         """Mark an item as consumed by the player."""
         ...
+
+    @abstractmethod
+    def add_item(self, item: InventoryItem) -> bool:
+        """Add a new item to the inventory system and optionally acquire it."""
+        ...

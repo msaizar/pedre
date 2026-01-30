@@ -587,6 +587,72 @@ class InventoryManager(InventoryBaseManager):
             else:
                 logger.warning("Failed to load inventory items (continuing with empty inventory): %s", str(e))
 
+    def add_item(self, item: InventoryItem) -> bool:
+        """Add a new item to the inventory system and optionally acquire it.
+
+        This method allows dynamically adding items that aren't defined in inventory_items.json.
+        This is useful for consumable items (like potions) that can be obtained through gameplay
+        actions rather than being part of the static item definitions.
+
+        If an item with the same ID already exists, this method will not overwrite it and will
+        return False. Use acquire_item() to mark existing items as acquired.
+
+        The item's acquired flag determines whether it's immediately added to the player's
+        inventory or just registered in the system. Set acquired=True for items that should
+        be immediately available (e.g., picking up a potion), or acquired=False for items
+        that need to be acquired later.
+
+        Note: When using AddItemAction from scripts, you can omit the item_id to have a UUID
+        automatically generated. This is useful for consumable items where you want to add
+        multiple instances without worrying about ID conflicts.
+
+        Args:
+            item: The InventoryItem to add to the system. Must have a unique ID.
+
+        Returns:
+            True if the item was successfully added, False if an item with that ID already exists
+            or if adding it would exceed inventory capacity.
+
+        Example:
+            # Add a health potion that's immediately available
+            potion = InventoryItem(
+                id=str(uuid.uuid4()),  # Generate unique ID
+                name="Health Potion",
+                description="Restores 50 HP",
+                icon_path="items/potion.png",
+                category="consumable",
+                acquired=True
+            )
+            if inventory_mgr.add_item(potion):
+                show_notification("Found: Health Potion!")
+        """
+        if item.id in self.items:
+            logger.warning("Attempted to add item with existing ID: %s", item.id)
+            return False
+
+        self.items[item.id] = item
+        logger.info("Added new item to inventory system: %s (%s)", item.id, item.name)
+
+        # If the item is already marked as acquired, publish the event and check capacity
+        if item.acquired:
+            current_count = len(self._get_acquired_items())
+            if current_count > settings.INVENTORY_MAX_SPACE:
+                logger.warning(
+                    "Item %s added exceeds inventory capacity (%d/%d)",
+                    item.id,
+                    current_count,
+                    settings.INVENTORY_MAX_SPACE,
+                )
+                # Don't publish event if capacity is exceeded
+                self.context.event_bus.publish(ItemAcquisitionFailedEvent(item_id=item.id, reason="capacity"))
+                # Remove the item since it exceeds capacity
+                del self.items[item.id]
+                return False
+
+            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item.id, item_name=item.name))
+
+        return True
+
     def acquire_item(self, item_id: str) -> bool:
         """Mark an item as acquired by the player.
 

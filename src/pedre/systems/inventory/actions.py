@@ -5,10 +5,12 @@ such as acquiring items or waiting for inventory access.
 """
 
 import logging
+import uuid
 from typing import TYPE_CHECKING, Any
 
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionRegistry
+from pedre.systems.inventory.base import InventoryItem
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
@@ -127,6 +129,142 @@ class AcquireItemAction(Action):
     def from_dict(cls, data: dict[str, Any]) -> AcquireItemAction:
         """Create AcquireItemAction from a dictionary."""
         return cls(item_id=data.get("item_id", ""))
+
+
+@ActionRegistry.register("add_item")
+class AddItemAction(Action):
+    """Add a new item to the inventory system.
+
+    This action dynamically creates and adds a new item to the inventory system without
+    requiring it to be defined in inventory_items.json. This is useful for consumable items
+    like potions that can be obtained through gameplay actions.
+
+    The item is created from the provided metadata and added to the inventory. If acquired=True,
+    it will be immediately available in the player's inventory and an ItemAcquiredEvent will
+    be published. If acquired=False, the item is registered but not yet in the player's possession.
+
+    If item_id is not provided or is empty, a unique UUID will be automatically generated to
+    avoid ID conflicts. This is useful when adding multiple instances of the same consumable
+    (e.g., multiple health potions).
+
+    Example usage:
+        # Without item_id - UUID auto-generated for each potion
+        {
+            "type": "add_item",
+            "name": "Health Potion",
+            "description": "Restores 50 HP",
+            "icon_path": "items/potion.png",
+            "category": "consumable",
+            "acquired": true
+        }
+
+        # With explicit item_id (for unique items)
+        {
+            "type": "add_item",
+            "item_id": "rusty_key",
+            "name": "Rusty Key",
+            "description": "Opens an old door",
+            "icon_path": "items/key.png",
+            "category": "key",
+            "acquired": true
+        }
+
+        # In a script for finding a potion
+        {
+            "actions": [
+                {"type": "dialog", "speaker": "Narrator", "text": ["You found a health potion!"]},
+                {
+                    "type": "add_item",
+                    "name": "Health Potion",
+                    "description": "Restores 50 HP",
+                    "icon_path": "items/icons/potion.png",
+                    "image_path": "items/potion.png",
+                    "category": "consumable",
+                    "acquired": true
+                },
+                {"type": "wait_for_dialog_close"}
+            ]
+        }
+    """
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        item_id: str | None = None,
+        image_path: str | None = None,
+        icon_path: str | None = None,
+        category: str = "general",
+        *,
+        acquired: bool = True,
+    ) -> None:
+        """Initialize add item action.
+
+        Args:
+            name: Display name of the item.
+            description: Description text for the item.
+            item_id: Optional unique identifier for the item. If not provided or empty,
+                    a UUID will be auto-generated to ensure uniqueness.
+            image_path: Optional path to full-size image (relative to assets/images/).
+            icon_path: Optional path to icon/thumbnail (relative to assets/images/).
+            category: Item category (e.g., "consumable", "key", "photo"). Default is "general".
+            acquired: Whether the item should be immediately acquired. Default is True.
+        """
+        self.item_id = item_id if item_id else str(uuid.uuid4())
+        self.name = name
+        self.description = description
+        self.image_path = image_path
+        self.icon_path = icon_path
+        self.category = category
+        self.acquired = acquired
+        self.started = False
+        self.success = False
+
+    def execute(self, context: GameContext) -> bool:
+        """Add the item if not already started.
+
+        Returns:
+            True if item was successfully added, False otherwise (blocks script progression).
+        """
+        if not self.started:
+            item = InventoryItem(
+                id=self.item_id,
+                name=self.name,
+                description=self.description,
+                image_path=self.image_path,
+                icon_path=self.icon_path,
+                category=self.category,
+                acquired=self.acquired,
+            )
+
+            inventory_manager = context.inventory_manager
+            self.success = inventory_manager.add_item(item)
+            self.started = True
+
+            if self.success:
+                logger.debug("AddItemAction: Successfully added item %s (%s)", self.item_id, self.name)
+            else:
+                logger.debug("AddItemAction: Failed to add item %s (may already exist)", self.item_id)
+
+        return self.success
+
+    def reset(self) -> None:
+        """Reset the action."""
+        self.started = False
+        self.success = False
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AddItemAction:
+        """Create AddItemAction from a dictionary."""
+        return cls(
+            name=data.get("name", ""),
+            description=data.get("description", ""),
+            item_id=data.get("item_id") if data.get("item_id") else None,
+            image_path=data.get("image_path"),
+            icon_path=data.get("icon_path"),
+            category=data.get("category", "general"),
+            acquired=data.get("acquired", True),
+        )
 
 
 @ActionRegistry.register("consume_item")
