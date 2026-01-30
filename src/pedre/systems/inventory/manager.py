@@ -244,8 +244,8 @@ class InventoryManager(InventoryBaseManager):
         self.icon_textures.clear()
 
         for item in self.all_items:
-            icon_path = self._get_icon_path(item)
-            if icon_path:
+            if item.icon_path:
+                icon_path = asset_path(f"{item.icon_path}")
                 try:
                     self.icon_textures[item.id] = arcade.load_texture(icon_path)
                     logger.debug("Loaded icon for item: %s", item.id)
@@ -269,11 +269,11 @@ class InventoryManager(InventoryBaseManager):
         item = self.all_items[selected_index]
 
         # Get image path
-        image_path = self._get_image_path(item)
-
-        if not image_path:
+        if not item.image_path:
             logger.warning("No image path configured for item: %s", item.id)
             return
+
+        image_path = asset_path(f"{item.image_path}")
 
         try:
             # Load and display photo
@@ -612,8 +612,7 @@ class InventoryManager(InventoryBaseManager):
             logger.info("Player acquired item: %s (%s)", item_id, item.name)
 
             # Publish event if event bus is available
-            if self.context.event_bus:
-                self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
+            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
 
             return True
 
@@ -685,45 +684,6 @@ class InventoryManager(InventoryBaseManager):
             acquired = [item for item in acquired if item.category == category]
 
         return acquired
-
-    def _get_image_path(self, item: InventoryItem) -> str | None:
-        """Get the full absolute path to an item's full-size image file.
-
-        Resolves the item's relative image path to an absolute filesystem path using
-        the asset_path() helper. This handles the asset directory structure so callers
-        don't need to know where assets are stored.
-
-        Args:
-            item: The InventoryItem instance to get the image path for.
-
-        Returns:
-            Full absolute path to the image file (e.g., "/path/to/assets/images/photos/beach.jpg"),
-            or None if the item has no image (image_path is None).
-
-        """
-        if not item.image_path:
-            return None
-
-        return asset_path(f"{item.image_path}")
-
-    def _get_icon_path(self, item: InventoryItem) -> str | None:
-        """Get the full absolute path to an item's icon/thumbnail image file.
-
-        Resolves the item's relative icon path to an absolute filesystem path using
-        the asset_path() helper. Icons are smaller preview images displayed in the
-        inventory grid.
-
-        Args:
-            item: The InventoryItem instance to get the icon path for.
-
-        Returns:
-            Full absolute path to the icon file (e.g., "/path/to/assets/images/icons/key_icon.png"),
-            or None if the item has no icon (icon_path is None).
-        """
-        if not item.icon_path:
-            return None
-
-        return asset_path(f"{item.icon_path}")
 
     def _get_acquired_count(self, category: str | None = None) -> int:
         """Get the count of items the player has acquired.
