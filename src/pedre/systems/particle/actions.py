@@ -58,6 +58,7 @@ class EmitParticlesAction(Action):
         *,
         player: bool = False,
         interactive_object: str | None = None,
+        color: tuple[int, int, int] | None = None,
     ) -> None:
         """Initialize particle emission action.
 
@@ -66,6 +67,7 @@ class EmitParticlesAction(Action):
             npc_name: NPC name to emit particles at (mutually exclusive).
             player: If True, emit at player location (mutually exclusive).
             interactive_object: Interactive object name to emit at (mutually exclusive).
+            color: Optional RGB color tuple to override default particle color.
 
         Note:
             Exactly one location parameter must be provided.
@@ -74,6 +76,7 @@ class EmitParticlesAction(Action):
         self.npc_name = npc_name
         self.player = player
         self.interactive_object = interactive_object
+        self.color = color
         self.executed = False
 
     def execute(self, context: GameContext) -> bool:
@@ -141,11 +144,20 @@ class EmitParticlesAction(Action):
             if emit_x is not None and emit_y is not None:
                 particle_manager = context.particle_manager
                 if self.particle_type == "hearts":
-                    particle_manager.emit_hearts(emit_x, emit_y)
+                    if self.color:
+                        particle_manager.emit_hearts(emit_x, emit_y, color=self.color)
+                    else:
+                        particle_manager.emit_hearts(emit_x, emit_y)
                 elif self.particle_type == "sparkles":
-                    particle_manager.emit_sparkles(emit_x, emit_y)
+                    if self.color:
+                        particle_manager.emit_sparkles(emit_x, emit_y, color=self.color)
+                    else:
+                        particle_manager.emit_sparkles(emit_x, emit_y)
                 elif self.particle_type == "burst":
-                    particle_manager.emit_burst(emit_x, emit_y, color=(255, 215, 0))
+                    if self.color:
+                        particle_manager.emit_burst(emit_x, emit_y, color=self.color)
+                    else:
+                        particle_manager.emit_burst(emit_x, emit_y)
 
                 self.executed = True
                 logger.debug("EmitParticlesAction: Emitted %s at (%s, %s)", self.particle_type, emit_x, emit_y)
@@ -161,10 +173,15 @@ class EmitParticlesAction(Action):
         """Create EmitParticlesAction from a dictionary.
 
         Accepts exactly one of: 'npc', 'player', or 'interactive_object'.
+        Optionally accepts 'color' as a list of 3 integers [R, G, B].
         """
+        color_data = data.get("color")
+        color = tuple(color_data) if color_data else None
+
         return cls(
             particle_type=data.get("particle_type", "burst"),
             npc_name=data.get("npc"),
             player=data.get("player", False),
             interactive_object=data.get("interactive_object"),
+            color=color,
         )
