@@ -125,6 +125,20 @@ Visual effects and particle systems. Creates visual feedback for game events.
 - Duration control
 - Automatic cleanup
 
+## Development Tools
+
+### [DebugManager](debug.md)
+
+Displays development information overlays showing player and NPC positions. Helps with debugging and level design.
+
+**Key Features:**
+
+- Toggle with Shift+D
+- Player position display (tile and pixel coordinates)
+- NPC position display (tile and pixel coordinates)
+- Dialog level tracking
+- Minimal performance overhead
+
 ## Persistence & State
 
 ### [SaveManager](save.md)
