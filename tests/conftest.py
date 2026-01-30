@@ -70,7 +70,7 @@ def configure_test_settings() -> Generator[None]:
         NPC_INTERACTION_DISTANCE=50,
         PORTAL_INTERACTION_DISTANCE=50,
         WAYPOINT_THRESHOLD=2,
-        NPC_SPEED=80.0,
+        NPC_MOVEMENT_SPEED=80.0,
         INITIAL_MAP="map.tmx",
         INVENTORY_GRID_COLS=4,
         INVENTORY_GRID_ROWS=3,

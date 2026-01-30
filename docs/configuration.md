@@ -95,16 +95,21 @@ Player character interaction settings.
 
 ### NPC Settings
 
-NPC behavior settings.
+NPC behavior and interaction settings.
 
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
-| `NPC_SPEED` | float | 80.0 | NPC movement speed in pixels per second |
+| `NPC_INTERACTION_DISTANCE` | int | 50 | Maximum distance in pixels for player to interact with NPCs |
+| `NPC_MOVEMENT_SPEED` | float | 80.0 | NPC movement speed in pixels per second |
+| `NPC_WAYPOINT_THRESHOLD` | int | 2 | Distance in pixels to consider an NPC has reached a waypoint |
+| `NPC_INTERACTION_KEY` | str | "SPACE" | Key to interact with NPCs (use arcade.key constants) |
 
 **Notes:**
 
-- This is the default speed for all NPCs
-- Individual NPCs can override this in their sprite initialization
+- `NPC_INTERACTION_DISTANCE` determines how close the player must be to interact with NPCs
+- `NPC_MOVEMENT_SPEED` is the default speed for all NPCs using pathfinding
+- `NPC_WAYPOINT_THRESHOLD` controls pathfinding precision (lower = more precise turns)
+- `NPC_INTERACTION_KEY` can be set to any arcade key constant (e.g., "E", "F", "RETURN")
 
 ### Menu Settings
 
@@ -333,7 +338,9 @@ PORTAL_INTERACTION_DISTANCE=60
 WAYPOINT_THRESHOLD=2
 
 # NPC settings
-NPC_SPEED=90.0
+NPC_MOVEMENT_SPEED=90.0
+NPC_WAYPOINT_THRESHOLD=2
+NPC_INTERACTION_KEY="E"
 
 # Menu settings
 MENU_TITLE="Mystic Quest"
@@ -391,7 +398,9 @@ INTERACTION_MANAGER_DISTANCE: int = 50
 NPC_INTERACTION_DISTANCE: int = 50
 PORTAL_INTERACTION_DISTANCE: int = 50
 WAYPOINT_THRESHOLD: int = 2
-NPC_SPEED: float = 80.0
+NPC_MOVEMENT_SPEED: float = 80.0
+NPC_WAYPOINT_THRESHOLD: int = 2
+NPC_INTERACTION_KEY: str = "SPACE"
 ASSETS_HANDLE: str = "game_assets"
 INITIAL_MAP: str = "map.tmx"
 INVENTORY_GRID_COLS: int = 4

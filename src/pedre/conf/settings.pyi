@@ -36,6 +36,8 @@ WAYPOINT_THRESHOLD: int
 
 # NPC settings
 NPC_SPEED: float
+NPC_WAYPOINT_THRESHOLD: int
+NPC_INTERACTION_KEY: str
 
 # Asset settings
 ASSETS_HANDLE: str

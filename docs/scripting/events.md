@@ -425,8 +425,7 @@ Triggered when an NPC finishes moving to a waypoint.
 
 **Available Trigger Fields:**
 
-- `npc` - Which NPC finished moving
-- `waypoint` - Waypoint name that was reached (optional)
+- `npc` - Which NPC finished moving (optional, omit to trigger for any NPC)
 
 **Example:**
 
@@ -436,8 +435,7 @@ Triggered when an NPC finishes moving to a waypoint.
     "scene": "village",
     "trigger": {
       "event": "npc_movement_complete",
-      "npc": "merchant",
-      "waypoint": "market_spot"
+      "npc": "merchant"
     },
     "actions": [
       {
@@ -461,13 +459,53 @@ Triggered when an NPC finishes moving to a waypoint.
 - Timed reactions
 - Multi-stage animations
 
+### npc_appear_complete
+
+Triggered when an NPC's appear animation finishes.
+
+**Available Trigger Fields:**
+
+- `npc` - Which NPC appeared (optional, omit to trigger for any NPC)
+
+**Example:**
+
+```json
+{
+  "spirit_materialized": {
+    "scene": "forest",
+    "trigger": {
+      "event": "npc_appear_complete",
+      "npc": "spirit"
+    },
+    "actions": [
+      {
+        "type": "play_sfx",
+        "file": "materialize.wav"
+      },
+      {
+        "type": "dialog",
+        "speaker": "Spirit",
+        "text": ["I have been summoned!"]
+      }
+    ]
+  }
+}
+```
+
+**Use Cases:**
+
+- Triggering dialog after dramatic entrances
+- Playing sound effects when NPCs fully appear
+- Chaining actions after reveal sequences
+- Coordinating multiple NPC appearances
+
 ### npc_disappear_complete
 
 Triggered when an NPC's disappear animation finishes.
 
 **Available Trigger Fields:**
 
-- `npc` - Which NPC disappeared
+- `npc` - Which NPC disappeared (optional, omit to trigger for any NPC)
 
 **Example:**
 

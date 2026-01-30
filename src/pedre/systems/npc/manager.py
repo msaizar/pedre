@@ -67,6 +67,7 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.conf.exceptions import ConfigurationError
 from pedre.constants import asset_path
+from pedre.helpers import matches_key
 from pedre.systems.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
 from pedre.systems.npc.constants import ALL_ANIMATION_PROPERTIES
 from pedre.systems.npc.events import (
@@ -116,11 +117,11 @@ class NPCManager(NPCBaseManager):
         pathfinding: PathfindingManager instance used for calculating NPC movement paths.
         interaction_distance: Maximum distance in pixels for player to interact with NPCs.
         waypoint_threshold: Distance in pixels to consider an NPC has reached a waypoint.
-        npc_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
+        movement_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
         inventory_manager: Optional reference for checking inventory conditions in dialog.
         event_bus: Optional EventBus for publishing NPC lifecycle events.
-        interacted_npcs: Set tracking which NPCs have been interacted with, for
-                        dialog and script condition checking.
+        interacted_npcs: Dictionary mapping scene names to sets of NPC names that have
+                        been interacted with in that scene. Allows scene-specific interaction tracking.
     """
 
     name: ClassVar[str] = "npc"
@@ -140,9 +141,9 @@ class NPCManager(NPCBaseManager):
         # Changed to scene -> npc -> level structure for scene-aware dialogs
         self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
         self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
-        self.waypoint_threshold = 2
-        self.npc_speed = settings.NPC_SPEED
-        self.interacted_npcs: set[str] = set()
+        self.waypoint_threshold = settings.NPC_WAYPOINT_THRESHOLD
+        self.movement_speed = settings.NPC_MOVEMENT_SPEED
+        self.interacted_npcs: dict[str, set[str]] = {}
 
     def setup(self, context: GameContext) -> None:
         """Initialize the NPC system with game context and settings.
@@ -388,13 +389,13 @@ class NPCManager(NPCBaseManager):
         Returns:
             True if interaction occurred.
         """
-        if symbol == arcade.key.SPACE:
+        if matches_key(symbol, settings.NPC_INTERACTION_KEY):
             player_sprite = self.context.player_manager.get_player_sprite()
 
             if player_sprite:
                 nearby = self.get_nearby_npc(player_sprite)
                 logger.debug(
-                    "NPCManager: SPACE pressed, player at (%.1f, %.1f), npcs=%d, nearby=%s",
+                    "NPCManager: Interaction, player at (%.1f, %.1f), npcs=%d, nearby=%s",
                     player_sprite.center_x,
                     player_sprite.center_y,
                     len(self.npcs),
@@ -453,25 +454,36 @@ class NPCManager(NPCBaseManager):
 
         return False
 
-    def mark_npc_as_interacted(self, npc_name: str) -> None:
-        """Mark an NPC as interacted with.
+    def mark_npc_as_interacted(self, npc_name: str, scene_name: str | None = None) -> None:
+        """Mark an NPC as interacted with in a specific scene.
 
         Args:
             npc_name: Name of the NPC.
+            scene_name: Scene name (defaults to current scene if not provided).
         """
-        self.interacted_npcs.add(npc_name)
-        logger.debug("NPCManager: NPC '%s' marked as interacted", npc_name)
+        if scene_name is None:
+            scene_name = self.context.scene_manager.get_current_scene()
 
-    def has_npc_been_interacted_with(self, npc_name: str) -> bool:
-        """Check if an NPC has been interacted with.
+        if scene_name not in self.interacted_npcs:
+            self.interacted_npcs[scene_name] = set()
+
+        self.interacted_npcs[scene_name].add(npc_name)
+        logger.debug("NPCManager: NPC '%s' marked as interacted in scene '%s'", npc_name, scene_name)
+
+    def has_npc_been_interacted_with(self, npc_name: str, scene_name: str | None = None) -> bool:
+        """Check if an NPC has been interacted with in a specific scene.
 
         Args:
             npc_name: Name of the NPC to check.
+            scene_name: Scene name (defaults to current scene if not provided).
 
         Returns:
-            True if the NPC has been interacted with, False otherwise.
+            True if the NPC has been interacted with in the specified scene, False otherwise.
         """
-        return npc_name in self.interacted_npcs
+        if scene_name is None:
+            scene_name = self.context.scene_manager.get_current_scene()
+
+        return npc_name in self.interacted_npcs.get(scene_name, set())
 
     def _check_dialog_conditions(self, conditions: list[dict[str, Any]]) -> bool:
         """Check if all dialog conditions are met using ConditionRegistry.
@@ -710,7 +722,7 @@ class NPCManager(NPCBaseManager):
 
                 # Move NPC (only if distance > 0 to avoid division by zero)
                 elif distance > 0:
-                    move_distance = self.npc_speed * delta_time
+                    move_distance = self.movement_speed * delta_time
                     move_distance = min(move_distance, distance)
                     npc.sprite.center_x += (dx / distance) * move_distance
                     npc.sprite.center_y += (dy / distance) * move_distance
@@ -941,12 +953,12 @@ class NPCManager(NPCBaseManager):
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving NPC data.
 
-        Saves NPC positions, visibility, dialog levels, and animation flags.
+        Saves NPC positions, visibility, dialog levels, animation flags, and interaction history.
 
         Returns:
-            Dictionary mapping NPC names to their state dictionaries.
+            Dictionary containing NPC states and interaction history.
         """
-        state: dict[str, Any] = {}
+        npc_states: dict[str, Any] = {}
         for npc_name, npc in self.npcs.items():
             npc_state: dict[str, Any] = {
                 "x": npc.sprite.center_x,
@@ -961,16 +973,26 @@ class NPCManager(NPCBaseManager):
                 npc_state["disappear_complete"] = npc.sprite.disappear_complete
                 npc_state["interact_complete"] = npc.sprite.interact_complete
 
-            state[npc_name] = npc_state
+            npc_states[npc_name] = npc_state
 
-        return state
+        # Convert interacted_npcs sets to lists for JSON serialization
+        interacted_npcs_serialized = {scene: list(npcs) for scene, npcs in self.interacted_npcs.items()}
+
+        return {
+            "npcs": npc_states,
+            "interacted_npcs": interacted_npcs_serialized,
+        }
 
     def restore_save_state(self, state: dict[str, Any]) -> None:
         """Phase 1: No metadata to restore for NPCs (sprites don't exist yet)."""
 
     def apply_entity_state(self, state: dict[str, Any]) -> None:
         """Phase 2: Apply saved NPC state after sprites exist."""
-        self._apply_npc_state(state)
+        self._apply_npc_state(state["npcs"])
+        # Restore interacted NPCs
+        if "interacted_npcs" in state:
+            self.interacted_npcs = {scene: set(npcs) for scene, npcs in state["interacted_npcs"].items()}
+            logger.debug("Restored interacted NPCs for %d scenes", len(self.interacted_npcs))
 
     def _apply_npc_state(self, state: dict[str, Any]) -> None:
         """Apply NPC state from save data or scene cache.
@@ -1000,8 +1022,29 @@ class NPCManager(NPCBaseManager):
         logger.info("Applied state for %d NPCs", len(state))
 
     def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
-        """Return state to cache during scene transitions."""
-        return self.get_save_state()
+        """Return state to cache during scene transitions.
+
+        Note: Only caches NPC entity state (positions, visibility, dialog levels).
+        Interaction history is global across all scenes and saved separately.
+        """
+        npc_states: dict[str, Any] = {}
+        for npc_name, npc in self.npcs.items():
+            npc_state: dict[str, Any] = {
+                "x": npc.sprite.center_x,
+                "y": npc.sprite.center_y,
+                "visible": npc.sprite.visible,
+                "dialog_level": npc.dialog_level,
+            }
+
+            # Save animation flags for AnimatedNPC sprites
+            if isinstance(npc.sprite, AnimatedNPC):
+                npc_state["appear_complete"] = npc.sprite.appear_complete
+                npc_state["disappear_complete"] = npc.sprite.disappear_complete
+                npc_state["interact_complete"] = npc.sprite.interact_complete
+
+            npc_states[npc_name] = npc_state
+
+        return npc_states
 
     def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
         """Restore cached state when returning to a scene."""

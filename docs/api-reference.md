@@ -120,21 +120,31 @@ npc = AnimatedNPC(
 
 ### NPCManager
 
-Manages all NPCs in the current scene.
+Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 
 ```python
-from pedre import NPCManager
-
-npc_manager = NPCManager(game_context)
+# Access via game context
+npc_manager = context.npc_manager
 ```
 
-**Methods:**
+**Key Methods:**
 
-- `add_npc(npc: AnimatedNPC)` - Register an NPC
-- `get_npc(name: str) -> AnimatedNPC | None` - Get NPC by name
-- `update_dialog_level(npc_name: str, level: int)` - Set dialog progress
-- `get_save_state() -> dict[str, int]` - Get all NPC dialog levels
-- `restore_save_state(state: dict[str, int])` - Restore NPC dialog levels
+- `register_npc(sprite: arcade.Sprite, name: str)` - Register an NPC sprite
+- `get_npc_by_name(name: str) -> NPCState | None` - Get NPC state by name
+- `get_nearby_npc(player_sprite: arcade.Sprite) -> tuple[arcade.Sprite, str, int] | None` - Find NPC within interaction distance
+- `interact_with_npc(name: str) -> bool` - Trigger interaction with specific NPC
+- `load_dialogs_from_json(json_path: Path | str) -> bool` - Load dialog configurations
+- `get_dialog(npc_name: str, dialog_level: int, scene: str = "default") -> tuple[NPCDialogConfig | None, list[dict] | None]` - Get dialog for NPC at conversation level
+- `advance_dialog(npc_name: str) -> int` - Increment NPC's dialog level
+- `move_npc_to_tile(npc_name: str, tile_x: int | float, tile_y: int | float)` - Start pathfinding movement
+- `show_npcs(npc_names: list[str])` - Make hidden NPCs visible
+- `mark_npc_as_interacted(npc_name: str, scene_name: str | None = None)` - Mark NPC as interacted with in scene
+- `has_npc_been_interacted_with(npc_name: str, scene_name: str | None = None) -> bool` - Check if NPC was interacted with
+- `update(delta_time: float)` - Update NPC movements and animations
+- `get_save_state() -> dict[str, Any]` - Get serializable state for saving
+- `apply_entity_state(state: dict[str, Any])` - Restore NPC state after sprites exist
+
+**See Also:** [NPC System Documentation](systems/npc.md)
 
 ### DialogManager
 
