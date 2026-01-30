@@ -116,6 +116,9 @@ INVENTORY_MAX_SPACE = 12
 INVENTORY_CAPACITY_FONT_SIZE = 14
 """Font size for the inventory capacity counter display."""
 
+INVENTORY_ITEMS_FILE = "data/inventory_items.json"
+"""Path to the inventory items JSON data file."""
+
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT = False
 """Default auto-close behavior for dialogs."""

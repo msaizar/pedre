@@ -553,7 +553,7 @@ class InventoryManager(InventoryBaseManager):
     def _initialize_default_items(self) -> None:
         """Initialize default inventory items from JSON data file."""
         try:
-            items_file = asset_path("data/inventory_items.json")
+            items_file = asset_path(settings.INVENTORY_ITEMS_FILE)
 
             with Path(items_file).open("r", encoding="utf-8") as f:
                 data = json.load(f)
