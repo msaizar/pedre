@@ -132,7 +132,7 @@ class NPCBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def has_npc_been_interacted_with(self, npc_name: str) -> bool:
+    def has_npc_been_interacted_with(self, npc_name: str, scene_name: str | None = None) -> bool:
         """Check if an NPC has been interacted with."""
         ...
 
