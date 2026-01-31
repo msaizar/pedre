@@ -109,8 +109,8 @@ class SceneManager(SceneBaseManager):
 
         # Transition state
         self.transition_state: TransitionState = TransitionState.NONE
-        self.transition_alpha: float = 0.0  # 0.0 = transparent, 1.0 = opaque
-        self.transition_speed: float = 3.0  # Alpha change per second
+        self.transition_alpha: float = settings.SCENE_TRANSITION_ALPHA
+        self.transition_speed: float = settings.SCENE_TRANSITION_SPEED
 
         # Pending transition data
         self.pending_map_file: str | None = None
@@ -132,7 +132,7 @@ class SceneManager(SceneBaseManager):
         self.current_scene = ""
         self.current_map = ""
         self.transition_state = TransitionState.NONE
-        self.transition_alpha = 0.0
+        self.transition_alpha = settings.SCENE_TRANSITION_ALPHA
         self.pending_map_file = None
         self.pending_spawn_waypoint = None
         self.wall_list.clear()
@@ -210,12 +210,12 @@ class SceneManager(SceneBaseManager):
             map_file: Filename of the .tmx map to load (e.g. "map.tmx").
 
         """
-        map_path = asset_path(f"maps/{map_file}", settings.ASSETS_HANDLE)
+        map_path = asset_path(f"{settings.SCENE_MAPS_FOLDER}/{map_file}", settings.ASSETS_HANDLE)
         logger.info("Loading map: %s", map_path)
         self.current_map = map_file
 
         # 1. Load TileMap and Scene
-        self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
+        self.tile_map = arcade.load_tilemap(map_path, scaling=settings.SCENE_TILEMAP_SCALING)
         self.arcade_scene = arcade.Scene.from_tilemap(self.tile_map)
 
         # 2. Extract collision layers (foundation for other systems)
@@ -232,9 +232,8 @@ class SceneManager(SceneBaseManager):
     def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
         """Extract collision layers into a wall list."""
         wall_list = arcade.SpriteList()
-        collision_layer_names = ["Walls", "Collision", "Objects", "Buildings"]
         if arcade_scene:
-            for layer_name in collision_layer_names:
+            for layer_name in settings.SCENE_COLLISION_LAYER_NAMES:
                 if layer_name in arcade_scene:
                     for sprite in arcade_scene[layer_name]:
                         wall_list.append(sprite)
@@ -267,7 +266,7 @@ class SceneManager(SceneBaseManager):
         self.pending_map_file = map_file
         self.pending_spawn_waypoint = spawn_waypoint
         self.transition_state = TransitionState.FADING_OUT
-        self.transition_alpha = 0.0
+        self.transition_alpha = settings.SCENE_TRANSITION_ALPHA
 
     def on_draw(self) -> None:
         """Draw the map scene and transition overlay."""
