@@ -48,7 +48,8 @@ Every script follows this basic structure:
 **Scene** (`"scene"`)
 
 - Optional: Which scene/map this script runs in
-- If omitted, script can run in any scene
+- If specified, script only runs in that scene (scene-specific)
+- If omitted, script can run in any scene (global script)
 - Example: `"scene": "village"`
 
 **Trigger** (`"trigger"`)
@@ -100,25 +101,33 @@ assets/scripts/
 
 ## Loading Scripts
 
-Scripts are automatically loaded when a scene starts. The game's `GameView.setup()` method loads the appropriate script file:
+All scripts are automatically loaded globally when the ScriptManager initializes during system setup. The manager scans the `assets/scripts/` directory for all files matching the pattern `*_scripts.json` and loads them into a single registry.
+
+**Global Loading:**
 
 ```python
-# In GameView.setup()
-script_manager.load_scripts(
-    script_path=f"assets/scripts/{scene_name}_scripts.json",
-    npc_dialogs=npc_manager.dialogs
-)
+# Scripts are loaded during setup
+script_manager = ScriptManager()
+script_manager.setup(context)  # Loads all scripts from scripts directory
 ```
 
-You don't need to manually load scripts - the system handles this automatically based on the current scene name.
+**Key Points:**
+
+- All scripts from all files are loaded at once
+- Scripts are available for condition checking across all scenes
+- The `scene` field in each script controls when it can execute
+- Scripts are reloaded on reset (new game or load game)
+
+You don't need to manually load scripts - the system handles this automatically.
 
 ## How Scripts Execute
 
 1. **Event Occurs:** Player interacts with NPC, closes dialog, etc.
-2. **Matching:** Script manager finds all scripts with matching event type
-3. **Filtering:** Checks if conditions are met (scene, trigger fields, condition checks)
-4. **Execution:** Runs the actions array sequentially
-5. **Completion:** Emits `script_complete` event when finished
+2. **Event Handling:** EventBus publishes event to all subscribers
+3. **Matching:** Script manager finds all scripts with matching event type in trigger
+4. **Filtering:** Checks if trigger fields match, scene matches, and conditions are met
+5. **Execution:** Runs the actions array sequentially
+6. **Completion:** Emits `script_complete` event when finished
 
 ## Script Properties
 
@@ -210,7 +219,7 @@ Break long action sequences into multiple scripts using `script_complete`:
   "part2": {
     "trigger": {
       "event": "script_complete",
-      "script_name": "part1"
+      "script": "part1"
     },
     "actions": [...]
   }
@@ -241,6 +250,15 @@ Break long action sequences into multiple scripts using `script_complete`:
       "npc": "elder"
     },
     "actions": [...]
+  },
+  "global_item_pickup": {
+    // No scene property - runs in ANY scene
+    "trigger": {
+      "event": "item_acquired"
+    },
+    "actions": [
+      {"type": "play_sfx", "file": "pickup.wav"}
+    ]
   }
 }
 ```

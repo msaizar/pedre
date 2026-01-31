@@ -437,14 +437,15 @@ This restores:
 - Player position and state
 - Interactive object states
 
-### 6. Load Dialogs and Scripts
+### 6. Load Dialogs
 
-Scene-specific dialogs and scripts are loaded:
+Scene-specific dialogs are loaded:
 
 ```python
-npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
-script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
+npc_manager.load_scene_dialogs(current_scene)
 ```
+
+Note: Scripts are loaded globally at system initialization, not per-scene. The `scene` field in script definitions controls which scene each script can execute in.
 
 ### 7. Restore Cached State
 

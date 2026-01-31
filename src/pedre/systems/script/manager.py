@@ -18,8 +18,8 @@ Key features:
 - Action sequencing with automatic continuation when async actions complete
 - Run-once scripts for one-time events
 - Scene-restricted scripts that only run in specific maps
+- Global script loading for cross-scene condition checking
 - Deferred condition checking to avoid race conditions
-- Dialog text references to avoid duplication
 - Script chaining via script_complete events
 
 Script anatomy:
@@ -38,7 +38,7 @@ Script anatomy:
 }
 
 Workflow:
-1. Scripts are loaded from JSON files during game initialization
+1. All scripts are loaded globally from the scripts directory during system setup
 2. Event triggers are registered with the EventBus
 3. When events occur, handlers check filters and trigger matching scripts
 4. Scripts check conditions, validate scene restrictions, and run_once status
@@ -81,11 +81,11 @@ class ScriptManager(ScriptBaseManager):
     """Manages loading, triggering, and execution of scripted event sequences.
 
     The ScriptManager is the central system for the game's scripting engine. It loads
-    scripts from JSON files, registers event triggers with the EventBus, evaluates
-    conditions, and executes action sequences frame-by-frame.
+    all scripts globally during setup, registers event triggers with the EventBus,
+    evaluates conditions, and executes action sequences frame-by-frame.
 
     Key responsibilities:
-    - Load and parse scripts from JSON files
+    - Load all scripts globally from the scripts directory during setup
     - Parse action data into Action objects
     - Register event triggers (dialog_closed, npc_interacted, etc.)
     - Evaluate script conditions (NPC dialog levels, inventory state, etc.)
@@ -93,44 +93,36 @@ class ScriptManager(ScriptBaseManager):
     - Track run_once scripts
     - Handle deferred condition checking to avoid race conditions
 
-    The manager maintains a registry of all loaded scripts and a list of currently
-    active sequences. Scripts are triggered by events or manual calls, and their
-    action sequences execute incrementally across multiple frames.
+    The manager maintains a registry of all loaded scripts (from all scenes) and a list
+    of currently active sequences. Scripts are triggered by events or manual calls, and
+    their action sequences execute incrementally across multiple frames. The scene field
+    in each script definition controls when it can execute.
 
     Integration points:
     - EventBus: Subscribes to game events for automatic triggering
     - GameContext: Provides access to all managers for action execution and conditions
     - Action classes: Instantiates and executes actions from JSON data
-    - NPC/Dialog/Inventory managers: Used for condition evaluation
+    - Condition system: Used for condition evaluation across all managers
 
     Attributes:
-        event_bus: The EventBus for subscribing to and publishing events.
-        scripts: Registry of all loaded scripts, keyed by script name.
+        scripts: Registry of all loaded scripts (from all scenes), keyed by script name.
         active_sequences: List of currently executing (script_name, ActionSequence) tuples.
         _pending_script_checks: Scripts queued for deferred condition checking.
+        _subscribed_events: Set of event types subscribed to (prevents duplicate handlers).
 
     Example usage:
-        # Initialize
+        # Initialize (loads all scripts globally)
         script_manager = ScriptManager()
-        script_manager.setup(context, settings)
-
-        # Load scripts from file
-        script_manager.load_scripts("data/scripts.json", npc_dialog_data)
+        script_manager.setup(context)
 
         # Game loop
         def update(delta_time):
             script_manager.update(delta_time)
 
-        # Manual trigger
-        script_manager.trigger_script("intro_cutscene")
     """
 
     name: ClassVar[str] = "script"
     dependencies: ClassVar[list[str]] = []
-
-    # Class-level cache for per-scene script JSON data (lazy loaded).
-    # Maps scene name to raw JSON data loaded from script files.
-    _script_cache: ClassVar[dict[str, dict[str, Any]]] = {}
 
     def __init__(self) -> None:
         """Initialize script manager."""
@@ -143,11 +135,18 @@ class ScriptManager(ScriptBaseManager):
     def setup(self, context: GameContext) -> None:
         """Set up the script system.
 
+        Loads all scripts globally from the scripts directory so they're available
+        for conditions across all scenes.
+
         Args:
             context: Game context containing all systems.
         """
         super().setup(context)
         self.context = context
+
+        # Load all scripts globally at initialization
+        self._load_all_scripts()
+
         self._register_event_handlers()
 
     def cleanup(self) -> None:
@@ -162,13 +161,19 @@ class ScriptManager(ScriptBaseManager):
     def reset(self) -> None:
         """Reset script system for new game.
 
-        Clears all scripts and active sequences while preserving system wiring.
+        Clears all runtime state (active sequences, completion flags) and reloads
+        all scripts from disk so the system is ready for a new or loaded game.
         """
         self.context.event_bus.unregister_all(self)
 
         self.scripts.clear()
         self.active_sequences.clear()
         self._subscribed_events.clear()
+
+        # Reload all scripts and re-register event handlers so the system
+        # is functional after reset (needed for both new games and loaded games).
+        self._load_all_scripts()
+        self._register_event_handlers()
 
     def get_scripts(self) -> dict[str, Script]:
         """Get scripts."""
@@ -185,14 +190,6 @@ class ScriptManager(ScriptBaseManager):
             "run_once_scripts": [name for name, script in self.scripts.items() if script.has_run],
         }
 
-    def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
-        """Return state to cache during scene transitions."""
-        return self.get_save_state()
-
-    def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
-        """Restore cached state when returning to a scene."""
-        self.restore_save_state(state)
-
     def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore script system state from save file.
 
@@ -203,14 +200,6 @@ class ScriptManager(ScriptBaseManager):
             for name in state["completed_scripts"]:
                 if name in self.scripts:
                     self.scripts[name].completed = True
-                else:
-                    # We might load a save that has completion data for a script
-                    # that isn't loaded yet (e.g. from another scene).
-                    # Ideally we'd store this separately, but for now we warn/ignore
-                    # or better: we can't easily set it on a script object that doesn't exist.
-                    # However, since scripts are usually loaded per-scene or globally,
-                    # we only care about scripts currently in memory.
-                    pass
 
         # Restore run-once history (critical for not re-running one-time events)
         if "run_once_scripts" in state:
@@ -218,71 +207,45 @@ class ScriptManager(ScriptBaseManager):
                 if name in self.scripts:
                     self.scripts[name].has_run = True
 
-    def load_scripts(self, script_path: str, npc_dialogs: dict[str, Any]) -> None:
-        """Load scripts from JSON file and register event triggers.
+    def _load_all_scripts(self) -> None:
+        """Load all scripts from the scripts directory.
 
-        Reads a JSON file containing script definitions, parses them into Script objects,
-        and registers any event triggers with the EventBus. This is typically called once
-        during game initialization.
-
-        The JSON file should contain a dictionary where keys are script names and values
-        are script definitions with optional trigger, conditions, scene, run_once, and
-        actions fields.
-
-        Args:
-            script_path: Absolute or relative path to the script JSON file.
-            npc_dialogs: Dictionary of NPC dialog data for resolving text_from references.
-                        Format: {npc_name: {dialog_level: {"text": [...]}}}
-
-        Example JSON structure:
-            {
-                "script_name": {
-                    "trigger": {"event": "dialog_closed", "npc": "martin"},
-                    "conditions": [{"check": "inventory_accessed", "equals": true}],
-                    "scene": "village",
-                    "run_once": true,
-                    "actions": [...]
-                }
-            }
+        Scans the scripts directory for all *_scripts.json files and loads them globally.
+        This makes all scripts available for conditions regardless of the current scene.
+        The scene field in each script definition controls when it can actually execute.
         """
-        self._load_script_file(script_path, npc_dialogs)
+        try:
+            scripts_dir = Path(asset_path("scripts", settings.ASSETS_HANDLE))
+            if not scripts_dir.exists():
+                logger.warning("Scripts directory not found: %s", scripts_dir)
+                return
 
-    def load_scene_scripts(self, scene_name: str, npc_dialogs_data: dict[str, Any]) -> dict[str, Any]:
-        """Load and cache scripts for a specific scene.
+            # Find all script files
+            script_files = list(scripts_dir.glob("*_scripts.json"))
+            if not script_files:
+                logger.info("No script files found in %s", scripts_dir)
+                return
 
-        Args:
-            scene_name: Name of the scene (map file without extension).
-            npc_dialogs_data: NPC dialog data for resolving text references.
+            # Load each script file
+            for script_file in script_files:
+                try:
+                    with script_file.open() as f:
+                        script_data = json.load(f)
 
-        Returns:
-            The loaded script data for the scene.
-        """
-        if scene_name in self._script_cache:
-            self.load_scripts_from_data(self._script_cache[scene_name], npc_dialogs_data)
-        else:
-            try:
-                scene_script_file = asset_path(f"scripts/{scene_name}_scripts.json", settings.ASSETS_HANDLE)
-                self.load_scripts(scene_script_file, npc_dialogs_data)
-                # Cache raw data
-                with Path(scene_script_file).open() as f:
-                    self._script_cache[scene_name] = json.load(f)
-            except Exception:  # noqa: BLE001
-                logger.debug("No scripts found for scene %s", scene_name)
+                    # Parse scripts and merge into global registry
+                    self._parse_scripts(script_data)
 
-        return self._script_cache.get(scene_name, {})
+                    logger.info("Loaded %d scripts from %s", len(script_data), script_file.name)
 
-    def load_scripts_from_data(self, script_data: dict[str, Any], npc_dialogs: dict[str, Any]) -> None:
-        """Load scripts from pre-loaded JSON data and register event triggers.
+                except json.JSONDecodeError:
+                    logger.exception("Failed to parse script JSON from %s", script_file)
+                except Exception:
+                    logger.exception("Failed to load script file %s", script_file)
 
-        Similar to load_scripts() but takes already-parsed JSON data instead of a file path.
-        This is useful for loading from cached script data to avoid repeated file I/O.
+            logger.info("Total scripts loaded globally: %d", len(self.scripts))
 
-        Args:
-            script_data: Dictionary containing script definitions.
-            npc_dialogs: Dictionary of NPC dialog data.
-        """
-        self._parse_scripts(script_data, npc_dialogs)
-        self._register_event_handlers()
+        except Exception:
+            logger.exception("Failed to load scripts from directory")
 
     def update(self, delta_time: float) -> None:
         """Update all active action sequences.
@@ -316,54 +279,6 @@ class ScriptManager(ScriptBaseManager):
         # Process any pending script condition checks
         if self._pending_script_checks:
             self._process_pending_checks()
-
-    def trigger_script(self, script_name: str, *, manual_trigger: bool = False) -> bool:
-        """Manually trigger a script by name.
-
-        Args:
-            script_name: Name of the script to trigger.
-            manual_trigger: If True, bypasses scene and run_once restrictions.
-
-        Returns:
-            True if script was triggered, False if not found or conditions failed.
-        """
-        if not self.context:
-            return False
-
-        if script_name not in self.scripts:
-            logger.warning("ScriptManager: Script '%s' not found", script_name)
-            return False
-
-        script = self.scripts[script_name]
-
-        # Check scene restriction
-        if not manual_trigger and script.scene and script.scene != self.context.scene_manager.get_current_scene():
-            logger.debug(
-                "ScriptManager: Script '%s' scene mismatch (need: %s, current: %s)",
-                script_name,
-                script.scene,
-                self.context.scene_manager.get_current_scene(),
-            )
-            return False
-
-        # Check run_once restriction
-        if not manual_trigger and script.run_once and script.has_run:
-            logger.debug("ScriptManager: Script '%s' already ran (run_once=True)", script_name)
-            return False
-
-        # Check conditions
-        if not self._check_conditions(script.conditions):
-            logger.debug("ScriptManager: Script '%s' conditions not met", script_name)
-            return False
-
-        # Execute script
-        self._execute_script(script_name, script)
-
-        # Mark as run if run_once
-        if script.run_once:
-            script.has_run = True
-
-        return True
 
     def _register_event_handlers(self) -> None:
         """Register event handlers for all events triggered by loaded scripts."""
@@ -413,34 +328,11 @@ class ScriptManager(ScriptBaseManager):
         # Trigger scripts matching this event and data
         self._handle_event_trigger(event_name, event_data)
 
-    def _load_script_file(self, script_path: str, npc_dialogs: dict[str, Any]) -> None:
-        """Load scripts from JSON file.
-
-        Args:
-            script_path: Path to the script JSON file.
-            npc_dialogs: Dictionary of NPC dialog data.
-        """
-        try:
-            full_path = Path(script_path)
-            if not full_path.exists():
-                logger.error("ScriptManager: Script file not found: %s", script_path)
-                return
-            with Path(script_path).open() as f:
-                script_data = json.load(f)
-
-            self._parse_scripts(script_data, npc_dialogs)
-            self._register_event_handlers()
-            logger.info("ScriptManager: Loaded %d scripts from %s", len(self.scripts), script_path)
-
-        except Exception:
-            logger.exception("ScriptManager: Failed to load script file %s", script_path)
-
-    def _parse_scripts(self, script_data: dict[str, Any], npc_dialogs: dict[str, Any]) -> None:
+    def _parse_scripts(self, script_data: dict[str, Any]) -> None:
         """Parse script data into Script objects and register triggers.
 
         Args:
             script_data: Dictionary containing script definitions.
-            npc_dialogs: Dictionary of NPC dialog data.
         """
         for script_name, script_def in script_data.items():
             script = Script(
@@ -452,37 +344,9 @@ class ScriptManager(ScriptBaseManager):
                 on_condition_fail=script_def.get("on_condition_fail", []),
             )
 
-            # Process actions to resolve text_from references
-            self._process_script_actions(script, npc_dialogs)
-
             self.scripts[script_name] = script
 
         logger.debug("ScriptManager: Parsed %d scripts", len(self.scripts))
-
-    def _process_script_actions(self, script: Script, npc_dialogs: dict[str, Any]) -> None:
-        """Process script actions to resolve text_from references.
-
-        Args:
-            script: Script object whose actions to process.
-            npc_dialogs: Dictionary of NPC dialog data.
-        """
-        for action in script.actions:
-            if action.get("type") == "dialog" and "text_from" in action:
-                text_from = action["text_from"]
-                if text_from in npc_dialogs:
-                    # Use first dialog level's text
-                    dialog_levels = npc_dialogs[text_from]
-                    if dialog_levels:
-                        first_level = next(iter(dialog_levels.values()))
-                        if "text" in first_level:
-                            action["text"] = first_level["text"]
-                            del action["text_from"]
-                        else:
-                            logger.warning("ScriptManager: No text found for dialog reference: %s", text_from)
-                    else:
-                        logger.warning("ScriptManager: No dialog levels found for: %s", text_from)
-                else:
-                    logger.warning("ScriptManager: Dialog reference not found: %s", text_from)
 
     def _check_conditions(self, conditions: list[dict[str, Any]]) -> bool:
         """Check if all conditions are satisfied.
@@ -630,24 +494,3 @@ class ScriptManager(ScriptBaseManager):
                 return False
 
         return True
-
-    def get_completed_scripts(self) -> list[str]:
-        """Get names of all scripts that have fully completed.
-
-        Returns:
-            List of script names that have completed all actions.
-        """
-        return [name for name, script in self.scripts.items() if script.completed]
-
-    def restore_completed_scripts(self, completed_scripts: list[str]) -> None:
-        """Restore completed state for scripts.
-
-        Args:
-            completed_scripts: List of script names to mark as completed.
-        """
-        for name in completed_scripts:
-            if name in self.scripts:
-                self.scripts[name].completed = True
-                self.scripts[name].has_run = True  # Also mark as run for run_once
-            else:
-                logger.warning("ScriptManager: Cannot restore unknown script: %s", name)
