@@ -4,9 +4,9 @@ Handles map transitions through an event-driven system integrated with the scrip
 
 ## Location
 
-- Implementation: [src/pedre/systems/portal/manager.py](../../src/pedre/systems/portal/manager.py)
-- Base class: [src/pedre/systems/portal/base.py](../../src/pedre/systems/portal/base.py)
-- Events: [src/pedre/systems/portal/events.py](../../src/pedre/systems/portal/events.py)
+- Implementation: [src/pedre/systems/portal/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/manager.py)
+- Base class: [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
+- Events: [src/pedre/systems/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/events.py)
 
 ## Configuration
 
@@ -170,7 +170,7 @@ Load portals from Tiled map object layer.
 
 Runtime data for a single portal.
 
-**Location:** [src/pedre/systems/portal/base.py](../../src/pedre/systems/portal/base.py)
+**Location:** [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
 
 **Attributes:**
 
@@ -200,7 +200,7 @@ portal = Portal(
 
 Published when player enters a portal zone.
 
-**Location:** [src/pedre/systems/portal/events.py](../../src/pedre/systems/portal/events.py)
+**Location:** [src/pedre/systems/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/events.py)
 
 **Attributes:**
 

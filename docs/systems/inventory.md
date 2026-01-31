@@ -4,11 +4,11 @@ Manages player's inventory and item collection with a visual grid overlay.
 
 ## Location
 
-- Implementation: [src/pedre/systems/inventory/manager.py](../../src/pedre/systems/inventory/manager.py)
-- Base class: [src/pedre/systems/inventory/base.py](../../src/pedre/systems/inventory/base.py)
-- Events: [src/pedre/systems/inventory/events.py](../../src/pedre/systems/inventory/events.py)
-- Actions: [src/pedre/systems/inventory/actions.py](../../src/pedre/systems/inventory/actions.py)
-- Conditions: [src/pedre/systems/inventory/conditions.py](../../src/pedre/systems/inventory/conditions.py)
+- Implementation: [src/pedre/systems/inventory/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/manager.py)
+- Base class: [src/pedre/systems/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/base.py)
+- Events: [src/pedre/systems/inventory/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/events.py)
+- Actions: [src/pedre/systems/inventory/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/actions.py)
+- Conditions: [src/pedre/systems/inventory/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/conditions.py)
 
 ## Configuration
 
@@ -845,7 +845,7 @@ If you need to replace the inventory system with a custom implementation, you ca
 
 ### InventoryBaseManager
 
-**Location:** [src/pedre/systems/inventory/base.py](../../src/pedre/systems/inventory/base.py)
+**Location:** [src/pedre/systems/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/base.py)
 
 The `InventoryBaseManager` class defines the minimum interface that any inventory manager must implement.
 

@@ -4,10 +4,10 @@ Manages player spawning, movement, animation, and state.
 
 ## Location
 
-- Implementation: [src/pedre/systems/player/manager.py](../../src/pedre/systems/player/manager.py)
-- Base class: [src/pedre/systems/player/base.py](../../src/pedre/systems/player/base.py)
-- Sprites: [src/pedre/systems/player/sprites.py](../../src/pedre/systems/player/sprites.py)
-- Types: [src/pedre/systems/player/types.py](../../src/pedre/systems/player/types.py)
+- Implementation: [src/pedre/systems/player/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/manager.py)
+- Base class: [src/pedre/systems/player/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/base.py)
+- Sprites: [src/pedre/systems/player/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/sprites.py)
+- Types: [src/pedre/systems/player/types.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/types.py)
 
 ## Configuration
 
@@ -428,7 +428,7 @@ If you need to replace the player system with a custom implementation, you can e
 
 ### PlayerBaseManager
 
-**Location:** [src/pedre/systems/player/base.py](../../src/pedre/systems/player/base.py)
+**Location:** [src/pedre/systems/player/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/base.py)
 
 The `PlayerBaseManager` class defines the minimum interface that any player manager must implement.
 

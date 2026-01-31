@@ -4,9 +4,9 @@ Manages particle effects and visual polish.
 
 ## Location
 
-- Implementation: [src/pedre/systems/particle/manager.py](../../src/pedre/systems/particle/manager.py)
-- Base class: [src/pedre/systems/particle/base.py](../../src/pedre/systems/particle/base.py)
-- Actions: [src/pedre/systems/particle/actions.py](../../src/pedre/systems/particle/actions.py)
+- Implementation: [src/pedre/systems/particle/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/manager.py)
+- Base class: [src/pedre/systems/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/base.py)
+- Actions: [src/pedre/systems/particle/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/actions.py)
 
 ## Configuration
 
@@ -527,7 +527,7 @@ If you need to replace the particle system with a custom implementation, you can
 
 ### ParticleBaseManager
 
-**Location:** [src/pedre/systems/particle/base.py](../../src/pedre/systems/particle/base.py)
+**Location:** [src/pedre/systems/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/base.py)
 
 The `ParticleBaseManager` class defines the minimum interface that any particle manager must implement.
 

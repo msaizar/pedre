@@ -4,8 +4,8 @@ Manages named positions in the map used for NPC navigation, player spawning, and
 
 ## Location
 
-- Implementation: [src/pedre/systems/waypoint/manager.py](../../src/pedre/systems/waypoint/manager.py)
-- Base class: [src/pedre/systems/waypoint/base.py](../../src/pedre/systems/waypoint/base.py)
+- Implementation: [src/pedre/systems/waypoint/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/manager.py)
+- Base class: [src/pedre/systems/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/base.py)
 
 ## Overview
 
@@ -294,7 +294,7 @@ If you need to replace the waypoint system with a custom implementation, you can
 
 ### WaypointBaseManager
 
-**Location:** [src/pedre/systems/waypoint/base.py](../../src/pedre/systems/waypoint/base.py)
+**Location:** [src/pedre/systems/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/base.py)
 
 The `WaypointBaseManager` class defines the minimum interface that any waypoint manager must implement.
 

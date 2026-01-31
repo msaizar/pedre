@@ -4,8 +4,8 @@ Manages scene state cache to preserve system states when the player transitions 
 
 ## Location
 
-- Implementation: [src/pedre/systems/cache/manager.py](../../src/pedre/systems/cache/manager.py)
-- Base class: [src/pedre/systems/cache/base.py](../../src/pedre/systems/cache/base.py)
+- Implementation: [src/pedre/systems/cache/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/cache/manager.py)
+- Base class: [src/pedre/systems/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/cache/base.py)
 
 ## Overview
 
@@ -355,7 +355,7 @@ If you need to replace the cache system with a custom implementation, you can ex
 
 ### CacheBaseManager
 
-**Location:** [src/pedre/systems/cache/base.py](../../src/pedre/systems/cache/base.py)
+**Location:** [src/pedre/systems/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/cache/base.py)
 
 The `CacheBaseManager` class defines the minimum interface that any cache manager must implement.
 

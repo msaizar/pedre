@@ -4,7 +4,7 @@ Displays development information overlays showing player and NPC positions in ti
 
 ## Location
 
-- Implementation: [src/pedre/systems/debug/manager.py](../../src/pedre/systems/debug/manager.py)
+- Implementation: [src/pedre/systems/debug/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/debug/manager.py)
 
 ## Configuration
 

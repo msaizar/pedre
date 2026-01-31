@@ -4,8 +4,8 @@ Manages game state persistence with auto-save, manual save slots, and quick save
 
 ## Location
 
-- Implementation: [src/pedre/systems/save/manager.py](../../src/pedre/systems/save/manager.py)
-- Base class: [src/pedre/systems/save/base.py](../../src/pedre/systems/save/base.py)
+- Implementation: [src/pedre/systems/save/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/save/manager.py)
+- Base class: [src/pedre/systems/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/save/base.py)
 
 ## Configuration
 
@@ -560,7 +560,7 @@ If you need to replace the save system with a custom implementation, you can ext
 
 ### SaveBaseManager
 
-**Location:** [src/pedre/systems/save/base.py](../../src/pedre/systems/save/base.py)
+**Location:** [src/pedre/systems/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/save/base.py)
 
 The `SaveBaseManager` class defines the minimum interface that any save manager must implement.
 

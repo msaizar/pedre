@@ -4,10 +4,10 @@ Manages dialog display and pagination for game conversations.
 
 ## Location
 
-- Implementation: [src/pedre/systems/dialog/manager.py](../../src/pedre/systems/dialog/manager.py)
-- Base class: [src/pedre/systems/dialog/base.py](../../src/pedre/systems/dialog/base.py)
-- Events: [src/pedre/systems/dialog/events.py](../../src/pedre/systems/dialog/events.py)
-- Actions: [src/pedre/systems/dialog/actions.py](../../src/pedre/systems/dialog/actions.py)
+- Implementation: [src/pedre/systems/dialog/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/manager.py)
+- Base class: [src/pedre/systems/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/base.py)
+- Events: [src/pedre/systems/dialog/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/events.py)
+- Actions: [src/pedre/systems/dialog/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/actions.py)
 
 ## Configuration
 
@@ -524,7 +524,7 @@ If you need to replace the dialog system with a custom implementation, you can e
 
 ### DialogBaseManager
 
-**Location:** [src/pedre/systems/dialog/base.py](../../src/pedre/systems/dialog/base.py)
+**Location:** [src/pedre/systems/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/base.py)
 
 The `DialogBaseManager` class defines the minimum interface that any dialog manager must implement.
 

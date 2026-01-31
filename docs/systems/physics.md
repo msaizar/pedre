@@ -4,8 +4,8 @@ Manages collision detection and physics simulation for the player sprite using A
 
 ## Location
 
-- Implementation: [src/pedre/systems/physics/manager.py](../../src/pedre/systems/physics/manager.py)
-- Base class: [src/pedre/systems/physics/base.py](../../src/pedre/systems/physics/base.py)
+- Implementation: [src/pedre/systems/physics/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/manager.py)
+- Base class: [src/pedre/systems/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/base.py)
 
 ## Overview
 
@@ -275,7 +275,7 @@ If you need advanced physics behavior, you can extend the `PhysicsBaseManager` a
 
 ### PhysicsBaseManager
 
-**Location:** [src/pedre/systems/physics/base.py](../../src/pedre/systems/physics/base.py)
+**Location:** [src/pedre/systems/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/base.py)
 
 The `PhysicsBaseManager` class defines the minimum interface for physics systems.
 

@@ -4,10 +4,10 @@ Manages scene transitions, map loading, lifecycle, and collision detection.
 
 ## Location
 
-- Implementation: [src/pedre/systems/scene/manager.py](../../src/pedre/systems/scene/manager.py)
-- Base class: [src/pedre/systems/scene/base.py](../../src/pedre/systems/scene/base.py)
-- Events: [src/pedre/systems/scene/events.py](../../src/pedre/systems/scene/events.py)
-- Actions: [src/pedre/systems/scene/actions.py](../../src/pedre/systems/scene/actions.py)
+- Implementation: [src/pedre/systems/scene/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/manager.py)
+- Base class: [src/pedre/systems/scene/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/base.py)
+- Events: [src/pedre/systems/scene/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/events.py)
+- Actions: [src/pedre/systems/scene/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/actions.py)
 
 ## Configuration
 
@@ -811,7 +811,7 @@ If you need to replace the scene system with a custom implementation, you can ex
 
 ### SceneBaseManager
 
-**Location:** [src/pedre/systems/scene/base.py](../../src/pedre/systems/scene/base.py)
+**Location:** [src/pedre/systems/scene/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/base.py)
 
 The `SceneBaseManager` class defines the minimum interface that any scene manager must implement.
 

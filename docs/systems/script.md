@@ -4,10 +4,10 @@ Event-driven scripting system for cutscenes and interactive sequences.
 
 ## Location
 
-- Implementation: [src/pedre/systems/script/manager.py](../../src/pedre/systems/script/manager.py)
-- Base class: [src/pedre/systems/script/base.py](../../src/pedre/systems/script/base.py)
-- Events: [src/pedre/systems/script/events.py](../../src/pedre/systems/script/events.py)
-- Conditions: [src/pedre/systems/script/conditions.py](../../src/pedre/systems/script/conditions.py)
+- Implementation: [src/pedre/systems/script/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/manager.py)
+- Base class: [src/pedre/systems/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/base.py)
+- Events: [src/pedre/systems/script/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/events.py)
+- Conditions: [src/pedre/systems/script/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/conditions.py)
 
 ## Configuration
 
@@ -556,7 +556,7 @@ If you need to replace the script system with a custom implementation, you can e
 
 ### ScriptBaseManager
 
-**Location:** [src/pedre/systems/script/base.py](../../src/pedre/systems/script/base.py)
+**Location:** [src/pedre/systems/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/base.py)
 
 The `ScriptBaseManager` class defines the minimum interface that any script manager must implement.
 

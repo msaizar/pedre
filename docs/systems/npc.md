@@ -4,12 +4,12 @@ Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 
 ## Location
 
-- Implementation: [src/pedre/systems/npc/manager.py](../../src/pedre/systems/npc/manager.py)
-- Base class: [src/pedre/systems/npc/base.py](../../src/pedre/systems/npc/base.py)
-- Events: [src/pedre/systems/npc/events.py](../../src/pedre/systems/npc/events.py)
-- Actions: [src/pedre/systems/npc/actions.py](../../src/pedre/systems/npc/actions.py)
-- Conditions: [src/pedre/systems/npc/conditions.py](../../src/pedre/systems/npc/conditions.py)
-- Sprites: [src/pedre/systems/npc/sprites.py](../../src/pedre/systems/npc/sprites.py)
+- Implementation: [src/pedre/systems/npc/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/manager.py)
+- Base class: [src/pedre/systems/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/base.py)
+- Events: [src/pedre/systems/npc/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/events.py)
+- Actions: [src/pedre/systems/npc/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/actions.py)
+- Conditions: [src/pedre/systems/npc/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/conditions.py)
+- Sprites: [src/pedre/systems/npc/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/sprites.py)
 
 ## Configuration
 
@@ -1335,7 +1335,7 @@ If you need to replace the NPC system with a custom implementation, you can exte
 
 ### NPCBaseManager
 
-**Location:** [src/pedre/systems/npc/base.py](../../src/pedre/systems/npc/base.py)
+**Location:** [src/pedre/systems/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/base.py)
 
 The `NPCBaseManager` class defines the minimum interface that any NPC manager must implement.
 
