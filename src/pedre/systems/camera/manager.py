@@ -469,22 +469,18 @@ class CameraManager(CameraBaseManager):
             else:
                 # Validate NPC exists
                 npc_manager = self.context.npc_manager
-                if npc_manager:
-                    # NPCs are registered during load_from_tiled phase
-                    # We can check if NPC will exist (it's in the map)
-                    npc_state = npc_manager.get_npc_by_name(npc_name)
-                    if npc_state is None:
-                        logger.warning(
-                            "camera_follow references NPC '%s' which does not exist, using 'player'",
-                            npc_name,
-                        )
-                        config = {"mode": "player", "smooth": camera_smooth}
-                    else:
-                        logger.info("Camera will follow NPC: %s", npc_name)
-                        config = {"mode": "npc", "target": npc_name, "smooth": camera_smooth}
-                else:
-                    logger.warning("NPCManager not available, cannot follow NPC, using 'player'")
+                # NPCs are registered during load_from_tiled phase
+                # We can check if NPC will exist (it's in the map)
+                npc_state = npc_manager.get_npc_by_name(npc_name)
+                if npc_state is None:
+                    logger.warning(
+                        "camera_follow references NPC '%s' which does not exist, using 'player'",
+                        npc_name,
+                    )
                     config = {"mode": "player", "smooth": camera_smooth}
+                else:
+                    logger.info("Camera will follow NPC: %s", npc_name)
+                    config = {"mode": "npc", "target": npc_name, "smooth": camera_smooth}
         else:
             logger.warning("Invalid camera_follow value: '%s', using 'player'", camera_follow)
             config = {"mode": "player", "smooth": camera_smooth}

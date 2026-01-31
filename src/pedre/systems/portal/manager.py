@@ -157,6 +157,7 @@ class PortalManager(BaseSystem):
 
         for portal in portal_layer:
             if not portal.name or not portal.properties or not portal.shape:
+                logger.warning("Portal object missing name, properties, or shape, skipping")
                 continue
 
             # Extract shape geometry
@@ -174,6 +175,7 @@ class PortalManager(BaseSystem):
                     xs.append(float(portal.shape[0]))
                     ys.append(float(portal.shape[1]))
             else:
+                logger.warning("Portal '%s' has invalid shape, skipping", portal.name)
                 continue
 
             # Create sprite for portal trigger zone

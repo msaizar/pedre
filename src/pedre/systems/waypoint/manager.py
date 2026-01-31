@@ -60,32 +60,39 @@ class WaypointManager(WaypointBaseManager):
             return
 
         for waypoint in waypoint_layer:
-            # Ensure shape is a list/tuple of coordinates with at least 2 elements
-            if (
-                waypoint.name
-                and waypoint.shape
-                and isinstance(waypoint.shape, (list, tuple))
-                and len(waypoint.shape) >= 2
-            ):
-                # For waypoints, shape should be [x, y] coordinates
-                shape_x = waypoint.shape[0]
-                shape_y = waypoint.shape[1]
+            if not waypoint.name:
+                logger.warning("Waypoint object missing 'name', skipping")
+                continue
 
-                # Extract numeric values
-                if isinstance(shape_x, (int, float)) and isinstance(shape_y, (int, float)):
-                    x = float(shape_x)
-                    y = float(shape_y)
-                    tile_x = int(x // settings.TILE_SIZE)
-                    tile_y = int(y // settings.TILE_SIZE)
-                    self.waypoints[waypoint.name] = (tile_x, tile_y)
-                    logger.debug(
-                        "Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
-                        waypoint.name,
-                        x,
-                        y,
-                        tile_x,
-                        tile_y,
-                    )
+            # Ensure shape is a list/tuple of coordinates with at least 2 elements
+            if not waypoint.shape or not isinstance(waypoint.shape, (list, tuple)) or len(waypoint.shape) < 2:
+                logger.warning("Waypoint '%s' has invalid shape, skipping", waypoint.name)
+                continue
+
+            # For waypoints, shape should be [x, y] coordinates
+            shape_x = waypoint.shape[0]
+            shape_y = waypoint.shape[1]
+
+            # Extract numeric values
+            if isinstance(shape_x, (int, float)) and isinstance(shape_y, (int, float)):
+                x = float(shape_x)
+                y = float(shape_y)
+                tile_x = int(x // settings.TILE_SIZE)
+                tile_y = int(y // settings.TILE_SIZE)
+                self.waypoints[waypoint.name] = (tile_x, tile_y)
+                logger.debug(
+                    "Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
+                    waypoint.name,
+                    x,
+                    y,
+                    tile_x,
+                    tile_y,
+                )
+            else:
+                logger.warning(
+                    "Waypoint '%s' has non-numeric coordinates, skipping",
+                    waypoint.name,
+                )
 
         logger.info("Loaded %d waypoints", len(self.waypoints))
 

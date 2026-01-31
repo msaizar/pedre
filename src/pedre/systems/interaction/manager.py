@@ -135,6 +135,7 @@ class InteractionManager(InteractionBaseManager):
 
         for obj in interactive_layer:
             if not obj.name:
+                logger.warning("Interactive object missing 'name', skipping")
                 continue
 
             # Extract shape geometry
@@ -152,6 +153,7 @@ class InteractionManager(InteractionBaseManager):
                     xs.append(float(obj.shape[0]))
                     ys.append(float(obj.shape[1]))
             else:
+                logger.warning("Interactive object '%s' has invalid shape, skipping", obj.name)
                 continue
 
             # Create sprite for interaction zone

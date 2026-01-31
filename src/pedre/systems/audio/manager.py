@@ -678,4 +678,4 @@ class AudioManager(AudioBaseManager):
         else:
             # play_music returns False if music_enabled=False or error
             # Error logging is handled by play_music, so just log debug message
-            logger.debug("Music did not start (may be disabled or file missing): %s", music_filename)
+            logger.warning("Music did not start (may be disabled or file missing): %s", music_filename)

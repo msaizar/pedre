@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.conf.exceptions import ConfigurationError
 from pedre.constants import asset_path
 from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
 from pedre.systems.player.base import PlayerBaseManager
@@ -112,25 +111,30 @@ class PlayerManager(PlayerBaseManager):
         # Get sprite sheet properties
         sprite_sheet = player_obj.properties.get("sprite_sheet")
         if not sprite_sheet:
-            error_msg = "Player object missing required 'sprite_sheet' property"
-            logger.error(error_msg)
-            raise ConfigurationError(error_msg)
+            logger.error("Player object missing required 'sprite_sheet' property")
+            return
 
         sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
 
         # Validate tile_size if present (optional)
         tile_size = player_obj.properties.get("tile_size")
         if tile_size is not None and not isinstance(tile_size, int):
-            error_msg = f"Player property 'tile_size' must be of type int, got {type(tile_size).__name__}: {tile_size}"
-            logger.error(error_msg)
-            raise ConfigurationError(error_msg)
+            logger.warning(
+                "Player property 'tile_size' must be of type int, got %s: %s. Using default.",
+                type(tile_size).__name__,
+                tile_size,
+            )
+            tile_size = None
 
         # Validate scale if present (optional)
         scale = player_obj.properties.get("scale")
         if scale is not None and not isinstance(scale, (int, float)):
-            error_msg = f"Player property 'scale' must be of type float, got {type(scale).__name__}: {scale}"
-            logger.error(error_msg)
-            raise ConfigurationError(error_msg)
+            logger.warning(
+                "Player property 'scale' must be of type float, got %s: %s. Using default.",
+                type(scale).__name__,
+                scale,
+            )
+            scale = None
 
         # Helper to extract animation props
         anim_props = self._get_animation_properties(player_obj.properties)
@@ -255,11 +259,11 @@ class PlayerManager(PlayerBaseManager):
                 if isinstance(properties[key], int):
                     animation_props[key] = properties[key]
                 else:
-                    error_msg = (
-                        f"Animation property '{key}' must be of type int, "
-                        f"got {type(properties[key]).__name__}: {properties[key]}"
+                    logger.warning(
+                        "Animation property '%s' must be of type int, got %s: %s. Skipping.",
+                        key,
+                        type(properties[key]).__name__,
+                        properties[key],
                     )
-                    logger.error(error_msg)
-                    raise ConfigurationError(error_msg)
 
         return animation_props
