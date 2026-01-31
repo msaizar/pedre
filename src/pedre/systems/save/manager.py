@@ -170,7 +170,7 @@ class SaveManager(SaveBaseManager):
 
             # Cache the current active scene before saving (in case we never left it)
             cache_manager = self.context.cache_manager
-            cache_manager.cache_scene(scene_manager.get_current_scene(), self.context)
+            cache_manager.cache_scene(scene_manager.get_current_scene())
 
             # Create save data
             player_sprite = self.context.player_manager.get_player_sprite()

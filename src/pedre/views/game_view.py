@@ -197,7 +197,7 @@ class GameView(arcade.View):
 
         if current_map:
             cache_manager = self.view_manager.game_context.cache_manager
-            cache_manager.cache_scene(current_map, self.view_manager.game_context)
+            cache_manager.cache_scene(current_map)
 
         # Reset ALL pluggable systems generically (clears session state but keeps wiring)
         self.view_manager.system_loader.reset_all()

@@ -21,20 +21,21 @@ The CacheManager itself has no configuration settings. It operates automatically
 
 ### Scene Caching
 
-#### `cache_scene(scene_name: str, context: GameContext) -> None`
+#### cache_scene
+
+`cache_scene(scene_name: str) -> None`
 
 Cache all system states for a scene when the player is leaving.
 
 **Parameters:**
 
 - `scene_name` - Name of the scene being left
-- `context` - Game context providing access to all systems
 
 **Example:**
 
 ```python
 # Typically called automatically during scene transitions
-cache_manager.cache_scene("village", context)
+cache_manager.cache_scene("village")
 ```
 
 **Notes:**
@@ -44,14 +45,15 @@ cache_manager.cache_scene("village", context)
 - Only stores non-empty state dictionaries
 - Automatically called by SceneManager during transitions
 
-#### `restore_scene(scene_name: str, context: GameContext) -> bool`
+#### restore_scene
+
+`restore_scene(scene_name: str) -> bool`
 
 Restore cached system states for a scene when the player is returning.
 
 **Parameters:**
 
 - `scene_name` - Name of the scene being entered
-- `context` - Game context providing access to all systems
 
 **Returns:**
 
@@ -61,7 +63,7 @@ Restore cached system states for a scene when the player is returning.
 
 ```python
 # Typically called automatically during scene transitions
-restored = cache_manager.restore_scene("village", context)
+restored = cache_manager.restore_scene("village")
 if restored:
     print("Scene state restored from cache")
 else:
@@ -75,7 +77,9 @@ else:
 - Returns `False` if scene has never been cached before
 - Automatically called by SceneManager during transitions
 
-#### `has_cached_state(scene_name: str) -> bool`
+#### has_cached_state
+
+`has_cached_state(scene_name: str) -> bool`
 
 Check if a scene has cached state.
 
@@ -102,7 +106,9 @@ else:
 - Returns `False` for scenes that have never been cached
 - Does not validate the contents of cached state
 
-#### `clear() -> None`
+#### clear
+
+`clear() -> None`
 
 Clear all cached state.
 
@@ -121,7 +127,9 @@ cache_manager.clear()
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -145,7 +153,9 @@ save_data = {
 - Includes all cached scene states
 - Compatible with JSON serialization
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore cache state from save file data.
 
@@ -167,7 +177,9 @@ cache_manager.restore_save_state(save_data["cache"])
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the cache system with game context.
 
@@ -180,7 +192,9 @@ Initialize the cache system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset cache for new game.
 
@@ -374,11 +388,11 @@ class CustomCacheManager(CacheBaseManager):
     name = "cache"
     dependencies = []
 
-    def cache_scene(self, scene_name: str, context: GameContext) -> None:
+    def cache_scene(self, scene_name: str) -> None:
         """Cache all system states for a scene."""
         ...
 
-    def restore_scene(self, scene_name: str, context: GameContext) -> bool:
+    def restore_scene(self, scene_name: str) -> bool:
         """Restore cached system states for a scene."""
         ...
 ```
@@ -401,19 +415,19 @@ class DatabaseCacheManager(CacheBaseManager):
     def __init__(self):
         self.db = Database()
 
-    def cache_scene(self, scene_name: str, context: GameContext) -> None:
+    def cache_scene(self, scene_name: str) -> None:
         # Store in database instead of memory
-        for system in context.get_systems().values():
+        for system in self.context.get_systems().values():
             state = system.cache_scene_state(scene_name)
             if state:
                 self.db.store(scene_name, system.name, state)
 
-    def restore_scene(self, scene_name: str, context: GameContext) -> bool:
+    def restore_scene(self, scene_name: str) -> bool:
         # Restore from database
         if not self.db.has_scene(scene_name):
             return False
 
-        for system in context.get_systems().values():
+        for system in self.context.get_systems().values():
             state = self.db.load(scene_name, system.name)
             if state:
                 system.restore_scene_state(scene_name, state)
