@@ -57,7 +57,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.conf.exceptions import ConfigurationError
 from pedre.constants import asset_path
 from pedre.systems.audio.base import AudioBaseManager
 from pedre.systems.registry import SystemRegistry
@@ -667,9 +666,6 @@ class AudioManager(AudioBaseManager):
             return
 
         if not isinstance(music_filename, str) or not music_filename.strip():
-            error_msg = "Audio: Property 'music' must be of type str and not empty"
-            logger.error(error_msg)
-            raise ConfigurationError(error_msg)
             logger.warning("Invalid 'music' property value: %s", music_filename)
             return
 
@@ -682,4 +678,4 @@ class AudioManager(AudioBaseManager):
         else:
             # play_music returns False if music_enabled=False or error
             # Error logging is handled by play_music, so just log debug message
-            logger.error("Music did not start (may be disabled or file missing): %s", music_filename)
+            logger.warning("Music did not start (may be disabled or file missing): %s", music_filename)
