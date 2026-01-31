@@ -22,6 +22,10 @@ The DialogManager uses the following settings from `pedre.conf.settings`:
 - `DIALOG_SHOW_HELP` - Whether to show instruction text (default: `True`)
 - `DIALOG_SHOW_PAGINATION` - Whether to show page indicators (default: `True`)
 
+### Input Settings
+
+- `DIALOG_KEY_ADVANCE` - Key for advancing dialog pages and closing dialogs (default: `"SPACE"`)
+
 ### Layout Settings
 
 - `DIALOG_BOX_WIDTH_PERCENT` - Dialog box width as fraction of window width (default: `0.75`)
@@ -57,6 +61,7 @@ These can be overridden in your project's `settings.py`:
 DIALOG_AUTO_CLOSE_DEFAULT = True
 DIALOG_AUTO_CLOSE_DURATION = 1.0
 DIALOG_CHAR_REVEAL_SPEED = 30
+DIALOG_KEY_ADVANCE = "RETURN"
 DIALOG_BOX_WIDTH_PERCENT = 0.8
 DIALOG_TEXT_FONT_SIZE = 18
 ```
@@ -115,7 +120,7 @@ dialog_manager.show_dialog(
 **Notes:**
 
 - Each string in the text list becomes one page of dialog
-- Players advance through pages by pressing SPACE
+- Players advance through pages by pressing the configured `DIALOG_KEY_ADVANCE` key (default: SPACE)
 - Text reveals letter-by-letter unless `instant=True` or `settings.DIALOG_INSTANT_TEXT_DEFAULT=True`
 - Auto-close timer starts after text is fully revealed
 - Publishes `DialogOpenedEvent` when dialog is shown
@@ -303,7 +308,7 @@ Handle input for dialog advancement.
 **Notes:**
 
 - Called automatically by the SystemLoader
-- Handles SPACE key to advance pages or close dialog
+- Handles the configured `DIALOG_KEY_ADVANCE` key to advance pages or close dialog
 - Publishes `DialogClosedEvent` when dialog closes
 
 #### `on_draw_ui() -> None`

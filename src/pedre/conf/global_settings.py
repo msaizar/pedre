@@ -184,6 +184,9 @@ DIALOG_CHAR_REVEAL_SPEED = 20
 DIALOG_INSTANT_TEXT_DEFAULT = False
 """Default instant text behavior for dialogs. If True, text appears immediately without reveal animation."""
 
+DIALOG_KEY_ADVANCE = "SPACE"
+"""Key for advancing dialog pages and closing dialogs."""
+
 # Dialog UI Layout Settings
 DIALOG_BOX_WIDTH_PERCENT = 0.75
 """Dialog box width as fraction of window width (0.0-1.0). Default: 75% of window width."""

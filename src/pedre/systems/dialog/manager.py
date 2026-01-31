@@ -62,6 +62,7 @@ from typing import TYPE_CHECKING, ClassVar
 import arcade
 
 from pedre.conf import settings
+from pedre.helpers import matches_key
 from pedre.systems.dialog.base import DialogBaseManager, DialogPage
 from pedre.systems.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.systems.registry import SystemRegistry
@@ -183,7 +184,7 @@ class DialogManager(DialogBaseManager):
         Returns:
             True if dialog is showing and event was consumed.
         """
-        if self.showing and symbol == arcade.key.SPACE:
+        if self.showing and matches_key(symbol, settings.DIALOG_KEY_ADVANCE):
             closed = self.advance_page()
             if closed and self.current_npc_name is not None:
                 # Get actual current level from NPC manager if available

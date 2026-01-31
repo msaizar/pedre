@@ -201,6 +201,7 @@ Dialog system behavior, timing, and appearance.
 | `DIALOG_INSTANT_TEXT_DEFAULT` | bool | False | Whether text appears instantly by default (skips reveal animation) |
 | `DIALOG_SHOW_HELP` | bool | True | Whether to show instruction text at the bottom of the dialog |
 | `DIALOG_SHOW_PAGINATION` | bool | True | Whether to show page indicators (e.g., "Page 1/3") |
+| `DIALOG_KEY_ADVANCE` | string | "SPACE" | Key for advancing dialog pages and closing dialogs |
 
 #### Layout Settings
 
@@ -246,6 +247,7 @@ Dialog system behavior, timing, and appearance.
 - **Height calculation**: Actual height = `max(DIALOG_BOX_MIN_HEIGHT, window_height × DIALOG_BOX_HEIGHT_PERCENT)`
 - **Position**: `DIALOG_VERTICAL_POSITION` of 0.25 means the dialog center is at 25% from the bottom of the screen
 - **Overlay**: Semi-transparent overlay covers the entire screen behind the dialog. Alpha value of 128 = 50% transparency
+- **Input**: `DIALOG_KEY_ADVANCE` can be set to any arcade key constant (e.g., "RETURN", "E", "SPACE"). Keys are matched using the `matches_key()` helper function
 - **Localization**: The `DIALOG_TEXT_*` settings allow you to customize instruction text for different languages or game styles
 
 ### Audio Settings
@@ -479,6 +481,7 @@ INVENTORY_BACKGROUND_IMAGE="images/ui/inventory.png"
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
+DIALOG_KEY_ADVANCE="SPACE"
 DIALOG_BOX_WIDTH_PERCENT=0.8
 DIALOG_TEXT_FONT_SIZE=18
 
@@ -531,6 +534,7 @@ DIALOG_AUTO_CLOSE_DEFAULT: bool = False
 DIALOG_AUTO_CLOSE_DURATION: float = 0.5
 DIALOG_CHAR_REVEAL_SPEED: int = 20
 DIALOG_INSTANT_TEXT_DEFAULT: bool = False
+DIALOG_KEY_ADVANCE: str = "SPACE"
 DIALOG_SHOW_HELP: bool = True
 DIALOG_SHOW_PAGINATION: bool = True
 DIALOG_TEXT_NEXT_PAGE: str = "Press SPACE for next page"
