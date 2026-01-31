@@ -105,7 +105,7 @@ When debug mode is enabled with Shift+D, the overlay shows:
 
 ### Player Information
 
-```
+```text
 Player: tile (10, 15)
 Player: coords (320, 480)
 ```
@@ -119,7 +119,7 @@ Player: coords (320, 480)
 
 For each visible NPC:
 
-```
+```text
 merchant: tile (12, 15) level 2
 merchant: coords (384, 480) level 2
 ```
