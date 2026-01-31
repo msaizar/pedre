@@ -146,13 +146,11 @@ class SceneManager(SceneBaseManager):
         save_manager = self.context.save_manager
         save_manager.apply_entity_states()
 
-        # Get NPC and script managers for scene loading
+        # Load scene-specific dialogs
         npc_manager = self.context.npc_manager
-        script_manager = self.context.script_manager
+        npc_manager.load_scene_dialogs(current_scene)
 
-        npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
-
-        script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
+        # Scripts are loaded globally at initialization, no per-scene loading needed
 
         # Restore scene state using cache manager
         cache_manager.restore_scene(current_scene, self.context)
