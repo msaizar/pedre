@@ -584,6 +584,48 @@ portal_manager.check_portals(player_sprite)
 
 **See Also:** [Portal System Documentation](systems/portal.md)
 
+### WaypointManager
+
+Manages named positions in the map used for NPC navigation, player spawning, and portal destinations.
+
+```python
+# Access via game context
+waypoint_manager = context.waypoint_manager
+```
+
+**Key Methods:**
+
+- `get_waypoint(name: str) -> tuple[float, float] | None` - Get waypoint position by name in tile coordinates
+- `get_waypoints() -> dict[str, tuple[float, float]]` - Get all waypoints in the current map
+- `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene)` - Load waypoints from Tiled map
+- `setup(context: GameContext)` - Initialize the waypoint system
+- `reset()` - Reset waypoint manager for new game
+
+**Example:**
+
+```python
+# Get waypoint position
+waypoint = waypoint_manager.get_waypoint("town_center")
+if waypoint:
+    tile_x, tile_y = waypoint
+    # Convert to pixel coordinates if needed
+    pixel_x = tile_x * settings.TILE_SIZE
+    pixel_y = tile_y * settings.TILE_SIZE
+
+# List all waypoints
+for name, (x, y) in waypoint_manager.get_waypoints().items():
+    print(f"{name}: tile ({x}, {y})")
+```
+
+**Notes:**
+
+- Waypoints are loaded from the "Waypoints" object layer in Tiled maps
+- Coordinates are stored as tile coordinates (not pixel coordinates)
+- Waypoints are automatically cleared when transitioning to a new map
+- Used by NPCManager for movement and PortalManager for spawn points
+
+See [WaypointManager documentation](systems/waypoint.md) for detailed usage.
+
 ### ParticleManager
 
 Manages particle effects and visual polish for the game.
