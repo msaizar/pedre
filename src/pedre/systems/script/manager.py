@@ -161,13 +161,19 @@ class ScriptManager(ScriptBaseManager):
     def reset(self) -> None:
         """Reset script system for new game.
 
-        Clears all scripts and active sequences while preserving system wiring.
+        Clears all runtime state (active sequences, completion flags) and reloads
+        all scripts from disk so the system is ready for a new or loaded game.
         """
         self.context.event_bus.unregister_all(self)
 
         self.scripts.clear()
         self.active_sequences.clear()
         self._subscribed_events.clear()
+
+        # Reload all scripts and re-register event handlers so the system
+        # is functional after reset (needed for both new games and loaded games).
+        self._load_all_scripts()
+        self._register_event_handlers()
 
     def get_scripts(self) -> dict[str, Script]:
         """Get scripts."""
