@@ -645,6 +645,7 @@ class InventoryManager(InventoryBaseManager):
                     icon_path=item_data.get("icon_path"),
                     category=item_data.get("category", "general"),
                     acquired=item_data.get("acquired", False),
+                    consumable=item_data.get("consumable", False),
                 )
                 self.items[item.id] = item
 
