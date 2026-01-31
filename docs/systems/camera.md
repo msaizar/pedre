@@ -27,7 +27,9 @@ CAMERA_LERP_SPEED = 0.2  # More responsive camera
 
 ### Camera Following
 
-#### `smooth_follow(target_x: float, target_y: float) -> None`
+#### smooth_follow
+
+`smooth_follow(target_x: float, target_y: float) -> None`
 
 Smoothly move camera towards target position using linear interpolation.
 
@@ -49,7 +51,9 @@ camera_manager.smooth_follow(player.center_x, player.center_y)
 - Automatically applies boundary constraints if enabled
 - Call this every frame in your update loop for continuous following
 
-#### `instant_follow(target_x: float, target_y: float) -> None`
+#### instant_follow
+
+`instant_follow(target_x: float, target_y: float) -> None`
 
 Instantly move camera to target position without interpolation.
 
@@ -70,7 +74,9 @@ camera_manager.instant_follow(spawn_x, spawn_y)
 - Useful for scene transitions and initial positioning
 - Still respects boundary constraints if enabled
 
-#### `set_follow_player(*, smooth: bool = True) -> None`
+#### set_follow_player
+
+`set_follow_player(*, smooth: bool = True) -> None`
 
 Set camera to automatically follow the player sprite.
 
@@ -93,7 +99,9 @@ camera_manager.set_follow_player(smooth=False)
 - The camera will automatically track player position every frame
 - Called automatically when loading maps with `camera_follow: "player"` property
 
-#### `set_follow_npc(npc_name: str, *, smooth: bool = True) -> None`
+#### set_follow_npc
+
+`set_follow_npc(npc_name: str, *, smooth: bool = True) -> None`
 
 Set camera to automatically follow a specific NPC sprite.
 
@@ -114,7 +122,9 @@ camera_manager.set_follow_npc("boss", smooth=True)
 - NPC must exist in the current scene
 - Useful for cutscenes and cinematic sequences
 
-#### `stop_follow() -> None`
+#### stop_follow
+
+`stop_follow() -> None`
 
 Stop camera following, keeping it at its current position.
 
@@ -132,7 +142,9 @@ camera_manager.stop_follow()
 
 ### Boundary Management
 
-#### `set_bounds(map_width: float, map_height: float, viewport_width: float, viewport_height: float) -> None`
+#### set_bounds
+
+`set_bounds(map_width: float, map_height: float, viewport_width: float, viewport_height: float) -> None`
 
 Set camera movement boundaries based on map and viewport dimensions.
 
@@ -163,7 +175,9 @@ camera_manager.set_bounds(
 
 ### Rendering
 
-#### `use() -> None`
+#### use
+
+`use() -> None`
 
 Activate this camera for rendering world objects.
 
@@ -186,7 +200,9 @@ def on_draw(self):
 - Must be called before drawing any world objects
 - UI elements typically use a separate camera
 
-#### `set_camera(camera: arcade.camera.Camera2D) -> None`
+#### set_camera
+
+`set_camera(camera: arcade.camera.Camera2D) -> None`
 
 Set the camera to manage.
 
@@ -200,7 +216,9 @@ Set the camera to manage.
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -217,7 +235,9 @@ save_data = {
 }
 ```
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore state from save data.
 
@@ -238,7 +258,9 @@ camera_manager.restore_save_state(save_data["camera"])
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the camera system with game context.
 
@@ -251,7 +273,9 @@ Initialize the camera system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up camera resources when the scene unloads.
 
@@ -260,7 +284,9 @@ Clean up camera resources when the scene unloads.
 - Clears camera, bounds, and follow configuration
 - Called automatically by SystemLoader
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update camera position based on follow mode.
 
@@ -276,7 +302,9 @@ Update camera position based on follow mode.
 
 ### Integration Methods
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load camera configuration from a Tiled map and create the camera.
 
@@ -311,7 +339,9 @@ camera_follow: "none"             # Static camera
 camera_smooth: false              # Instant following (no interpolation)
 ```
 
-#### `apply_follow_config() -> None`
+#### apply_follow_config
+
+`apply_follow_config() -> None`
 
 Apply camera following configuration loaded from Tiled.
 
@@ -320,7 +350,9 @@ Apply camera following configuration loaded from Tiled.
 - Called by SceneManager after camera is created and set
 - Applies the configuration stored by `load_from_tiled()`
 
-#### `get_follow_config() -> dict[str, Any] | None`
+#### get_follow_config
+
+`get_follow_config() -> dict[str, Any] | None`
 
 Get the stored follow configuration.
 
