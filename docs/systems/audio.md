@@ -4,17 +4,20 @@ Manages background music and sound effects with caching.
 
 ## Location
 
-- Implementation: `src/pedre/systems/audio/manager.py`
-- Base class: `src/pedre/systems/audio/base.py`
+- Implementation: [src/pedre/systems/audio/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/manager.py)
+- Base class: [src/pedre/systems/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/base.py)
+- Actions: [src/pedre/systems/audio/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/actions.py)
 
 ## Configuration
 
 The AudioManager uses the following settings from `pedre.conf.settings`:
 
-- `AUDIO_MUSIC_VOLUME` - Default music volume (0.0 to 1.0, default: 0.5)
-- `AUDIO_MUSIC_ENABLED` - Whether music is enabled by default (default: True)
-- `AUDIO_SFX_VOLUME` - Default sound effects volume (0.0 to 1.0, default: 0.7)
-- `AUDIO_SFX_ENABLED` - Whether sound effects are enabled by default (default: True)
+### Volume and Playback Settings
+
+- `AUDIO_MUSIC_VOLUME` - Default music volume (0.0 to 1.0, default: `0.5`)
+- `AUDIO_MUSIC_ENABLED` - Whether music is enabled by default (default: `True`)
+- `AUDIO_SFX_VOLUME` - Default sound effects volume (0.0 to 1.0, default: `0.7`)
+- `AUDIO_SFX_ENABLED` - Whether sound effects are enabled by default (default: `True`)
 
 These can be overridden in your project's `settings.py`:
 
@@ -58,6 +61,7 @@ audio_manager.play_music("victory.ogg", loop=False, volume=0.9)
 - Automatically stops any currently playing music
 - Music files are cached for faster replay
 - Non-looping music uses streaming to reduce memory usage
+- If a file is being preloaded in background, waits briefly for preload to complete
 
 #### `stop_music() -> None`
 
@@ -309,6 +313,120 @@ Set a music file in the cache.
 - `cache_key` - Filename to use as cache key
 - `sound` - The `arcade.Sound` object to cache
 
+### Save/Load Support
+
+#### `get_save_state() -> dict[str, Any]`
+
+Return serializable state for saving.
+
+**Returns:**
+
+- Dictionary containing audio settings (volume levels and enabled states)
+
+**Example:**
+
+```python
+save_data = {
+    "audio": audio_manager.get_save_state(),
+    # ... other save data
+}
+```
+
+**Notes:**
+
+- Saves music volume, SFX volume, music enabled, and SFX enabled states
+- Delegates to `to_dict()`
+
+#### `restore_save_state(state: dict[str, Any]) -> None`
+
+Restore state from save data.
+
+**Parameters:**
+
+- `state` - Previously saved state dictionary
+
+**Example:**
+
+```python
+audio_manager.restore_save_state(save_data["audio"])
+```
+
+**Notes:**
+
+- Restores volume levels and enabled states
+- Does not affect currently playing audio or cached files
+- Delegates to `from_dict()`
+
+#### `to_dict() -> dict[str, bool | float]`
+
+Convert audio settings to dictionary for serialization.
+
+**Returns:**
+
+- Dictionary with keys: `music_volume`, `sfx_volume`, `music_enabled`, `sfx_enabled`
+
+**Example:**
+
+```python
+save_data = {
+    "audio": audio_manager.to_dict(),
+    # ... other save data
+}
+```
+
+#### `from_dict(data: dict[str, bool | float]) -> None`
+
+Load audio settings from a saved dictionary.
+
+**Parameters:**
+
+- `data` - Dictionary with audio settings
+
+**Example:**
+
+```python
+audio_manager.from_dict(save_data["audio"])
+```
+
+**Notes:**
+
+- Missing keys are ignored (current values are retained)
+- Volume values are clamped to 0.0-1.0 range
+
+### System Lifecycle
+
+#### `setup(context: GameContext) -> None`
+
+Initialize the audio system with game context.
+
+**Parameters:**
+
+- `context` - Game context providing access to other systems
+
+**Notes:**
+
+- Called automatically by SystemLoader
+- Stores reference to game context
+
+#### `cleanup() -> None`
+
+Clean up audio resources when the scene unloads.
+
+**Notes:**
+
+- Stops any playing music
+- Clears all caches
+- Called automatically by SystemLoader
+
+#### `reset() -> None`
+
+Reset audio system for new game.
+
+**Notes:**
+
+- Stops currently playing music
+- Keeps caches intact for performance
+
 ### Integration Methods
 
 #### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
@@ -344,13 +462,74 @@ music: "peaceful_village.ogg"
 - **Music**: `.mp3`, `.ogg`, `.wav`
 - **SFX**: `.wav`, `.ogg`, `.mp3`
 
+## Actions
+
+### PlayMusicAction
+
+Play background music.
+
+**Type:** `play_music`
+
+**Parameters:**
+
+- `file: str` - Music file name (in `assets/audio/music/`)
+- `loop: bool` - Whether to loop the music (default: `true`)
+- `volume: float` - Optional volume override (0.0 to 1.0)
+
+**Example:**
+
+```json
+{
+    "type": "play_music",
+    "file": "town_theme.ogg"
+}
+```
+
+```json
+{
+    "type": "play_music",
+    "file": "victory_fanfare.ogg",
+    "loop": false,
+    "volume": 0.8
+}
+```
+
+**Notes:**
+
+- Stops any currently playing music before starting the new track
+- Action completes immediately after starting playback
+
+### PlaySFXAction
+
+Play a sound effect.
+
+**Type:** `play_sfx`
+
+**Parameters:**
+
+- `file: str` - Sound effect file name (in `assets/audio/sfx/`)
+
+**Example:**
+
+```json
+{
+    "type": "play_sfx",
+    "file": "door_open.wav"
+}
+```
+
+**Notes:**
+
+- Action completes immediately after playing the sound
+- Multiple sound effects can play simultaneously
+
 ## Custom Audio Implementation
 
 If you need to replace the audio system with a custom implementation (e.g., for FMOD, Wwise, or a different audio backend), you can extend the `AudioBaseManager` abstract base class.
 
 ### AudioBaseManager
 
-**Location:** `src/pedre/systems/audio/base.py`
+**Location:** [src/pedre/systems/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/base.py)
 
 The `AudioBaseManager` class defines the minimum interface that any audio manager must implement. All methods are abstract and must be implemented by your custom class.
 
@@ -455,3 +634,73 @@ INSTALLED_SYSTEMS = [
     # ... rest of systems (omit "pedre.systems.audio") ...
 ]
 ```
+
+## Usage Examples
+
+### Background Music for Scenes
+
+```python
+# Play looping background music
+audio_manager.play_music("village_theme.ogg")
+
+# Switch to battle music
+audio_manager.play_music("battle.ogg")
+```
+
+### Sound Effects on Interaction
+
+```python
+# Play NPC voice when interacting
+audio_manager.play_sfx("martin.mp3")
+
+# Play UI feedback
+audio_manager.play_sfx("click.wav", volume=0.3)
+```
+
+### Scripted Audio Sequence
+
+```json
+{
+    "dramatic_entrance": {
+        "scene": "castle",
+        "trigger": {
+            "event": "portal_entered",
+            "portal": "throne_room"
+        },
+        "actions": [
+            {"type": "play_music", "file": "throne_room.ogg"},
+            {"type": "play_sfx", "file": "door_open.wav"},
+            {"type": "dialog", "speaker": "King", "text": ["Welcome to my court!"]},
+            {"type": "wait_for_dialog_close"}
+        ]
+    }
+}
+```
+
+### Pausing Audio During Menus
+
+```python
+# When opening pause menu
+audio_manager.pause_music()
+
+# When closing pause menu
+audio_manager.resume_music()
+```
+
+### Saving and Restoring Audio Settings
+
+```python
+# Save
+save_data = {"audio": audio_manager.get_save_state()}
+
+# Restore
+audio_manager.restore_save_state(save_data["audio"])
+```
+
+## See Also
+
+- [DialogManager](dialog.md) - Conversation system
+- [ScriptManager](script.md) - Event-driven scripting
+- [SaveManager](save.md) - Save/load system
+- [Configuration Guide](../configuration.md) - Audio system settings
+- [Scripting Actions](../scripting/actions.md) - Audio actions
