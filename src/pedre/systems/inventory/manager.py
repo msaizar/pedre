@@ -127,6 +127,9 @@ class InventoryManager(InventoryBaseManager):
         # All available items
         self.items: dict[str, InventoryItem] = {}
 
+        # Track dynamically added items (not from JSON file)
+        self.dynamic_items: set[str] = set()
+
         # Track if inventory has been accessed
         self.accessed: bool = False
 
@@ -171,6 +174,7 @@ class InventoryManager(InventoryBaseManager):
     def reset(self) -> None:
         """Reset inventory state for new game."""
         self.items.clear()
+        self.dynamic_items.clear()  # Clear tracking of dynamic items
         self.accessed = False
         self.showing = False
         self.viewing_photo = False
@@ -705,7 +709,8 @@ class InventoryManager(InventoryBaseManager):
             return False
 
         self.items[item.id] = item
-        logger.info("Added new item to inventory system: %s (%s)", item.id, item.name)
+        self.dynamic_items.add(item.id)  # Track as dynamically added
+        logger.info("Added new dynamically created item to inventory system: %s (%s)", item.id, item.name)
 
         # If the item is already marked as acquired, publish the event and check capacity
         if item.acquired:
@@ -931,21 +936,20 @@ class InventoryManager(InventoryBaseManager):
         """Check if inventory has been accessed."""
         return self.accessed
 
-    def to_dict(self) -> dict[str, dict[str, bool]]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert inventory state to dictionary for save data serialization.
 
         Exports the acquisition and consumption status of all items as a dictionary mapping
         item IDs to state dictionaries. This dictionary can be serialized to JSON or other
         formats for persistent storage.
 
-        Only the acquired and consumed status is saved - item definitions (name, description,
-        image) are considered part of the game's code/data and are loaded via
-        _initialize_default_items().
+        For items loaded from the JSON file, only acquired and consumed status is saved.
+        For dynamically added items (via add_item()), the full item data is saved to restore them.
 
         Returns:
-            Dictionary mapping item ID strings to state dictionaries containing acquired and
-            consumed flags. Example:
-            {"photo_01": {"acquired": True, "consumed": False}, "key": {"acquired": True, "consumed": True}}
+            Dictionary with two keys:
+            - "item_states": Maps item IDs to {acquired, consumed} for JSON-loaded items
+            - "dynamic_items": List of full item data dicts for dynamically added items
 
         Example:
             # Save to JSON file
@@ -958,24 +962,46 @@ class InventoryManager(InventoryBaseManager):
             with open("save.json", "w") as f:
                 json.dump(save_data, f)
         """
-        return {item_id: {"acquired": item.acquired, "consumed": item.consumed} for item_id, item in self.items.items()}
+        # Save state for all items
+        item_states = {
+            item_id: {"acquired": item.acquired, "consumed": item.consumed} for item_id, item in self.items.items()
+        }
 
-    def from_dict(self, data: dict[str, dict[str, bool]]) -> None:
+        # Save full data for dynamically added items
+        dynamic_item_data = []
+        for item_id in self.dynamic_items:
+            if item_id in self.items:
+                item = self.items[item_id]
+                dynamic_item_data.append(
+                    {
+                        "id": item.id,
+                        "name": item.name,
+                        "description": item.description,
+                        "image_path": item.image_path,
+                        "icon_path": item.icon_path,
+                        "category": item.category,
+                        "acquired": item.acquired,
+                        "consumed": item.consumed,
+                        "consumable": item.consumable,
+                    }
+                )
+
+        return {
+            "item_states": item_states,
+            "dynamic_items": dynamic_item_data,
+        }
+
+    def from_dict(self, data: dict[str, Any]) -> None:
         """Load inventory state from saved dictionary data.
 
         Restores the acquisition and consumption status of items from a previously saved
         dictionary. This method updates the acquired and consumed flags of existing items
-        but doesn't create new items - items must already exist in the registry (from
-        initialization).
-
-        If the save data contains item IDs that don't exist in the current registry,
-        those entries are skipped with a warning. This handles cases where items were
-        added/removed between game versions.
+        and recreates dynamically added items.
 
         Args:
-            data: Dictionary mapping item ID strings to state dictionaries containing acquired
-                 and consumed flags, typically loaded from a JSON save file.
-                 Example: {"photo_01": {"acquired": True, "consumed": False}}
+            data: Dictionary containing:
+                 - "item_states": Maps item IDs to {acquired, consumed} state
+                 - "dynamic_items": List of full item data for dynamically added items
 
         Example:
             # Load from JSON file
@@ -986,9 +1012,33 @@ class InventoryManager(InventoryBaseManager):
             inventory_mgr.from_dict(save_data["inventory"])
             # Player's inventory is now restored
         """
-        for item_id, state in data.items():
+        item_states = data.get("item_states", {})
+        dynamic_items_data = data.get("dynamic_items", [])
+
+        # Restore states for existing items
+        for item_id, state in item_states.items():
             if item_id in self.items:
                 self.items[item_id].acquired = state.get("acquired", False)
                 self.items[item_id].consumed = state.get("consumed", False)
             else:
                 logger.warning("Unknown item in save data: %s", item_id)
+
+        # Restore dynamically added items
+        for item_data in dynamic_items_data:
+            item_id = item_data["id"]
+            # Only add if not already present (avoid duplicates)
+            if item_id not in self.items:
+                item = InventoryItem(
+                    id=item_id,
+                    name=item_data["name"],
+                    description=item_data["description"],
+                    image_path=item_data.get("image_path"),
+                    icon_path=item_data.get("icon_path"),
+                    category=item_data.get("category", "general"),
+                    acquired=item_data.get("acquired", False),
+                    consumed=item_data.get("consumed", False),
+                    consumable=item_data.get("consumable", False),
+                )
+                self.items[item_id] = item
+                self.dynamic_items.add(item_id)
+                logger.info("Restored dynamically added item from save: %s (%s)", item_id, item.name)
