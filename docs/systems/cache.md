@@ -255,6 +255,7 @@ def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
 The cache system differs from the save system:
 
 **Cache System:**
+
 - **Purpose**: Preserve scene state during session
 - **Scope**: Per-scene state (NPC positions, object states in specific scenes)
 - **Lifetime**: Current game session only
@@ -262,6 +263,7 @@ The cache system differs from the save system:
 - **Methods**: `cache_scene_state()` / `restore_scene_state()`
 
 **Save System:**
+
 - **Purpose**: Persist game state across sessions
 - **Scope**: Global game state (inventory, flags, story progress)
 - **Lifetime**: Persists to disk, survives game restarts
@@ -495,12 +497,14 @@ The cache is stored as a nested dictionary:
 ### What to Cache
 
 **Do cache:**
+
 - NPC positions within a scene
 - Object interaction states (doors opened, chests looted)
 - Entity visibility states
 - Temporary scene-specific flags
 
 **Don't cache:**
+
 - Global game state (inventory, player stats)
 - Story progression flags
 - Achievement/unlock states
@@ -509,11 +513,13 @@ The cache is stored as a nested dictionary:
 ### Cache Clearing
 
 Cache should be cleared when:
+
 - Starting a new game
 - Resetting to checkpoint
 - Specific gameplay events require scene reset
 
 Cache should NOT be cleared when:
+
 - Saving the game
 - Switching between scenes normally
 - Pausing/unpausing
