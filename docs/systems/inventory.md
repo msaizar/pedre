@@ -243,48 +243,14 @@ Restore state from save data.
 inventory_manager.restore_save_state(save_data["inventory"])
 ```
 
-### Internal Serialization Methods
+**Notes:**
 
-#### `to_dict() -> dict[str, dict[str, bool]]`
+- Restores item acquired/consumed flags and accessed state
+- Dynamically added items are recreated from save data
 
-Convert inventory state to dictionary for save data serialization.
+## System Lifecycle
 
-**Returns:**
-
-- Dictionary mapping item IDs to state dictionaries with `acquired` and `consumed` flags
-
-**Example:**
-
-```python
-import json
-save_data = {
-    "inventory": inventory_manager.to_dict(),
-    "player_position": (x, y),
-}
-with open("save.json", "w") as f:
-    json.dump(save_data, f)
-```
-
-#### `from_dict(data: dict[str, dict[str, bool]]) -> None`
-
-Load inventory state from saved dictionary data.
-
-**Parameters:**
-
-- `data` - Dictionary mapping item IDs to state dictionaries
-
-**Example:**
-
-```python
-import json
-with open("save.json", "r") as f:
-    save_data = json.load(f)
-inventory_manager.from_dict(save_data["inventory"])
-```
-
-### System Lifecycle
-
-#### `setup(context: GameContext) -> None`
+### `setup(context: GameContext) -> None`
 
 Initialize the inventory system with game context.
 
@@ -297,7 +263,7 @@ Initialize the inventory system with game context.
 - Called automatically by the SystemLoader
 - Loads items from `INVENTORY_ITEMS_FILE`
 
-#### `cleanup() -> None`
+### `cleanup() -> None`
 
 Clean up inventory resources when the scene unloads.
 
@@ -306,7 +272,7 @@ Clean up inventory resources when the scene unloads.
 - Clears all items and resets accessed flag
 - Called automatically by the SystemLoader
 
-#### `reset() -> None`
+### `reset() -> None`
 
 Reset inventory state for new game.
 
@@ -315,7 +281,7 @@ Reset inventory state for new game.
 - Clears items, accessed flag, and overlay state
 - Reloads default items from JSON
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+### `on_key_press(symbol: int, modifiers: int) -> bool`
 
 Handle key presses for inventory overlay.
 
@@ -337,7 +303,7 @@ Handle key presses for inventory overlay.
 - `INVENTORY_KEY_CONSUME` (default: `C`) consumes selected item
 - `ESC` closes overlay
 
-#### `on_draw_ui() -> None`
+### `on_draw_ui() -> None`
 
 Draw the inventory overlay in screen coordinates.
 
@@ -943,37 +909,6 @@ INSTALLED_SYSTEMS = [
 
 ## Usage Examples
 
-### Basic Item Collection
-
-```python
-# When player picks up an item
-if inventory_manager.acquire_item("ancient_scroll"):
-    show_notification("Found: Ancient Scroll!")
-    audio_manager.play_sfx("item_get.wav")
-```
-
-### Conditional Door Unlock
-
-```python
-# Check for key before unlocking door
-if inventory_manager.has_item("tower_key"):
-    unlock_door("tower_entrance")
-    dialog_manager.show_dialog("Info", ["The key fits perfectly!"])
-else:
-    dialog_manager.show_dialog("Info", ["The door is locked."])
-```
-
-### Consumable Item
-
-```python
-# When player uses a health potion
-if inventory_manager.consume_item("health_potion"):
-    restore_player_health(50)
-    show_notification("HP restored!")
-else:
-    show_message("You don't have any health potions!")
-```
-
 ### Tutorial Sequence
 
 ```json
@@ -1040,3 +975,4 @@ else:
 - [Configuration Guide](../configuration.md) - Inventory system settings
 - [Scripting Actions](../scripting/actions.md) - Inventory actions
 - [Scripting Conditions](../scripting/conditions.md) - Inventory conditions
+- [Scripting Events](../scripting/events.md) - Inventory events
