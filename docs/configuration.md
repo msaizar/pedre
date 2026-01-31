@@ -508,15 +508,25 @@ INITIAL_MAP="starting_village.tmx"
 If you don't specify a setting, `pedre.conf.settings` uses these defaults:
 
 ```python
+# Window settings
 SCREEN_WIDTH: int = 1280
 SCREEN_HEIGHT: int = 720
 WINDOW_TITLE: str = "Pedre Game"
+
+# Menu settings
 MENU_TITLE: str = "Pedre Game"
 MENU_TITLE_SIZE: int = 48
 MENU_OPTION_SIZE: int = 24
 MENU_SPACING: int = 50
 MENU_BACKGROUND_IMAGE: str = ""
 MENU_MUSIC_FILES: list[str] = []
+MENU_TEXT_CONTINUE: str = "Continue"
+MENU_TEXT_NEW_GAME: str = "New Game"
+MENU_TEXT_SAVE_GAME: str = "Save Game"
+MENU_TEXT_LOAD_GAME: str = "Load Game"
+MENU_TEXT_EXIT: str = "Exit"
+
+# Player settings
 PLAYER_MOVEMENT_SPEED: float = 180.0
 TILE_SIZE: int = 32
 INTERACTION_MANAGER_DISTANCE: int = 50
@@ -524,18 +534,43 @@ INTERACTION_KEY: str = "SPACE"
 NPC_INTERACTION_DISTANCE: int = 50
 PORTAL_INTERACTION_DISTANCE: int = 50
 WAYPOINT_THRESHOLD: int = 2
+
+# NPC settings
 NPC_MOVEMENT_SPEED: float = 80.0
 NPC_WAYPOINT_THRESHOLD: int = 2
 NPC_INTERACTION_KEY: str = "SPACE"
+
+# Asset settings
 ASSETS_HANDLE: str = "game_assets"
+
+# Game settings
 INITIAL_MAP: str = "map.tmx"
+
+# Scene settings
+SCENE_TRANSITION_ALPHA: float = 0.0
+SCENE_TRANSITION_SPEED: float = 3.0
+SCENE_MAPS_FOLDER: str = "maps"
+SCENE_TILEMAP_SCALING: float = 1.0
+SCENE_COLLISION_LAYER_NAMES: list[str] = ["Walls", "Collision", "Objects", "Buildings"]
+
+# Inventory settings
 INVENTORY_GRID_COLS: int = 4
 INVENTORY_GRID_ROWS: int = 3
 INVENTORY_BOX_SIZE: int = 100
 INVENTORY_BOX_SPACING: int = 15
 INVENTORY_BOX_BORDER_WIDTH: int = 3
 INVENTORY_BACKGROUND_IMAGE: str = ""
+INVENTORY_MAX_SPACE: int = 12
+INVENTORY_CAPACITY_FONT_SIZE: int = 14
+INVENTORY_ITEMS_FILE: str = "data/inventory_items.json"
 INVENTORY_KEY_TOGGLE: str = "I"
+INVENTORY_KEY_VIEW: str = "V"
+INVENTORY_KEY_CONSUME: str = "C"
+INVENTORY_HINT_VIEW: str = "[V] View"
+INVENTORY_HINT_CONSUME: str = "[C] Consume"
+INVENTORY_HINT_FONT_SIZE: int = 12
+
+# Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT: bool = False
 DIALOG_AUTO_CLOSE_DURATION: float = 0.5
 DIALOG_CHAR_REVEAL_SPEED: int = 20
@@ -562,11 +597,24 @@ DIALOG_NPC_NAME_FONT_SIZE: int = 20
 DIALOG_TEXT_FONT_SIZE: int = 16
 DIALOG_INSTRUCTION_FONT_SIZE: int = 12
 DIALOG_PAGE_INDICATOR_FONT_SIZE: int = 10
+
+# Audio settings
 AUDIO_MUSIC_VOLUME: float = 0.5
 AUDIO_MUSIC_ENABLED: bool = True
 AUDIO_SFX_VOLUME: float = 0.7
 AUDIO_SFX_ENABLED: bool = True
+
+# Camera settings
 CAMERA_LERP_SPEED: float = 0.1
+
+# Particle settings
+PARTICLE_ENABLED: bool = True
+PARTICLE_COLOR_HEARTS: tuple[int, int, int] = (255, 105, 180)
+PARTICLE_COLOR_SPARKLES: tuple[int, int, int] = (255, 255, 100)
+PARTICLE_COLOR_TRAIL: tuple[int, int, int] = (200, 200, 255)
+PARTICLE_COLOR_BURST: tuple[int, int, int] = (255, 200, 0)
+
+# Save system settings
 SAVE_FOLDER: str = "saves"
 SAVE_QUICK_SAVE_KEY: str = "F5"
 SAVE_QUICK_LOAD_KEY: str = "F9"
