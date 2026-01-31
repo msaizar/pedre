@@ -626,6 +626,102 @@ Triggered when the player enters a portal zone.
 }
 ```
 
+### scene_start
+
+Triggered when a new scene/map finishes loading.
+
+**Available Trigger Fields:**
+
+- `scene` - Which scene started loading (optional, omit to trigger for any scene)
+
+**Example:**
+
+```json
+{
+  "forest_intro": {
+    "scene": "forest",
+    "trigger": {
+      "event": "scene_start"
+    },
+    "actions": [
+      {
+        "type": "play_music",
+        "file": "forest_ambience.ogg"
+      },
+      {
+        "type": "dialog",
+        "speaker": "Narrator",
+        "text": ["The forest is dark and mysterious..."]
+      }
+    ]
+  }
+}
+```
+
+**Example with scene filter:**
+
+```json
+{
+  "village_welcome": {
+    "trigger": {
+      "event": "scene_start",
+      "scene": "village"
+    },
+    "run_once": true,
+    "actions": [
+      {
+        "type": "dialog",
+        "speaker": "Narrator",
+        "text": ["Welcome to the village!"]
+      }
+    ]
+  }
+}
+```
+
+**Notes:**
+
+- Fires after all systems are loaded and initialized
+- Fires on every map transition and when starting new game
+- Useful for scene-specific initialization like music, cutscenes, or tutorial messages
+- For more details, see the [Scene System Documentation](../systems/scene.md)
+
+**Use Cases:**
+
+- Playing scene-specific music
+- Opening cutscenes when entering new areas
+- Tutorial messages for first-time visits
+- Quest state checks when returning to areas
+- Spawning or revealing NPCs based on game state
+
+**Scene-Specific Quest Example:**
+
+```json
+{
+  "castle_return": {
+    "trigger": {
+      "event": "scene_start",
+      "scene": "castle"
+    },
+    "conditions": [
+      {"check": "quest_complete", "quest": "gather_herbs"}
+    ],
+    "run_once": true,
+    "actions": [
+      {
+        "type": "reveal_npcs",
+        "npcs": ["king", "advisor"]
+      },
+      {
+        "type": "dialog",
+        "speaker": "King",
+        "text": ["You've returned! Did you find the herbs?"]
+      }
+    ]
+  }
+}
+```
+
 ### script_complete
 
 Triggered when another script finishes executing.

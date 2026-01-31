@@ -227,17 +227,29 @@ loader.load_systems()
 
 ### SceneManager
 
-Manages scene transitions and map loading.
+Manages scene transitions, map loading, and collision detection.
 
 ```python
 from pedre.systems import SceneManager
-# Accessed via context.get_system("scene")
+# Accessed via context.scene_manager
 ```
 
 **Methods:**
 
-- `request_transition(map_file: str, spawn_waypoint: str | None = None)` - Request smooth transition
-- `load_level(map_file: str, spawn_waypoint: str | None)` - Load map immediately
+- `request_transition(map_file: str, spawn_waypoint: str | None = None)` - Request smooth fade transition to new map
+- `load_level(map_file: str, *, initial: bool = False)` - Load map immediately without transition
+- `get_current_scene() -> str` - Get current scene name (map filename without .tmx)
+- `get_current_map() -> str` - Get current map filename
+- `get_transition_state() -> TransitionState` - Get current transition state (NONE, FADING_OUT, LOADING, FADING_IN)
+- `get_wall_list() -> arcade.SpriteList | None` - Get collision wall sprite list
+- `add_to_wall_list(sprite: arcade.Sprite)` - Add sprite to collision detection
+- `remove_from_wall_list(sprite: arcade.Sprite)` - Remove sprite from collision detection
+- `get_next_spawn_waypoint() -> str` - Get waypoint where player should spawn
+- `clear_next_spawn_waypoint()` - Clear spawn waypoint after use
+- `get_save_state() -> dict[str, Any]` - Serialize scene state for saving
+- `restore_save_state(state: dict[str, Any])` - Restore from saved state
+
+For detailed documentation, see [SceneManager System](systems/scene.md)
 
 ### InventoryManager
 

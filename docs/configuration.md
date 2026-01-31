@@ -312,6 +312,47 @@ Particle system configuration for visual effects.
     - Red burst: `PARTICLE_COLOR_BURST = (255, 0, 0)`
 - For more details, see the [ParticleManager documentation](systems/particle.md)
 
+### Scene Settings
+
+Scene transition and map loading configuration.
+
+| Setting | Type | Default | Description |
+| ------- | ---- | ------- | ----------- |
+| `SCENE_TRANSITION_ALPHA` | float | 0.0 | Starting alpha value for scene transitions (0.0 = transparent, 1.0 = opaque) |
+| `SCENE_TRANSITION_SPEED` | float | 3.0 | Speed of fade in/out transitions (higher = faster) |
+| `SCENE_MAPS_FOLDER` | string | "maps" | Folder containing Tiled .tmx map files (relative to assets) |
+| `SCENE_TILEMAP_SCALING` | float | 1.0 | Scaling factor applied to loaded tile maps |
+| `SCENE_COLLISION_LAYER_NAMES` | list[string] | ["Walls", "Collision", "Objects", "Buildings"] | Names of Tiled layers used for collision detection |
+
+**Notes:**
+
+- **Transition timing**: The total transition duration is `2.0 / SCENE_TRANSITION_SPEED` seconds
+  - Default (3.0): ~0.67 seconds total (~0.33s fade out + ~0.33s fade in)
+  - Faster (5.0): ~0.4 seconds total
+  - Slower (2.0): ~1.0 second total
+  - Very fast (10.0): ~0.2 seconds total
+- **Transition alpha**: `SCENE_TRANSITION_ALPHA` controls the starting transparency for transitions
+  - 0.0 (default): Starts fully transparent, fades to black
+  - Higher values create different effects (not recommended to change)
+- **Map folder**: `SCENE_MAPS_FOLDER` is where the SceneManager looks for .tmx files
+  - Path is relative to the assets directory
+  - Example: If `ASSETS_HANDLE` points to "assets/", then "maps" resolves to "assets/maps/"
+- **Tilemap scaling**: `SCENE_TILEMAP_SCALING` scales the entire loaded map
+  - 1.0 (default): No scaling
+  - 2.0: Double size (useful for pixel art)
+  - 0.5: Half size
+- **Collision layers**: `SCENE_COLLISION_LAYER_NAMES` defines which Tiled layers become collision walls
+  - All layers in this list are combined into a single collision wall list
+  - Layer names are case-sensitive and must match exactly
+  - Order doesn't matter (all layers are combined)
+  - Can customize to use fewer or different layer names:
+
+    ```python
+    SCENE_COLLISION_LAYER_NAMES = ["Walls"]  # Only use Walls layer
+    ```
+
+- For more details, see the [SceneManager documentation](systems/scene.md)
+
 ### Debug Settings
 
 Debug system configuration for development overlays.
