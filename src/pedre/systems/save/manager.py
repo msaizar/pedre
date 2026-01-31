@@ -246,9 +246,6 @@ class SaveManager(SaveBaseManager):
                 system.restore_save_state(save_data.save_states[system.name])
                 logger.debug("Restored metadata state to system: %s", system.name)
 
-        # Cache manager state is now handled through normal save/restore flow
-        # since it's a system
-
         logger.info("Phase 1: Restored metadata state from save data")
 
     def apply_entity_states(self) -> None:
