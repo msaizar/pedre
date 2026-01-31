@@ -198,6 +198,17 @@ A* pathfinding for NPC navigation. Enables intelligent movement around obstacles
 - Collision avoidance
 - Waypoint generation
 
+### [WaypointManager](waypoint.md)
+
+Named position management for navigation and spawning. Stores map locations used by NPCs and portals.
+
+**Key Features:**
+
+- Named position storage
+- Portal destination tracking
+- NPC movement targets
+- Tiled map integration
+
 ## Interaction & Input
 
 ### [InteractionManager](interaction.md)
