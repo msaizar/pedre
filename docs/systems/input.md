@@ -26,7 +26,9 @@ PLAYER_MOVEMENT_SPEED = 250.0  # Faster player movement
 
 ### Key Event Handling
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+#### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Register a key press event.
 
@@ -56,7 +58,9 @@ def on_key_press(symbol, modifiers):
 - Handles `arcade.key.ESCAPE` to publish `ShowMenuEvent` for the pause menu
 - Returns `True` when handling ESCAPE to prevent further processing
 
-#### `on_key_release(symbol: int, modifiers: int) -> bool`
+#### on_key_release
+
+`on_key_release(symbol: int, modifiers: int) -> bool`
 
 Register a key release event.
 
@@ -84,7 +88,9 @@ def on_key_release(symbol, modifiers):
 
 ### Movement Calculation
 
-#### `get_movement_vector(delta_time: float) -> tuple[float, float]`
+#### get_movement_vector
+
+`get_movement_vector(delta_time: float) -> tuple[float, float]`
 
 Calculate normalized movement vector from currently pressed keys.
 
@@ -125,7 +131,9 @@ player.center_y += dy
 
 ### Key State Queries
 
-#### `is_key_pressed(symbol: int) -> bool`
+#### is_key_pressed
+
+`is_key_pressed(symbol: int) -> bool`
 
 Check if a specific key is currently pressed.
 
@@ -158,7 +166,9 @@ if input_manager.is_key_pressed(arcade.key.I):
 
 ### State Management
 
-#### `clear() -> None`
+#### clear
+
+`clear() -> None`
 
 Clear all pressed keys from the input state.
 
@@ -190,7 +200,9 @@ dialog_manager.show_dialog("npc", ["Hello!"])
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -213,7 +225,9 @@ save_data = {
 - Saves `movement_speed` in case it was modified at runtime
 - Key press state is transient and not saved
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore state from save data.
 
@@ -251,7 +265,9 @@ The InputManager supports two control schemes simultaneously:
 
 ## System Lifecycle
 
-### `setup(context: GameContext) -> None`
+### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the input system with game context.
 
@@ -264,7 +280,9 @@ Initialize the input system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-### `cleanup() -> None`
+### cleanup
+
+`cleanup() -> None`
 
 Clean up input resources when the scene unloads.
 
