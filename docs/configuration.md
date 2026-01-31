@@ -79,6 +79,7 @@ Player character interaction settings.
 | ------- | ---- | ------- | ----------- |
 | `TILE_SIZE` | int | 32 | Base tile size for grid-based movement |
 | `INTERACTION_MANAGER_DISTANCE` | int | 50 | Maximum distance for player to interact with objects |
+| `INTERACTION_KEY` | string | "SPACE" | Key for interacting with objects (use arcade.key constants) |
 | `NPC_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to interact with NPCs |
 | `PORTAL_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to activate portals |
 | `WAYPOINT_THRESHOLD` | int | 2 | Distance threshold to consider waypoint reached |
@@ -89,6 +90,7 @@ Player character interaction settings.
   - Common values: 32 (1 tile), 50 (default, ~1.5 tiles), 64 (2 tiles), 96 (3 tiles)
   - Uses Euclidean distance from player center to object center
   - For more details, see the [InteractionManager documentation](systems/interaction.md)
+- `INTERACTION_KEY` can be set to any arcade key constant (e.g., "E", "SPACE", "RETURN"). Keys are matched using the `matches_key()` helper function
 - `NPC_INTERACTION_DISTANCE` determines how close the player must be to interact with NPCs
 - `PORTAL_INTERACTION_DISTANCE` determines how close the player must be to activate portals
   - Common values: 32 (1 tile), 50 (default, ~1.5 tiles), 64 (2 tiles), 96 (3 tiles)
@@ -166,6 +168,7 @@ Inventory grid layout, capacity, and appearance.
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
 | `INVENTORY_ITEMS_FILE` | string | "data/inventory_items.json" | Path to JSON file with item definitions |
+| `INVENTORY_KEY_TOGGLE` | string | "I" | Key to open/close the inventory overlay |
 | `INVENTORY_KEY_VIEW` | string | "V" | Key to view selected item in detail |
 | `INVENTORY_KEY_CONSUME` | string | "C" | Key to consume selected item |
 
@@ -201,6 +204,7 @@ Dialog system behavior, timing, and appearance.
 | `DIALOG_INSTANT_TEXT_DEFAULT` | bool | False | Whether text appears instantly by default (skips reveal animation) |
 | `DIALOG_SHOW_HELP` | bool | True | Whether to show instruction text at the bottom of the dialog |
 | `DIALOG_SHOW_PAGINATION` | bool | True | Whether to show page indicators (e.g., "Page 1/3") |
+| `DIALOG_KEY_ADVANCE` | string | "SPACE" | Key for advancing dialog pages and closing dialogs |
 
 #### Layout Settings
 
@@ -246,6 +250,7 @@ Dialog system behavior, timing, and appearance.
 - **Height calculation**: Actual height = `max(DIALOG_BOX_MIN_HEIGHT, window_height × DIALOG_BOX_HEIGHT_PERCENT)`
 - **Position**: `DIALOG_VERTICAL_POSITION` of 0.25 means the dialog center is at 25% from the bottom of the screen
 - **Overlay**: Semi-transparent overlay covers the entire screen behind the dialog. Alpha value of 128 = 50% transparency
+- **Input**: `DIALOG_KEY_ADVANCE` can be set to any arcade key constant (e.g., "RETURN", "E", "SPACE"). Keys are matched using the `matches_key()` helper function
 - **Localization**: The `DIALOG_TEXT_*` settings allow you to customize instruction text for different languages or game styles
 
 ### Audio Settings
@@ -451,6 +456,7 @@ PLAYER_MOVEMENT_SPEED=200.0
 # Player settings
 TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=60
+INTERACTION_KEY="E"
 NPC_INTERACTION_DISTANCE=60
 PORTAL_INTERACTION_DISTANCE=60
 WAYPOINT_THRESHOLD=2
@@ -479,6 +485,7 @@ INVENTORY_BACKGROUND_IMAGE="images/ui/inventory.png"
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
+DIALOG_KEY_ADVANCE="SPACE"
 DIALOG_BOX_WIDTH_PERCENT=0.8
 DIALOG_TEXT_FONT_SIZE=18
 
@@ -501,36 +508,74 @@ INITIAL_MAP="starting_village.tmx"
 If you don't specify a setting, `pedre.conf.settings` uses these defaults:
 
 ```python
+# Window settings
 SCREEN_WIDTH: int = 1280
 SCREEN_HEIGHT: int = 720
 WINDOW_TITLE: str = "Pedre Game"
+
+# Menu settings
 MENU_TITLE: str = "Pedre Game"
 MENU_TITLE_SIZE: int = 48
 MENU_OPTION_SIZE: int = 24
 MENU_SPACING: int = 50
 MENU_BACKGROUND_IMAGE: str = ""
 MENU_MUSIC_FILES: list[str] = []
+MENU_TEXT_CONTINUE: str = "Continue"
+MENU_TEXT_NEW_GAME: str = "New Game"
+MENU_TEXT_SAVE_GAME: str = "Save Game"
+MENU_TEXT_LOAD_GAME: str = "Load Game"
+MENU_TEXT_EXIT: str = "Exit"
+
+# Player settings
 PLAYER_MOVEMENT_SPEED: float = 180.0
 TILE_SIZE: int = 32
 INTERACTION_MANAGER_DISTANCE: int = 50
+INTERACTION_KEY: str = "SPACE"
 NPC_INTERACTION_DISTANCE: int = 50
 PORTAL_INTERACTION_DISTANCE: int = 50
 WAYPOINT_THRESHOLD: int = 2
+
+# NPC settings
 NPC_MOVEMENT_SPEED: float = 80.0
 NPC_WAYPOINT_THRESHOLD: int = 2
 NPC_INTERACTION_KEY: str = "SPACE"
+
+# Asset settings
 ASSETS_HANDLE: str = "game_assets"
+
+# Game settings
 INITIAL_MAP: str = "map.tmx"
+
+# Scene settings
+SCENE_TRANSITION_ALPHA: float = 0.0
+SCENE_TRANSITION_SPEED: float = 3.0
+SCENE_MAPS_FOLDER: str = "maps"
+SCENE_TILEMAP_SCALING: float = 1.0
+SCENE_COLLISION_LAYER_NAMES: list[str] = ["Walls", "Collision", "Objects", "Buildings"]
+
+# Inventory settings
 INVENTORY_GRID_COLS: int = 4
 INVENTORY_GRID_ROWS: int = 3
 INVENTORY_BOX_SIZE: int = 100
 INVENTORY_BOX_SPACING: int = 15
 INVENTORY_BOX_BORDER_WIDTH: int = 3
 INVENTORY_BACKGROUND_IMAGE: str = ""
+INVENTORY_MAX_SPACE: int = 12
+INVENTORY_CAPACITY_FONT_SIZE: int = 14
+INVENTORY_ITEMS_FILE: str = "data/inventory_items.json"
+INVENTORY_KEY_TOGGLE: str = "I"
+INVENTORY_KEY_VIEW: str = "V"
+INVENTORY_KEY_CONSUME: str = "C"
+INVENTORY_HINT_VIEW: str = "[V] View"
+INVENTORY_HINT_CONSUME: str = "[C] Consume"
+INVENTORY_HINT_FONT_SIZE: int = 12
+
+# Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT: bool = False
 DIALOG_AUTO_CLOSE_DURATION: float = 0.5
 DIALOG_CHAR_REVEAL_SPEED: int = 20
 DIALOG_INSTANT_TEXT_DEFAULT: bool = False
+DIALOG_KEY_ADVANCE: str = "SPACE"
 DIALOG_SHOW_HELP: bool = True
 DIALOG_SHOW_PAGINATION: bool = True
 DIALOG_TEXT_NEXT_PAGE: str = "Press SPACE for next page"
@@ -552,11 +597,24 @@ DIALOG_NPC_NAME_FONT_SIZE: int = 20
 DIALOG_TEXT_FONT_SIZE: int = 16
 DIALOG_INSTRUCTION_FONT_SIZE: int = 12
 DIALOG_PAGE_INDICATOR_FONT_SIZE: int = 10
+
+# Audio settings
 AUDIO_MUSIC_VOLUME: float = 0.5
 AUDIO_MUSIC_ENABLED: bool = True
 AUDIO_SFX_VOLUME: float = 0.7
 AUDIO_SFX_ENABLED: bool = True
+
+# Camera settings
 CAMERA_LERP_SPEED: float = 0.1
+
+# Particle settings
+PARTICLE_ENABLED: bool = True
+PARTICLE_COLOR_HEARTS: tuple[int, int, int] = (255, 105, 180)
+PARTICLE_COLOR_SPARKLES: tuple[int, int, int] = (255, 255, 100)
+PARTICLE_COLOR_TRAIL: tuple[int, int, int] = (200, 200, 255)
+PARTICLE_COLOR_BURST: tuple[int, int, int] = (255, 200, 0)
+
+# Save system settings
 SAVE_FOLDER: str = "saves"
 SAVE_QUICK_SAVE_KEY: str = "F5"
 SAVE_QUICK_LOAD_KEY: str = "F9"

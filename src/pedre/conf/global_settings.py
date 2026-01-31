@@ -70,6 +70,9 @@ TILE_SIZE = 32
 INTERACTION_MANAGER_DISTANCE = 50
 """Maximum distance in pixels for general interactions."""
 
+INTERACTION_KEY = "SPACE"
+"""Key for interacting with objects."""
+
 NPC_INTERACTION_DISTANCE = 50
 """Maximum distance in pixels for NPC interactions."""
 
@@ -141,6 +144,9 @@ INVENTORY_CAPACITY_FONT_SIZE = 14
 INVENTORY_ITEMS_FILE = "data/inventory_items.json"
 """Path to the inventory items JSON data file."""
 
+INVENTORY_KEY_TOGGLE = "I"
+"""Key to open/close the inventory overlay."""
+
 INVENTORY_KEY_VIEW = "V"
 """Key to view the selected item in detail (full-screen mode)."""
 
@@ -183,6 +189,9 @@ DIALOG_CHAR_REVEAL_SPEED = 20
 
 DIALOG_INSTANT_TEXT_DEFAULT = False
 """Default instant text behavior for dialogs. If True, text appears immediately without reveal animation."""
+
+DIALOG_KEY_ADVANCE = "SPACE"
+"""Key for advancing dialog pages and closing dialogs."""
 
 # Dialog UI Layout Settings
 DIALOG_BOX_WIDTH_PERCENT = 0.75

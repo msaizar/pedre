@@ -11,13 +11,20 @@ Manages interactive objects that players can activate in the game world.
 
 The InteractionManager uses the following settings from `pedre.conf.settings`:
 
+### Distance Settings
+
 - `INTERACTION_MANAGER_DISTANCE` - Maximum distance in pixels for player to interact with objects (default: 50)
 
-This can be overridden in your project's `settings.py`:
+### Input Settings
+
+- `INTERACTION_KEY` - Key for interacting with objects (default: `"SPACE"`)
+
+These can be overridden in your project's `settings.py`:
 
 ```python
 # Custom interaction settings
 INTERACTION_MANAGER_DISTANCE = 64  # Increase interaction range
+INTERACTION_KEY = "E"
 ```
 
 ## Public API
@@ -238,7 +245,7 @@ interaction_mgr.reset()
 
 #### `on_key_press(symbol: int, modifiers: int) -> bool`
 
-Handle interaction input (SPACE key).
+Handle interaction input.
 
 **Parameters:**
 
@@ -260,7 +267,7 @@ def on_key_press(self, symbol: int, modifiers: int):
 
 **Notes:**
 
-- Automatically checks for nearby objects when SPACE is pressed
+- Automatically checks for nearby objects when the configured `INTERACTION_KEY` is pressed (default: SPACE)
 - Calls `handle_interaction()` if an object is found
 - Returns `True` if interaction occurred to prevent further processing
 
@@ -333,7 +340,7 @@ The InteractionManager uses Euclidean distance to determine if objects are withi
 
 ### How It Works
 
-1. When player presses interaction key (SPACE), the manager:
+1. When player presses the configured `INTERACTION_KEY` (default: SPACE), the manager:
    - Calculates distance from player to each registered object
    - Filters objects within `interaction_distance`
    - Selects the nearest object
@@ -613,16 +620,11 @@ The primary way to handle interactions is through the script system:
 
 ### Input System
 
-The InteractionManager automatically handles the SPACE key for interactions. To use a different key:
+The InteractionManager automatically handles the configured `INTERACTION_KEY` for interactions. To use a different key, override it in your `settings.py`:
 
 ```python
-# In your custom game code
-def on_key_press(self, symbol: int, modifiers: int):
-    if symbol == arcade.key.E:  # Use E instead of SPACE
-        player = self.player_manager.get_player_sprite()
-        obj = self.interaction_manager.get_nearby_object(player)
-        if obj:
-            self.interaction_manager.handle_interaction(obj)
+# In your project's settings.py
+INTERACTION_KEY = "E"
 ```
 
 ### Scene System Integration

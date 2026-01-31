@@ -187,7 +187,7 @@ class InventoryManager(InventoryBaseManager):
     def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle key presses for inventory overlay."""
         # Toggle inventory with I key
-        if symbol == arcade.key.I and not self.showing:
+        if matches_key(symbol, settings.INVENTORY_KEY_TOGGLE) and not self.showing:
             self._show_inventory()
             return True
 
