@@ -52,6 +52,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
+from pedre.helpers import matches_key
 from pedre.systems.interaction.base import InteractionBaseManager, InteractiveObject
 from pedre.systems.interaction.events import ObjectInteractedEvent
 from pedre.systems.registry import SystemRegistry
@@ -181,11 +182,12 @@ class InteractionManager(InteractionBaseManager):
         Returns:
             True if interaction occurred.
         """
-        if symbol == arcade.key.SPACE:
+        if matches_key(symbol, settings.INTERACTION_KEY):
             player_sprite = self.context.player_manager.get_player_sprite()
             if player_sprite:
                 logger.debug(
-                    "InteractionManager: SPACE pressed, player at (%.1f, %.1f)",
+                    "InteractionManager: %s pressed, player at (%.1f, %.1f)",
+                    settings.INTERACTION_KEY,
                     player_sprite.center_x,
                     player_sprite.center_y,
                 )

@@ -70,6 +70,9 @@ TILE_SIZE = 32
 INTERACTION_MANAGER_DISTANCE = 50
 """Maximum distance in pixels for general interactions."""
 
+INTERACTION_KEY = "SPACE"
+"""Key for interacting with objects."""
+
 NPC_INTERACTION_DISTANCE = 50
 """Maximum distance in pixels for NPC interactions."""
 

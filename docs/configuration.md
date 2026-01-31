@@ -79,6 +79,7 @@ Player character interaction settings.
 | ------- | ---- | ------- | ----------- |
 | `TILE_SIZE` | int | 32 | Base tile size for grid-based movement |
 | `INTERACTION_MANAGER_DISTANCE` | int | 50 | Maximum distance for player to interact with objects |
+| `INTERACTION_KEY` | string | "SPACE" | Key for interacting with objects (use arcade.key constants) |
 | `NPC_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to interact with NPCs |
 | `PORTAL_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to activate portals |
 | `WAYPOINT_THRESHOLD` | int | 2 | Distance threshold to consider waypoint reached |
@@ -89,6 +90,7 @@ Player character interaction settings.
   - Common values: 32 (1 tile), 50 (default, ~1.5 tiles), 64 (2 tiles), 96 (3 tiles)
   - Uses Euclidean distance from player center to object center
   - For more details, see the [InteractionManager documentation](systems/interaction.md)
+- `INTERACTION_KEY` can be set to any arcade key constant (e.g., "E", "SPACE", "RETURN"). Keys are matched using the `matches_key()` helper function
 - `NPC_INTERACTION_DISTANCE` determines how close the player must be to interact with NPCs
 - `PORTAL_INTERACTION_DISTANCE` determines how close the player must be to activate portals
   - Common values: 32 (1 tile), 50 (default, ~1.5 tiles), 64 (2 tiles), 96 (3 tiles)
@@ -453,6 +455,7 @@ PLAYER_MOVEMENT_SPEED=200.0
 # Player settings
 TILE_SIZE=32
 INTERACTION_MANAGER_DISTANCE=60
+INTERACTION_KEY="E"
 NPC_INTERACTION_DISTANCE=60
 PORTAL_INTERACTION_DISTANCE=60
 WAYPOINT_THRESHOLD=2
@@ -516,6 +519,7 @@ MENU_MUSIC_FILES: list[str] = []
 PLAYER_MOVEMENT_SPEED: float = 180.0
 TILE_SIZE: int = 32
 INTERACTION_MANAGER_DISTANCE: int = 50
+INTERACTION_KEY: str = "SPACE"
 NPC_INTERACTION_DISTANCE: int = 50
 PORTAL_INTERACTION_DISTANCE: int = 50
 WAYPOINT_THRESHOLD: int = 2
