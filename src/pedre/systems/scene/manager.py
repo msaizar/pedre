@@ -150,14 +150,6 @@ class SceneManager(SceneBaseManager):
         """Add a sprite to the wall list."""
         self.wall_list.append(sprite)
 
-    def get_arcade_scene(self) -> arcade.Scene | None:
-        """Get arcade scene."""
-        return self.arcade_scene
-
-    def get_tile_map(self) -> arcade.TileMap | None:
-        """Get tile map."""
-        return self.tile_map
-
     def get_next_spawn_waypoint(self) -> str:
         """Get next spawn waypoint."""
         return self.next_spawn_waypoint
@@ -186,26 +178,22 @@ class SceneManager(SceneBaseManager):
 
         # Phase 2: Apply entity state from pending save data
         save_manager = self.context.save_manager
-        if save_manager:
-            save_manager.apply_entity_states()
+        save_manager.apply_entity_states()
 
         # Get NPC and script managers for scene loading
         npc_manager = self.context.npc_manager
         script_manager = self.context.script_manager
 
-        npc_dialogs_data = {}
-        if npc_manager:
-            npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
+        npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
 
-        if script_manager:
-            script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
+        script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
 
         # Restore scene state using cache manager
         if self._cache_manager:
             self._cache_manager.restore_scene(current_scene, self.context)
 
             # Sync wall_list with NPC visibility after restore
-            if npc_manager and self.wall_list:
+            if self.wall_list:
                 for npc_state in npc_manager.get_npcs().values():
                     if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
                         self.wall_list.remove(npc_state.sprite)
@@ -293,10 +281,6 @@ class SceneManager(SceneBaseManager):
 
     def _draw_transition_overlay(self) -> None:
         """Draw the black fade overlay."""
-        camera_manager = self.context.camera_manager
-        if camera_manager:
-            pass
-
         # Ideally we use arcade.camera.Camera2D() (default identity)
         window = arcade.get_window()
         default_cam = arcade.camera.Camera2D()

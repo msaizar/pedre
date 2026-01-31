@@ -90,16 +90,6 @@ class SceneBaseManager(BaseSystem, ABC):
         ...
 
     @abstractmethod
-    def get_arcade_scene(self) -> arcade.Scene | None:
-        """Get arcade scene."""
-        ...
-
-    @abstractmethod
-    def get_tile_map(self) -> arcade.TileMap | None:
-        """Get tile map."""
-        ...
-
-    @abstractmethod
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map."""
         ...

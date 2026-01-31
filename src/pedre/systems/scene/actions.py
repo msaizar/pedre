@@ -71,18 +71,15 @@ class ChangeSceneAction(Action):
         """Trigger the scene transition."""
         if not self.executed:
             scene_manager = context.scene_manager
-            if scene_manager:
-                scene_manager.request_transition(
-                    self.target_map,
-                    self.spawn_waypoint,
-                )
-                logger.debug(
-                    "ChangeSceneAction: Transitioning to %s (spawn: %s)",
-                    self.target_map,
-                    self.spawn_waypoint or "default",
-                )
-            else:
-                logger.warning("ChangeSceneAction: No scene_manager in context, cannot transition")
+            scene_manager.request_transition(
+                self.target_map,
+                self.spawn_waypoint,
+            )
+            logger.debug(
+                "ChangeSceneAction: Transitioning to %s (spawn: %s)",
+                self.target_map,
+                self.spawn_waypoint or "default",
+            )
             self.executed = True
 
         return True
