@@ -31,6 +31,7 @@ The InventoryManager uses the following settings from `pedre.conf.settings`:
 ### Data and Input Settings
 
 - `INVENTORY_ITEMS_FILE` - Path to JSON file with item definitions (default: "data/inventory_items.json")
+- `INVENTORY_KEY_TOGGLE` - Key to open/close the inventory overlay (default: "I")
 - `INVENTORY_KEY_VIEW` - Key to view selected item in detail (default: "V")
 - `INVENTORY_KEY_CONSUME` - Key to consume selected item (default: "C")
 
@@ -330,10 +331,10 @@ Handle key presses for inventory overlay.
 **Notes:**
 
 - Called automatically by the SystemLoader
-- Press `I` to toggle inventory overlay
+- Press the configured `INVENTORY_KEY_TOGGLE` key (default: `I`) to open the inventory overlay
 - Arrow keys navigate the grid
-- `V` views selected item in detail
-- `C` consumes selected item
+- `INVENTORY_KEY_VIEW` (default: `V`) views selected item in detail
+- `INVENTORY_KEY_CONSUME` (default: `C`) consumes selected item
 - `ESC` closes overlay
 
 #### `on_draw_ui() -> None`
@@ -808,7 +809,7 @@ Check if an inventory item was acquired.
 
 ### Opening the Inventory
 
-Press `I` to toggle the inventory overlay. The overlay shows:
+Press the configured `INVENTORY_KEY_TOGGLE` key (default: `I`) to open the inventory overlay. The overlay shows:
 
 - Grid of acquired items with icons
 - Selected item name at bottom

@@ -144,6 +144,9 @@ INVENTORY_CAPACITY_FONT_SIZE = 14
 INVENTORY_ITEMS_FILE = "data/inventory_items.json"
 """Path to the inventory items JSON data file."""
 
+INVENTORY_KEY_TOGGLE = "I"
+"""Key to open/close the inventory overlay."""
+
 INVENTORY_KEY_VIEW = "V"
 """Key to view the selected item in detail (full-screen mode)."""
 

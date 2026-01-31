@@ -168,6 +168,7 @@ Inventory grid layout, capacity, and appearance.
 | Setting | Type | Default | Description |
 | ------- | ---- | ------- | ----------- |
 | `INVENTORY_ITEMS_FILE` | string | "data/inventory_items.json" | Path to JSON file with item definitions |
+| `INVENTORY_KEY_TOGGLE` | string | "I" | Key to open/close the inventory overlay |
 | `INVENTORY_KEY_VIEW` | string | "V" | Key to view selected item in detail |
 | `INVENTORY_KEY_CONSUME` | string | "C" | Key to consume selected item |
 
@@ -534,6 +535,7 @@ INVENTORY_BOX_SIZE: int = 100
 INVENTORY_BOX_SPACING: int = 15
 INVENTORY_BOX_BORDER_WIDTH: int = 3
 INVENTORY_BACKGROUND_IMAGE: str = ""
+INVENTORY_KEY_TOGGLE: str = "I"
 DIALOG_AUTO_CLOSE_DEFAULT: bool = False
 DIALOG_AUTO_CLOSE_DURATION: float = 0.5
 DIALOG_CHAR_REVEAL_SPEED: int = 20
