@@ -30,7 +30,9 @@ INTERACTION_KEY = "E"
 
 ### Object Registration
 
-#### `register_object(sprite: arcade.Sprite, name: str, properties: dict) -> None`
+#### register_object
+
+`register_object(sprite: arcade.Sprite, name: str, properties: dict) -> None`
 
 Register an interactive object in the manager.
 
@@ -60,7 +62,9 @@ for obj in tiled_map.object_lists["Interactive"]:
 
 ### Object Queries
 
-#### `get_nearby_object(player_sprite: arcade.Sprite) -> InteractiveObject | None`
+#### get_nearby_object
+
+`get_nearby_object(player_sprite: arcade.Sprite) -> InteractiveObject | None`
 
 Get the nearest interactive object within interaction distance.
 
@@ -86,7 +90,9 @@ if nearby_obj:
 - When multiple objects are within range, the nearest one is selected automatically
 - Distance calculation uses center points of both the player sprite and object sprites
 
-#### `get_interactive_objects() -> dict[str, InteractiveObject]`
+#### get_interactive_objects
+
+`get_interactive_objects() -> dict[str, InteractiveObject]`
 
 Get all registered interactive objects.
 
@@ -104,7 +110,9 @@ for name, obj in objects.items():
 
 ### Interaction Handling
 
-#### `handle_interaction(obj: InteractiveObject) -> bool`
+#### handle_interaction
+
+`handle_interaction(obj: InteractiveObject) -> bool`
 
 Handle interaction with an object by publishing an event.
 
@@ -134,7 +142,9 @@ if obj:
 
 ### Interaction State
 
-#### `mark_as_interacted(object_name: str) -> None`
+#### mark_as_interacted
+
+`mark_as_interacted(object_name: str) -> None`
 
 Mark an object as interacted with.
 
@@ -154,7 +164,9 @@ interaction_mgr.mark_as_interacted("treasure_chest")
 - Automatically called by `handle_interaction()`
 - Used for tracking interaction state (e.g., one-time interactions)
 
-#### `has_interacted_with(object_name: str) -> bool`
+#### has_interacted_with
+
+`has_interacted_with(object_name: str) -> bool`
 
 Check if an object has been interacted with.
 
@@ -182,7 +194,9 @@ else:
 
 ### State Management
 
-#### `clear() -> None`
+#### clear
+
+`clear() -> None`
 
 Clear all registered interactive objects from the manager.
 
@@ -201,7 +215,9 @@ interaction_mgr.clear()
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -224,7 +240,9 @@ save_data = {
 - Saves the `interacted_objects` set as a list
 - Object registrations are not saved (recreated from Tiled maps on load)
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore interacted objects set from save data.
 
@@ -367,7 +385,9 @@ Objects:
 
 ## System Lifecycle
 
-### `setup(context: GameContext) -> None`
+### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the interaction system with game context.
 
@@ -380,7 +400,9 @@ Initialize the interaction system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-### `cleanup() -> None`
+### cleanup
+
+`cleanup() -> None`
 
 Clean up interaction resources when the scene unloads.
 
@@ -389,7 +411,9 @@ Clean up interaction resources when the scene unloads.
 - Clears all registered interactive objects
 - Called automatically by SystemLoader
 
-### `reset() -> None`
+### reset
+
+`reset() -> None`
 
 Reset interaction system for new game.
 
@@ -398,7 +422,9 @@ Reset interaction system for new game.
 - Clears interactive objects and interaction history
 - Called when starting a new game
 
-### `on_key_press(symbol: int, modifiers: int) -> bool`
+### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Handle key presses for object interaction.
 
@@ -417,7 +443,9 @@ Handle key presses for object interaction.
 - Checks for `INTERACTION_KEY` press (default: SPACE)
 - Finds nearby object and triggers interaction
 
-### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load interactive objects from Tiled map object layer.
 
