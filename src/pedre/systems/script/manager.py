@@ -119,8 +119,6 @@ class ScriptManager(ScriptBaseManager):
         def update(delta_time):
             script_manager.update(delta_time)
 
-        # Manual trigger
-        script_manager.trigger_script("intro_cutscene")
     """
 
     name: ClassVar[str] = "script"
@@ -196,14 +194,6 @@ class ScriptManager(ScriptBaseManager):
             for name in state["completed_scripts"]:
                 if name in self.scripts:
                     self.scripts[name].completed = True
-                else:
-                    # We might load a save that has completion data for a script
-                    # that isn't loaded yet (e.g. from another scene).
-                    # Ideally we'd store this separately, but for now we warn/ignore
-                    # or better: we can't easily set it on a script object that doesn't exist.
-                    # However, since scripts are usually loaded per-scene or globally,
-                    # we only care about scripts currently in memory.
-                    pass
 
         # Restore run-once history (critical for not re-running one-time events)
         if "run_once_scripts" in state:
@@ -283,54 +273,6 @@ class ScriptManager(ScriptBaseManager):
         # Process any pending script condition checks
         if self._pending_script_checks:
             self._process_pending_checks()
-
-    def trigger_script(self, script_name: str, *, manual_trigger: bool = False) -> bool:
-        """Manually trigger a script by name.
-
-        Args:
-            script_name: Name of the script to trigger.
-            manual_trigger: If True, bypasses scene and run_once restrictions.
-
-        Returns:
-            True if script was triggered, False if not found or conditions failed.
-        """
-        if not self.context:
-            return False
-
-        if script_name not in self.scripts:
-            logger.warning("ScriptManager: Script '%s' not found", script_name)
-            return False
-
-        script = self.scripts[script_name]
-
-        # Check scene restriction
-        if not manual_trigger and script.scene and script.scene != self.context.scene_manager.get_current_scene():
-            logger.debug(
-                "ScriptManager: Script '%s' scene mismatch (need: %s, current: %s)",
-                script_name,
-                script.scene,
-                self.context.scene_manager.get_current_scene(),
-            )
-            return False
-
-        # Check run_once restriction
-        if not manual_trigger and script.run_once and script.has_run:
-            logger.debug("ScriptManager: Script '%s' already ran (run_once=True)", script_name)
-            return False
-
-        # Check conditions
-        if not self._check_conditions(script.conditions):
-            logger.debug("ScriptManager: Script '%s' conditions not met", script_name)
-            return False
-
-        # Execute script
-        self._execute_script(script_name, script)
-
-        # Mark as run if run_once
-        if script.run_once:
-            script.has_run = True
-
-        return True
 
     def _register_event_handlers(self) -> None:
         """Register event handlers for all events triggered by loaded scripts."""
@@ -546,24 +488,3 @@ class ScriptManager(ScriptBaseManager):
                 return False
 
         return True
-
-    def get_completed_scripts(self) -> list[str]:
-        """Get names of all scripts that have fully completed.
-
-        Returns:
-            List of script names that have completed all actions.
-        """
-        return [name for name, script in self.scripts.items() if script.completed]
-
-    def restore_completed_scripts(self, completed_scripts: list[str]) -> None:
-        """Restore completed state for scripts.
-
-        Args:
-            completed_scripts: List of script names to mark as completed.
-        """
-        for name in completed_scripts:
-            if name in self.scripts:
-                self.scripts[name].completed = True
-                self.scripts[name].has_run = True  # Also mark as run for run_once
-            else:
-                logger.warning("ScriptManager: Cannot restore unknown script: %s", name)
