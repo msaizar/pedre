@@ -32,7 +32,9 @@ AUDIO_MUSIC_ENABLED = False  # Start with music muted
 
 ### Music Playback
 
-#### `play_music(filename: str, *, loop: bool = True, volume: float | None = None) -> bool`
+#### play_music
+
+`play_music(filename: str, *, loop: bool = True, volume: float | None = None) -> bool`
 
 Play background music from the `assets/audio/music/` directory.
 
@@ -63,7 +65,9 @@ audio_manager.play_music("victory.ogg", loop=False, volume=0.9)
 - Non-looping music uses streaming to reduce memory usage
 - If a file is being preloaded in background, waits briefly for preload to complete
 
-#### `stop_music() -> None`
+#### stop_music
+
+`stop_music() -> None`
 
 Stop the currently playing music immediately.
 
@@ -78,7 +82,9 @@ audio_manager.stop_music()
 - Music file remains cached and can be replayed without reloading
 - Called automatically when starting new music
 
-#### `pause_music() -> None`
+#### pause_music
+
+`pause_music() -> None`
 
 Pause the currently playing music at its current position.
 
@@ -94,7 +100,9 @@ audio_manager.pause_music()
 - Use `resume_music()` to continue from the same position
 - Use `stop_music()` if you want to restart from the beginning
 
-#### `resume_music() -> None`
+#### resume_music
+
+`resume_music() -> None`
 
 Resume paused music from where it was paused.
 
@@ -111,7 +119,9 @@ audio_manager.resume_music()
 
 ### Sound Effects
 
-#### `play_sfx(sound_name: str, *, volume: float | None = None) -> bool`
+#### play_sfx
+
+`play_sfx(sound_name: str, *, volume: float | None = None) -> bool`
 
 Play a sound effect from the `assets/audio/sfx/` directory.
 
@@ -142,7 +152,9 @@ audio_manager.play_sfx("click.wav", volume=0.3)
 
 ### Volume Control
 
-#### `set_music_volume(volume: float) -> None`
+#### set_music_volume
+
+`set_music_volume(volume: float) -> None`
 
 Set the music volume level.
 
@@ -161,7 +173,9 @@ audio_manager.set_music_volume(0.5)  # 50% volume
 - Volume is automatically clamped to 0.0-1.0 range
 - If music is currently playing, the change takes effect immediately
 
-#### `set_sfx_volume(volume: float) -> None`
+#### set_sfx_volume
+
+`set_sfx_volume(volume: float) -> None`
 
 Set the sound effects volume level.
 
@@ -182,7 +196,9 @@ audio_manager.set_sfx_volume(0.8)  # 80% volume
 
 ### Enable/Disable
 
-#### `toggle_music() -> bool`
+#### toggle_music
+
+`toggle_music() -> bool`
 
 Toggle music on/off.
 
@@ -203,7 +219,9 @@ print(f"Music is now {'on' if new_state else 'off'}")
 - When music is disabled, any currently playing music is stopped
 - When re-enabled, music does not automatically resume
 
-#### `toggle_sfx() -> bool`
+#### toggle_sfx
+
+`toggle_sfx() -> bool`
 
 Toggle sound effects on/off.
 
@@ -226,7 +244,9 @@ print(f"Sound effects are now {'on' if new_state else 'off'}")
 
 ### Cache Management
 
-#### `clear_music_cache() -> None`
+#### clear_music_cache
+
+`clear_music_cache() -> None`
 
 Clear the music cache to free memory.
 
@@ -242,7 +262,9 @@ audio_manager.clear_music_cache()
 - Music will be reloaded from disk on next use
 - May cause a brief delay when starting music again
 
-#### `clear_sfx_cache() -> None`
+#### clear_sfx_cache
+
+`clear_sfx_cache() -> None`
 
 Clear the sound effects cache to free memory.
 
@@ -258,7 +280,9 @@ audio_manager.clear_sfx_cache()
 - Sound effects will be reloaded from disk on next use
 - May cause a brief delay the first time each sound is played again
 
-#### `clear_all_caches() -> None`
+#### clear_all_caches
+
+`clear_all_caches() -> None`
 
 Clear both music and SFX caches simultaneously.
 
@@ -271,7 +295,9 @@ audio_manager.clear_all_caches()
 
 ### Advanced Methods
 
-#### `mark_music_loading(filename: str) -> None`
+#### mark_music_loading
+
+`mark_music_loading(filename: str) -> None`
 
 Mark a music file as currently being loaded in the background.
 
@@ -284,7 +310,9 @@ Mark a music file as currently being loaded in the background.
 - Used for background preloading coordination
 - `play_music()` will wait briefly if a file is being preloaded
 
-#### `unmark_music_loading(filename: str) -> None`
+#### unmark_music_loading
+
+`unmark_music_loading(filename: str) -> None`
 
 Unmark a music file as being loaded.
 
@@ -296,7 +324,9 @@ Unmark a music file as being loaded.
 
 - Should be called after `mark_music_loading()` once the file is loaded
 
-#### `get_music_cache() -> dict[str, arcade.Sound]`
+#### get_music_cache
+
+`get_music_cache() -> dict[str, arcade.Sound]`
 
 Get the music cache dictionary.
 
@@ -304,7 +334,9 @@ Get the music cache dictionary.
 
 - Dictionary mapping filename to `arcade.Sound` objects
 
-#### `set_music_cache(cache_key: str, sound: arcade.Sound) -> None`
+#### set_music_cache
+
+`set_music_cache(cache_key: str, sound: arcade.Sound) -> None`
 
 Set a music file in the cache.
 
@@ -315,7 +347,9 @@ Set a music file in the cache.
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -337,7 +371,9 @@ save_data = {
 - Saves music volume, SFX volume, music enabled, and SFX enabled states
 - Delegates to `to_dict()`
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore state from save data.
 
@@ -357,7 +393,9 @@ audio_manager.restore_save_state(save_data["audio"])
 - Does not affect currently playing audio or cached files
 - Delegates to `from_dict()`
 
-#### `to_dict() -> dict[str, bool | float]`
+#### to_dict
+
+`to_dict() -> dict[str, bool | float]`
 
 Convert audio settings to dictionary for serialization.
 
@@ -374,7 +412,9 @@ save_data = {
 }
 ```
 
-#### `from_dict(data: dict[str, bool | float]) -> None`
+#### from_dict
+
+`from_dict(data: dict[str, bool | float]) -> None`
 
 Load audio settings from a saved dictionary.
 
@@ -395,7 +435,9 @@ audio_manager.from_dict(save_data["audio"])
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the audio system with game context.
 
@@ -408,7 +450,9 @@ Initialize the audio system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up audio resources when the scene unloads.
 
@@ -418,7 +462,9 @@ Clean up audio resources when the scene unloads.
 - Clears all caches
 - Called automatically by SystemLoader
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset audio system for new game.
 
@@ -429,7 +475,9 @@ Reset audio system for new game.
 
 ### Integration Methods
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load and play background music from a Tiled map property.
 
