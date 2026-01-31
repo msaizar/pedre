@@ -455,6 +455,45 @@ camera_manager = CameraManager(camera, lerp_speed=0.1)
 
 See [CameraManager documentation](systems/camera.md) for detailed usage.
 
+### PhysicsManager
+
+Manages collision detection and physics simulation for the player sprite.
+
+```python
+# Access via game context
+physics_manager = context.physics_manager
+```
+
+**Key Methods:**
+
+- `invalidate()` - Mark physics engine for recreation on next update
+- `update(delta_time: float)` - Update physics simulation
+- `setup(context: GameContext)` - Initialize the physics system
+
+**Properties:**
+
+- `physics_engine: arcade.PhysicsEngineSimple | None` - The Arcade physics engine instance
+
+**Example:**
+
+```python
+# Invalidate after player sprite changes
+player_manager.spawn_player(x=100, y=100)
+physics_manager.invalidate()
+
+# Physics automatically updates each frame
+physics_manager.update(delta_time)
+```
+
+**Notes:**
+
+- Uses Arcade's `PhysicsEngineSimple` for collision handling
+- Automatically prevents player from moving through walls
+- Engine is recreated when player sprite or scene changes
+- Requires player sprite and wall list to be initialized
+
+See [PhysicsManager documentation](systems/physics.md) for detailed usage.
+
 ### InteractionManager
 
 Manages interactive objects that players can activate in the game world.

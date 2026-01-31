@@ -165,6 +165,17 @@ Smooth camera following with optional bounds. Controls viewport positioning and 
 - Boundary constraints
 - Configurable smoothing
 
+### [PhysicsManager](physics.md)
+
+Collision detection and physics simulation for the player sprite.
+
+**Key Features:**
+
+- Arcade physics engine integration
+- Player-wall collision handling
+- Automatic engine recreation
+- Scene transition support
+
 ### [SceneManager](scene.md)
 
 Manages map loading and scene transitions. Handles the lifecycle of Tiled maps and connects game systems to the current level.
