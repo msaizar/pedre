@@ -24,7 +24,6 @@ from pedre.systems.scene.events import SceneStartEvent
 if TYPE_CHECKING:
     from typing import Any
 
-    from pedre.systems.cache_manager import CacheManager
     from pedre.systems.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -55,41 +54,7 @@ class SceneManager(SceneBaseManager):
     """
 
     name: ClassVar[str] = "scene"
-    dependencies: ClassVar[list[str]] = ["waypoint", "npc", "portal", "interaction", "player", "script"]
-
-    # Class-level cache manager (persists across scene transitions)
-    _cache_manager: ClassVar[CacheManager | None] = None
-
-    @classmethod
-    def init_cache_manager(cls, cache_manager: CacheManager) -> None:
-        """Initialize the cache manager.
-
-        Args:
-            cache_manager: The CacheManager instance to use for caching.
-        """
-        cls._cache_manager = cache_manager
-
-    @classmethod
-    def get_cache_manager(cls) -> CacheManager | None:
-        """Get the cache manager instance."""
-        return cls._cache_manager
-
-    @classmethod
-    def restore_cache_state(cls, cache_states: dict[str, Any]) -> None:
-        """Restore the cache state from saved data.
-
-        Args:
-            cache_states: Dictionary mapping cache names to their serialized state.
-        """
-        if cls._cache_manager:
-            cls._cache_manager.from_dict(cache_states)
-
-    @classmethod
-    def get_cache_state_dict(cls) -> dict[str, Any]:
-        """Get the cache state as a dictionary for saving."""
-        if cls._cache_manager:
-            return cls._cache_manager.to_dict()
-        return {}
+    dependencies: ClassVar[list[str]] = ["cache", "waypoint", "npc", "portal", "interaction", "player", "script"]
 
     def get_current_map(self) -> str:
         """Get current map."""
@@ -109,8 +74,8 @@ class SceneManager(SceneBaseManager):
 
         # Transition state
         self.transition_state: TransitionState = TransitionState.NONE
-        self.transition_alpha: float = 0.0  # 0.0 = transparent, 1.0 = opaque
-        self.transition_speed: float = 3.0  # Alpha change per second
+        self.transition_alpha: float = settings.SCENE_TRANSITION_ALPHA
+        self.transition_speed: float = settings.SCENE_TRANSITION_SPEED
 
         # Pending transition data
         self.pending_map_file: str | None = None
@@ -132,7 +97,7 @@ class SceneManager(SceneBaseManager):
         self.current_scene = ""
         self.current_map = ""
         self.transition_state = TransitionState.NONE
-        self.transition_alpha = 0.0
+        self.transition_alpha = settings.SCENE_TRANSITION_ALPHA
         self.pending_map_file = None
         self.pending_spawn_waypoint = None
         self.wall_list.clear()
@@ -150,14 +115,6 @@ class SceneManager(SceneBaseManager):
         """Add a sprite to the wall list."""
         self.wall_list.append(sprite)
 
-    def get_arcade_scene(self) -> arcade.Scene | None:
-        """Get arcade scene."""
-        return self.arcade_scene
-
-    def get_tile_map(self) -> arcade.TileMap | None:
-        """Get tile map."""
-        return self.tile_map
-
     def get_next_spawn_waypoint(self) -> str:
         """Get next spawn waypoint."""
         return self.next_spawn_waypoint
@@ -174,8 +131,9 @@ class SceneManager(SceneBaseManager):
             initial: If it's the first level loading. Don't cache if not transitioning.
         """
         # Cache current scene state before transitioning
-        if self._cache_manager and not initial:
-            self._cache_manager.cache_scene(self.get_current_scene(), self.context)
+        cache_manager = self.context.cache_manager
+        if not initial:
+            cache_manager.cache_scene(self.get_current_scene(), self.context)
 
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
@@ -186,31 +144,26 @@ class SceneManager(SceneBaseManager):
 
         # Phase 2: Apply entity state from pending save data
         save_manager = self.context.save_manager
-        if save_manager:
-            save_manager.apply_entity_states()
+        save_manager.apply_entity_states()
 
         # Get NPC and script managers for scene loading
         npc_manager = self.context.npc_manager
         script_manager = self.context.script_manager
 
-        npc_dialogs_data = {}
-        if npc_manager:
-            npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
+        npc_dialogs_data = npc_manager.load_scene_dialogs(current_scene)
 
-        if script_manager:
-            script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
+        script_manager.load_scene_scripts(current_scene, npc_dialogs_data)
 
         # Restore scene state using cache manager
-        if self._cache_manager:
-            self._cache_manager.restore_scene(current_scene, self.context)
+        cache_manager.restore_scene(current_scene, self.context)
 
-            # Sync wall_list with NPC visibility after restore
-            if npc_manager and self.wall_list:
-                for npc_state in npc_manager.get_npcs().values():
-                    if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
-                        self.wall_list.remove(npc_state.sprite)
-                    elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
-                        self.wall_list.append(npc_state.sprite)
+        # Sync wall_list with NPC visibility after restore
+        if self.wall_list:
+            for npc_state in npc_manager.get_npcs().values():
+                if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
+                    self.wall_list.remove(npc_state.sprite)
+                elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
+                    self.wall_list.append(npc_state.sprite)
 
         # Emit SceneStartEvent
         self.context.event_bus.publish(SceneStartEvent(current_scene))
@@ -222,12 +175,12 @@ class SceneManager(SceneBaseManager):
             map_file: Filename of the .tmx map to load (e.g. "map.tmx").
 
         """
-        map_path = asset_path(f"maps/{map_file}", settings.ASSETS_HANDLE)
+        map_path = asset_path(f"{settings.SCENE_MAPS_FOLDER}/{map_file}", settings.ASSETS_HANDLE)
         logger.info("Loading map: %s", map_path)
         self.current_map = map_file
 
         # 1. Load TileMap and Scene
-        self.tile_map = arcade.load_tilemap(map_path, scaling=1.0)
+        self.tile_map = arcade.load_tilemap(map_path, scaling=settings.SCENE_TILEMAP_SCALING)
         self.arcade_scene = arcade.Scene.from_tilemap(self.tile_map)
 
         # 2. Extract collision layers (foundation for other systems)
@@ -244,9 +197,8 @@ class SceneManager(SceneBaseManager):
     def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
         """Extract collision layers into a wall list."""
         wall_list = arcade.SpriteList()
-        collision_layer_names = ["Walls", "Collision", "Objects", "Buildings"]
         if arcade_scene:
-            for layer_name in collision_layer_names:
+            for layer_name in settings.SCENE_COLLISION_LAYER_NAMES:
                 if layer_name in arcade_scene:
                     for sprite in arcade_scene[layer_name]:
                         wall_list.append(sprite)
@@ -279,7 +231,7 @@ class SceneManager(SceneBaseManager):
         self.pending_map_file = map_file
         self.pending_spawn_waypoint = spawn_waypoint
         self.transition_state = TransitionState.FADING_OUT
-        self.transition_alpha = 0.0
+        self.transition_alpha = settings.SCENE_TRANSITION_ALPHA
 
     def on_draw(self) -> None:
         """Draw the map scene and transition overlay."""
@@ -293,10 +245,6 @@ class SceneManager(SceneBaseManager):
 
     def _draw_transition_overlay(self) -> None:
         """Draw the black fade overlay."""
-        camera_manager = self.context.camera_manager
-        if camera_manager:
-            pass
-
         # Ideally we use arcade.camera.Camera2D() (default identity)
         window = arcade.get_window()
         default_cam = arcade.camera.Camera2D()

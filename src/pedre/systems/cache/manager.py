@@ -1,14 +1,16 @@
-"""Lightweight cache manager for scene state transitions.
+"""Cache system for scene state transitions.
 
-This module provides the CacheManager class, which replaces the previous
-CacheRegistry/CacheLoader/BaseCacheProvider pattern with a simpler approach
-that directly calls methods on BaseSystem instances.
+This module provides the CacheManager system, which manages scene state cache
+to preserve system states when the player transitions between scenes.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
+
+from pedre.systems.cache.base import CacheBaseManager
+from pedre.systems.registry import SystemRegistry
 
 if TYPE_CHECKING:
     from pedre.systems.game_context import GameContext
@@ -16,21 +18,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class CacheManager:
+@SystemRegistry.register
+class CacheManager(CacheBaseManager):
     """Manages scene state cache for transitions.
 
     The CacheManager holds in-memory state for each scene, allowing systems
     to preserve their state when the player leaves a scene and restore it
     when they return.
 
-    Instead of using separate provider classes, this manager directly calls
-    cache_scene_state() and restore_scene_state() on each system.
+    This system directly calls cache_scene_state() and restore_scene_state()
+    on each system to manage their cached state.
 
     Attributes:
         _cache: Nested dictionary mapping scene_name -> system_name -> state dict.
 
     Example:
-        cache_manager = CacheManager()
+        # Access via context
+        cache_manager = context.cache_manager
 
         # When leaving a scene
         cache_manager.cache_scene("village", context)
@@ -39,10 +43,26 @@ class CacheManager:
         restored = cache_manager.restore_scene("village", context)
     """
 
+    name: ClassVar[str] = "cache"
+    dependencies: ClassVar[list[str]] = []
+
     def __init__(self) -> None:
         """Initialize the cache manager with empty cache."""
         # scene_name -> system_name -> state dict
         self._cache: dict[str, dict[str, Any]] = {}
+        self.context: GameContext
+
+    def setup(self, context: GameContext) -> None:
+        """Initialize with context.
+
+        Args:
+            context: Game context providing access to all systems.
+        """
+        self.context = context
+
+    def reset(self) -> None:
+        """Reset cache for new game."""
+        self.clear()
 
     def cache_scene(self, scene_name: str, context: GameContext) -> None:
         """Cache all system states for a scene.
@@ -103,23 +123,6 @@ class CacheManager:
         """
         return scene_name in self._cache
 
-    def to_dict(self) -> dict[str, Any]:
-        """Serialize cache state for save files.
-
-        Returns:
-            Dictionary mapping scene names to their cached system states.
-        """
-        return self._cache.copy()
-
-    def from_dict(self, data: dict[str, Any]) -> None:
-        """Restore cache state from save file data.
-
-        Args:
-            data: Previously serialized cache state from to_dict().
-        """
-        self._cache = data.copy()
-        logger.debug("Restored cache for %d scenes from save data", len(self._cache))
-
     def clear(self) -> None:
         """Clear all cached state.
 
@@ -128,3 +131,20 @@ class CacheManager:
         scene_count = len(self._cache)
         self._cache.clear()
         logger.debug("Cleared cache for %d scenes", scene_count)
+
+    def get_save_state(self) -> dict[str, Any]:
+        """Get cache state for saving.
+
+        Returns:
+            Dictionary mapping scene names to their cached system states.
+        """
+        return self._cache.copy()
+
+    def restore_save_state(self, state: dict[str, Any]) -> None:
+        """Restore cache state from save file data.
+
+        Args:
+            state: Previously serialized cache state from get_save_state().
+        """
+        self._cache = state.copy()
+        logger.debug("Restored cache for %d scenes from save data", len(self._cache))

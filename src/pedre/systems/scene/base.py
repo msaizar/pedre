@@ -2,14 +2,12 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pedre.systems.base import BaseSystem
 
 if TYPE_CHECKING:
     import arcade
-
-    from pedre.systems.cache_manager import CacheManager
 
 
 class TransitionState(Enum):
@@ -66,37 +64,9 @@ class SceneBaseManager(BaseSystem, ABC):
         """Get transition state."""
         ...
 
-    @classmethod
-    @abstractmethod
-    def get_cache_manager(cls) -> CacheManager | None:
-        """Get the cache manager instance."""
-        ...
-
-    @classmethod
-    @abstractmethod
-    def restore_cache_state(cls, cache_states: dict[str, Any]) -> None:
-        """Restore the cache state from saved data."""
-        ...
-
-    @classmethod
-    @abstractmethod
-    def get_cache_state_dict(cls) -> dict[str, Any]:
-        """Get the cache state as a dictionary for saving."""
-        ...
-
     @abstractmethod
     def get_current_map(self) -> str:
         """Get current map."""
-        ...
-
-    @abstractmethod
-    def get_arcade_scene(self) -> arcade.Scene | None:
-        """Get arcade scene."""
-        ...
-
-    @abstractmethod
-    def get_tile_map(self) -> arcade.TileMap | None:
-        """Get tile map."""
         ...
 
     @abstractmethod

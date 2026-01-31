@@ -169,14 +169,8 @@ class SaveManager(SaveBaseManager):
                     logger.debug("Gathered save state from system: %s", system.name)
 
             # Cache the current active scene before saving (in case we never left it)
-            cache_manager = scene_manager.get_cache_manager()
-            if cache_manager:
-                cache_manager.cache_scene(scene_manager.get_current_scene(), self.context)
-
-            # Also include cache manager state
-            cache_state = scene_manager.get_cache_state_dict()
-            if cache_state:
-                save_states["_scene_caches"] = cache_state
+            cache_manager = self.context.cache_manager
+            cache_manager.cache_scene(scene_manager.get_current_scene(), self.context)
 
             # Create save data
             player_sprite = self.context.player_manager.get_player_sprite()
@@ -251,12 +245,6 @@ class SaveManager(SaveBaseManager):
             if system.name in save_data.save_states:
                 system.restore_save_state(save_data.save_states[system.name])
                 logger.debug("Restored metadata state to system: %s", system.name)
-
-        if "_scene_caches" in save_data.save_states:
-            scene_manager = self.context.scene_manager
-            if scene_manager:
-                scene_manager.restore_cache_state(save_data.save_states["_scene_caches"])
-                logger.debug("Restored cache manager state")
 
         logger.info("Phase 1: Restored metadata state from save data")
 

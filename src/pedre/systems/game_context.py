@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from pedre.events import EventBus
     from pedre.systems.audio.base import AudioBaseManager
     from pedre.systems.base import BaseSystem
+    from pedre.systems.cache.base import CacheBaseManager
     from pedre.systems.camera.base import CameraBaseManager
     from pedre.systems.dialog.base import DialogBaseManager
     from pedre.systems.input.base import InputBaseManager
@@ -80,6 +81,7 @@ class GameContext:
     """
 
     audio_manager: AudioBaseManager
+    cache_manager: CacheBaseManager
     save_manager: SaveBaseManager
     npc_manager: NPCBaseManager
     scene_manager: SceneBaseManager

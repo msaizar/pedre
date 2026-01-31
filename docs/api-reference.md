@@ -227,17 +227,29 @@ loader.load_systems()
 
 ### SceneManager
 
-Manages scene transitions and map loading.
+Manages scene transitions, map loading, and collision detection.
 
 ```python
 from pedre.systems import SceneManager
-# Accessed via context.get_system("scene")
+# Accessed via context.scene_manager
 ```
 
 **Methods:**
 
-- `request_transition(map_file: str, spawn_waypoint: str | None = None)` - Request smooth transition
-- `load_level(map_file: str, spawn_waypoint: str | None)` - Load map immediately
+- `request_transition(map_file: str, spawn_waypoint: str | None = None)` - Request smooth fade transition to new map
+- `load_level(map_file: str, *, initial: bool = False)` - Load map immediately without transition
+- `get_current_scene() -> str` - Get current scene name (map filename without .tmx)
+- `get_current_map() -> str` - Get current map filename
+- `get_transition_state() -> TransitionState` - Get current transition state (NONE, FADING_OUT, LOADING, FADING_IN)
+- `get_wall_list() -> arcade.SpriteList | None` - Get collision wall sprite list
+- `add_to_wall_list(sprite: arcade.Sprite)` - Add sprite to collision detection
+- `remove_from_wall_list(sprite: arcade.Sprite)` - Remove sprite from collision detection
+- `get_next_spawn_waypoint() -> str` - Get waypoint where player should spawn
+- `clear_next_spawn_waypoint()` - Clear spawn waypoint after use
+- `get_save_state() -> dict[str, Any]` - Serialize scene state for saving
+- `restore_save_state(state: dict[str, Any])` - Restore from saved state
+
+For detailed documentation, see [SceneManager System](systems/scene.md)
 
 ### InventoryManager
 
@@ -371,6 +383,48 @@ audio_manager = AudioManager(game_context)
 - `set_music_volume(volume: float)` - Adjust music volume
 - `get_save_state() -> dict` - Get current audio state
 - `restore_save_state(state: dict)` - Restore audio state
+
+### CacheManager
+
+Manages scene state cache to preserve system states when the player transitions between scenes.
+
+```python
+# Accessed via game context
+cache_manager = context.cache_manager
+```
+
+**Methods:**
+
+- `cache_scene(scene_name: str, context: GameContext) -> None` - Cache all system states for a scene when leaving
+- `restore_scene(scene_name: str, context: GameContext) -> bool` - Restore cached system states when returning to a scene
+- `has_cached_state(scene_name: str) -> bool` - Check if a scene has cached state
+- `clear() -> None` - Clear all cached state
+- `get_save_state() -> dict[str, Any]` - Get cache state for saving
+- `restore_save_state(state: dict[str, Any]) -> None` - Restore cache state from save file
+- `setup(context: GameContext) -> None` - Initialize the cache system
+- `reset() -> None` - Reset cache for new game
+
+**Example:**
+
+```python
+# Automatically called during scene transitions
+cache_manager.cache_scene("village", context)
+
+# Restore when returning to a scene
+restored = cache_manager.restore_scene("village", context)
+if restored:
+    print("Scene state restored from cache")
+```
+
+**Notes:**
+
+- Operates in-memory for fast scene transitions
+- Works by calling `cache_scene_state()` and `restore_scene_state()` on all systems
+- Cached state persists within the current session
+- Cache is saved/loaded as part of the save system for cross-session persistence
+- Each scene maintains separate cached state for all systems
+
+See [CacheManager documentation](systems/cache.md) for detailed usage.
 
 ### SaveManager
 

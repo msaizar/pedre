@@ -97,6 +97,22 @@ ASSETS_HANDLE = "game_assets"
 INITIAL_MAP = "map.tmx"
 """Path to the initial map file to load."""
 
+# Scene settings
+SCENE_TRANSITION_ALPHA = 0.0
+"""Initial transition alpha value (0.0 = transparent, 1.0 = opaque)."""
+
+SCENE_TRANSITION_SPEED = 3.0
+"""Alpha change per second during scene transitions."""
+
+SCENE_MAPS_FOLDER = "maps"
+"""Folder where map files are stored (relative to assets directory)."""
+
+SCENE_TILEMAP_SCALING = 1.0
+"""Scaling factor for tilemap rendering."""
+
+SCENE_COLLISION_LAYER_NAMES = ["Walls", "Collision", "Objects", "Buildings"]
+"""Names of tilemap layers that should be treated as collision layers."""
+
 # Inventory settings
 INVENTORY_GRID_COLS = 4
 """Number of columns in the inventory grid."""
@@ -275,6 +291,7 @@ SAVE_SFX_FILE = "save.wav"
 # Installed systems (like Django's INSTALLED_APPS)
 INSTALLED_SYSTEMS = [
     "pedre.systems.audio",
+    "pedre.systems.cache",
     "pedre.systems.camera",
     "pedre.systems.debug",
     "pedre.systems.dialog",
