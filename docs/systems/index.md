@@ -141,6 +141,17 @@ Displays development information overlays showing player and NPC positions. Help
 
 ## Persistence & State
 
+### [CacheManager](cache.md)
+
+Manages scene state cache to preserve system states when the player transitions between scenes.
+
+**Key Features:**
+
+- In-memory scene state storage
+- Automatic state preservation during transitions
+- System-agnostic caching interface
+- Save/load integration
+
 ### [SaveManager](save.md)
 
 Handles game state persistence with auto-save and manual save slots. Manages game progress across sessions.

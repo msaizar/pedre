@@ -372,6 +372,48 @@ audio_manager = AudioManager(game_context)
 - `get_save_state() -> dict` - Get current audio state
 - `restore_save_state(state: dict)` - Restore audio state
 
+### CacheManager
+
+Manages scene state cache to preserve system states when the player transitions between scenes.
+
+```python
+# Accessed via game context
+cache_manager = context.cache_manager
+```
+
+**Methods:**
+
+- `cache_scene(scene_name: str, context: GameContext) -> None` - Cache all system states for a scene when leaving
+- `restore_scene(scene_name: str, context: GameContext) -> bool` - Restore cached system states when returning to a scene
+- `has_cached_state(scene_name: str) -> bool` - Check if a scene has cached state
+- `clear() -> None` - Clear all cached state
+- `get_save_state() -> dict[str, Any]` - Get cache state for saving
+- `restore_save_state(state: dict[str, Any]) -> None` - Restore cache state from save file
+- `setup(context: GameContext) -> None` - Initialize the cache system
+- `reset() -> None` - Reset cache for new game
+
+**Example:**
+
+```python
+# Automatically called during scene transitions
+cache_manager.cache_scene("village", context)
+
+# Restore when returning to a scene
+restored = cache_manager.restore_scene("village", context)
+if restored:
+    print("Scene state restored from cache")
+```
+
+**Notes:**
+
+- Operates in-memory for fast scene transitions
+- Works by calling `cache_scene_state()` and `restore_scene_state()` on all systems
+- Cached state persists within the current session
+- Cache is saved/loaded as part of the save system for cross-session persistence
+- Each scene maintains separate cached state for all systems
+
+See [CacheManager documentation](systems/cache.md) for detailed usage.
+
 ### SaveManager
 
 Handles game state persistence with auto-save, manual save slots, and quick save/load.
