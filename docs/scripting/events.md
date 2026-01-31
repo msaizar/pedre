@@ -728,7 +728,7 @@ Triggered when another script finishes executing.
 
 **Available Trigger Fields:**
 
-- `script_name` - Which script completed
+- `script` - Which script completed
 
 **Example:**
 
@@ -738,7 +738,7 @@ Triggered when another script finishes executing.
     "scene": "castle",
     "trigger": {
       "event": "script_complete",
-      "script_name": "cutscene_intro"
+      "script": "cutscene_intro"
     },
     "actions": [
       {
@@ -850,7 +850,7 @@ This script only runs when:
   "part2": {
     "trigger": {
       "event": "script_complete",
-      "script_name": "part1"
+      "script": "part1"
     },
     "actions": [...]
   }

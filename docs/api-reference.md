@@ -317,28 +317,29 @@ See [InventoryManager documentation](systems/inventory.md) for detailed usage.
 Executes event-driven scripted sequences.
 
 ```python
-from pedre import ScriptManager
-
-script_manager = ScriptManager(game_context, scripts_path="scripts.json")
+# Access via game context
+script_manager = context.script_manager
 ```
 
-**Methods:**
+**Key Methods:**
 
-- `handle_event(event_type: str, event_data: dict)` - Process game events
-- `is_active() -> bool` - Check if script is running
-- `update(delta_time: float)` - Update active script
+- `get_scripts() -> dict[str, Script]` - Get all loaded scripts
+- `update(delta_time: float)` - Update active action sequences
+- `get_save_state() -> dict[str, Any]` - Get serializable state for saving
+- `restore_save_state(state: dict[str, Any])` - Restore from saved state
+- `setup(context: GameContext)` - Initialize the script system
+- `cleanup()` - Clean up script resources
+- `reset()` - Reset script system for new game
 
-**Supported Actions:**
+**Script Loading:**
 
-- `dialog` - Show conversation
-- `move_npc` - Move NPC to position
-- `add_to_inventory` - Give item to player
-- `play_sfx` - Play sound effect
-- `wait` - Pause execution
-- `set_dialog_level` - Update NPC dialog progress
-- `follow_player` - Camera follows player
-- `follow_npc` - Camera follows NPC
-- `stop_camera_follow` - Stop camera following
+All scripts are loaded globally during system setup from the `assets/scripts/` directory. The manager automatically scans for all `*_scripts.json` files and loads them into a single registry.
+
+**Script Execution:**
+
+Scripts are triggered automatically by game events via the EventBus. The `trigger` field in each script specifies which event activates it, and the `scene` field controls when it can execute.
+
+**See Also:** [Script System Documentation](systems/script.md)
 
 ### InputManager
 
