@@ -1,0 +1,38 @@
+"""Base class for cache system."""
+
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+from pedre.systems.base import BaseSystem
+
+if TYPE_CHECKING:
+    from pedre.systems.game_context import GameContext
+
+
+class CacheBaseManager(BaseSystem, ABC):
+    """Base class for cache manager."""
+
+    role = "cache_manager"
+
+    @abstractmethod
+    def cache_scene(self, scene_name: str, context: GameContext) -> None:
+        """Cache all system states for a scene.
+
+        Args:
+            scene_name: Name of the scene being left.
+            context: Game context providing access to all systems.
+        """
+        ...
+
+    @abstractmethod
+    def restore_scene(self, scene_name: str, context: GameContext) -> bool:
+        """Restore cached system states for a scene.
+
+        Args:
+            scene_name: Name of the scene being entered.
+            context: Game context providing access to all systems.
+
+        Returns:
+            True if cached state was found and restored, False if no cache exists.
+        """
+        ...

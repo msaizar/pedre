@@ -291,6 +291,7 @@ SAVE_SFX_FILE = "save.wav"
 # Installed systems (like Django's INSTALLED_APPS)
 INSTALLED_SYSTEMS = [
     "pedre.systems.audio",
+    "pedre.systems.cache",
     "pedre.systems.camera",
     "pedre.systems.debug",
     "pedre.systems.dialog",
