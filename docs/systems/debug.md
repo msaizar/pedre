@@ -18,7 +18,9 @@ The DebugManager uses the following settings from `pedre.conf.settings`:
 
 ### Debug Mode Control
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+#### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Toggle debug mode on/off with Shift+D.
 
@@ -48,7 +50,9 @@ def on_key_press(self, symbol, modifiers):
 
 ### Debug Display
 
-#### `on_draw_ui() -> None`
+#### on_draw_ui
+
+`on_draw_ui() -> None`
 
 Render debug information overlay in screen coordinates.
 
@@ -75,7 +79,9 @@ def on_draw(self):
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the debug system with game context.
 
@@ -89,7 +95,9 @@ Initialize the debug system with game context.
 - Stores reference to game context
 - Initializes empty text object list
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up debug resources when the scene unloads.
 
