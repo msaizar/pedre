@@ -101,13 +101,13 @@ assets/scripts/
 
 ## Loading Scripts
 
-All scripts are automatically loaded globally when the ScriptManager initializes during system setup. The manager scans the `assets/scripts/` directory for all files matching the pattern `*_scripts.json` and loads them into a single registry.
+All scripts are automatically loaded globally when the ScriptPlugin initializes during plugin setup. The manager scans the `assets/scripts/` directory for all files matching the pattern `*_scripts.json` and loads them into a single registry.
 
 **Global Loading:**
 
 ```python
 # Scripts are loaded during setup
-script_manager = ScriptManager()
+script_manager = ScriptPlugin()
 script_manager.setup(context)  # Loads all scripts from scripts directory
 ```
 
@@ -118,7 +118,7 @@ script_manager.setup(context)  # Loads all scripts from scripts directory
 - The `scene` field in each script controls when it can execute
 - Scripts are reloaded on reset (new game or load game)
 
-You don't need to manually load scripts - the system handles this automatically.
+You don't need to manually load scripts - the plugin handles this automatically.
 
 ## How Scripts Execute
 

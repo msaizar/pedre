@@ -200,13 +200,13 @@ Set properties on the map itself (not layers) to configure map behavior.
 
 ### Available Map Properties
 
-| Property | Type | Required | Description | Example |
-| -------- | ---- | -------- | ----------- | ------- |
-| `music` | string | No | Background music file (relative to assets/audio/music/) | `"village_theme.mp3"` |
-| `show_all_npcs` | bool | No | Force all NPCs to be visible | `true` |
-| `show_npcs` | string | No | Comma-separated list of NPCs to show | `"merchant,guard,elder"` |
-| `camera_follow` | string | No | Camera follow target: "player", "npc:\<name\>", or "none" | `"player"`, `"npc:merchant"` |
-| `camera_smooth` | bool | No | Use smooth interpolation (true) or instant following (false) | `true` |
+| Property        | Type   | Required | Description                                                  | Example                      |
+| --------------- | ------ | -------- | ------------------------------------------------------------ | ---------------------------- |
+| `music`         | string | No       | Background music file (relative to assets/audio/music/)      | `"village_theme.mp3"`        |
+| `show_all_npcs` | bool   | No       | Force all NPCs to be visible                                 | `true`                       |
+| `show_npcs`     | string | No       | Comma-separated list of NPCs to show                         | `"merchant,guard,elder"`     |
+| `camera_follow` | string | No       | Camera follow target: "player", "npc:\<name\>", or "none"    | `"player"`, `"npc:merchant"` |
+| `camera_smooth` | bool   | No       | Use smooth interpolation (true) or instant following (false) | `true`                       |
 
 ### Example Map Property Configuration
 
@@ -219,7 +219,7 @@ camera_smooth: true
 
 ### Camera Configuration
 
-The camera system can be configured via map properties to control which entity the camera follows and how it moves.
+The camera plugin can be configured via map properties to control which entity the camera follows and how it moves.
 
 #### Camera Follow Modes
 
@@ -361,19 +361,19 @@ The player sprite sheet can have:
 
 **Required Player Object Properties:**
 
-| Property | Type | Default | Description |
-| -------- | ---- | ------- | ----------- |
+| Property       | Type   | Default | Description                                |
+| -------------- | ------ | ------- | ------------------------------------------ |
 | `sprite_sheet` | string | **Yes** | Path to sprite sheet (relative to assets/) |
-| `tile_size` | int | 64 | Size of each sprite frame in pixels |
+| `tile_size`    | int    | 64      | Size of each sprite frame in pixels        |
 
 **Animation Properties (Optional):**
 
-| Property | Type | Default | Description |
-| -------- | ---- | ------- | ----------- |
-| `idle_up_frames`, `idle_down_frames`, `idle_left_frames`, `idle_right_frames` | int | None | Idle frames per direction |
-| `idle_up_row`, `idle_down_row`, `idle_left_row`, `idle_right_row` | int | None | Row index per direction |
-| `walk_up_frames`, `walk_down_frames`, `walk_left_frames`, `walk_right_frames` | int | None | Walk frames per direction |
-| `walk_up_row`, `walk_down_row`, `walk_left_row`, `walk_right_row` | int | None | Row index per direction |
+| Property                                                                      | Type | Default | Description               |
+| ----------------------------------------------------------------------------- | ---- | ------- | ------------------------- |
+| `idle_up_frames`, `idle_down_frames`, `idle_left_frames`, `idle_right_frames` | int  | None    | Idle frames per direction |
+| `idle_up_row`, `idle_down_row`, `idle_left_row`, `idle_right_row`             | int  | None    | Row index per direction   |
+| `walk_up_frames`, `walk_down_frames`, `walk_left_frames`, `walk_right_frames` | int  | None    | Walk frames per direction |
+| `walk_up_row`, `walk_down_row`, `walk_left_row`, `walk_right_row`             | int  | None    | Row index per direction   |
 
 **4-Directional Example:**
 
@@ -412,7 +412,7 @@ The player is controlled via keyboard input:
 Player movement and interaction speeds are controlled by game settings in your `settings.py` file. See [Configuration Guide](configuration.md#player-settings) for all available player and interaction settings including:
 
 - `PLAYER_MOVEMENT_SPEED` - Player movement speed
-- `INTERACTION_MANAGER_DISTANCE` - Object interaction range
+- `INTERACTION_PLUGIN_DISTANCE` - Object interaction range
 - `NPC_INTERACTION_DISTANCE` - NPC interaction range
 - `PORTAL_INTERACTION_DISTANCE` - Portal activation range
 
@@ -532,21 +532,21 @@ NPCs are placed as **Point Objects** in the **NPCs** object layer.
 
 ### Required NPC Properties
 
-| Property | Type | Required | Description |
-| -------- | ---- | -------- | ----------- |
-| `name` | string | **Yes** | Unique identifier for this NPC |
-| `sprite_sheet` | string | **Yes** | Path to sprite sheet (relative to assets/) |
+| Property       | Type   | Required | Description                                |
+| -------------- | ------ | -------- | ------------------------------------------ |
+| `name`         | string | **Yes**  | Unique identifier for this NPC             |
+| `sprite_sheet` | string | **Yes**  | Path to sprite sheet (relative to assets/) |
 
 ### Optional NPC Properties
 
-| Property | Type | Default | Description |
-| -------- | ---- | ------- | ----------- |
-| `tile_size` | int | `64` | Size of each sprite frame in pixels |
-| `columns` | int | `12` | Total number of columns in the sprite sheet |
-| `scale` | float | `1.0` | Sprite scale multiplier for rendering |
-| `initially_hidden` | bool | `false` | Whether NPC starts hidden (if map property set) |
-| `dialog_level` | int | `0` | Starting conversation level |
-| `animation` | string | `"idle"` | Starting animation state |
+| Property           | Type   | Default  | Description                                     |
+| ------------------ | ------ | -------- | ----------------------------------------------- |
+| `tile_size`        | int    | `64`     | Size of each sprite frame in pixels             |
+| `columns`          | int    | `12`     | Total number of columns in the sprite sheet     |
+| `scale`            | float  | `1.0`    | Sprite scale multiplier for rendering           |
+| `initially_hidden` | bool   | `false`  | Whether NPC starts hidden (if map property set) |
+| `dialog_level`     | int    | `0`      | Starting conversation level                     |
+| `animation`        | string | `"idle"` | Starting animation state                        |
 
 ### NPC Sprite Sheets
 
@@ -563,29 +563,29 @@ NPC sprite sheets support 4-directional animation with flexible layout. Specify 
 
 **4-Directional Animation Properties:**
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `idle_up_frames`, `idle_down_frames`, `idle_left_frames`, `idle_right_frames` | int | Idle frames per direction |
-| `idle_up_row`, `idle_down_row`, `idle_left_row`, `idle_right_row` | int | Row index per direction |
-| `walk_up_frames`, `walk_down_frames`, `walk_left_frames`, `walk_right_frames` | int | Walk frames per direction |
-| `walk_up_row`, `walk_down_row`, `walk_left_row`, `walk_right_row` | int | Row index per direction |
+| Property                                                                      | Type | Description               |
+| ----------------------------------------------------------------------------- | ---- | ------------------------- |
+| `idle_up_frames`, `idle_down_frames`, `idle_left_frames`, `idle_right_frames` | int  | Idle frames per direction |
+| `idle_up_row`, `idle_down_row`, `idle_left_row`, `idle_right_row`             | int  | Row index per direction   |
+| `walk_up_frames`, `walk_down_frames`, `walk_left_frames`, `walk_right_frames` | int  | Walk frames per direction |
+| `walk_up_row`, `walk_down_row`, `walk_left_row`, `walk_right_row`             | int  | Row index per direction   |
 
 **Optional Special Animation Properties:**
 
-| Property | Type | Description |
-| -------- | ---- | ----------- |
-| `appear_frames` | int | Number of frames for appear animation (optional) |
-| `appear_row` | int | Row index for appear animation frames (optional) |
-| `disappear_frames` | int | Number of frames for disappear animation (optional) |
-| `disappear_row` | int | Row index for disappear animation frames (optional) |
-| `interact_up_frames` | int | Number of frames for up-facing interact animation |
-| `interact_up_row` | int | Row index for up-facing interact animation |
-| `interact_down_frames` | int | Number of frames for down-facing interact animation |
-| `interact_down_row` | int | Row index for down-facing interact animation |
-| `interact_left_frames` | int | Number of frames for left-facing interact animation |
-| `interact_left_row` | int | Row index for left-facing interact animation |
-| `interact_right_frames` | int | Number of frames for right-facing interact animation |
-| `interact_right_row` | int | Row index for right-facing interact animation |
+| Property                | Type | Description                                          |
+| ----------------------- | ---- | ---------------------------------------------------- |
+| `appear_frames`         | int  | Number of frames for appear animation (optional)     |
+| `appear_row`            | int  | Row index for appear animation frames (optional)     |
+| `disappear_frames`      | int  | Number of frames for disappear animation (optional)  |
+| `disappear_row`         | int  | Row index for disappear animation frames (optional)  |
+| `interact_up_frames`    | int  | Number of frames for up-facing interact animation    |
+| `interact_up_row`       | int  | Row index for up-facing interact animation           |
+| `interact_down_frames`  | int  | Number of frames for down-facing interact animation  |
+| `interact_down_row`     | int  | Row index for down-facing interact animation         |
+| `interact_left_frames`  | int  | Number of frames for left-facing interact animation  |
+| `interact_left_row`     | int  | Row index for left-facing interact animation         |
+| `interact_right_frames` | int  | Number of frames for right-facing interact animation |
+| `interact_right_row`    | int  | Row index for right-facing interact animation        |
 
 **Auto-Generation Behavior:**
 
@@ -679,7 +679,7 @@ Each NPC needs:
 
 ## Portals and Transitions
 
-Portals are **Rectangle Objects** that trigger map transitions when the player enters them. The portal system uses an event-driven architecture where portal behavior is defined in JSON scripts.
+Portals are **Rectangle Objects** that trigger map transitions when the player enters them. The portal plugin uses an event-driven architecture where portal behavior is defined in JSON scripts.
 
 ### Creating a Portal
 
@@ -690,9 +690,9 @@ Portals are **Rectangle Objects** that trigger map transitions when the player e
 
 ### Portal Properties
 
-| Property | Type | Required | Description | Example |
-| -------- | ---- | -------- | ----------- | ------- |
-| `name` | string | **Yes** | Unique portal identifier (used in script triggers) | `"to_forest"` |
+| Property | Type   | Required | Description                                        | Example       |
+| -------- | ------ | -------- | -------------------------------------------------- | ------------- |
+| `name`   | string | **Yes**  | Unique portal identifier (used in script triggers) | `"to_forest"` |
 
 Portal behavior (destination, conditions, cutscenes) is defined in script files, not Tiled properties.
 
@@ -733,7 +733,7 @@ Properties:
 
 ### Portal Scripts
 
-Portal transitions are handled through the script system using the `portal_entered` event and `change_scene` action.
+Portal transitions are handled through the script plugin using the `portal_entered` event and `change_scene` action.
 
 **Simple Portal:**
 
@@ -807,10 +807,10 @@ Waypoints are **Point Objects** that define named positions on the map.
 
 ### Waypoint Uses
 
-| Use Case | Description |
-| -------- | ----------- |
+| Use Case                | Description                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------- |
 | **Portal destinations** | Target location for map transitions (used with portal `spawn_waypoint` property) |
-| **NPC movement** | Destinations for pathfinding scripts |
+| **NPC movement**        | Destinations for pathfinding scripts                                             |
 
 **Note:** Waypoints are simple named locations stored as Point objects. They only need a `name` property. The framework converts their pixel coordinates to tile coordinates and stores them in a dictionary for lookup by name.
 
@@ -858,9 +858,9 @@ Interactive objects are shapes (rectangles, polygons, points) that trigger actio
 
 ### Interactive Object Properties
 
-| Property | Type | Required | Description | Example |
-| -------- | ---- | -------- | ----------- | ------- |
-| `name` | string | **Yes** | Unique identifier | `"treasure_chest"` |
+| Property | Type   | Required | Description       | Example            |
+| -------- | ------ | -------- | ----------------- | ------------------ |
+| `name`   | string | **Yes**  | Unique identifier | `"treasure_chest"` |
 
 ## Custom Properties
 
@@ -912,5 +912,5 @@ You can add any custom properties you need to objects. These properties are stor
 **Next Steps:**
 
 - [Scripting Guide](scripting/index.md) - Learn about event-driven actions
-- [Systems Reference](../systems/index.md) - Individual system documentation
+- [Plugins Reference](../plugins/index.md) - Individual plugin documentation
 - [API Reference](../api/index.md) - API reference

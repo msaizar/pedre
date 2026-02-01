@@ -1,17 +1,17 @@
-# SaveManager
+# SavePlugin
 
 Manages game state persistence with auto-save, manual save slots, and quick save/load functionality.
 
 ## Location
 
-- Implementation: [src/pedre/systems/save/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/save/manager.py)
-- Base class: [src/pedre/systems/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/save/base.py)
+- Implementation: [src/pedre/plugins/save/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/save/manager.py)
+- Base class: [src/pedre/plugins/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/save/base.py)
 
 ## Configuration
 
-The SaveManager uses the following settings from `pedre.conf.settings`:
+The SavePlugin uses the following settings from `pedre.conf.settings`:
 
-### Save System Settings
+### Save Plugin Settings
 
 - `SAVE_FOLDER` - Directory where save files are stored (default: "saves")
 - `SAVE_QUICK_SAVE_KEY` - Keybind for quick save action (default: "F5")
@@ -58,7 +58,7 @@ if success:
 **Notes:**
 
 - Creates a complete snapshot of the current game state
-- Gathers state from all registered save providers (systems)
+- Gathers state from all registered save providers (plugins)
 - Writes to JSON file with 2-space indentation for readability
 - Updates `current_slot` tracker
 - Automatically caches current scene before saving
@@ -162,7 +162,7 @@ if save_data:
     # Phase 1: Restore metadata (settings, flags, which map to load)
     save_manager.restore_game_data(save_data)
 
-    # Phase 2 happens automatically after SceneManager loads sprites
+    # Phase 2 happens automatically after ScenePlugin loads sprites
 ```
 
 **Notes:**
@@ -170,7 +170,7 @@ if save_data:
 - Restores non-entity state (settings, flags, which map to load)
 - Stores save data for Phase 2 (entity state restoration)
 - Entity-specific state (positions, visibility) is applied later via `apply_entity_states()`
-- Each system's `restore_save_state()` method is called
+- Each plugin's `restore_save_state()` method is called
 - Scene cache state is also restored if present
 
 #### apply_entity_states
@@ -182,15 +182,15 @@ Phase 2: Apply entity-specific state after sprites exist.
 **Example:**
 
 ```python
-# Called automatically by SceneManager after load_from_tiled()
+# Called automatically by ScenePlugin after load_from_tiled()
 save_manager.apply_entity_states()
 ```
 
 **Notes:**
 
-- Called by SceneManager after `load_from_tiled()` has created all sprites
+- Called by ScenePlugin after `load_from_tiled()` has created all sprites
 - Applies positions, visibility, and other state that requires sprites to exist
-- Each system's `apply_entity_state()` method is called
+- Each plugin's `apply_entity_state()` method is called
 - Clears pending save data after application
 
 ### Save Slot Management
@@ -276,7 +276,7 @@ if save_manager.delete_save(2):
 
 ### Quick Save/Load
 
-The SaveManager automatically handles quick save and quick load via keyboard shortcuts.
+The SavePlugin automatically handles quick save and quick load via keyboard shortcuts.
 
 **Quick Save (F5 by default):**
 
@@ -298,33 +298,33 @@ The SaveManager automatically handles quick save and quick load via keyboard sho
 - Plays configured SFX on successful save/load
 - Logs warnings/info messages for debugging
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the save system with game context.
+Initialize the save plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### cleanup
 
 `cleanup() -> None`
 
-Clean up save system resources.
+Clean up save plugin resources.
 
 **Notes:**
 
 - Currently a no-op (no cleanup needed)
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 #### on_key_press
 
@@ -343,7 +343,7 @@ Handle quick save/load hotkeys.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Checks for configured quick save/load keys
 - Uses `matches_key` helper to support custom key bindings
 
@@ -413,8 +413,8 @@ Save files use JSON with 2-space indentation for human readability:
 
 **Structure:**
 
-- `save_states` - Dictionary mapping system names to their saved state
-  - Each system manages its own state structure
+- `save_states` - Dictionary mapping plugin names to their saved state
+  - Each plugin manages its own state structure
   - `_scene_caches` stores cached states for scene transitions
 - `save_timestamp` - Unix timestamp when save was created
 - `save_version` - Save format version for future migrations
@@ -456,17 +456,17 @@ loaded_data = GameSaveData.from_dict(data_dict)
 
 ## Save Providers
 
-Any system can participate in the save system by implementing save/load methods.
+Any plugin can participate in the save plugin by implementing save/load methods.
 
 ### Implementing Save Support
 
 ```python
-from pedre.systems.base import BaseSystem
-from pedre.systems.registry import SystemRegistry
+from pedre.plugins.base import BasePlugin
+from pedre.plugins.registry import PluginRegistry
 
-@SystemRegistry.register
-class MyCustomSystem(BaseSystem):
-    name = "my_system"
+@PluginRegistry.register
+class MyCustomPlugin(BasePlugin):
+    name = "my_plugin"
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving."""
@@ -492,37 +492,37 @@ class MyCustomSystem(BaseSystem):
 - `restore_save_state()` restores metadata state before sprites exist
 - `apply_entity_state()` applies entity state after sprites exist
 - Both restore methods receive the same state dict returned by `get_save_state()`
-- State is automatically included in save files under the system's name
+- State is automatically included in save files under the plugin's name
 
 ## Scene Caching
 
-The SaveManager also handles scene caching for smooth transitions.
+The SavePlugin also handles scene caching for smooth transitions.
 
 **Scene Cache Flow:**
 
 1. Player enters portal to new scene
-2. SaveManager caches current scene state under `_scene_caches`
+2. SavePlugin caches current scene state under `_scene_caches`
 3. New scene loads
 4. Player returns to previous scene via portal
-5. SaveManager restores cached state
+5. SavePlugin restores cached state
 
 **Notes:**
 
 - Scene caching is automatic when using portals
 - Cached state is separate from manual save slots
 - Cache is preserved across save/load operations
-- Each scene's cache includes all system entity states
+- Each scene's cache includes all plugin entity states
 
-## Save System Behavior
+## Save Plugin Behavior
 
 ### Two-Phase Loading
 
-The save system uses a two-phase approach to handle sprite dependencies:
+The save plugin uses a two-phase approach to handle sprite dependencies:
 
 **Phase 1: Metadata Restoration (`restore_save_state`)**
 
 1. Save file loaded from disk
-2. System metadata restored (flags, settings, which map to load)
+2. Plugin metadata restored (flags, settings, which map to load)
 3. Scene begins loading
 4. Sprites created via `load_from_tiled()`
 
@@ -540,20 +540,20 @@ The save system uses a two-phase approach to handle sprite dependencies:
 
 ### Save State Gathering
 
-When saving, the SaveManager collects state from all systems:
+When saving, the SavePlugin collects state from all plugins:
 
 ```python
 save_states = {}
-for system in registered_systems:
-    if hasattr(system, 'get_save_state'):
-        save_states[system.name] = system.get_save_state()
+for plugin in registered_plugins:
+    if hasattr(plugin, 'get_save_state'):
+        save_states[plugin.name] = plugin.get_save_state()
 ```
 
 **Automatic Collection:**
 
 - No manual registration required
-- Systems opt-in by implementing `get_save_state()`
-- State automatically namespaced by system name
+- Plugins opt-in by implementing `get_save_state()`
+- State automatically namespaced by plugin name
 - JSON serialization handled automatically
 
 ### File Operations
@@ -582,9 +582,9 @@ with open(save_path, "r") as f:
 
 ## Implementation Details
 
-### Save Slot System
+### Save Slot Plugin
 
-The SaveManager uses a simple slot-based system:
+The SavePlugin uses a simple slot-based plugin:
 
 **Slot 0 (Auto-save):**
 
@@ -688,7 +688,7 @@ if player_confirmed_deletion:
 ### Custom Quick Save Handler
 
 ```python
-# In your custom system
+# In your custom plugin
 def on_key_press(self, symbol: int, modifiers: int) -> bool:
     from pedre.helpers import matches_key
     from pedre.conf import settings
@@ -702,34 +702,34 @@ def on_key_press(self, symbol: int, modifiers: int) -> bool:
     return False
 ```
 
-## Integration with Other Systems
+## Integration with Other Plugins
 
-### SceneManager Integration
+### ScenePlugin Integration
 
-The SceneManager coordinates scene loading during game restoration:
+The ScenePlugin coordinates scene loading during game restoration:
 
 ```python
-# SaveManager triggers scene load
+# SavePlugin triggers scene load
 scene_name = save_data.save_states["scene"]["current_map"]
 context.scene_manager.request_transition(
     map_file=scene_name,
     spawn_waypoint=None  # Position restored via entity state
 )
 
-# After scene loads, SceneManager calls apply_entity_states()
+# After scene loads, ScenePlugin calls apply_entity_states()
 context.save_manager.apply_entity_states()
 ```
 
 **Notes:**
 
-- SceneManager loads the map specified in save data
+- ScenePlugin loads the map specified in save data
 - Player position restored after map loads
 - Scene caching preserved across save/load
 - Spawn waypoints cleared during save restoration
 
-### PlayerManager Integration
+### PlayerPlugin Integration
 
-The PlayerManager saves and restores player position:
+The PlayerPlugin saves and restores player position:
 
 ```python
 # Saving player state
@@ -753,9 +753,9 @@ def apply_entity_state(self, state: dict[str, Any]) -> None:
 - Player sprite must exist before state can be applied
 - Coordinates stored as floats for precision
 
-### NPCManager Integration
+### NPCPlugin Integration
 
-The NPCManager saves NPC states and interaction history:
+The NPCPlugin saves NPC states and interaction history:
 
 ```python
 # NPC state includes positions, dialog levels, visibility
@@ -780,7 +780,7 @@ The NPCManager saves NPC states and interaction history:
 - NPC positions and visibility restored
 - Interaction history available for conditions
 
-### AudioManager Integration
+### AudioPlugin Integration
 
 Audio plays feedback for save/load operations:
 
@@ -796,12 +796,12 @@ if save_manager.auto_save():
 - Audio feedback confirms successful operations
 - No sound played on failures
 
-### ScriptManager Integration
+### ScriptPlugin Integration
 
 Script execution state can be saved:
 
 ```python
-# Script system tracks completed scripts
+# Script plugin tracks completed scripts
 {
   "completed_scripts": ["intro_cutscene", "merchant_greeting"],
   "run_once_scripts": {"boss_defeated": true}
@@ -824,16 +824,16 @@ If saves fail silently:
 2. **Check permissions** - Ensure write permissions for save directory
 3. **Review logs** - Look for I/O errors or JSON serialization issues
 4. **Test manually** - Try `save_game(1)` and check return value
-5. **Verify systems** - Ensure all systems return JSON-serializable data from `get_save_state()`
+5. **Verify plugins** - Ensure all plugins return JSON-serializable data from `get_save_state()`
 
 ### Load Not Restoring State
 
 If load succeeds but state isn't restored:
 
-1. **Check Phase 1** - Verify `restore_save_state()` called for all systems
+1. **Check Phase 1** - Verify `restore_save_state()` called for all plugins
 2. **Check Phase 2** - Ensure `apply_entity_states()` called after scene loads
-3. **Verify save data** - Check save file contains expected system states
-4. **Review system implementations** - Ensure systems implement both restore methods
+3. **Verify save data** - Check save file contains expected plugin states
+4. **Review plugin implementations** - Ensure plugins implement both restore methods
 5. **Check sprite existence** - Entity state requires sprites to exist
 
 ### Quick Save/Load Not Working
@@ -843,7 +843,7 @@ If keyboard shortcuts don't trigger saves:
 1. **Check key bindings** - Verify `SAVE_QUICK_SAVE_KEY` and `SAVE_QUICK_LOAD_KEY` settings
 2. **Test key codes** - Use `matches_key` helper to debug key detection
 3. **Check auto-save slot** - Ensure slot 0 is writable
-4. **Review on_key_press** - Ensure SaveManager's key handler is called by SystemLoader
+4. **Review on_key_press** - Ensure SavePlugin's key handler is called by PluginLoader
 
 ### Save File Corruption
 
@@ -853,38 +853,38 @@ If save files are unreadable:
 2. **Check version** - Ensure `save_version` matches expected version
 3. **Backup saves** - Keep backups before testing new features
 4. **Validate serialization** - Test `get_save_state()` returns JSON-serializable data
-5. **Review custom systems** - Check custom systems don't save unsupported types
+5. **Review custom plugins** - Check custom plugins don't save unsupported types
 
 ### Missing State After Load
 
 If some state is missing after loading:
 
-1. **Check system registration** - Ensure all systems are registered and loaded
+1. **Check plugin registration** - Ensure all plugins are registered and loaded
 2. **Verify save state** - Check `get_save_state()` returns complete data
 3. **Test both phases** - Ensure both `restore_save_state()` and `apply_entity_state()` implemented
 4. **Check scene caching** - Verify scene cache includes all necessary state
-5. **Review namespacing** - Ensure system names match between save and load
+5. **Review namespacing** - Ensure plugin names match between save and load
 
-## Custom SaveManager Implementation
+## Custom SavePlugin Implementation
 
-If you need to replace the save system with a custom implementation, you can extend the `SaveBaseManager` abstract base class.
+If you need to replace the save plugin with a custom implementation, you can extend the `SaveBasePlugin` abstract base class.
 
-### SaveBaseManager
+### SaveBasePlugin
 
-**Location:** [src/pedre/systems/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/save/base.py)
+**Location:** [src/pedre/plugins/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/save/base.py)
 
-The `SaveBaseManager` class defines the minimum interface that any save manager must implement.
+The `SaveBasePlugin` class defines the minimum interface that any save manager must implement.
 
 #### Required Methods
 
 Your custom save manager must implement these abstract methods:
 
 ```python
-from pedre.systems.save.base import SaveBaseManager, GameSaveData
-from pedre.systems.registry import SystemRegistry
+from pedre.plugins.save.base import SaveBasePlugin, GameSaveData
+from pedre.plugins.registry import PluginRegistry
 
-@SystemRegistry.register
-class CustomSaveManager(SaveBaseManager):
+@PluginRegistry.register
+class CustomSavePlugin(SaveBasePlugin):
     """Custom save implementation."""
 
     name = "save"
@@ -920,14 +920,14 @@ class CustomSaveManager(SaveBaseManager):
 
 #### Registration
 
-Register your custom save manager using the `@SystemRegistry.register` decorator:
+Register your custom save manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.save.base import SaveBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.save.base import SaveBasePlugin
 
-@SystemRegistry.register
-class CloudSaveManager(SaveBaseManager):
+@PluginRegistry.register
+class CloudSavePlugin(SaveBasePlugin):
     name = "save"
 
     # ... implement all abstract methods ...
@@ -935,20 +935,20 @@ class CloudSaveManager(SaveBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `SaveBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and potentially `reset()`
+- Your custom manager inherits from `BasePlugin` (via `SaveBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and potentially `reset()`
 - The `role` attribute is set to `"save_manager"` in the base class
 - Your implementation can use any storage backend (cloud, database, encrypted files, etc.)
-- Register your custom save manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.save"` to replace it
+- Register your custom save manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.save"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/cloud_save.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.save.base import SaveBaseManager, GameSaveData
+# In myproject/plugins/cloud_save.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.save.base import SaveBasePlugin, GameSaveData
 
-@SystemRegistry.register
-class CloudSaveManager(SaveBaseManager):
+@PluginRegistry.register
+class CloudSavePlugin(SaveBasePlugin):
     """Save manager that stores saves in the cloud."""
 
     name = "save"
@@ -966,16 +966,16 @@ class CloudSaveManager(SaveBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.cloud_save",  # Load custom save first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.save") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.cloud_save",  # Load custom save first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.save") ...
 ]
 ```
 
 ## See Also
 
-- [SceneManager](scene.md) - Scene transitions and loading
+- [ScenePlugin](scene.md) - Scene transitions and loading
 - [Configuration Guide](../guides/configuration.md)
 - [Views](../api/views.md)

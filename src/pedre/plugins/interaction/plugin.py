@@ -113,7 +113,7 @@ class InteractionPlugin(InteractionBasePlugin):
                                 Typical values: 32.0 (1 tile), 64.0 (2 tiles), 96.0 (3 tiles).
                                 Default is 64.0 for comfortable interaction range.
         """
-        self.interaction_distance = settings.INTERACTION_MANAGER_DISTANCE
+        self.interaction_distance = settings.INTERACTION_PLUGIN_DISTANCE
         self.interactive_objects: dict[str, InteractiveObject] = {}
         self.interacted_objects: set[str] = set()
 

@@ -1,19 +1,19 @@
-# NPCManager
+# NPCPlugin
 
 Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 
 ## Location
 
-- Implementation: [src/pedre/systems/npc/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/manager.py)
-- Base class: [src/pedre/systems/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/base.py)
-- Events: [src/pedre/systems/npc/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/events.py)
-- Actions: [src/pedre/systems/npc/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/actions.py)
-- Conditions: [src/pedre/systems/npc/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/conditions.py)
-- Sprites: [src/pedre/systems/npc/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/sprites.py)
+- Implementation: [src/pedre/plugins/npc/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/manager.py)
+- Base class: [src/pedre/plugins/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/base.py)
+- Events: [src/pedre/plugins/npc/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/events.py)
+- Actions: [src/pedre/plugins/npc/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/actions.py)
+- Conditions: [src/pedre/plugins/npc/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/conditions.py)
+- Sprites: [src/pedre/plugins/npc/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/sprites.py)
 
 ## Configuration
 
-The NPCManager uses the following settings from `pedre.conf.settings`:
+The NPCPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Movement and Interaction Settings
 
@@ -207,7 +207,7 @@ def on_update(self, delta_time):
 
 **Notes:**
 
-- Called automatically by SystemLoader each frame
+- Called automatically by PluginLoader each frame
 - Updates NPC positions along paths
 - Updates AnimatedNPC animations
 - Publishes movement/animation complete events
@@ -270,7 +270,7 @@ if npc_manager.interact_with_npc("merchant"):
 
 - Retrieves NPC's current dialog
 - Checks dialog conditions
-- Shows dialog via DialogManager
+- Shows dialog via DialogPlugin
 - Marks NPC as interacted in current scene
 
 #### mark_npc_as_interacted
@@ -510,21 +510,21 @@ Restore cached state when returning to a scene.
 - `scene_name` - Name of the scene being restored
 - `state` - Previously cached state
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the NPC system with game context.
+Initialize the NPC plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### cleanup
@@ -537,13 +537,13 @@ Clean up NPC resources when the scene unloads.
 
 - Clears all registered NPCs
 - Clears dialog cache
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 #### reset
 
 `reset() -> None`
 
-Reset NPC system for new game.
+Reset NPC plugin for new game.
 
 **Notes:**
 
@@ -567,7 +567,7 @@ Handle key presses for NPC interaction.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Checks for NPC_INTERACTION_KEY press
 - Finds nearby NPC and triggers interaction
 
@@ -584,7 +584,7 @@ Load NPCs from Tiled map object layer.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Looks for "NPCs" object layer
 - Creates AnimatedNPC sprites from object data
 
@@ -637,7 +637,7 @@ dialog_config = NPCDialogConfig(
 )
 ```
 
-## Dialog System
+## Dialog Plugin
 
 ### Dialog JSON Format
 
@@ -690,7 +690,7 @@ current_scene = context.scene_manager.get_current_scene()
 dialog_data = npc_manager.get_dialog("merchant", 0, current_scene)
 ```
 
-If no scene-specific dialog exists, the system falls back to "default" scene.
+If no scene-specific dialog exists, the plugin falls back to "default" scene.
 
 ### Dialog Conditions
 
@@ -726,7 +726,7 @@ AnimatedNPCs are specialized sprites with multi-directional animations and speci
 ### Creating AnimatedNPC
 
 ```python
-from pedre.systems.npc.sprites import AnimatedNPC
+from pedre.plugins.npc.sprites import AnimatedNPC
 
 npc = AnimatedNPC(
     sprite_sheet="characters/merchant.png",
@@ -1379,22 +1379,22 @@ if nearby:
 
 ## Custom NPC Implementation
 
-If you need to replace the NPC system with a custom implementation, you can extend the `NPCBaseManager` abstract base class.
+If you need to replace the NPC plugin with a custom implementation, you can extend the `NPCBasePlugin` abstract base class.
 
-### NPCBaseManager
+### NPCBasePlugin
 
-**Location:** [src/pedre/systems/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/base.py)
+**Location:** [src/pedre/plugins/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/base.py)
 
-The `NPCBaseManager` class defines the minimum interface that any NPC manager must implement.
+The `NPCBasePlugin` class defines the minimum interface that any NPC manager must implement.
 
 #### Required Methods
 
 Your custom NPC manager must implement these abstract methods:
 
 ```python
-from pedre.systems.npc.base import NPCBaseManager, NPCState
+from pedre.plugins.npc.base import NPCBasePlugin, NPCState
 
-class CustomNPCManager(NPCBaseManager):
+class CustomNPCPlugin(NPCBasePlugin):
     """Custom NPC implementation."""
 
     name = "npc"
@@ -1431,14 +1431,14 @@ class CustomNPCManager(NPCBaseManager):
 
 #### Registration
 
-Register your custom NPC manager using the `@SystemRegistry.register` decorator:
+Register your custom NPC manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.npc.base import NPCBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.npc.base import NPCBasePlugin
 
-@SystemRegistry.register
-class CustomNPCManager(NPCBaseManager):
+@PluginRegistry.register
+class CustomNPCPlugin(NPCBasePlugin):
     name = "npc"
     dependencies = ["pathfinding"]
 
@@ -1447,20 +1447,20 @@ class CustomNPCManager(NPCBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `NPCBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `NPCBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"npc_manager"` in the base class
-- Your implementation can use any dialog storage or movement system
-- Register your custom NPC manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.npc"` to replace it
+- Your implementation can use any dialog storage or movement plugin
+- Register your custom NPC manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.npc"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_npc.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.npc.base import NPCBaseManager
+# In myproject/plugins/custom_npc.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.npc.base import NPCBasePlugin
 
-@SystemRegistry.register
-class DatabaseNPCManager(NPCBaseManager):
+@PluginRegistry.register
+class DatabaseNPCPlugin(NPCBasePlugin):
     """NPC manager that stores state in a database."""
 
     name = "npc"
@@ -1479,19 +1479,19 @@ class DatabaseNPCManager(NPCBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_npc",  # Load custom NPC first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.npc") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_npc",  # Load custom NPC first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.npc") ...
 ]
 ```
 
 ## See Also
 
-- [DialogManager](dialog.md) - Conversation system
-- [ScriptManager](script.md) - Event-driven scripting
-- [PathfindingManager](pathfinding.md) - A* pathfinding system
+- [DialogPlugin](dialog.md) - Conversation plugin
+- [ScriptPlugin](script.md) - Event-driven scripting
+- [PathfindingPlugin](pathfinding.md) - A* pathfinding plugin
 - [Configuration Guide](../guides/configuration.md)
 - [Scripting Actions](../scripting/actions.md)
 - [Scripting Conditions](../scripting/conditions.md)

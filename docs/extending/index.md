@@ -1,12 +1,12 @@
 # Extending Pedre
 
-Pedre is designed for extensibility. You can add custom actions, events, conditions, and even entire game systems without modifying the framework code.
+Pedre is designed for extensibility. You can add custom actions, events, conditions, and even entire game plugins without modifying the framework code.
 
 ## Extension System Overview
 
 The Pedre extension system uses a **plugin-style architecture** with automatic discovery and registration:
 
-1. **Define** your custom component (action/event/condition/system)
+1. **Define** your custom component (action/event/condition/plugin)
 2. **Register** it using decorators (`@ActionRegistry.register`, `@EventRegistry.register`, etc.)
 3. **Configure** it in your project's `settings.py` to be loaded
 4. **Use** it in your JSON scripts or game code
@@ -19,7 +19,7 @@ Create custom script actions that can be triggered from JSON scripts.
 
 **Use Cases:**
 
-- Weather systems (rain, snow, fog)
+- Weather plugins (rain, snow, fog)
 - Custom UI elements (tooltips, notifications)
 - Game mechanics (crafting, combat, puzzles)
 - External integrations (analytics, achievements)
@@ -52,19 +52,19 @@ Create conditional checks for script execution.
 
 **Learn More:** [Custom Conditions](custom-conditions.md)
 
-### Systems
+### Plugins
 
-Build entire game systems that integrate with the framework lifecycle.
+Build entire game plugins that integrate with the framework lifecycle.
 
 **Use Cases:**
 
 - Quest management
-- Combat system
-- Crafting system
-- Weather/time system
-- Relationship/faction system
+- Combat plugin
+- Crafting plugin
+- Weather/time plugin
+- Relationship/faction plugin
 
-**Learn More:** [Custom Systems](custom-systems.md)
+**Learn More:** [Custom Plugins](custom-plugins.md)
 
 ## Extension Workflow
 
@@ -137,9 +137,9 @@ List of Python module paths containing action classes.
 
 ```python
 INSTALLED_ACTIONS = [
-    "pedre.systems.audio.actions",
-    "pedre.systems.camera.actions",
-    "pedre.systems.dialog.actions",
+    "pedre.plugins.audio.actions",
+    "pedre.plugins.camera.actions",
+    "pedre.plugins.dialog.actions",
     "myproject.custom_actions",  # Your custom actions
 ]
 ```
@@ -150,8 +150,8 @@ List of Python module paths containing event classes.
 
 ```python
 INSTALLED_EVENTS = [
-    "pedre.systems.npc.events",
-    "pedre.systems.dialog.events",
+    "pedre.plugins.npc.events",
+    "pedre.plugins.dialog.events",
     "myproject.custom_events",  # Your custom events
 ]
 ```
@@ -162,21 +162,21 @@ List of Python module paths containing condition checker functions.
 
 ```python
 INSTALLED_CONDITIONS = [
-    "pedre.systems.inventory.conditions",
-    "pedre.systems.npc.conditions",
+    "pedre.plugins.inventory.conditions",
+    "pedre.plugins.npc.conditions",
     "myproject.custom_conditions",  # Your custom conditions
 ]
 ```
 
-### INSTALLED_SYSTEMS
+### INSTALLED_PLUGINS
 
-List of Python module paths containing system classes.
+List of Python module paths containing plugin classes.
 
 ```python
-INSTALLED_SYSTEMS = [
-    "pedre.systems.audio.manager",
-    "pedre.systems.dialog.manager",
-    "myproject.systems.weather",  # Your custom system
+INSTALLED_PLUGINS = [
+    "pedre.plugins.audio.manager",
+    "pedre.plugins.dialog.manager",
+    "myproject.plugins.weather",  # Your custom plugin
 ]
 ```
 
@@ -187,7 +187,7 @@ INSTALLED_SYSTEMS = [
 - **Actions**: Verb-based, lowercase with underscores (e.g., `set_weather`, `spawn_enemy`)
 - **Events**: Past tense, lowercase with underscores (e.g., `weather_changed`, `enemy_spawned`)
 - **Conditions**: Question-based, lowercase with underscores (e.g., `is_raining`, `has_quest`)
-- **Systems**: Noun-based, PascalCase with "Manager" suffix (e.g., `WeatherManager`, `QuestManager`)
+- **Plugins**: Noun-based, PascalCase with "Plugin" suffix (e.g., `WeatherPlugin`, `QuestPlugin`)
 
 ### Documentation
 
@@ -203,7 +203,7 @@ Always include docstrings explaining:
 - **Actions**: Return `False` to keep action active, `True` when complete
 - **Conditions**: Return `False` if checks fail, don't raise exceptions
 - **Events**: Use dataclasses for clear data structures
-- **Systems**: Handle missing dependencies gracefully
+- **Plugins**: Handle missing dependencies gracefully
 
 ### Testing
 
@@ -234,9 +234,9 @@ class SetWeatherAction(Action):
 
     def execute(self, context) -> bool:
         if not self._executed:
-            weather_system = context.get_system("weather")
-            if weather_system:
-                weather_system.set_weather(self.weather)
+            weather_plugin = context.get_plugin("weather")
+            if weather_plugin:
+                weather_plugin.set_weather(self.weather)
             self._executed = True
         return True
 
@@ -259,15 +259,15 @@ class WeatherChangedEvent:
 ```python
 @ConditionRegistry.register("is_weather")
 def check_weather(data: dict[str, Any], context: GameContext) -> bool:
-    weather_system = context.get_system("weather")
-    if not weather_system:
+    weather_plugin = context.get_plugin("weather")
+    if not weather_plugin:
         return False
-    return weather_system.current_weather == data.get("weather")
+    return weather_plugin.current_weather == data.get("weather")
 ```
 
-## System Loader
+## Plugin Loader
 
-The [SystemLoader](system-loader.md) handles automatic loading and initialization of all extensions. It manages:
+The [PluginLoader](plugin-loader.md) handles automatic loading and initialization of all extensions. It manages:
 
 - Dependency resolution
 - Initialization order
@@ -279,11 +279,11 @@ The [SystemLoader](system-loader.md) handles automatic loading and initializatio
 - [Custom Actions](custom-actions.md) - Create script actions
 - [Custom Events](custom-events.md) - Define game events
 - [Custom Conditions](custom-conditions.md) - Add conditional checks
-- [Custom Systems](custom-systems.md) - Build complete game systems
-- [System Loader](system-loader.md) - Understand the loading process
+- [Custom Plugins](custom-plugins.md) - Build complete game plugins
+- [Plugin Loader](plugin-loader.md) - Understand the loading process
 
 ## See Also
 
 - [API Reference](../api/index.md) - Framework architecture
 - [Scripting Guide](../scripting/index.md) - Using extensions in scripts
-- [Systems Reference](../systems/index.md) - Built-in systems documentation
+- [Plugins Reference](../plugins/index.md) - Built-in plugins documentation

@@ -1,6 +1,6 @@
 # Actions & Registry
 
-Pedre uses an extensible action system where all script actions are managed by a central registry. This allows you to create custom actions that integrate seamlessly with the event-driven scripting system.
+Pedre uses an extensible action plugin where all script actions are managed by a central registry. This allows you to create custom actions that integrate seamlessly with the event-driven scripting plugin.
 
 ## How Actions Are Loaded
 
@@ -14,13 +14,13 @@ Actions are configured through the `INSTALLED_ACTIONS` setting, which is a list 
 
 ```python
 INSTALLED_ACTIONS = [
-    "pedre.systems.audio.actions",
-    "pedre.systems.camera.actions",
-    "pedre.systems.dialog.actions",
-    "pedre.systems.inventory.actions",
-    "pedre.systems.particle.actions",
-    "pedre.systems.scene.actions",
-    "pedre.systems.npc.actions",
+    "pedre.plugins.audio.actions",
+    "pedre.plugins.camera.actions",
+    "pedre.plugins.dialog.actions",
+    "pedre.plugins.inventory.actions",
+    "pedre.plugins.particle.actions",
+    "pedre.plugins.scene.actions",
+    "pedre.plugins.npc.actions",
 ]
 ```
 
@@ -34,7 +34,7 @@ from pedre.conf import global_settings
 INSTALLED_ACTIONS = [
     *global_settings.INSTALLED_ACTIONS,  # Include built-in actions
     "myproject.custom_actions",           # Your custom actions module
-    "myproject.systems.weather.actions",  # System-specific actions
+    "myproject.plugins.weather.actions",  # Plugin-specific actions
 ]
 ```
 
@@ -76,9 +76,9 @@ class SetWeatherAction(Action):
     def execute(self, context) -> bool:
         """Execute the action logic."""
         if not self._executed:
-            weather_system = context.get_system("weather")
-            if weather_system:
-                weather_system.set_weather(self.weather, self.intensity)
+            weather_plugin = context.get_plugin("weather")
+            if weather_plugin:
+                weather_plugin.set_weather(self.weather, self.intensity)
             self._executed = True
 
         # Return True to indicate the action is complete.

@@ -4,7 +4,7 @@ Publish-subscribe event system for loose coupling.
 
 ## Location
 
-[src/pedre/systems/events/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/view_manager.py)
+[src/pedre/events/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/events/base.py)
 
 ## Key Methods
 
@@ -41,7 +41,7 @@ Publish an event to all subscribers.
 **Example:**
 
 ```python
-from pedre.systems.events import DialogClosedEvent
+from pedre.plugins.events import DialogClosedEvent
 
 event_bus.publish(DialogClosedEvent(
     npc_name="merchant",
@@ -63,21 +63,21 @@ event_bus.unsubscribe(DialogClosedEvent, on_dialog_closed)
 
 ## Available Events
 
-| Event | Fields | Description |
-| ----- | ------ | ----------- |
-| `DialogClosedEvent` | `npc_name`, `dialog_level` | Dialog window closed |
-| `NPCInteractedEvent` | `npc_name`, `position` | Player interacted with NPC |
-| `NPCMovementCompleteEvent` | `npc_name`, `waypoint` | NPC reached destination |
-| `NPCDisappearCompleteEvent` | `npc_name` | NPC disappear animation finished |
-| `InventoryClosedEvent` | - | Inventory screen closed |
-| `ObjectInteractedEvent` | `object_name`, `position` | Player interacted with object |
-| `ScriptCompleteEvent` | `script_name` | Script finished executing |
+| Event                       | Fields                     | Description                      |
+| --------------------------- | -------------------------- | -------------------------------- |
+| `DialogClosedEvent`         | `npc_name`, `dialog_level` | Dialog window closed             |
+| `NPCInteractedEvent`        | `npc_name`, `position`     | Player interacted with NPC       |
+| `NPCMovementCompleteEvent`  | `npc_name`, `waypoint`     | NPC reached destination          |
+| `NPCDisappearCompleteEvent` | `npc_name`                 | NPC disappear animation finished |
+| `InventoryClosedEvent`      | -                          | Inventory screen closed          |
+| `ObjectInteractedEvent`     | `object_name`, `position`  | Player interacted with object    |
+| `ScriptCompleteEvent`       | `script_name`              | Script finished executing        |
 
 ## Creating Custom Events
 
 ```python
 from dataclasses import dataclass
-from pedre.systems.events import Event
+from pedre.plugins.events import Event
 
 @dataclass
 class ItemCollectedEvent(Event):

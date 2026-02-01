@@ -66,7 +66,7 @@ def configure_test_settings() -> Generator[None]:
         WINDOW_TITLE="Test",
         MENU_TITLE="Test Menu",
         PLAYER_MOVEMENT_SPEED=3,
-        INTERACTION_MANAGER_DISTANCE=50,
+        INTERACTION_PLUGIN_DISTANCE=50,
         NPC_INTERACTION_DISTANCE=50,
         PORTAL_INTERACTION_DISTANCE=50,
         WAYPOINT_THRESHOLD=2,

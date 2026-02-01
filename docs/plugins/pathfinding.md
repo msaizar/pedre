@@ -1,15 +1,15 @@
-# PathfindingManager
+# PathfindingPlugin
 
 A* pathfinding for NPC navigation on tile-based grids.
 
 ## Location
 
-- Implementation: [src/pedre/systems/pathfinding/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/pathfinding/manager.py)
-- Base class: [src/pedre/systems/pathfinding/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/pathfinding/base.py)
+- Implementation: [src/pedre/plugins/pathfinding/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/pathfinding/manager.py)
+- Base class: [src/pedre/plugins/pathfinding/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/pathfinding/base.py)
 
 ## Configuration
 
-The PathfindingManager uses the following settings from `pedre.conf.settings`:
+The PathfindingPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Tile Settings
 
@@ -106,21 +106,21 @@ if pathfinding_manager.is_tile_walkable(10, 15, exclude_sprite=npc_sprite):
 - Returns `True` if the wall list is not set (fail-safe behavior)
 - The exclusion system prevents entities from blocking their own paths
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the pathfinding system with game context.
+Initialize the pathfinding plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### cleanup
@@ -131,11 +131,11 @@ Clean up pathfinding resources when the scene unloads.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 ## How It Works
 
-The pathfinding system operates on a tile-based grid and converts between two coordinate systems:
+The pathfinding plugin operates on a tile-based grid and converts between two coordinate systems:
 
 - **Pixel coordinates**: World positions used by sprites (e.g., 320.0, 240.0)
 - **Tile coordinates**: Grid positions used for pathfinding (e.g., 10, 7)
@@ -160,32 +160,32 @@ The implementation uses the A* search algorithm with:
 
 ### NPC Passthrough
 
-When normal pathfinding fails (typically because NPCs are blocking the path), the system automatically retries with all NPC sprites excluded from collision checks. This prevents permanent deadlocks where NPCs block each other's paths, with the expectation that NPCs will move out of the way before collision occurs.
+When normal pathfinding fails (typically because NPCs are blocking the path), the plugin automatically retries with all NPC sprites excluded from collision checks. This prevents permanent deadlocks where NPCs block each other's paths, with the expectation that NPCs will move out of the way before collision occurs.
 
-### Integration with Other Systems
+### Integration with Other Plugins
 
-- **NPCManager** calls `find_path` when moving NPCs to waypoints
+- **NPCPlugin** calls `find_path` when moving NPCs to waypoints
 - **MoveNPCAction** triggers pathfinding via NPC manager
-- The wall list is obtained from the **SceneManager** via `get_wall_list()`
+- The wall list is obtained from the **ScenePlugin** via `get_wall_list()`
 
 ## Custom Pathfinding Implementation
 
-If you need to replace the pathfinding system with a custom implementation, you can extend the `PathfindingBaseManager` abstract base class.
+If you need to replace the pathfinding plugin with a custom implementation, you can extend the `PathfindingBasePlugin` abstract base class.
 
-### PathfindingBaseManager
+### PathfindingBasePlugin
 
-**Location:** [src/pedre/systems/pathfinding/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/pathfinding/base.py)
+**Location:** [src/pedre/plugins/pathfinding/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/pathfinding/base.py)
 
-The `PathfindingBaseManager` class defines the minimum interface that any pathfinding manager must implement.
+The `PathfindingBasePlugin` class defines the minimum interface that any pathfinding manager must implement.
 
 #### Required Methods
 
 Your custom pathfinding manager must implement these abstract methods:
 
 ```python
-from pedre.systems.pathfinding.base import PathfindingBaseManager
+from pedre.plugins.pathfinding.base import PathfindingBasePlugin
 
-class CustomPathfindingManager(PathfindingBaseManager):
+class CustomPathfindingPlugin(PathfindingBasePlugin):
     """Custom pathfinding implementation."""
 
     name = "pathfinding"
@@ -206,14 +206,14 @@ class CustomPathfindingManager(PathfindingBaseManager):
 
 #### Registration
 
-Register your custom pathfinding manager using the `@SystemRegistry.register` decorator:
+Register your custom pathfinding manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.pathfinding.base import PathfindingBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.pathfinding.base import PathfindingBasePlugin
 
-@SystemRegistry.register
-class CustomPathfindingManager(PathfindingBaseManager):
+@PluginRegistry.register
+class CustomPathfindingPlugin(PathfindingBasePlugin):
     name = "pathfinding"
     dependencies = []
 
@@ -222,23 +222,23 @@ class CustomPathfindingManager(PathfindingBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `PathfindingBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `PathfindingBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"pathfinding_manager"` in the base class
 - Your implementation can use any pathfinding algorithm (Dijkstra, JPS, navmesh, etc.)
-- Register your custom pathfinding manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.pathfinding"` to replace it
+- Register your custom pathfinding manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.pathfinding"` to replace it
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_pathfinding",  # Load custom pathfinding first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.pathfinding") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_pathfinding",  # Load custom pathfinding first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.pathfinding") ...
 ]
 ```
 
 ## See Also
 
-- [NPCManager](npc.md) - NPC movement uses pathfinding
-- [SceneManager](scene.md) - Provides wall list for collision
+- [NPCPlugin](npc.md) - NPC movement uses pathfinding
+- [ScenePlugin](scene.md) - Provides wall list for collision
 - [Configuration Guide](../guides/configuration.md)

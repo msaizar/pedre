@@ -1,17 +1,17 @@
-# ScriptManager
+# ScriptPlugin
 
-Event-driven scripting system for cutscenes and interactive sequences.
+Event-driven scripting plugin for cutscenes and interactive sequences.
 
 ## Location
 
-- Implementation: [src/pedre/systems/script/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/manager.py)
-- Base class: [src/pedre/systems/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/base.py)
-- Events: [src/pedre/systems/script/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/events.py)
-- Conditions: [src/pedre/systems/script/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/conditions.py)
+- Implementation: [src/pedre/plugins/script/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/manager.py)
+- Base class: [src/pedre/plugins/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/base.py)
+- Events: [src/pedre/plugins/script/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/events.py)
+- Conditions: [src/pedre/plugins/script/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/conditions.py)
 
 ## Configuration
 
-The ScriptManager uses the following setting from `pedre.conf.settings`:
+The ScriptPlugin uses the following setting from `pedre.conf.settings`:
 
 - `ASSETS_HANDLE` - Base path for asset loading (default: "assets")
 
@@ -19,15 +19,15 @@ The ScriptManager uses the following setting from `pedre.conf.settings`:
 
 ### Script Loading
 
-All scripts are loaded globally during system setup. The ScriptManager automatically scans the scripts directory for all `*_scripts.json` files and loads them at initialization time. This makes scripts available for condition checking across all scenes, with the `scene` field in each script definition controlling when it can actually execute.
+All scripts are loaded globally during plugin setup. The ScriptPlugin automatically scans the scripts directory for all `*_scripts.json` files and loads them at initialization time. This makes scripts available for condition checking across all scenes, with the `scene` field in each script definition controlling when it can actually execute.
 
 **Automatic Loading:**
 
-Scripts are loaded automatically when ScriptManager initializes:
+Scripts are loaded automatically when ScriptPlugin initializes:
 
 ```python
 # Scripts are loaded during setup
-script_manager = ScriptManager()
+script_manager = ScriptPlugin()
 script_manager.setup(context)  # Loads all scripts from scripts directory
 ```
 
@@ -70,7 +70,7 @@ def on_update(self, delta_time):
 
 **Notes:**
 
-- Called automatically by SystemLoader each frame
+- Called automatically by PluginLoader each frame
 - Updates all currently executing script action sequences
 - Removes completed sequences and publishes ScriptCompleteEvent
 
@@ -125,7 +125,7 @@ save_data = {
 
 `restore_save_state(state: dict[str, Any]) -> None`
 
-Restore script system state from save file.
+Restore script plugin state from save file.
 
 **Parameters:**
 
@@ -142,21 +142,21 @@ script_manager.restore_save_state(save_data["script"])
 - Restores completion flags and run-once history
 - Critical for preventing one-time events from re-running
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the script system with game context.
+Initialize the script plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Loads all scripts globally from scripts directory
 - Registers event handlers for all script triggers
 
@@ -164,19 +164,19 @@ Initialize the script system with game context.
 
 `cleanup() -> None`
 
-Clean up script system resources.
+Clean up script plugin resources.
 
 **Notes:**
 
 - Unregisters all event handlers
 - Clears scripts and active sequences
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 #### reset
 
 `reset() -> None`
 
-Reset script system for new game.
+Reset script plugin for new game.
 
 **Notes:**
 
@@ -218,7 +218,7 @@ script = Script(
 )
 ```
 
-## Script System
+## Script Plugin
 
 ### Script JSON Format
 
@@ -261,14 +261,14 @@ Scripts are defined in JSON files located in `assets/scripts/` with the naming p
 
 ### Script Fields
 
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `trigger` | object | Yes | Event specification that triggers this script |
-| `conditions` | array | No | Conditions to check before running |
-| `scene` | string | No | Only run in this scene/map (omit for global scripts that run anywhere) |
-| `run_once` | bool | No | Only execute once (default: false) |
-| `actions` | array | Yes | Sequence of actions to execute |
-| `on_condition_fail` | array | No | Actions to execute when conditions fail |
+| Field               | Type   | Required | Description                                                            |
+| ------------------- | ------ | -------- | ---------------------------------------------------------------------- |
+| `trigger`           | object | Yes      | Event specification that triggers this script                          |
+| `conditions`        | array  | No       | Conditions to check before running                                     |
+| `scene`             | string | No       | Only run in this scene/map (omit for global scripts that run anywhere) |
+| `run_once`          | bool   | No       | Only execute once (default: false)                                     |
+| `actions`           | array  | Yes      | Sequence of actions to execute                                         |
+| `on_condition_fail` | array  | No       | Actions to execute when conditions fail                                |
 
 ### Trigger Object
 
@@ -331,9 +331,9 @@ For available condition types, see [Conditions](../scripting/conditions.md).
 
 ### Global Script Loading
 
-All scripts are loaded globally during system initialization:
+All scripts are loaded globally during plugin initialization:
 
-1. ScriptManager scans `assets/scripts/` for all `*_scripts.json` files
+1. ScriptPlugin scans `assets/scripts/` for all `*_scripts.json` files
 2. All scripts are loaded into a single registry
 3. Event triggers are registered with the EventBus
 4. Scripts can be referenced in conditions across all scenes
@@ -566,22 +566,22 @@ Check if a specific script has fully completed all its actions.
 
 ## Custom Script Implementation
 
-If you need to replace the script system with a custom implementation, you can extend the `ScriptBaseManager` abstract base class.
+If you need to replace the script plugin with a custom implementation, you can extend the `ScriptBasePlugin` abstract base class.
 
-### ScriptBaseManager
+### ScriptBasePlugin
 
-**Location:** [src/pedre/systems/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/script/base.py)
+**Location:** [src/pedre/plugins/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/base.py)
 
-The `ScriptBaseManager` class defines the minimum interface that any script manager must implement.
+The `ScriptBasePlugin` class defines the minimum interface that any script manager must implement.
 
 #### Required Methods
 
 Your custom script manager must implement these abstract methods:
 
 ```python
-from pedre.systems.script.base import ScriptBaseManager, Script
+from pedre.plugins.script.base import ScriptBasePlugin, Script
 
-class CustomScriptManager(ScriptBaseManager):
+class CustomScriptPlugin(ScriptBasePlugin):
     """Custom script implementation."""
 
     name = "script"
@@ -594,14 +594,14 @@ class CustomScriptManager(ScriptBaseManager):
 
 #### Registration
 
-Register your custom script manager using the `@SystemRegistry.register` decorator:
+Register your custom script manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.script.base import ScriptBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.script.base import ScriptBasePlugin
 
-@SystemRegistry.register
-class CustomScriptManager(ScriptBaseManager):
+@PluginRegistry.register
+class CustomScriptPlugin(ScriptBasePlugin):
     name = "script"
     dependencies = []
 
@@ -610,20 +610,20 @@ class CustomScriptManager(ScriptBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `ScriptBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `ScriptBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"script_manager"` in the base class
-- Your implementation can use any script storage or execution system
-- Register your custom script manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.script"` to replace it
+- Your implementation can use any script storage or execution plugin
+- Register your custom script manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.script"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_script.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.script.base import ScriptBaseManager
+# In myproject/plugins/custom_script.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.script.base import ScriptBasePlugin
 
-@SystemRegistry.register
-class DatabaseScriptManager(ScriptBaseManager):
+@PluginRegistry.register
+class DatabaseScriptPlugin(ScriptBasePlugin):
     """Script manager that stores state in a database."""
 
     name = "script"
@@ -642,20 +642,20 @@ class DatabaseScriptManager(ScriptBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_script",  # Load custom script first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.script") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_script",  # Load custom script first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.script") ...
 ]
 ```
 
 ## See Also
 
-- [NPCManager](npc.md) - NPC interactions and dialog
-- [DialogManager](dialog.md) - Conversation system
+- [NPCPlugin](npc.md) - NPC interactions and dialog
+- [DialogPlugin](dialog.md) - Conversation plugin
 - [Scripting Guide](../scripting/index.md) - Event-driven scripting documentation
 - [Scripting Basics](../scripting/basics.md) - Script structure and organization
 - [Event Types](../scripting/events.md) - Available event triggers
-- [Conditions](../scripting/conditions.md) - Script condition system
+- [Conditions](../scripting/conditions.md) - Script condition plugin
 - [Actions](../scripting/actions.md) - Available script actions

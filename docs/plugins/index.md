@@ -1,19 +1,19 @@
-# Systems Reference
+# Plugins Reference
 
-This documentation provides detailed information about each manager/system in the Pedre framework. Each system is responsible for a specific aspect of game functionality and can be used independently or combined to create rich interactive experiences.
+This documentation provides detailed information about each plugin in the Pedre framework. Each plugin is responsible for a specific aspect of game functionality and can be used independently or combined to create rich interactive experiences.
 
 ## Overview
 
-The Pedre framework follows a manager-based architecture where each system encapsulates specific functionality. Systems communicate through an event bus for loose coupling and maintainability.
+The Pedre framework follows a plugin-based architecture where each plugin encapsulates specific functionality. Plugins communicate through an event bus for loose coupling and maintainability.
 
 For framework architecture and extension points, see:
 
 - [API Reference](../api/index.md) - Core framework components
-- [Extending Pedre](../extending/index.md) - Custom actions, events, conditions, and systems
+- [Extending Pedre](../extending/index.md) - Custom actions, events, conditions, and plugins
 
-## Core Systems
+## Core Plugins
 
-### [DialogManager](dialog.md)
+### [DialogPlugin](dialog.md)
 
 Manages dialog display with multi-page support and pagination. Handles NPC conversations and text-based interactions.
 
@@ -24,7 +24,7 @@ Manages dialog display with multi-page support and pagination. Handles NPC conve
 - Dialog overlay rendering
 - Event integration
 
-### [NPCManager](npc.md)
+### [NPCPlugin](npc.md)
 
 Manages NPC state, movement, pathfinding, and interactions. Controls all non-player character behavior and conversations.
 
@@ -36,7 +36,7 @@ Manages NPC state, movement, pathfinding, and interactions. Controls all non-pla
 - JSON-based dialog configuration
 - Event-driven interactions
 
-### [PlayerManager](player.md)
+### [PlayerPlugin](player.md)
 
 Manages player spawning, movement, animation, and state. Handles player character lifecycle and input processing.
 
@@ -48,9 +48,9 @@ Manages player spawning, movement, animation, and state. Handles player characte
 - Portal-based spawning
 - Save/load support
 
-### [ScriptManager](script.md)
+### [ScriptPlugin](script.md)
 
-Event-driven scripting system for cutscenes and interactive sequences. Enables complex game logic without code changes.
+Event-driven scripting plugin for cutscenes and interactive sequences. Enables complex game logic without code changes.
 
 **Key Features:**
 
@@ -60,7 +60,7 @@ Event-driven scripting system for cutscenes and interactive sequences. Enables c
 - Action sequencing
 - Script reusability
 
-### [PortalManager](portal.md)
+### [PortalPlugin](portal.md)
 
 Handles map transitions and portal collision detection. Manages seamless movement between different game areas.
 
@@ -71,7 +71,7 @@ Handles map transitions and portal collision detection. Manages seamless movemen
 - Conditional portals
 - Target positioning
 
-### [InventoryManager](inventory.md)
+### [InventoryPlugin](inventory.md)
 
 Manages item collection and categorization. Tracks player possessions and supports various item types.
 
@@ -84,7 +84,7 @@ Manages item collection and categorization. Tracks player possessions and suppor
 
 ## Media & Effects
 
-### [AudioManager](audio.md)
+### [AudioPlugin](audio.md)
 
 Manages background music and sound effects with caching. Provides audio playback and volume control.
 
@@ -95,9 +95,9 @@ Manages background music and sound effects with caching. Provides audio playback
 - Volume control
 - Multiple audio format support
 
-### [ParticleManager](particle.md)
+### [ParticlePlugin](particle.md)
 
-Visual effects and particle systems. Creates visual feedback for game events.
+Visual effects and particle plugins. Creates visual feedback for game events.
 
 **Key Features:**
 
@@ -108,7 +108,7 @@ Visual effects and particle systems. Creates visual feedback for game events.
 
 ## Development Tools
 
-### [DebugManager](debug.md)
+### [DebugPlugin](debug.md)
 
 Displays development information overlays showing player and NPC positions. Helps with debugging and level design.
 
@@ -122,18 +122,18 @@ Displays development information overlays showing player and NPC positions. Help
 
 ## Persistence & State
 
-### [CacheManager](cache.md)
+### [CachePlugin](cache.md)
 
-Manages scene state cache to preserve system states when the player transitions between scenes.
+Manages scene state cache to preserve plugin states when the player transitions between scenes.
 
 **Key Features:**
 
 - In-memory scene state storage
 - Automatic state preservation during transitions
-- System-agnostic caching interface
+- Plugin-agnostic caching interface
 - Save/load integration
 
-### [SaveManager](save.md)
+### [SavePlugin](save.md)
 
 Handles game state persistence with auto-save and manual save slots. Manages game progress across sessions.
 
@@ -146,7 +146,7 @@ Handles game state persistence with auto-save and manual save slots. Manages gam
 
 ## Camera & Movement
 
-### [CameraManager](camera.md)
+### [CameraPlugin](camera.md)
 
 Smooth camera following with optional bounds. Controls viewport positioning and movement.
 
@@ -157,7 +157,7 @@ Smooth camera following with optional bounds. Controls viewport positioning and 
 - Boundary constraints
 - Configurable smoothing
 
-### [PhysicsManager](physics.md)
+### [PhysicsPlugin](physics.md)
 
 Collision detection and physics simulation for the player sprite.
 
@@ -168,9 +168,9 @@ Collision detection and physics simulation for the player sprite.
 - Automatic engine recreation
 - Scene transition support
 
-### [SceneManager](scene.md)
+### [ScenePlugin](scene.md)
 
-Manages map loading and scene transitions. Handles the lifecycle of Tiled maps and connects game systems to the current level.
+Manages map loading and scene transitions. Handles the lifecycle of Tiled maps and connects game plugins to the current level.
 
 **Key Features:**
 
@@ -179,7 +179,7 @@ Manages map loading and scene transitions. Handles the lifecycle of Tiled maps a
 - Waypoint spawning
 - Collision layer extraction
 
-### [PathfindingManager](pathfinding.md)
+### [PathfindingPlugin](pathfinding.md)
 
 A* pathfinding for NPC navigation. Enables intelligent movement around obstacles.
 
@@ -190,7 +190,7 @@ A* pathfinding for NPC navigation. Enables intelligent movement around obstacles
 - Collision avoidance
 - Waypoint generation
 
-### [WaypointManager](waypoint.md)
+### [WaypointPlugin](waypoint.md)
 
 Named position management for navigation and spawning. Stores map locations used by NPCs and portals.
 
@@ -203,7 +203,7 @@ Named position management for navigation and spawning. Stores map locations used
 
 ## Interaction & Input
 
-### [InteractionManager](interaction.md)
+### [InteractionPlugin](interaction.md)
 
 Manages interactive objects that players can interact with. Handles object-based interactions.
 
@@ -214,7 +214,7 @@ Manages interactive objects that players can interact with. Handles object-based
 - Multiple interaction types
 - Property-based configuration
 
-### [InputManager](input.md)
+### [InputPlugin](input.md)
 
 Keyboard input handling and movement vector calculation. Processes player input.
 
@@ -236,7 +236,7 @@ Prefer events over direct manager calls:
 def close_dialog():
     dialog_manager.close()
     event_bus.publish(DialogClosedEvent(npc_name="merchant"))
-    # ScriptManager handles the rest
+    # ScriptPlugin handles the rest
 
 # Avoid: Direct coupling
 def close_dialog():
@@ -274,4 +274,4 @@ def on_update(self, delta_time):
 - [API Reference](../api/index.md) - Framework architecture and core components
 - [Scripting Guide](../scripting/index.md) - Event-driven scripting system
 - [Extending Pedre](../extending/index.md) - Add custom functionality
-- [Configuration Guide](../guides/configuration.md) - System settings reference
+- [Configuration Guide](../guides/configuration.md) - Plugin settings reference

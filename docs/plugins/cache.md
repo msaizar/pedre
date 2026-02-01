@@ -1,21 +1,21 @@
-# CacheManager
+# CachePlugin
 
-Manages scene state cache to preserve system states when the player transitions between scenes.
+Manages scene state cache to preserve plugin states when the player transitions between scenes.
 
 ## Location
 
-- Implementation: [src/pedre/systems/cache/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/cache/manager.py)
-- Base class: [src/pedre/systems/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/cache/base.py)
+- Implementation: [src/pedre/plugins/cache/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/cache/manager.py)
+- Base class: [src/pedre/plugins/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/cache/base.py)
 
 ## Overview
 
-The CacheManager is a central system that manages in-memory state preservation across scene transitions. When a player leaves a scene, the CacheManager collects and stores the state of all systems for that scene. When the player returns to the scene, the CacheManager restores those states, allowing NPCs, objects, and other systems to resume from where they left off.
+The CachePlugin is a central plugin that manages in-memory state preservation across scene transitions. When a player leaves a scene, the CachePlugin collects and stores the state of all plugins for that scene. When the player returns to the scene, the CachePlugin restores those states, allowing NPCs, objects, and other plugins to resume from where they left off.
 
-This system works by calling `cache_scene_state()` and `restore_scene_state()` on all registered systems, making scene transitions seamless while preserving game state.
+This plugin works by calling `cache_scene_state()` and `restore_scene_state()` on all registered plugins, making scene transitions seamless while preserving game state.
 
 ## Configuration
 
-The CacheManager itself has no configuration settings. It operates automatically by coordinating with other systems through the `BaseSystem` interface.
+The CachePlugin itself has no configuration settings. It operates automatically by coordinating with other plugins through the `BasePlugin` interface.
 
 ## Public API
 
@@ -25,7 +25,7 @@ The CacheManager itself has no configuration settings. It operates automatically
 
 `cache_scene(scene_name: str) -> None`
 
-Cache all system states for a scene when the player is leaving.
+Cache all plugin states for a scene when the player is leaving.
 
 **Parameters:**
 
@@ -40,16 +40,16 @@ cache_manager.cache_scene("village")
 
 **Notes:**
 
-- Iterates through all systems in the game context
-- Calls `cache_scene_state(scene_name)` on each system
+- Iterates through all plugins in the game context
+- Calls `cache_scene_state(scene_name)` on each plugin
 - Only stores non-empty state dictionaries
-- Automatically called by SceneManager during transitions
+- Automatically called by ScenePlugin during transitions
 
 #### restore_scene
 
 `restore_scene(scene_name: str) -> bool`
 
-Restore cached system states for a scene when the player is returning.
+Restore cached plugin states for a scene when the player is returning.
 
 **Parameters:**
 
@@ -72,10 +72,10 @@ else:
 
 **Notes:**
 
-- Iterates through all systems in the game context
-- Calls `restore_scene_state(scene_name, state)` on each system with cached state
+- Iterates through all plugins in the game context
+- Calls `restore_scene_state(scene_name, state)` on each plugin with cached state
 - Returns `False` if scene has never been cached before
-- Automatically called by SceneManager during transitions
+- Automatically called by ScenePlugin during transitions
 
 #### has_cached_state
 
@@ -135,7 +135,7 @@ Return serializable state for saving.
 
 **Returns:**
 
-- Dictionary mapping scene names to their cached system states
+- Dictionary mapping scene names to their cached plugin states
 
 **Example:**
 
@@ -173,23 +173,23 @@ cache_manager.restore_save_state(save_data["cache"])
 
 - Replaces current cache with saved state
 - Restores all previously cached scenes
-- Called automatically by SaveManager when loading a game
+- Called automatically by SavePlugin when loading a game
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the cache system with game context.
+Initialize the cache plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### reset
@@ -204,11 +204,11 @@ Reset cache for new game.
 - Called when starting a new game
 - Equivalent to calling `clear()`
 
-## How Systems Participate in Caching
+## How Plugins Participate in Caching
 
-### System Requirements
+### Plugin Requirements
 
-For a system to participate in scene caching, it must implement two methods from the `BaseSystem` interface:
+For a plugin to participate in scene caching, it must implement two methods from the `BasePlugin` interface:
 
 ```python
 def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
@@ -234,9 +234,9 @@ def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
     pass
 ```
 
-### Example: NPC System Caching
+### Example: NPC Plugin Caching
 
-The NPCManager caches NPC positions, visibility, and dialog levels:
+The NPCPlugin caches NPC positions, visibility, and dialog levels:
 
 ```python
 def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
@@ -266,33 +266,33 @@ def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
 
 ### Cache vs Save State
 
-The cache system differs from the save system:
+The cache plugin differs from the save plugin:
 
-**Cache System:**
+**Cache Plugin:**
 
 - **Purpose**: Preserve scene state during session
 - **Scope**: Per-scene state (NPC positions, object states in specific scenes)
 - **Lifetime**: Current game session only
-- **Called by**: SceneManager during scene transitions
+- **Called by**: ScenePlugin during scene transitions
 - **Methods**: `cache_scene_state()` / `restore_scene_state()`
 
-**Save System:**
+**Save Plugin:**
 
 - **Purpose**: Persist game state across sessions
 - **Scope**: Global game state (inventory, flags, story progress)
 - **Lifetime**: Persists to disk, survives game restarts
-- **Called by**: SaveManager during save/load
+- **Called by**: SavePlugin during save/load
 - **Methods**: `get_save_state()` / `restore_save_state()` / `apply_entity_state()`
 
 **Example Distinction:**
 
 ```python
-# NPCManager caching (per-scene)
+# NPCPlugin caching (per-scene)
 def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
     # Only cache NPC entity state for this specific scene
     return {"npcs": {name: npc_entity_state for name, npc in self._npcs.items()}}
 
-# NPCManager saving (global)
+# NPCPlugin saving (global)
 def get_save_state(self) -> dict[str, Any]:
     # Save global state: interaction history, dialog levels across ALL scenes
     return {
@@ -305,7 +305,7 @@ def get_save_state(self) -> dict[str, Any]:
 
 ### Basic Scene Transition
 
-The cache system is typically used automatically during scene transitions:
+The cache plugin is typically used automatically during scene transitions:
 
 ```python
 # When leaving a scene
@@ -345,7 +345,7 @@ def reset_village():
 
 ### Save Integration
 
-The cache system integrates with the save system to persist scene states:
+The cache plugin integrates with the save plugin to persist scene states:
 
 ```python
 # During save
@@ -354,7 +354,7 @@ def save_game(slot: int):
         "version": 1,
         "timestamp": time.time(),
         "cache": cache_manager.get_save_state(),  # Includes all scene caches
-        # ... other systems
+        # ... other plugins
     }
     write_save_file(slot, save_data)
 
@@ -362,51 +362,51 @@ def save_game(slot: int):
 def load_game(slot: int):
     save_data = read_save_file(slot)
     cache_manager.restore_save_state(save_data["cache"])  # Restores all scene caches
-    # ... restore other systems
+    # ... restore other plugins
 ```
 
 ## Custom Cache Implementation
 
-If you need to replace the cache system with a custom implementation, you can extend the `CacheBaseManager` abstract base class.
+If you need to replace the cache plugin with a custom implementation, you can extend the `CacheBasePlugin` abstract base class.
 
-### CacheBaseManager
+### CacheBasePlugin
 
-**Location:** [src/pedre/systems/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/cache/base.py)
+**Location:** [src/pedre/plugins/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/cache/base.py)
 
-The `CacheBaseManager` class defines the minimum interface that any cache manager must implement.
+The `CacheBasePlugin` class defines the minimum interface that any cache manager must implement.
 
 #### Required Methods
 
 Your custom cache manager must implement these abstract methods:
 
 ```python
-from pedre.systems.cache.base import CacheBaseManager
+from pedre.plugins.cache.base import CacheBasePlugin
 
-class CustomCacheManager(CacheBaseManager):
+class CustomCachePlugin(CacheBasePlugin):
     """Custom cache implementation."""
 
     name = "cache"
     dependencies = []
 
     def cache_scene(self, scene_name: str) -> None:
-        """Cache all system states for a scene."""
+        """Cache all plugin states for a scene."""
         ...
 
     def restore_scene(self, scene_name: str) -> bool:
-        """Restore cached system states for a scene."""
+        """Restore cached plugin states for a scene."""
         ...
 ```
 
 #### Registration
 
-Register your custom cache manager using the `@SystemRegistry.register` decorator:
+Register your custom cache manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.cache.base import CacheBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.cache.base import CacheBasePlugin
 
-@SystemRegistry.register
-class DatabaseCacheManager(CacheBaseManager):
+@PluginRegistry.register
+class DatabaseCachePlugin(CacheBasePlugin):
     """Cache manager that stores state in a database."""
 
     name = "cache"
@@ -417,39 +417,39 @@ class DatabaseCacheManager(CacheBaseManager):
 
     def cache_scene(self, scene_name: str) -> None:
         # Store in database instead of memory
-        for system in self.context.get_systems().values():
-            state = system.cache_scene_state(scene_name)
+        for plugin in self.context.get_plugins().values():
+            state = plugin.cache_scene_state(scene_name)
             if state:
-                self.db.store(scene_name, system.name, state)
+                self.db.store(scene_name, plugin.name, state)
 
     def restore_scene(self, scene_name: str) -> bool:
         # Restore from database
         if not self.db.has_scene(scene_name):
             return False
 
-        for system in self.context.get_systems().values():
-            state = self.db.load(scene_name, system.name)
+        for plugin in self.context.get_plugins().values():
+            state = self.db.load(scene_name, plugin.name)
             if state:
-                system.restore_scene_state(scene_name, state)
+                plugin.restore_scene_state(scene_name, state)
         return True
 ```
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_cache",  # Load custom cache first
-    "pedre.systems.scene",
-    "pedre.systems.player",
-    # ... rest of systems (omit "pedre.systems.cache") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_cache",  # Load custom cache first
+    "pedre.plugins.scene",
+    "pedre.plugins.player",
+    # ... rest of plugins (omit "pedre.plugins.cache") ...
 ]
 ```
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `CacheBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `CacheBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"cache_manager"` in the base class
 - Your implementation can use any storage mechanism (database, files, network)
-- Register your custom cache manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.cache"` to replace it
+- Register your custom cache manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.cache"` to replace it
 
 ## Internal Structure
 
@@ -460,10 +460,10 @@ The cache is stored as a nested dictionary:
 ```python
 {
     "scene_name": {
-        "system_name": {
-            # System-specific cached state
+        "plugin_name": {
+            # Plugin-specific cached state
         },
-        # ... other systems
+        # ... other plugins
     },
     # ... other scenes
 }
@@ -547,7 +547,7 @@ Cache should NOT be cleared when:
 
 ## See Also
 
-- [SceneManager](scene.md) - Uses cache during scene transitions
-- [SaveManager](save.md) - Persists cache to disk
-- [NPCManager](npc.md) - Example system that uses caching
+- [ScenePlugin](scene.md) - Uses cache during scene transitions
+- [SavePlugin](save.md) - Persists cache to disk
+- [NPCPlugin](npc.md) - Example plugin that uses caching
 - [Configuration Guide](../guides/configuration.md)

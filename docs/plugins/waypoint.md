@@ -1,15 +1,15 @@
-# WaypointManager
+# WaypointPlugin
 
 Manages named positions in the map used for NPC navigation, player spawning, and portal destinations.
 
 ## Location
 
-- Implementation: [src/pedre/systems/waypoint/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/manager.py)
-- Base class: [src/pedre/systems/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/base.py)
+- Implementation: [src/pedre/plugins/waypoint/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/waypoint/manager.py)
+- Base class: [src/pedre/plugins/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/waypoint/base.py)
 
 ## Overview
 
-The WaypointManager is a simple but essential system that stores named positions (waypoints) from Tiled maps. Waypoints are used throughout the framework for:
+The WaypointPlugin is a simple but essential plugin that stores named positions (waypoints) from Tiled maps. Waypoints are used throughout the framework for:
 
 - **Player spawning** - Portal destinations when transitioning between maps
 - **NPC movement** - Target positions for pathfinding-based movement
@@ -19,7 +19,7 @@ Waypoints are defined as Point objects in Tiled's "Waypoints" object layer and a
 
 ## Configuration
 
-The WaypointManager uses the following setting from `pedre.conf.settings`:
+The WaypointPlugin uses the following setting from `pedre.conf.settings`:
 
 - `TILE_SIZE` - Size of each tile in pixels, used to convert waypoint pixel coordinates to tile coordinates (default: 32)
 
@@ -103,27 +103,27 @@ Load waypoints from Tiled map object layer.
 
 **Notes:**
 
-- Called automatically by SystemLoader during map loading
+- Called automatically by PluginLoader during map loading
 - Looks for "Waypoints" object layer in the Tiled map
 - Converts pixel coordinates to tile coordinates using `settings.TILE_SIZE`
 - Only processes Point objects with valid `name` and `shape` properties
 - Logs waypoint loading for debugging
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the waypoint system with game context.
+Initialize the waypoint plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### reset
@@ -270,7 +270,7 @@ Waypoints are stored in tile coordinates internally:
 
 ```python
 # Tiled stores waypoints in pixel coordinates (e.g., x=320, y=240)
-# WaypointManager converts to tile coordinates during loading:
+# WaypointPlugin converts to tile coordinates during loading:
 tile_x = int(pixel_x // settings.TILE_SIZE)  # e.g., 320 // 32 = 10
 tile_y = int(pixel_y // settings.TILE_SIZE)  # e.g., 240 // 32 = 7
 ```
@@ -281,8 +281,8 @@ This makes waypoints independent of tile size and easier to use with grid-based 
 
 When a map is loaded:
 
-1. SystemLoader calls `waypoint_manager.load_from_tiled(tile_map, scene)`
-2. WaypointManager looks for "Waypoints" object layer
+1. PluginLoader calls `waypoint_manager.load_from_tiled(tile_map, scene)`
+2. WaypointPlugin looks for "Waypoints" object layer
 3. For each Point object in the layer:
    - Validates it has a `name` and `shape` property
    - Extracts pixel coordinates from `shape[0]` and `shape[1]`
@@ -313,22 +313,22 @@ This ensures waypoints from one map don't carry over to another.
 
 ## Custom Waypoint Implementation
 
-If you need to replace the waypoint system with a custom implementation, you can extend the `WaypointBaseManager` abstract base class.
+If you need to replace the waypoint plugin with a custom implementation, you can extend the `WaypointBasePlugin` abstract base class.
 
-### WaypointBaseManager
+### WaypointBasePlugin
 
-**Location:** [src/pedre/systems/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/base.py)
+**Location:** [src/pedre/plugins/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/waypoint/base.py)
 
-The `WaypointBaseManager` class defines the minimum interface that any waypoint manager must implement.
+The `WaypointBasePlugin` class defines the minimum interface that any waypoint manager must implement.
 
 #### Required Methods
 
 Your custom waypoint manager must implement this abstract method:
 
 ```python
-from pedre.systems.waypoint.base import WaypointBaseManager
+from pedre.plugins.waypoint.base import WaypointBasePlugin
 
-class CustomWaypointManager(WaypointBaseManager):
+class CustomWaypointPlugin(WaypointBasePlugin):
     """Custom waypoint implementation."""
 
     name = "waypoint"
@@ -341,14 +341,14 @@ class CustomWaypointManager(WaypointBaseManager):
 
 #### Registration
 
-Register your custom waypoint manager using the `@SystemRegistry.register` decorator:
+Register your custom waypoint manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.waypoint.base import WaypointBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.waypoint.base import WaypointBasePlugin
 
-@SystemRegistry.register
-class CustomWaypointManager(WaypointBaseManager):
+@PluginRegistry.register
+class CustomWaypointPlugin(WaypointBasePlugin):
     name = "waypoint"
     dependencies = []
 
@@ -359,20 +359,20 @@ class CustomWaypointManager(WaypointBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `WaypointBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `WaypointBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"waypoint_manager"` in the base class
 - Your implementation can use any storage system (database, JSON, CSV, etc.)
-- Register your custom waypoint manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.waypoint"` to replace it
+- Register your custom waypoint manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.waypoint"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_waypoint.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.waypoint.base import WaypointBaseManager
+# In myproject/plugins/custom_waypoint.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.waypoint.base import WaypointBasePlugin
 
-@SystemRegistry.register
-class DatabaseWaypointManager(WaypointBaseManager):
+@PluginRegistry.register
+class DatabaseWaypointPlugin(WaypointBasePlugin):
     """Waypoint manager that stores waypoints in a database."""
 
     name = "waypoint"
@@ -391,18 +391,18 @@ class DatabaseWaypointManager(WaypointBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_waypoint",  # Load custom waypoint first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.waypoint") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_waypoint",  # Load custom waypoint first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.waypoint") ...
 ]
 ```
 
 ## See Also
 
-- [NPCManager](npc.md) - Uses waypoints for NPC movement
-- [PortalManager](portal.md) - Uses waypoints for player spawning
-- [ScriptManager](script.md) - Uses waypoints in scripted actions
+- [NPCPlugin](npc.md) - Uses waypoints for NPC movement
+- [PortalPlugin](portal.md) - Uses waypoints for player spawning
+- [ScriptPlugin](script.md) - Uses waypoints in scripted actions
 - [Configuration Guide](../guides/configuration.md)
 - [Tiled Integration](../guides/tiled-integration.md)

@@ -521,7 +521,7 @@ Give an item to the player's inventory.
 
 **Details:**
 
-- The item must already be defined in the inventory system
+- The item must already be defined in the inventory plugin
 - Publishes `ItemAcquiredEvent` on success
 - Publishes `ItemAcquisitionFailedEvent` on failure
 - Returns `False` and blocks script progression if acquisition fails
@@ -535,7 +535,7 @@ Give an item to the player's inventory.
 
 ### add_item
 
-Add a new item to the inventory system.
+Add a new item to the inventory plugin.
 
 **Parameters:**
 

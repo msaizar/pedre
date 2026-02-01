@@ -1,18 +1,18 @@
-# ParticleManager
+# ParticlePlugin
 
 Manages particle effects and visual polish.
 
 ## Location
 
-- Implementation: [src/pedre/systems/particle/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/manager.py)
-- Base class: [src/pedre/systems/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/base.py)
-- Actions: [src/pedre/systems/particle/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/actions.py)
+- Implementation: [src/pedre/plugins/particle/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/manager.py)
+- Base class: [src/pedre/plugins/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/base.py)
+- Actions: [src/pedre/plugins/particle/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/actions.py)
 
 ## Configuration
 
-The ParticleManager uses the following settings from `pedre.conf.settings`:
+The ParticlePlugin uses the following settings from `pedre.conf.settings`:
 
-### Particle System Settings
+### Particle Plugin Settings
 
 - `PARTICLE_ENABLED` - Whether particle effects are enabled by default (default: True)
 - `PARTICLE_COLOR_HEARTS` - Default color for heart particles (default: (255, 105, 180) - hot pink)
@@ -172,7 +172,7 @@ particle_manager.emit_burst(npc_x, npc_y, count=25, color=(255, 215, 0))
 - Major event triggers
 - Dramatic reveals and discoveries
 
-### System Control
+### Plugin Control
 
 #### toggle
 
@@ -194,7 +194,7 @@ print(f"Particles {'enabled' if is_enabled else 'disabled'}")
 
 **Notes:**
 
-- Switches the particle system between enabled and disabled states
+- Switches the particle plugin between enabled and disabled states
 - When disabling, all active particles are immediately cleared
 - When disabled, no new particles are created (emit methods return immediately)
 - When disabled, no particles are rendered (draw returns immediately)
@@ -215,7 +215,7 @@ particle_manager.clear()
 
 **Notes:**
 
-- Immediately removes all particles from the system
+- Immediately removes all particles from the plugin
 - Useful for scene transitions where particles should not carry over
 - Called automatically by `toggle()` when disabling particle effects
 
@@ -240,7 +240,7 @@ def on_update(self, delta_time):
 
 **Notes:**
 
-- Called automatically by SystemLoader each frame
+- Called automatically by PluginLoader each frame
 - Updates particle ages, positions, and velocities
 - Removes particles that have exceeded their lifetime
 - Applies downward gravity acceleration to all particles
@@ -261,22 +261,22 @@ def on_draw(self):
 
 **Notes:**
 
-- Called automatically by SystemLoader during the draw loop
+- Called automatically by PluginLoader during the draw loop
 - Renders each particle as a filled circle with appropriate color and alpha
 - Particles with fade=True have their alpha calculated based on remaining lifetime
-- When the particle system is disabled, returns immediately without rendering
+- When the particle plugin is disabled, returns immediately without rendering
 - Should be called after drawing the game world but before UI elements
 
 #### on_draw
 
 `on_draw() -> None`
 
-Draw all active particles (BaseSystem interface).
+Draw all active particles (BasePlugin interface).
 
 **Notes:**
 
-- Wrapper for `draw()` method to satisfy BaseSystem interface
-- Called automatically by SystemLoader
+- Wrapper for `draw()` method to satisfy BasePlugin interface
+- Called automatically by PluginLoader
 
 ### Save/Load Support
 
@@ -326,21 +326,21 @@ particle_manager.restore_save_state(save_data["particle"])
 - Restores enabled/disabled state
 - Active particles are not restored (they're temporary visual effects)
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the particle system with game context and settings.
+Initialize the particle plugin with game context and settings.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### cleanup
@@ -352,27 +352,27 @@ Clean up particle resources when the scene unloads.
 **Notes:**
 
 - Clears all active particles
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 #### reset
 
 `reset() -> None`
 
-Reset system state for a new game session.
+Reset plugin state for a new game session.
 
 **Notes:**
 
 - Clears all active particles
 - Called when starting a new game
 
-## Particle System
+## Particle Plugin
 
 ### How It Works
 
-The particle system consists of:
+The particle plugin consists of:
 
 1. **Particle** - Individual particle data including position, velocity, and visual properties
-2. **ParticleManager** - System for creating, updating, and rendering particles
+2. **ParticlePlugin** - Plugin for creating, updating, and rendering particles
 
 The manager provides several pre-configured particle effects:
 
@@ -381,7 +381,7 @@ The manager provides several pre-configured particle effects:
 - **Trail** - Subtle movement trails for the player
 - **Burst** - Dramatic explosions for reveals and events
 
-Particles automatically fade out over their lifetime and are removed when expired. The system uses simple physics including gravity simulation for realistic movement.
+Particles automatically fade out over their lifetime and are removed when expired. The plugin uses simple physics including gravity simulation for realistic movement.
 
 ### Particle Properties
 
@@ -551,23 +551,23 @@ PARTICLE_ENABLED = False  # Start with particles disabled
 
 ## Custom Particle Implementation
 
-If you need to replace the particle system with a custom implementation, you can extend the `ParticleBaseManager` abstract base class.
+If you need to replace the particle plugin with a custom implementation, you can extend the `ParticleBasePlugin` abstract base class.
 
-### ParticleBaseManager
+### ParticleBasePlugin
 
-**Location:** [src/pedre/systems/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/particle/base.py)
+**Location:** [src/pedre/plugins/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/base.py)
 
-The `ParticleBaseManager` class defines the minimum interface that any particle manager must implement.
+The `ParticleBasePlugin` class defines the minimum interface that any particle manager must implement.
 
 #### Required Methods
 
 Your custom particle manager must implement these abstract methods:
 
 ```python
-from pedre.systems.particle.base import ParticleBaseManager
+from pedre.plugins.particle.base import ParticleBasePlugin
 from pedre.conf import settings
 
-class CustomParticleManager(ParticleBaseManager):
+class CustomParticlePlugin(ParticleBasePlugin):
     """Custom particle implementation."""
 
     name = "particle"
@@ -632,14 +632,14 @@ class CustomParticleManager(ParticleBaseManager):
 
 #### Registration
 
-Register your custom particle manager using the `@SystemRegistry.register` decorator:
+Register your custom particle manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.particle.base import ParticleBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.particle.base import ParticleBasePlugin
 
-@SystemRegistry.register
-class CustomParticleManager(ParticleBaseManager):
+@PluginRegistry.register
+class CustomParticlePlugin(ParticleBasePlugin):
     name = "particle"
     dependencies = ["scene"]
 
@@ -649,16 +649,16 @@ class CustomParticleManager(ParticleBaseManager):
 Then in your project's `settings.py`, load your custom module:
 
 ```python
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_particle",  # Load custom particle first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.particle") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_particle",  # Load custom particle first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.particle") ...
 ]
 ```
 
 ## See Also
 
-- [ScriptManager](script.md) - Event-driven scripting
+- [ScriptPlugin](script.md) - Event-driven scripting
 - [Configuration Guide](../guides/configuration.md)
 - [Scripting Actions](../scripting/actions.md)

@@ -1,10 +1,10 @@
 # GameContext
 
-The `GameContext` serves as a central registry and state container for the game. It is passed to all systems and actions, providing access to shared resources and other systems.
+The `GameContext` serves as a central registry and state container for the game. It is passed to all plugins and actions, providing access to shared resources and other plugins.
 
 ## Location
 
-[src/pedre/systems/game_context.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/game_context.py)
+[src/pedre/plugins/game_context.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/game_context.py)
 
 ## Overview
 
@@ -16,22 +16,22 @@ Unlike a global singleton, `GameContext` is explicitly passed to methods that ne
 
 ## Key Methods
 
-### get_system
+### get_plugin
 
-`get_system(name: str) -> BaseSystem | None`
+`get_plugin(name: str) -> BasePlugin | None`
 
-Retrieve a registered system by its name.
+Retrieve a registered plugin by its name.
 
 ```python
-dialog_manager = context.get_system("dialog")
+dialog_manager = context.get_plugin("dialog")
 if dialog_manager:
     dialog_manager.show_dialog("Hello!")
 ```
 
-## Usage in Systems
+## Usage in Plugins
 
 ```python
 def update(self, delta_time):
-    # Access other systems
-    audio = self.context.get_system("audio")
+    # Access other plugins
+    audio = self.context.get_plugin("audio")
 ```

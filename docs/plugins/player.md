@@ -1,17 +1,17 @@
-# PlayerManager
+# PlayerPlugin
 
 Manages player spawning, movement, animation, and state.
 
 ## Location
 
-- Implementation: [src/pedre/systems/player/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/manager.py)
-- Base class: [src/pedre/systems/player/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/base.py)
-- Sprites: [src/pedre/systems/player/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/sprites.py)
-- Types: [src/pedre/systems/player/types.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/types.py)
+- Implementation: [src/pedre/plugins/player/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/manager.py)
+- Base class: [src/pedre/plugins/player/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/base.py)
+- Sprites: [src/pedre/plugins/player/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/sprites.py)
+- Types: [src/pedre/plugins/player/types.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/types.py)
 
 ## Configuration
 
-The PlayerManager uses the following settings from `pedre.conf.settings`:
+The PlayerPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Movement Settings
 
@@ -52,23 +52,23 @@ if player_sprite:
 
 - Returns None before scene is loaded
 - Player sprite is created during `load_from_tiled()`
-- Used by other systems (camera, portals, interactions)
+- Used by other plugins (camera, portals, interactions)
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the player system with game context.
+Initialize the player plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 - Must be called before loading player from Tiled
 
@@ -91,8 +91,8 @@ def on_update(self, delta_time):
 
 **Notes:**
 
-- Called automatically by SystemLoader each frame
-- Processes input from InputManager
+- Called automatically by PluginLoader each frame
+- Processes input from InputPlugin
 - Blocks movement when dialog is showing
 - Updates player position and animation state
 - Handles direction changes based on movement
@@ -110,7 +110,7 @@ Load player from Tiled map object layer.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Looks for "Player" object layer
 - Uses first player object in layer
 - Creates AnimatedPlayer sprite from object data
@@ -237,7 +237,7 @@ AnimatedPlayer is a specialized sprite for the player character with 4-direction
 ### Creating AnimatedPlayer
 
 ```python
-from pedre.systems.player.sprites import AnimatedPlayer
+from pedre.plugins.player.sprites import AnimatedPlayer
 
 player = AnimatedPlayer(
     sprite_sheet="characters/player.png",
@@ -328,8 +328,8 @@ When loading a scene, the player can spawn at a waypoint instead of the default 
 
 **How It Works:**
 
-1. SceneManager stores a `next_spawn_waypoint` when transitioning scenes
-2. PlayerManager checks for this waypoint during `load_from_tiled()`
+1. ScenePlugin stores a `next_spawn_waypoint` when transitioning scenes
+2. PlayerPlugin checks for this waypoint during `load_from_tiled()`
 3. If `spawn_at_portal=true` and waypoint exists, player spawns there
 4. If waypoint not found or `spawn_at_portal=false`, uses default position from Tiled
 
@@ -342,19 +342,19 @@ context.scene_manager.request_transition(
     spawn_waypoint="entrance"
 )
 
-# PlayerManager will spawn player at "entrance" waypoint
+# PlayerPlugin will spawn player at "entrance" waypoint
 # instead of default position from Tiled map
 ```
 
 **Notes:**
 
-- Waypoint must exist in target scene's waypoint system
+- Waypoint must exist in target scene's waypoint plugin
 - Spawn waypoint is cleared after use (one-time)
 - Default position from Tiled is used as fallback
 
 ## Player State
 
-The PlayerManager maintains the player sprite and its state throughout the game session.
+The PlayerPlugin maintains the player sprite and its state throughout the game session.
 
 ### Player Sprite Lifecycle
 
@@ -370,15 +370,15 @@ The player state includes:
 - **Position** - `center_x` and `center_y` coordinates in pixels
 - **Direction** - Current facing direction (up, down, left, right)
 - **Animation State** - Walking or idle
-- **Velocity** - Movement vector from input system
+- **Velocity** - Movement vector from input plugin
 
-## Movement System
+## Movement Plugin
 
-The PlayerManager handles movement processing each frame:
+The PlayerPlugin handles movement processing each frame:
 
 ### Movement Processing Flow
 
-1. **Input Check** - Get movement vector from InputManager
+1. **Input Check** - Get movement vector from InputPlugin
 2. **Dialog Blocking** - Block movement if dialog is showing
 3. **Direction Update** - Update player direction based on movement
 4. **Animation Update** - Update walk/idle animation state
@@ -462,17 +462,17 @@ The player spawns at waypoints during scene transitions. This is typically handl
 }
 ```
 
-## Integration with Other Systems
+## Integration with Other Plugins
 
-### InputManager Integration
+### InputPlugin Integration
 
-The InputManager provides movement vectors:
+The InputPlugin provides movement vectors:
 
 ```python
 # In update loop
 dx, dy = context.input_manager.get_movement_vector()
 
-# PlayerManager processes this input
+# PlayerPlugin processes this input
 # Updates player sprite velocity and direction
 ```
 
@@ -482,9 +482,9 @@ dx, dy = context.input_manager.get_movement_vector()
 - Movement is blocked when dialogs are showing
 - Direction changes are based on movement vector
 
-### CameraManager Integration
+### CameraPlugin Integration
 
-The CameraManager can follow the player:
+The CameraPlugin can follow the player:
 
 ```python
 # Enable player following
@@ -499,7 +499,7 @@ context.camera_manager.set_follow_player(smooth=True)
 - Camera uses player position for centering
 - Smooth following interpolates camera movement
 
-### DialogManager Integration
+### DialogPlugin Integration
 
 Dialog blocks player movement:
 
@@ -516,15 +516,15 @@ if context.dialog_manager.is_showing():
 - Input is still processed but not applied
 - Movement resumes when dialog closes
 
-### SceneManager Integration
+### ScenePlugin Integration
 
 Scene transitions handle player spawning:
 
 ```python
-# SceneManager provides spawn waypoint
+# ScenePlugin provides spawn waypoint
 spawn_waypoint = context.scene_manager.get_next_spawn_waypoint()
 
-# PlayerManager spawns at waypoint location
+# PlayerPlugin spawns at waypoint location
 if spawn_waypoint:
     waypoint_pos = context.waypoint_manager.get_waypoint(spawn_waypoint)
     player.center_x = waypoint_pos.x
@@ -537,7 +537,7 @@ if spawn_waypoint:
 - Falls back to Tiled map position if waypoint not found
 - Spawn waypoint is cleared after use
 
-### PhysicsManager Integration
+### PhysicsPlugin Integration
 
 Physics engine prevents wall collisions:
 
@@ -552,8 +552,8 @@ physics_engine.update()
 **Notes:**
 
 - Physics must be invalidated when player sprite changes
-- Collision response is handled by physics system
-- Player velocity is set by PlayerManager, constrained by PhysicsManager
+- Collision response is handled by physics plugin
+- Player velocity is set by PlayerPlugin, constrained by PhysicsPlugin
 
 ## Troubleshooting
 
@@ -570,7 +570,7 @@ If the player doesn't appear on the map:
 
 If the player sprite exists but doesn't move:
 
-1. **Check InputManager** - Ensure input system is working (`get_movement_vector()`)
+1. **Check InputPlugin** - Ensure input plugin is working (`get_movement_vector()`)
 2. **Verify update loop** - Confirm `player_manager.update(delta_time)` is called every frame
 3. **Check dialog state** - Ensure dialog isn't blocking movement
 4. **Test physics** - Verify physics engine allows movement (not stuck in walls)
@@ -582,7 +582,7 @@ If animations aren't working:
 1. **Check sprite sheet** - Ensure animation frames exist in sprite sheet
 2. **Verify properties** - Check `idle_*` and `walk_*` frame/row properties
 3. **Test movement** - Animations require actual movement to trigger walk states
-4. **Review AnimatedSprite** - Check base animation system is functioning
+4. **Review AnimatedSprite** - Check base animation plugin is functioning
 
 ### Spawn Waypoint Issues
 
@@ -595,23 +595,23 @@ If portal-based spawning doesn't work:
 
 ## Custom Player Implementation
 
-If you need to replace the player system with a custom implementation, you can extend the `PlayerBaseManager` abstract base class.
+If you need to replace the player plugin with a custom implementation, you can extend the `PlayerBasePlugin` abstract base class.
 
-### PlayerBaseManager
+### PlayerBasePlugin
 
-**Location:** [src/pedre/systems/player/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/player/base.py)
+**Location:** [src/pedre/plugins/player/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/base.py)
 
-The `PlayerBaseManager` class defines the minimum interface that any player manager must implement.
+The `PlayerBasePlugin` class defines the minimum interface that any player manager must implement.
 
 #### Required Methods
 
 Your custom player manager must implement these abstract methods:
 
 ```python
-from pedre.systems.player.base import PlayerBaseManager
-from pedre.systems.player.sprites import AnimatedPlayer
+from pedre.plugins.player.base import PlayerBasePlugin
+from pedre.plugins.player.sprites import AnimatedPlayer
 
-class CustomPlayerManager(PlayerBaseManager):
+class CustomPlayerPlugin(PlayerBasePlugin):
     """Custom player implementation."""
 
     name = "player"
@@ -624,14 +624,14 @@ class CustomPlayerManager(PlayerBaseManager):
 
 #### Registration
 
-Register your custom player manager using the `@SystemRegistry.register` decorator:
+Register your custom player manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.player.base import PlayerBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.player.base import PlayerBasePlugin
 
-@SystemRegistry.register
-class CustomPlayerManager(PlayerBaseManager):
+@PluginRegistry.register
+class CustomPlayerPlugin(PlayerBasePlugin):
     name = "player"
     dependencies = ["input", "waypoint"]
 
@@ -640,20 +640,20 @@ class CustomPlayerManager(PlayerBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `PlayerBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `PlayerBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"player_manager"` in the base class
 - Your implementation can use any sprite type or movement system
-- Register your custom player manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.player"` to replace it
+- Register your custom player manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.player"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_player.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.player.base import PlayerBaseManager
+# In myproject/plugins/custom_player.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.player.base import PlayerBasePlugin
 
-@SystemRegistry.register
-class PhysicsPlayerManager(PlayerBaseManager):
+@PluginRegistry.register
+class PhysicsPlayerPlugin(PlayerBasePlugin):
     """Player manager with physics-based movement."""
 
     name = "player"
@@ -677,19 +677,19 @@ class PhysicsPlayerManager(PlayerBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_player",  # Load custom player first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.player") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_player",  # Load custom player first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.player") ...
 ]
 ```
 
 ## See Also
 
-- [InputManager](input.md) - Keyboard input handling
-- [CameraManager](camera.md) - Camera following
-- [SceneManager](scene.md) - Scene transitions and spawning
-- [WaypointManager](waypoint.md) - Waypoint system
+- [InputPlugin](input.md) - Keyboard input handling
+- [CameraPlugin](camera.md) - Camera following
+- [ScenePlugin](scene.md) - Scene transitions and spawning
+- [WaypointPlugin](waypoint.md) - Waypoint plugin
 - [Configuration Guide](../guides/configuration.md)
 - [AnimatedSprite](../api/sprites.md)

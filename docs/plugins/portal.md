@@ -1,16 +1,16 @@
-# PortalManager
+# PortalPlugin
 
 Handles map transitions through an event-driven system integrated with the script manager.
 
 ## Location
 
-- Implementation: [src/pedre/systems/portal/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/manager.py)
-- Base class: [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
-- Events: [src/pedre/systems/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/events.py)
+- Implementation: [src/pedre/plugins/portal/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/portal/manager.py)
+- Base class: [src/pedre/plugins/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/portal/base.py)
+- Events: [src/pedre/plugins/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/portal/events.py)
 
 ## Configuration
 
-The PortalManager uses the following settings from `pedre.conf.settings`:
+The PortalPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Portal Settings
 
@@ -34,7 +34,7 @@ PORTAL_INTERACTION_DISTANCE = 64
 
 ## Overview
 
-The portal system uses an event-driven architecture where:
+The portal plugin uses an event-driven architecture where:
 
 1. Portals are registered from Tiled map data during map loading
 2. When the player enters a portal zone, `PortalEnteredEvent` is published
@@ -94,7 +94,7 @@ def on_update(self, delta_time):
 
 **Notes:**
 
-- Called automatically by the system each frame via `update()`
+- Called automatically by the plugin each frame via `update()`
 - Events only fire when player enters a portal zone (transitions from outside to inside)
 - Won't re-fire while player remains standing in the portal
 - Uses `PORTAL_INTERACTION_DISTANCE` setting
@@ -113,21 +113,21 @@ Clear all registered portals.
 - Called automatically when changing maps
 - Also clears the internal tracking of which portals player is inside
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the portal system with game context.
+Initialize the portal plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Configures the manager with event bus and settings
 - Stores reference to game context
 
@@ -135,7 +135,7 @@ Initialize the portal system with game context.
 
 `update(delta_time: float) -> None`
 
-Update portal system, checking for player entry.
+Update portal plugin, checking for player entry.
 
 **Parameters:**
 
@@ -143,7 +143,7 @@ Update portal system, checking for player entry.
 
 **Notes:**
 
-- Called automatically by SystemLoader each frame
+- Called automatically by PluginLoader each frame
 - Calls `check_portals()` with current player sprite
 - Handles portal entry detection
 
@@ -157,7 +157,7 @@ Clean up portal resources when the scene unloads.
 
 - Clears all registered portals
 - Resets tracking state
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 #### load_from_tiled
 
@@ -172,7 +172,7 @@ Load portals from Tiled map object layer.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Looks for "Portals" object layer
 - Creates portal sprites from object shapes
 - Clears old portals before loading new ones
@@ -184,7 +184,7 @@ Load portals from Tiled map object layer.
 
 Runtime data for a single portal.
 
-**Location:** [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
+**Location:** [src/pedre/plugins/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/portal/base.py)
 
 **Attributes:**
 
@@ -194,7 +194,7 @@ Runtime data for a single portal.
 **Example:**
 
 ```python
-from pedre.systems.portal.base import Portal
+from pedre.plugins.portal.base import Portal
 
 portal = Portal(
     sprite=portal_sprite,
@@ -214,7 +214,7 @@ portal = Portal(
 
 Published when player enters a portal zone.
 
-**Location:** [src/pedre/systems/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/events.py)
+**Location:** [src/pedre/plugins/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/portal/events.py)
 
 **Attributes:**
 
@@ -340,7 +340,7 @@ The portal name is used in script triggers to match specific portals:
 
 ### Entry Detection
 
-The portal system uses zone-based detection:
+The portal plugin uses zone-based detection:
 
 1. **Distance Check** - Calculates Euclidean distance from player center to portal center
 2. **Zone Entry** - Player enters when distance < `PORTAL_INTERACTION_DISTANCE`
@@ -505,11 +505,11 @@ Create matching portals in both maps:
 }
 ```
 
-## Integration with Other Systems
+## Integration with Other Plugins
 
-### SceneManager Integration
+### ScenePlugin Integration
 
-The SceneManager handles map transitions:
+The ScenePlugin handles map transitions:
 
 ```python
 # Portal triggers scene change via script action
@@ -523,15 +523,15 @@ context.scene_manager.request_transition(
 
 - Portal event triggers script
 - Script executes `change_scene` action
-- SceneManager handles the actual transition
+- ScenePlugin handles the actual transition
 - Player spawns at specified waypoint
 
-### PlayerManager Integration
+### PlayerPlugin Integration
 
-The PlayerManager provides player position:
+The PlayerPlugin provides player position:
 
 ```python
-# Portal system checks player position
+# Portal plugin checks player position
 player_sprite = context.player_manager.get_player_sprite()
 if player_sprite:
     portal_manager.check_portals(player_sprite)
@@ -543,7 +543,7 @@ if player_sprite:
 - Uses player sprite center position
 - Checked every frame in update loop
 
-### ScriptManager Integration
+### ScriptPlugin Integration
 
 Scripts handle portal responses:
 
@@ -558,12 +558,12 @@ context.event_bus.publish(event)
 
 **Notes:**
 
-- Portal system only publishes events
+- Portal plugin only publishes events
 - Scripts define what happens
 - Full flexibility for conditional behavior
 - Can chain multiple actions
 
-### WaypointManager Integration
+### WaypointPlugin Integration
 
 Waypoints define spawn positions:
 
@@ -622,22 +622,22 @@ If portal event fires but scene doesn't change:
 
 ## Custom Portal Implementation
 
-If you need to replace the portal system with a custom implementation, you can extend the `PortalBaseManager` abstract base class.
+If you need to replace the portal plugin with a custom implementation, you can extend the `PortalBasePlugin` abstract base class.
 
-### PortalBaseManager
+### PortalBasePlugin
 
-**Location:** [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
+**Location:** [src/pedre/plugins/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/portal/base.py)
 
-The `PortalBaseManager` class defines the minimum interface that any portal manager must implement.
+The `PortalBasePlugin` class defines the minimum interface that any portal manager must implement.
 
 #### Required Methods
 
 Your custom portal manager must implement these abstract methods:
 
 ```python
-from pedre.systems.portal.base import PortalBaseManager
+from pedre.plugins.portal.base import PortalBasePlugin
 
-class CustomPortalManager(PortalBaseManager):
+class CustomPortalPlugin(PortalBasePlugin):
     """Custom portal implementation."""
 
     name = "portal"
@@ -657,14 +657,14 @@ class CustomPortalManager(PortalBaseManager):
 
 #### Registration
 
-Register your custom portal manager using the `@SystemRegistry.register` decorator:
+Register your custom portal manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.portal.base import PortalBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.portal.base import PortalBasePlugin
 
-@SystemRegistry.register
-class TriggerPortalManager(PortalBaseManager):
+@PluginRegistry.register
+class TriggerPortalPlugin(PortalBasePlugin):
     """Portal manager with touch triggers instead of zones."""
 
     name = "portal"
@@ -674,20 +674,20 @@ class TriggerPortalManager(PortalBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `PortalBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `PortalBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"portal_manager"` in the base class
 - Your implementation can use any detection system (zones, triggers, collisions)
-- Register your custom portal manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.portal"` to replace it
+- Register your custom portal manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.portal"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_portal.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.portal.base import PortalBaseManager
+# In myproject/plugins/custom_portal.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.portal.base import PortalBasePlugin
 
-@SystemRegistry.register
-class CollisionPortalManager(PortalBaseManager):
+@PluginRegistry.register
+class CollisionPortalPlugin(PortalBasePlugin):
     """Portal manager using collision detection instead of distance."""
 
     name = "portal"
@@ -712,18 +712,18 @@ class CollisionPortalManager(PortalBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_portal",  # Load custom portal first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.portal") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_portal",  # Load custom portal first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.portal") ...
 ]
 ```
 
 ## See Also
 
-- [SceneManager](scene.md) - Map loading and transitions
-- [ScriptManager](script.md) - Event-driven scripting
+- [ScenePlugin](scene.md) - Map loading and transitions
+- [ScriptPlugin](script.md) - Event-driven scripting
 - [Configuration Guide](../guides/configuration.md)
 - [Events Reference](../scripting/events.md)
 - [Actions Reference](../scripting/actions.md)

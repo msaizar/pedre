@@ -1,28 +1,28 @@
-# InteractionManager
+# InteractionPlugin
 
 Manages interactive objects that players can activate in the game world.
 
 ## Location
 
-- Implementation: [src/pedre/systems/interaction/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/interaction/manager.py)
-- Base class: [src/pedre/systems/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/interaction/base.py)
-- Events: [src/pedre/systems/interaction/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/interaction/events.py)
-- Conditions: [src/pedre/systems/interaction/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/interaction/conditions.py)
+- Implementation: [src/pedre/plugins/interaction/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/manager.py)
+- Base class: [src/pedre/plugins/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/base.py)
+- Events: [src/pedre/plugins/interaction/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/events.py)
+- Conditions: [src/pedre/plugins/interaction/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/conditions.py)
 
 ## Configuration
 
-The InteractionManager uses the following settings from `pedre.conf.settings`:
+The InteractionPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Distance and Input Settings
 
-- `INTERACTION_MANAGER_DISTANCE` - Maximum distance in pixels for player to interact with objects (default: 50)
+- `INTERACTION_PLUGIN_DISTANCE` - Maximum distance in pixels for player to interact with objects (default: 50)
 - `INTERACTION_KEY` - Key for interacting with objects (default: `"SPACE"`)
 
 These can be overridden in your project's `settings.py`:
 
 ```python
 # Custom interaction settings
-INTERACTION_MANAGER_DISTANCE = 64  # Increase interaction range
+INTERACTION_PLUGIN_DISTANCE = 64  # Increase interaction range
 INTERACTION_KEY = "E"
 ```
 
@@ -138,7 +138,7 @@ if obj:
 
 - Publishes an `ObjectInteractedEvent` on the event bus
 - Marks the object as interacted with using `mark_as_interacted()`
-- Actual interaction behavior is typically handled by the script system listening to the event
+- Actual interaction behavior is typically handled by the script plugin listening to the event
 
 ### Interaction State
 
@@ -265,7 +265,7 @@ interaction_mgr.restore_save_state(save_data["interaction"])
 
 The `InteractiveObject` dataclass represents an interactive element in the game world.
 
-**Location:** [src/pedre/systems/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/interaction/base.py)
+**Location:** [src/pedre/plugins/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/base.py)
 
 **Attributes:**
 
@@ -276,7 +276,7 @@ The `InteractiveObject` dataclass represents an interactive element in the game 
 **Example:**
 
 ```python
-from pedre.systems.interaction.base import InteractiveObject
+from pedre.plugins.interaction.base import InteractiveObject
 
 obj = InteractiveObject(
     sprite=my_sprite,
@@ -304,7 +304,7 @@ Published when player interacts with an interactive object.
         "object_name": "treasure_chest"
     },
     "actions": [
-        {"type": "dialog", "speaker": "System", "text": ["You found a health potion!"]}
+        {"type": "dialog", "speaker": "Plugin", "text": ["You found a health potion!"]}
     ]
 }
 ```
@@ -383,21 +383,21 @@ Objects:
     height: 32
 ```
 
-## System Lifecycle
+## Plugin Lifecycle
 
 ### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the interaction system with game context.
+Initialize the interaction plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 ### cleanup
@@ -409,13 +409,13 @@ Clean up interaction resources when the scene unloads.
 **Notes:**
 
 - Clears all registered interactive objects
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 ### reset
 
 `reset() -> None`
 
-Reset interaction system for new game.
+Reset interaction plugin for new game.
 
 **Notes:**
 
@@ -439,7 +439,7 @@ Handle key presses for object interaction.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Checks for `INTERACTION_KEY` press (default: SPACE)
 - Finds nearby object and triggers interaction
 
@@ -456,29 +456,29 @@ Load interactive objects from Tiled map object layer.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Looks for "Interactive" object layer
 - Creates sprites from object geometry
 - Objects without names are skipped
 
 ## Custom Interaction Implementation
 
-If you need to replace the interaction system with a custom implementation (e.g., for different interaction mechanics, targeting systems, or UI), you can extend the `InteractionBaseManager` abstract base class.
+If you need to replace the interaction plugin with a custom implementation (e.g., for different interaction mechanics, targeting plugins, or UI), you can extend the `InteractionBasePlugin` abstract base class.
 
-### InteractionBaseManager
+### InteractionBasePlugin
 
-**Location:** [src/pedre/systems/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/interaction/base.py)
+**Location:** [src/pedre/plugins/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/base.py)
 
-The `InteractionBaseManager` class defines the minimum interface that any interaction manager must implement.
+The `InteractionBasePlugin` class defines the minimum interface that any interaction manager must implement.
 
 #### Required Methods
 
 Your custom interaction manager must implement these abstract methods:
 
 ```python
-from pedre.systems.interaction.base import InteractionBaseManager, InteractiveObject
+from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObject
 
-class CustomInteractionManager(InteractionBaseManager):
+class CustomInteractionPlugin(InteractionBasePlugin):
     """Custom interaction implementation."""
 
     name = "interaction"
@@ -495,14 +495,14 @@ class CustomInteractionManager(InteractionBaseManager):
 
 #### Registration
 
-Register your custom interaction manager using the `@SystemRegistry.register` decorator:
+Register your custom interaction manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.interaction.base import InteractionBaseManager, InteractiveObject
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObject
 
-@SystemRegistry.register
-class TargetedInteractionManager(InteractionBaseManager):
+@PluginRegistry.register
+class TargetedInteractionPlugin(InteractionBasePlugin):
     """Custom interaction manager with cursor targeting."""
 
     name = "interaction"
@@ -513,31 +513,31 @@ class TargetedInteractionManager(InteractionBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `InteractionBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
+- Your custom manager inherits from `BasePlugin` (via `InteractionBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
 - The `role` attribute is set to `"interaction_manager"` in the base class
 - Your implementation can use any interaction method (distance-based, targeting, UI menus, etc.)
 - The two abstract methods (`get_interactive_objects()` and `has_interacted_with()`) are the minimum required interface
-- Register your custom interaction manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.interaction"` to replace it
+- Register your custom interaction manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.interaction"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_interaction.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.interaction.base import InteractionBaseManager, InteractiveObject
-from pedre.systems.interaction.events import ObjectInteractedEvent
+# In myproject/plugins/custom_interaction.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObject
+from pedre.plugins.interaction.events import ObjectInteractedEvent
 from pedre.conf import settings
 import arcade
 
-@SystemRegistry.register
-class MenuInteractionManager(InteractionBaseManager):
+@PluginRegistry.register
+class MenuInteractionPlugin(InteractionBasePlugin):
     """Interaction manager with radial menu selection."""
 
     name = "interaction"
     dependencies = []
 
     def __init__(self):
-        self.interaction_distance = settings.INTERACTION_MANAGER_DISTANCE
+        self.interaction_distance = settings.INTERACTION_PLUGIN_DISTANCE
         self.interactive_objects = {}
         self.interacted_objects = set()
         self.nearby_objects = []
@@ -582,19 +582,19 @@ class MenuInteractionManager(InteractionBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_interaction",  # Load custom interaction first
-    "pedre.systems.camera",
-    "pedre.systems.input",
-    # ... rest of systems (omit "pedre.systems.interaction") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_interaction",  # Load custom interaction first
+    "pedre.plugins.camera",
+    "pedre.plugins.input",
+    # ... rest of plugins (omit "pedre.plugins.interaction") ...
 ]
 ```
 
 ## See Also
 
-- [ScriptManager](script.md) - Event-driven scripting for handling interactions
-- [NPCManager](npc.md) - NPC interaction system
-- [DialogManager](dialog.md) - Conversation system
+- [ScriptPlugin](script.md) - Event-driven scripting for handling interactions
+- [NPCPlugin](npc.md) - NPC interaction plugin
+- [DialogPlugin](dialog.md) - Conversation plugin
 - [Configuration Guide](../guides/configuration.md)
 - [Scripting Conditions](../scripting/conditions.md)
 - [Scripting Events](../scripting/events.md)

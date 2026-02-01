@@ -1,50 +1,50 @@
-# Custom Systems
+# Custom Plugins
 
-Create complete game systems that integrate with the Pedre framework lifecycle.
+Create complete game plugins that integrate with the Pedre framework lifecycle.
 
 ## Overview
 
-A system (manager) is a self-contained module that handles a specific aspect of game functionality. Systems can:
+A plugin is a self-contained module that handles a specific aspect of game functionality. Plugins can:
 
 - Subscribe to events
 - Publish events
-- Access other systems via GameContext
+- Access other plugins via GameContext
 - Maintain state that persists across scenes
 - Participate in save/load operations
 
-## System Lifecycle
+## Plugin Lifecycle
 
-Systems follow a standard lifecycle managed by the SystemLoader:
+Plugins follow a standard lifecycle managed by the PluginLoader:
 
 1. **Instantiation** - Constructor called, dependencies injected
 2. **Setup** - `setup(context)` called to initialize and subscribe to events
 3. **Update** - `update(delta_time)` called each frame (optional)
 4. **Reset** - `reset()` called when starting a new game
-5. **Cleanup** - `cleanup()` called when system is destroyed
+5. **Cleanup** - `cleanup()` called when plugin is destroyed
 
-## Creating a Custom System
+## Creating a Custom Plugin
 
-### 1. Define the System Class
+### 1. Define the Plugin Class
 
 ```python
-# myproject/systems/weather.py
-from pedre.systems.base import BaseSystem
-from pedre.systems.game_context import GameContext
+# myproject/plugins/weather.py
+from pedre.plugins.base import BasePlugin
+from pedre.plugins.game_context import GameContext
 
-class WeatherManager(BaseSystem):
+class WeatherPlugin(BasePlugin):
     """Manages weather effects and time of day."""
 
-    # Declare system dependencies
+    # Declare plugin dependencies
     DEPENDENCIES = ["audio", "particle"]
 
     def __init__(self):
-        """Initialize the system."""
+        """Initialize the plugin."""
         self.current_weather = "clear"
         self.intensity = 0.0
         self.context: GameContext | None = None
 
     def setup(self, context: GameContext) -> None:
-        """Initialize the system with game context.
+        """Initialize the plugin with game context.
 
         Subscribe to events and set up initial state.
         """
@@ -58,7 +58,7 @@ class WeatherManager(BaseSystem):
         """Update weather effects each frame."""
         if self.current_weather == "rain":
             # Emit rain particles
-            particle_manager = self.context.get_system("particle")
+            particle_manager = self.context.get_plugin("particle")
             if particle_manager:
                 particle_manager.emit_rain()
 
@@ -68,7 +68,7 @@ class WeatherManager(BaseSystem):
         self.intensity = 0.0
 
     def cleanup(self) -> None:
-        """Clean up resources when system is destroyed."""
+        """Clean up resources when plugin is destroyed."""
         if self.context:
             from myproject.events import TimeChangedEvent
             self.context.event_bus.unsubscribe(TimeChangedEvent, self._on_time_changed)
@@ -92,7 +92,7 @@ class WeatherManager(BaseSystem):
             )
 
         # Play weather sounds
-        audio = self.context.get_system("audio")
+        audio = self.context.get_plugin("audio")
         if audio and weather == "rain":
             audio.play_music("rain_ambient.ogg", volume=intensity * 0.5, loop=True)
 
@@ -114,7 +114,7 @@ class WeatherManager(BaseSystem):
 
 ### 2. Add Save/Load Support (Optional)
 
-If your system needs to persist state across save/load:
+If your plugin needs to persist state across save/load:
 
 ```python
 def get_save_state(self) -> dict[str, Any]:
@@ -140,11 +140,11 @@ def restore_save_state(self, state: dict[str, Any]) -> None:
 
 ### 3. Add Scene Caching Support (Optional)
 
-If your system needs to preserve state when transitioning between scenes:
+If your plugin needs to preserve state when transitioning between scenes:
 
 ```python
 def cache_scene_state(self, scene_name: str) -> dict[str, Any]:
-    """Cache system state for a specific scene.
+    """Cache plugin state for a specific scene.
 
     Args:
         scene_name: Name of the scene being cached
@@ -168,46 +168,46 @@ def restore_scene_state(self, scene_name: str, state: dict[str, Any]) -> None:
     self.intensity = state.get("intensity", 0.0)
 ```
 
-### 4. Register the System
+### 4. Register the Plugin
 
-Add your system to `settings.py`:
+Add your plugin to `settings.py`:
 
 ```python
 # settings.py
 from pedre.conf import global_settings
 
-INSTALLED_SYSTEMS = [
-    *global_settings.INSTALLED_SYSTEMS,  # Include built-in systems
-    "myproject.systems.weather.WeatherManager",
+INSTALLED_PLUGINS = [
+    *global_settings.INSTALLED_PLUGINS,  # Include built-in plugins
+    "myproject.plugins.weather.WeatherPlugin",
 ]
 ```
 
-### 5. Access from Other Systems
+### 5. Access from Other Plugins
 
 ```python
-# In another system or action
-weather = context.get_system("weather")
+# In another plugin or action
+weather = context.get_plugin("weather")
 if weather:
     current_weather, intensity = weather.get_weather()
     weather.set_weather("snow", 0.8)
 ```
 
-## System Dependencies
+## Plugin Dependencies
 
-Declare dependencies to ensure systems are initialized in the correct order:
+Declare dependencies to ensure plugins are initialized in the correct order:
 
 ```python
-class QuestManager(BaseSystem):
-    # This system depends on inventory and npc systems
+class QuestPlugin(BasePlugin):
+    # This plugin depends on inventory and npc plugins
     DEPENDENCIES = ["inventory", "npc"]
 
     def setup(self, context: GameContext) -> None:
-        # These systems are guaranteed to be initialized
-        self.inventory = context.get_system("inventory")
-        self.npc_manager = context.get_system("npc")
+        # These plugins are guaranteed to be initialized
+        self.inventory = context.get_plugin("inventory")
+        self.npc_manager = context.get_plugin("npc")
 ```
 
-The SystemLoader will:
+The PluginLoader will:
 
 - Initialize dependencies first
 - Detect circular dependencies
@@ -223,7 +223,7 @@ def load_from_tiled(
     tile_map: arcade.TileMap,
     arcade_scene: arcade.Scene
 ) -> None:
-    """Load system data from Tiled map.
+    """Load plugin data from Tiled map.
 
     Args:
         tile_map: The loaded Tiled map
@@ -244,8 +244,8 @@ def load_from_tiled(
 
 ### Naming Conventions
 
-- Class name: `PascalCase` ending in `Manager` (e.g., `WeatherManager`)
-- System key: Lowercase version without "Manager" (e.g., "weather")
+- Class name: `PascalCase` ending in `Plugin` (e.g., `WeatherPlugin`)
+- Plugin key: Lowercase version without "Plugin" (e.g., "weather")
 - The framework automatically converts class names to keys
 
 ### State Management
@@ -267,24 +267,24 @@ def set_weather(self, weather: str):
     self.current_weather = weather
     self.context.event_bus.publish(WeatherChangedEvent(weather))
 
-# Avoid: Direct system coupling
+# Avoid: Direct plugin coupling
 def set_weather(self, weather: str):
     self.current_weather = weather
-    self.context.get_system("audio").play_music("rain.ogg")  # Too coupled
+    self.context.get_plugin("audio").play_music("rain.ogg")  # Too coupled
 ```
 
 ### Error Handling
 
 ```python
-# Good: Check for system availability
+# Good: Check for plugin availability
 def update(self, delta_time: float):
-    audio = self.context.get_system("audio")
+    audio = self.context.get_plugin("audio")
     if audio:
         audio.play_sfx("thunder.wav")
 
-# Avoid: Assuming systems exist
+# Avoid: Assuming plugins exist
 def update(self, delta_time: float):
-    self.context.get_system("audio").play_sfx("thunder.wav")  # May crash
+    self.context.get_plugin("audio").play_sfx("thunder.wav")  # May crash
 ```
 
 ### Resource Cleanup
@@ -300,13 +300,13 @@ def cleanup(self):
         self.sprite_list.clear()
 ```
 
-## Complete Example: Quest System
+## Complete Example: Quest Plugin
 
 ```python
 from dataclasses import dataclass
 from typing import Any
-from pedre.systems.base import BaseSystem
-from pedre.systems.game_context import GameContext
+from pedre.plugins.base import BasePlugin
+from pedre.plugins.game_context import GameContext
 
 @dataclass
 class Quest:
@@ -316,7 +316,7 @@ class Quest:
     stage: int = 0
     completed: bool = False
 
-class QuestManager(BaseSystem):
+class QuestPlugin(BasePlugin):
     """Manages quest state and progression."""
 
     DEPENDENCIES = ["inventory", "npc"]
@@ -329,7 +329,7 @@ class QuestManager(BaseSystem):
         self.context = context
 
         # Subscribe to events that affect quests
-        from pedre.systems.inventory.events import ItemAcquiredEvent
+        from pedre.plugins.inventory.events import ItemAcquiredEvent
         context.event_bus.subscribe(ItemAcquiredEvent, self._on_item_acquired)
 
     def update(self, delta_time: float) -> None:
@@ -341,7 +341,7 @@ class QuestManager(BaseSystem):
 
     def cleanup(self) -> None:
         if self.context:
-            from pedre.systems.inventory.events import ItemAcquiredEvent
+            from pedre.plugins.inventory.events import ItemAcquiredEvent
             self.context.event_bus.unsubscribe(ItemAcquiredEvent, self._on_item_acquired)
 
     # Public API
@@ -411,7 +411,7 @@ class QuestManager(BaseSystem):
 
 ## See Also
 
-- [SystemLoader](system-loader.md) - How systems are loaded and initialized
-- [Custom Actions](custom-actions.md) - Create actions that use your system
-- [Custom Events](custom-events.md) - Define events your system publishes
+- [PluginLoader](plugin-loader.md) - How plugins are loaded and initialized
+- [Custom Actions](custom-actions.md) - Create actions that use your plugin
+- [Custom Events](custom-events.md) - Define events your plugin publishes
 - [API Reference](../api/index.md) - Framework architecture

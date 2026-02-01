@@ -5,15 +5,15 @@ A Python RPG framework built on [Arcade](https://api.arcade.academy/) with seaml
 ## Features
 
 - **Tiled Map Integration** - Load .tmx maps with automatic layer detection and object parsing
-- **NPC System** - Animated NPCs with dialog trees, pathfinding, and state management
-- **Dialog System** - Multi-page conversations with character names and pagination
+- **NPC Plugin** - Animated NPCs with dialog trees, pathfinding, and state management
+- **Dialog Plugin** - Multi-page conversations with character names and pagination
 - **Event-Driven Scripting** - JSON-based cutscenes and interactive sequences
-- **Inventory Management** - Item collection and categorization system
-- **Portal System** - Map transitions with conditional triggers
-- **Save/Load System** - Automatic game state persistence
+- **Inventory Management** - Item collection and categorization plugin
+- **Portal Plugin** - Map transitions with conditional triggers
+- **Save/Load Plugin** - Automatic game state persistence
 - **Audio Management** - Background music and sound effects with caching
-- **Camera System** - Smooth camera following with optional bounds
-- **Particle Effects** - Visual feedback system for interactions
+- **Camera Plugin** - Smooth camera following with optional bounds
+- **Particle Effects** - Visual feedback plugin for interactions
 
 ## Installation
 
@@ -126,14 +126,14 @@ The framework uses a **manager-based architecture** with event-driven communicat
 
 - **Views** - Menu, Game, Inventory, Load screens
 - **Sprites** - AnimatedPlayer, AnimatedNPC with sprite sheet support
-- **Systems** - Modular managers for different game aspects:
-  - DialogManager - Conversation display
-  - NPCManager - NPC state and interactions
-  - PortalManager - Map transitions
-  - ScriptManager - Event-driven actions
-  - InventoryManager - Item management
-  - AudioManager - Sound and music
-  - SaveManager - Game persistence
+- **Plugins** - Modular managers for different game aspects:
+  - DialogPlugin - Conversation display
+  - NPCPlugin - NPC state and interactions
+  - PortalPlugin - Map transitions
+  - ScriptPlugin - Event-driven actions
+  - InventoryPlugin - Item management
+  - AudioPlugin - Sound and music
+  - SavePlugin - Game persistence
   - And more...
 
 ## Development

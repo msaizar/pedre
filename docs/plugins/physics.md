@@ -1,15 +1,15 @@
-# PhysicsManager
+# PhysicsPlugin
 
 Manages collision detection and physics simulation for the player sprite using Arcade's built-in physics engine.
 
 ## Location
 
-- Implementation: [src/pedre/systems/physics/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/manager.py)
-- Base class: [src/pedre/systems/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/base.py)
+- Implementation: [src/pedre/plugins/physics/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/physics/manager.py)
+- Base class: [src/pedre/plugins/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/physics/base.py)
 
 ## Configuration
 
-The PhysicsManager uses the following settings from `pedre.conf.settings`:
+The PhysicsPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Movement and Collision Settings
 
@@ -52,13 +52,13 @@ physics_manager.invalidate()
 - Sets internal flag to recreate engine on next `update()` call
 - Useful when the wall list or player sprite changes during gameplay
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the physics system with game context and create the physics engine.
+Initialize the physics plugin with game context and create the physics engine.
 
 **Parameters:**
 
@@ -66,7 +66,7 @@ Initialize the physics system with game context and create the physics engine.
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Creates the initial physics engine with current player and walls
 - Stores reference to game context for future engine recreation
 
@@ -91,7 +91,7 @@ Update the physics simulation.
 
 ### Collision Detection
 
-The PhysicsManager uses Arcade's `PhysicsEngineSimple`, which provides:
+The PhysicsPlugin uses Arcade's `PhysicsEngineSimple`, which provides:
 
 - **Simple collision response** - Prevents player from moving through walls
 - **Sliding along walls** - Player can slide along diagonal walls smoothly
@@ -99,7 +99,7 @@ The PhysicsManager uses Arcade's `PhysicsEngineSimple`, which provides:
 
 ### Wall List
 
-The physics engine uses the wall list from the SceneManager:
+The physics engine uses the wall list from the ScenePlugin:
 
 ```python
 wall_list = context.scene_manager.get_wall_list()
@@ -108,14 +108,14 @@ wall_list = context.scene_manager.get_wall_list()
 **Notes:**
 
 - Wall list typically comes from Tiled map layers marked as collision layers
-- SceneManager automatically extracts wall sprites from map data
+- ScenePlugin automatically extracts wall sprites from map data
 - Walls must be present in the Arcade scene for collision to work
 
 ### Engine Recreation
 
 The physics engine is recreated when:
 
-1. **Initial setup** - When the system is first initialized
+1. **Initial setup** - When the plugin is first initialized
 2. **Player sprite changes** - When `invalidate()` is called
 3. **Scene transitions** - After loading a new map with different walls
 
@@ -142,13 +142,13 @@ self.physics_engine = arcade.PhysicsEngineSimple(
 
 **Requirements:**
 
-- Player sprite must exist (from PlayerManager)
-- Wall list must be available (from SceneManager)
+- Player sprite must exist (from PlayerPlugin)
+- Wall list must be available (from ScenePlugin)
 
 **Fallback:**
 
 - If player sprite doesn't exist, engine is not created
-- System gracefully handles missing sprites and walls
+- Plugin gracefully handles missing sprites and walls
 
 ### Invalidation Pattern
 
@@ -171,16 +171,16 @@ def update(self, delta_time: float) -> None:
 **Benefits:**
 
 - Avoids recreating engine multiple times in same frame
-- Allows systems to invalidate without direct access to sprites
+- Allows plugins to invalidate without direct access to sprites
 - Defers expensive operations until necessary
 
-## System Dependencies
+## Plugin Dependencies
 
-The PhysicsManager depends on:
+The PhysicsPlugin depends on:
 
-- `player` - PlayerManager for player sprite access
+- `player` - PlayerPlugin for player sprite access
 
-The system also requires:
+The plugin also requires:
 
 - `scene_manager` - Via game context for wall list access
 - Player sprite must exist before physics can work
@@ -190,11 +190,11 @@ The system also requires:
 
 ### Basic Physics Setup
 
-The physics system is automatically initialized by the SystemLoader:
+The physics plugin is automatically initialized by the PluginLoader:
 
 ```python
 # In GameView initialization
-# PhysicsManager is loaded and setup automatically
+# PhysicsPlugin is loaded and setup automatically
 # No manual initialization needed
 ```
 
@@ -203,13 +203,13 @@ The physics system is automatically initialized by the SystemLoader:
 When the player sprite is recreated or repositioned:
 
 ```python
-# In PlayerManager after spawning new player
+# In PlayerPlugin after spawning new player
 def spawn_player(self, x: float, y: float):
     self.player_sprite = AnimatedPlayer(...)
     self.player_sprite.center_x = x
     self.player_sprite.center_y = y
 
-    # Tell physics system to rebuild engine
+    # Tell physics plugin to rebuild engine
     self.context.physics_manager.invalidate()
 ```
 
@@ -218,14 +218,14 @@ def spawn_player(self, x: float, y: float):
 After loading a new scene with different walls:
 
 ```python
-# In SceneManager after loading new map
+# In ScenePlugin after loading new map
 def load_level(self, map_file: str):
     # Load new Tiled map
     self.tile_map = arcade.load_tilemap(map_file)
     self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
     # Physics engine will be invalidated and recreated
-    # automatically by PlayerManager or scene loading
+    # automatically by PlayerPlugin or scene loading
     self.context.physics_manager.invalidate()
 ```
 
@@ -239,11 +239,11 @@ else:
     print("Physics engine not initialized")
 ```
 
-## Integration with Other Systems
+## Integration with Other Plugins
 
-### PlayerManager Integration
+### PlayerPlugin Integration
 
-The PlayerManager provides the player sprite:
+The PlayerPlugin provides the player sprite:
 
 ```python
 player_sprite = context.player_manager.get_player_sprite()
@@ -251,12 +251,12 @@ player_sprite = context.player_manager.get_player_sprite()
 
 **Important:**
 
-- PlayerManager should call `invalidate()` when player sprite changes
+- PlayerPlugin should call `invalidate()` when player sprite changes
 - Player must exist before physics engine can be created
 
-### SceneManager Integration
+### ScenePlugin Integration
 
-The SceneManager provides the wall list:
+The ScenePlugin provides the wall list:
 
 ```python
 wall_list = context.scene_manager.get_wall_list()
@@ -268,9 +268,9 @@ wall_list = context.scene_manager.get_wall_list()
 - Typically includes walls, obstacles, barriers
 - Updated automatically when new scene loads
 
-### InputManager Integration
+### InputPlugin Integration
 
-The InputManager provides movement input, which the physics engine applies:
+The InputPlugin provides movement input, which the physics engine applies:
 
 ```python
 # In game update loop
@@ -284,26 +284,26 @@ player_sprite.change_y = dy
 physics_manager.update(delta_time)
 ```
 
-## Custom PhysicsManager Implementation
+## Custom PhysicsPlugin Implementation
 
-If you need advanced physics behavior, you can extend the `PhysicsBaseManager` abstract base class.
+If you need advanced physics behavior, you can extend the `PhysicsBasePlugin` abstract base class.
 
-### PhysicsBaseManager
+### PhysicsBasePlugin
 
-**Location:** [src/pedre/systems/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/base.py)
+**Location:** [src/pedre/plugins/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/physics/base.py)
 
-The `PhysicsBaseManager` class defines the minimum interface for physics systems.
+The `PhysicsBasePlugin` class defines the minimum interface for physics plugins.
 
 #### Required Methods
 
 Your custom physics manager must implement:
 
 ```python
-from pedre.systems.physics.base import PhysicsBaseManager
-from pedre.systems.registry import SystemRegistry
+from pedre.plugins.physics.base import PhysicsBasePlugin
+from pedre.plugins.registry import PluginRegistry
 
-@SystemRegistry.register
-class CustomPhysicsManager(PhysicsBaseManager):
+@PluginRegistry.register
+class CustomPhysicsPlugin(PhysicsBasePlugin):
     """Custom physics implementation."""
 
     name = "physics"
@@ -312,7 +312,7 @@ class CustomPhysicsManager(PhysicsBaseManager):
         """Mark physics engine for recreation."""
         ...
 
-    # Also implement BaseSystem methods:
+    # Also implement BasePlugin methods:
     # - setup(context: GameContext)
     # - update(delta_time: float)
     # - cleanup() (optional)
@@ -321,13 +321,13 @@ class CustomPhysicsManager(PhysicsBaseManager):
 #### Example Custom Implementation
 
 ```python
-# In myproject/systems/advanced_physics.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.physics.base import PhysicsBaseManager
+# In myproject/plugins/advanced_physics.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.physics.base import PhysicsBasePlugin
 import arcade
 
-@SystemRegistry.register
-class PlatformerPhysicsManager(PhysicsBaseManager):
+@PluginRegistry.register
+class PlatformerPhysicsPlugin(PhysicsBasePlugin):
     """Physics with gravity and jumping."""
 
     name = "physics"
@@ -371,11 +371,11 @@ class PlatformerPhysicsManager(PhysicsBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.advanced_physics",  # Load custom physics first
-    "pedre.systems.camera",
-    "pedre.systems.player",
-    # ... rest of systems (omit "pedre.systems.physics") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.advanced_physics",  # Load custom physics first
+    "pedre.plugins.camera",
+    "pedre.plugins.player",
+    # ... rest of plugins (omit "pedre.plugins.physics") ...
 ]
 ```
 
@@ -408,7 +408,7 @@ If physics is causing lag:
 
 ## See Also
 
-- [PlayerManager](player.md) - Player sprite management
-- [SceneManager](scene.md) - Map loading and wall list management
-- [InputManager](input.md) - Movement input handling
+- [PlayerPlugin](player.md) - Player sprite management
+- [ScenePlugin](scene.md) - Map loading and wall list management
+- [InputPlugin](input.md) - Movement input handling
 - [Arcade Physics Documentation](https://api.arcade.academy/en/latest/programming_guide/physics_engines.html) - Underlying physics engine

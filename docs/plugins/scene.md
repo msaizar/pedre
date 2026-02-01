@@ -1,17 +1,17 @@
-# SceneManager
+# ScenePlugin
 
 Manages scene transitions, map loading, lifecycle, and collision detection.
 
 ## Location
 
-- Implementation: [src/pedre/systems/scene/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/manager.py)
-- Base class: [src/pedre/systems/scene/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/base.py)
-- Events: [src/pedre/systems/scene/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/events.py)
-- Actions: [src/pedre/systems/scene/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/actions.py)
+- Implementation: [src/pedre/plugins/scene/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/scene/manager.py)
+- Base class: [src/pedre/plugins/scene/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/scene/base.py)
+- Events: [src/pedre/plugins/scene/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/scene/events.py)
+- Actions: [src/pedre/plugins/scene/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/scene/actions.py)
 
 ## Configuration
 
-The SceneManager uses the following settings from `pedre.conf.settings`:
+The ScenePlugin uses the following settings from `pedre.conf.settings`:
 
 ### Scene Transition Settings
 
@@ -88,7 +88,7 @@ Get the current transition state.
 **Example:**
 
 ```python
-from pedre.systems.scene.base import TransitionState
+from pedre.plugins.scene.base import TransitionState
 
 state = context.scene_manager.get_transition_state()
 if state == TransitionState.NONE:
@@ -132,11 +132,11 @@ scene_manager.load_level("forest.tmx")
 - In most cases, use `request_transition()` for smooth visual transitions
 - This method loads immediately without fade effects
 - Caches current scene state before loading (unless initial=True)
-- Orchestrates all system updates in proper order:
+- Orchestrates all plugin updates in proper order:
   1. Cache current scene state
   2. Load Tiled map
   3. Extract collision layers
-  4. Load system data from Tiled (waypoints, portals, NPCs, etc.)
+  4. Load plugin data from Tiled (waypoints, portals, NPCs, etc.)
   5. Apply entity states from save data
   6. Load NPC dialogs and scripts
   7. Restore cached scene state
@@ -194,7 +194,7 @@ if wall_list:
 **Notes:**
 
 - Contains sprites from all layers listed in `SCENE_COLLISION_LAYER_NAMES`
-- Used by PhysicsManager for collision detection
+- Used by PhysicsPlugin for collision detection
 - Includes static map tiles and dynamic entities (NPCs, objects)
 
 #### add_to_wall_list
@@ -267,7 +267,7 @@ else:
 
 - Set by `request_transition()` when spawn_waypoint parameter is provided
 - Cleared after player is spawned
-- PlayerManager checks this during scene load
+- PlayerPlugin checks this during scene load
 
 #### clear_next_spawn_waypoint
 
@@ -284,7 +284,7 @@ scene_manager.clear_next_spawn_waypoint()
 
 **Notes:**
 
-- Called automatically by PlayerManager after spawning
+- Called automatically by PlayerPlugin after spawning
 - Ensures spawn waypoint only applies once
 
 ### Rendering
@@ -313,21 +313,21 @@ Draw the transition overlay (black fade) on top of the screen.
 - Only draws if transition state is not NONE
 - Uses transition_alpha to control fade opacity
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the scene system with game context.
+Initialize the scene plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### reset
@@ -355,7 +355,7 @@ Update transition state machine.
 
 **Notes:**
 
-- Called automatically by SystemLoader each frame
+- Called automatically by PluginLoader each frame
 - Manages transition state machine progression
 - Handles fade in/out alpha updates
 - Triggers map loading during LOADING state
@@ -385,7 +385,7 @@ save_data = {
 **Notes:**
 
 - Only saves current_map filename
-- Other scene state (entities, positions) saved by individual systems
+- Other scene state (entities, positions) saved by individual plugins
 
 #### restore_save_state
 
@@ -410,7 +410,7 @@ scene_manager.restore_save_state(save_data["scene"])
 
 ## Map Loading Process
 
-The SceneManager orchestrates a complex loading sequence to ensure all systems are updated correctly:
+The ScenePlugin orchestrates a complex loading sequence to ensure all plugins are updated correctly:
 
 ### 1. Cache Current Scene
 
@@ -425,7 +425,7 @@ This preserves:
 - NPC positions, visibility, and dialog levels
 - Interactive object states
 - Portal states
-- Any other system-specific scene state
+- Any other plugin-specific scene state
 
 ### 2. Load Tiled Map
 
@@ -448,20 +448,20 @@ for layer_name in SCENE_COLLISION_LAYER_NAMES:
             wall_list.append(sprite)
 ```
 
-### 4. Load System Data from Tiled
+### 4. Load Plugin Data from Tiled
 
-Each system's `load_from_tiled()` method is called in dependency order:
+Each plugin's `load_from_tiled()` method is called in dependency order:
 
-- WaypointManager - Extracts waypoint positions
-- PortalManager - Extracts portal trigger zones
-- InteractionManager - Extracts interactive objects
-- PlayerManager - Spawns player at waypoint or default position
-- NPCManager - Spawns NPCs from object layer
-- CameraManager - Initializes camera position
+- WaypointPlugin - Extracts waypoint positions
+- PortalPlugin - Extracts portal trigger zones
+- InteractionPlugin - Extracts interactive objects
+- PlayerPlugin - Spawns player at waypoint or default position
+- NPCPlugin - Spawns NPCs from object layer
+- CameraPlugin - Initializes camera position
 
 ### 5. Apply Entity States
 
-SaveManager applies any pending entity states from save data:
+SavePlugin applies any pending entity states from save data:
 
 ```python
 save_manager.apply_entity_states()
@@ -481,7 +481,7 @@ Scene-specific dialogs are loaded:
 npc_manager.load_scene_dialogs(current_scene)
 ```
 
-Note: Scripts are loaded globally at system initialization, not per-scene. The `scene` field in script definitions controls which scene each script can execute in.
+Note: Scripts are loaded globally at plugin initialization, not per-scene. The `scene` field in script definitions controls which scene each script can execute in.
 
 ### 7. Restore Cached State
 
@@ -519,7 +519,7 @@ event_bus.publish(SceneStartEvent(current_scene))
 
 ## Transition State Machine
 
-The SceneManager implements a state machine for smooth scene transitions:
+The ScenePlugin implements a state machine for smooth scene transitions:
 
 ```text
 NONE (idle)
@@ -602,7 +602,7 @@ All layers are combined into a single wall_list for collision detection.
 
 ## Scene Caching
 
-The SceneManager works with CacheManager to preserve scene state across transitions:
+The ScenePlugin works with CachePlugin to preserve scene state across transitions:
 
 ### What Gets Cached
 
@@ -611,7 +611,7 @@ When leaving a scene:
 - NPC positions, visibility, dialog levels
 - Interactive object states
 - Portal states
-- Any custom system state
+- Any custom plugin state
 
 ### When Caching Happens
 
@@ -623,7 +623,7 @@ cache_manager.cache_scene(current_scene)
 ### When Cache is Restored
 
 ```python
-# After loading map and systems
+# After loading map and plugins
 cache_manager.restore_scene(current_scene)
 ```
 
@@ -664,7 +664,7 @@ Published when a new scene/map finishes loading.
 
 **Notes:**
 
-- Fires after all systems are loaded and initialized
+- Fires after all plugins are loaded and initialized
 - Fires on every map transition and when starting new game
 - The `scene` filter is optional (omit to trigger for any scene)
 - Useful for:
@@ -678,7 +678,7 @@ Published when a new scene/map finishes loading.
 SceneStartEvent fires at the end of `load_level()`, after:
 
 1. Map loaded
-2. Systems initialized from Tiled
+2. Plugins initialized from Tiled
 3. Entity states applied
 4. Cached state restored
 5. Collision synced
@@ -708,7 +708,7 @@ Transition to a different map/scene with fade effects.
 
 **Notes:**
 
-- Triggers smooth transition through SceneManager.request_transition()
+- Triggers smooth transition through ScenePlugin.request_transition()
 - Screen fades out, loads map, fades back in
 - If spawn_waypoint not specified, uses map's default spawn
 - Commonly used with portal_entered or dialog_closed events
@@ -840,7 +840,7 @@ boulder.remove_from_sprite_lists()
 ### Check Transition State
 
 ```python
-from pedre.systems.scene.base import TransitionState
+from pedre.plugins.scene.base import TransitionState
 
 # Disable pause during transitions
 state = context.scene_manager.get_transition_state()
@@ -849,11 +849,11 @@ if state != TransitionState.NONE:
     return
 ```
 
-## Integration with Other Systems
+## Integration with Other Plugins
 
-### CacheManager Integration
+### CachePlugin Integration
 
-The CacheManager preserves scene state during transitions:
+The CachePlugin preserves scene state during transitions:
 
 ```python
 # Before loading new scene
@@ -865,20 +865,20 @@ cache_manager.restore_scene(current_scene)
 
 **Notes:**
 
-- Cache is transparent to SceneManager
-- SceneManager calls CacheManager at appropriate times
+- Cache is transparent to ScenePlugin
+- ScenePlugin calls CachePlugin at appropriate times
 - Preserves NPC positions, dialog levels, object states
 - Cache is in-memory, separate from save files
 
-### WaypointManager Integration
+### WaypointPlugin Integration
 
 Waypoints are loaded and used for player spawning:
 
 ```python
-# SceneManager loads waypoints from Tiled
+# ScenePlugin loads waypoints from Tiled
 waypoint_manager.load_from_tiled(tile_map, arcade_scene)
 
-# PlayerManager uses waypoints for spawning
+# PlayerPlugin uses waypoints for spawning
 spawn_waypoint = scene_manager.get_next_spawn_waypoint()
 if spawn_waypoint:
     waypoint_pos = waypoint_manager.get_waypoint(spawn_waypoint)
@@ -890,12 +890,12 @@ if spawn_waypoint:
 - Spawn waypoint set via `request_transition()`
 - Cleared after player spawns
 
-### PortalManager Integration
+### PortalPlugin Integration
 
 Portals are loaded from Tiled during scene setup:
 
 ```python
-# SceneManager orchestrates portal loading
+# ScenePlugin orchestrates portal loading
 portal_manager.load_from_tiled(tile_map, arcade_scene)
 ```
 
@@ -903,9 +903,9 @@ portal_manager.load_from_tiled(tile_map, arcade_scene)
 
 - Portals loaded from "Portals" object layer
 - Portal events trigger scene transitions
-- SceneManager handles the actual transition via `request_transition()`
+- ScenePlugin handles the actual transition via `request_transition()`
 
-### NPCManager Integration
+### NPCPlugin Integration
 
 NPCs are loaded and managed during scene transitions:
 
@@ -923,12 +923,12 @@ npc_manager.load_scene_dialogs(current_scene)
 - Dialog files loaded per-scene
 - NPC visibility synced with collision list
 
-### PlayerManager Integration
+### PlayerPlugin Integration
 
 Player is spawned at correct location during scene load:
 
 ```python
-# PlayerManager loads player from Tiled
+# PlayerPlugin loads player from Tiled
 player_manager.load_from_tiled(tile_map, arcade_scene)
 
 # Uses spawn waypoint if set
@@ -941,15 +941,15 @@ spawn_waypoint = scene_manager.get_next_spawn_waypoint()
 - Spawn waypoint overrides default position
 - Player position restored from save data after load
 
-### PhysicsManager Integration
+### PhysicsPlugin Integration
 
 Physics engine uses collision layers from scene:
 
 ```python
-# SceneManager provides wall list
+# ScenePlugin provides wall list
 wall_list = scene_manager.get_wall_list()
 
-# PhysicsManager creates engine with walls
+# PhysicsPlugin creates engine with walls
 physics_manager.invalidate()
 ```
 
@@ -959,7 +959,7 @@ physics_manager.invalidate()
 - Physics engine invalidated after scene load
 - Dynamic sprites added/removed from wall list
 
-### SaveManager Integration
+### SavePlugin Integration
 
 Scene state is saved and restored:
 
@@ -974,11 +974,11 @@ scene_manager.load_level(save_state["current_map"])
 
 **Notes:**
 
-- Only map filename saved by SceneManager
-- Entity states saved by individual systems
-- Scene loading orchestrated by SceneManager
+- Only map filename saved by ScenePlugin
+- Entity states saved by individual plugins
+- Scene loading orchestrated by ScenePlugin
 
-### ScriptManager Integration
+### ScriptPlugin Integration
 
 Scripts are triggered by scene events:
 
@@ -1019,7 +1019,7 @@ If player passes through walls:
 1. **Check layer names** - Ensure collision layers match `SCENE_COLLISION_LAYER_NAMES`
 2. **Verify wall list** - Check `get_wall_list()` contains sprites
 3. **Review Tiled layers** - Ensure collision tiles are painted
-4. **Check physics** - Verify PhysicsManager is using wall list
+4. **Check physics** - Verify PhysicsPlugin is using wall list
 5. **Test visibility sync** - Ensure invisible NPCs removed from walls
 
 ### Transition Stuck
@@ -1046,10 +1046,10 @@ If player spawns at incorrect position:
 
 If scene changes aren't remembered:
 
-1. **Check caching** - Verify CacheManager is enabled and working
+1. **Check caching** - Verify CachePlugin is enabled and working
 2. **Review cache calls** - Ensure `cache_scene()` called before transition
 3. **Test restore** - Check `restore_scene()` called after loading
-4. **Verify system support** - Ensure systems implement `cache_scene_state()`
+4. **Verify plugin support** - Ensure plugins implement `cache_scene_state()`
 5. **Check save/load** - Test that cache survives save/load cycle
 
 ### Objects Not Loading
@@ -1058,7 +1058,7 @@ If waypoints, portals, or NPCs don't appear:
 
 1. **Check object layers** - Verify "Waypoints", "Portals", "NPCs" layers exist
 2. **Review properties** - Ensure objects have required custom properties
-3. **Check load order** - Verify systems' `load_from_tiled()` called in correct order
+3. **Check load order** - Verify plugins' `load_from_tiled()` called in correct order
 4. **Test individually** - Load map and check each object layer
 5. **Review logs** - Look for parsing or validation errors
 
@@ -1069,27 +1069,27 @@ If scene transitions are slow:
 1. **Reduce tile count** - Simplify maps or use larger tiles
 2. **Optimize collision** - Use fewer collision sprites
 3. **Increase speed** - Adjust `SCENE_TRANSITION_SPEED` for faster fades
-4. **Profile loading** - Identify slow systems in load sequence
+4. **Profile loading** - Identify slow plugins in load sequence
 5. **Lazy load assets** - Load textures on demand rather than all at once
 
 ## Custom Scene Implementation
 
-If you need to replace the scene system with a custom implementation, you can extend the `SceneBaseManager` abstract base class.
+If you need to replace the scene plugin with a custom implementation, you can extend the `SceneBasePlugin` abstract base class.
 
-### SceneBaseManager
+### SceneBasePlugin
 
-**Location:** [src/pedre/systems/scene/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/scene/base.py)
+**Location:** [src/pedre/plugins/scene/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/scene/base.py)
 
-The `SceneBaseManager` class defines the minimum interface that any scene manager must implement.
+The `SceneBasePlugin` class defines the minimum interface that any scene manager must implement.
 
 #### Required Methods
 
 Your custom scene manager must implement these abstract methods:
 
 ```python
-from pedre.systems.scene.base import SceneBaseManager, TransitionState
+from pedre.plugins.scene.base import SceneBasePlugin, TransitionState
 
-class CustomSceneManager(SceneBaseManager):
+class CustomScenePlugin(SceneBasePlugin):
     """Custom scene implementation."""
 
     name = "scene"
@@ -1138,14 +1138,14 @@ class CustomSceneManager(SceneBaseManager):
 
 #### Registration
 
-Register your custom scene manager using the `@SystemRegistry.register` decorator:
+Register your custom scene manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.scene.base import SceneBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.scene.base import SceneBasePlugin
 
-@SystemRegistry.register
-class CustomSceneManager(SceneBaseManager):
+@PluginRegistry.register
+class CustomScenePlugin(SceneBasePlugin):
     name = "scene"
     dependencies = ["cache"]
 
@@ -1154,20 +1154,20 @@ class CustomSceneManager(SceneBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `SceneBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `reset()`, and optionally `update()` and `on_draw()`
+- Your custom manager inherits from `BasePlugin` (via `SceneBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `reset()`, and optionally `update()` and `on_draw()`
 - The `role` attribute is set to `"scene_manager"` in the base class
 - Your implementation can use any map format or transition system
-- Register your custom scene manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.scene"` to replace it
+- Register your custom scene manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.scene"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_scene.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.scene.base import SceneBaseManager, TransitionState
+# In myproject/plugins/custom_scene.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.scene.base import SceneBasePlugin, TransitionState
 
-@SystemRegistry.register
-class ProceduralSceneManager(SceneBaseManager):
+@PluginRegistry.register
+class ProceduralScenePlugin(SceneBasePlugin):
     """Scene manager that generates maps procedurally."""
 
     name = "scene"
@@ -1187,22 +1187,22 @@ class ProceduralSceneManager(SceneBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_scene",  # Load custom scene first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.scene") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_scene",  # Load custom scene first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.scene") ...
 ]
 ```
 
 ## See Also
 
-- [CacheManager](cache.md) - Scene state caching
-- [WaypointManager](waypoint.md) - Spawn points and pathfinding targets
-- [PortalManager](portal.md) - Scene transition triggers
-- [NPCManager](npc.md) - NPC loading and management
-- [PlayerManager](player.md) - Player spawning and control
-- [PhysicsManager](physics.md) - Collision detection
+- [CachePlugin](cache.md) - Scene state caching
+- [WaypointPlugin](waypoint.md) - Spawn points and pathfinding targets
+- [PortalPlugin](portal.md) - Scene transition triggers
+- [NPCPlugin](npc.md) - NPC loading and management
+- [PlayerPlugin](player.md) - Player spawning and control
+- [PhysicsPlugin](physics.md) - Collision detection
 - [Configuration Guide](../guides/configuration.md)
 - [Scripting Actions](../scripting/actions.md)
 - [Scripting Events](../scripting/events.md)

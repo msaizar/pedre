@@ -167,11 +167,11 @@ npc = AnimatedNPC(
 
 ```python
 # NPC is typically created from Tiled map data
-# See NPCManager for registration and management
+# See NPCPlugin for registration and management
 ```
 
 ## See Also
 
-- [Player System](../systems/player.md) - PlayerManager documentation
-- [NPC System](../systems/npc.md) - NPCManager documentation
+- [Player Plugin](../plugins/player.md) - PlayerPlugin documentation
+- [NPC Plugin](../plugins/npc.md) - NPCPlugin documentation
 - [Tiled Integration](../guides/tiled-integration.md) - Setting up sprites in Tiled

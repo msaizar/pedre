@@ -1,6 +1,6 @@
 # Events & Registry
 
-The Pedre framework uses an event-driven architecture to decouple systems. The `EventRegistry` allows dynamic discovery and registration of event types by name.
+The Pedre framework uses an event-driven architecture to decouple plugins. The `EventRegistry` allows dynamic discovery and registration of event types by name.
 
 ## How Events Are Loaded
 
@@ -14,13 +14,13 @@ Events are configured through the `INSTALLED_EVENTS` setting, which is a list of
 
 ```python
 INSTALLED_EVENTS = [
-    "pedre.systems.audio.events",
-    "pedre.systems.camera.events",
-    "pedre.systems.dialog.events",
-    "pedre.systems.inventory.events",
-    "pedre.systems.particle.events",
-    "pedre.systems.scene.events",
-    "pedre.systems.npc.events",
+    "pedre.plugins.audio.events",
+    "pedre.plugins.camera.events",
+    "pedre.plugins.dialog.events",
+    "pedre.plugins.inventory.events",
+    "pedre.plugins.particle.events",
+    "pedre.plugins.scene.events",
+    "pedre.plugins.npc.events",
 ]
 ```
 
@@ -34,7 +34,7 @@ from pedre.conf import global_settings
 INSTALLED_EVENTS = [
     *global_settings.INSTALLED_EVENTS,  # Include built-in events
     "myproject.custom_events",           # Your custom events module
-    "myproject.systems.weather.events",  # System-specific events
+    "myproject.plugins.weather.events",  # Plugin-specific events
 ]
 ```
 
@@ -42,7 +42,7 @@ You can also replace built-in events with your own implementations by omitting t
 
 ## EventRegistry
 
-The `EventRegistry` maps string names (like `"npc_interacted"`) to Event classes. This enables the scripting system to subscribe to events defined in JSON without importing the actual Python classes.
+The `EventRegistry` maps string names (like `"npc_interacted"`) to Event classes. This enables the scripting plugin to subscribe to events defined in JSON without importing the actual Python classes.
 
 ### Location
 
@@ -69,14 +69,14 @@ class WeatherChangedEvent:
 
 ### 2. Publish the Event
 
-Publish the event from your system using the context's event bus.
+Publish the event from your plugin using the context's event bus.
 
 ```python
 def set_weather(self, type, intensity):
     self.current_weather = type
     # ... apply changes ...
 
-    # Notify other systems/scripts
+    # Notify other plugins/scripts
     self.context.event_bus.publish(WeatherChangedEvent(type, intensity))
 ```
 

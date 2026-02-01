@@ -1,18 +1,18 @@
-# InventoryManager
+# InventoryPlugin
 
 Manages player's inventory and item collection with a visual grid overlay.
 
 ## Location
 
-- Implementation: [src/pedre/systems/inventory/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/manager.py)
-- Base class: [src/pedre/systems/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/base.py)
-- Events: [src/pedre/systems/inventory/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/events.py)
-- Actions: [src/pedre/systems/inventory/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/actions.py)
-- Conditions: [src/pedre/systems/inventory/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/conditions.py)
+- Implementation: [src/pedre/plugins/inventory/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/manager.py)
+- Base class: [src/pedre/plugins/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/base.py)
+- Events: [src/pedre/plugins/inventory/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/events.py)
+- Actions: [src/pedre/plugins/inventory/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/actions.py)
+- Conditions: [src/pedre/plugins/inventory/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/conditions.py)
 
 ## Configuration
 
-The InventoryManager uses the following settings from `pedre.conf.settings`:
+The InventoryPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Grid Layout Settings
 
@@ -125,11 +125,11 @@ else:
 
 `add_item(item: InventoryItem) -> bool`
 
-Add a new item to the inventory system and optionally acquire it.
+Add a new item to the inventory plugin and optionally acquire it.
 
 **Parameters:**
 
-- `item` - The `InventoryItem` to add to the system
+- `item` - The `InventoryItem` to add to the plugin
 
 **Returns:**
 
@@ -138,7 +138,7 @@ Add a new item to the inventory system and optionally acquire it.
 **Example:**
 
 ```python
-from pedre.systems.inventory.base import InventoryItem
+from pedre.plugins.inventory.base import InventoryItem
 import uuid
 
 # Add a health potion that's immediately available
@@ -209,7 +209,7 @@ Check if inventory has been accessed by the player.
 
 ```python
 if inventory_manager.has_been_accessed():
-    # Player knows about inventory system
+    # Player knows about inventory plugin
     pass
 ```
 
@@ -262,13 +262,13 @@ inventory_manager.restore_save_state(save_data["inventory"])
 - Restores item acquired/consumed flags and accessed state
 - Dynamically added items are recreated from save data
 
-## System Lifecycle
+## Plugin Lifecycle
 
 ### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the inventory system with game context.
+Initialize the inventory plugin with game context.
 
 **Parameters:**
 
@@ -276,7 +276,7 @@ Initialize the inventory system with game context.
 
 **Notes:**
 
-- Called automatically by the SystemLoader
+- Called automatically by the PluginLoader
 - Loads items from `INVENTORY_ITEMS_FILE`
 
 ### cleanup
@@ -288,7 +288,7 @@ Clean up inventory resources when the scene unloads.
 **Notes:**
 
 - Clears all items and resets accessed flag
-- Called automatically by the SystemLoader
+- Called automatically by the PluginLoader
 
 ### reset
 
@@ -318,7 +318,7 @@ Handle key presses for inventory overlay.
 
 **Notes:**
 
-- Called automatically by the SystemLoader
+- Called automatically by the PluginLoader
 - Press the configured `INVENTORY_KEY_TOGGLE` key (default: `I`) to open the inventory overlay
 - Arrow keys navigate the grid
 - `INVENTORY_KEY_VIEW` (default: `V`) views selected item in detail
@@ -333,7 +333,7 @@ Draw the inventory overlay in screen coordinates.
 
 **Notes:**
 
-- Called automatically by the SystemLoader during UI draw phase
+- Called automatically by the PluginLoader during UI draw phase
 - Renders grid, items, hints, and capacity counter
 
 ## Inventory Items
@@ -608,14 +608,14 @@ Give an item to the player's inventory.
 
 **Notes:**
 
-- The item must already be defined in the inventory system
+- The item must already be defined in the inventory plugin
 - Publishes `ItemAcquiredEvent` on success
 - Publishes `ItemAcquisitionFailedEvent` on failure
 - Returns `False` and blocks script progression if acquisition fails
 
 ### AddItemAction
 
-Add a new item to the inventory system.
+Add a new item to the inventory plugin.
 
 **Type:** `add_item`
 
@@ -831,22 +831,22 @@ When viewing an item with an `image_path`:
 
 ## Custom Inventory Implementation
 
-If you need to replace the inventory system with a custom implementation, you can extend the `InventoryBaseManager` abstract base class.
+If you need to replace the inventory plugin with a custom implementation, you can extend the `InventoryBasePlugin` abstract base class.
 
-### InventoryBaseManager
+### InventoryBasePlugin
 
-**Location:** [src/pedre/systems/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/base.py)
+**Location:** [src/pedre/plugins/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/base.py)
 
-The `InventoryBaseManager` class defines the minimum interface that any inventory manager must implement.
+The `InventoryBasePlugin` class defines the minimum interface that any inventory manager must implement.
 
 #### Required Methods
 
 Your custom inventory manager must implement these abstract methods:
 
 ```python
-from pedre.systems.inventory.base import InventoryBaseManager, InventoryItem
+from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
 
-class CustomInventoryManager(InventoryBaseManager):
+class CustomInventoryPlugin(InventoryBasePlugin):
     """Custom inventory implementation."""
 
     name = "inventory"
@@ -869,20 +869,20 @@ class CustomInventoryManager(InventoryBaseManager):
         ...
 
     def add_item(self, item: InventoryItem) -> bool:
-        """Add a new item to the inventory system."""
+        """Add a new item to the inventory plugin."""
         ...
 ```
 
 #### Registration
 
-Register your custom inventory manager using the `@SystemRegistry.register` decorator:
+Register your custom inventory manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.inventory.base import InventoryBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.inventory.base import InventoryBasePlugin
 
-@SystemRegistry.register
-class CustomInventoryManager(InventoryBaseManager):
+@PluginRegistry.register
+class CustomInventoryPlugin(InventoryBasePlugin):
     name = "inventory"
     dependencies = []
 
@@ -891,20 +891,20 @@ class CustomInventoryManager(InventoryBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `InventoryBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `InventoryBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"inventory_manager"` in the base class
-- Your implementation can use any storage backend or UI system
-- Register your custom inventory manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.inventory"` to replace it
+- Your implementation can use any storage backend or UI plugin
+- Register your custom inventory manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.inventory"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_inventory.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.inventory.base import InventoryBaseManager
+# In myproject/plugins/custom_inventory.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.inventory.base import InventoryBasePlugin
 
-@SystemRegistry.register
-class DatabaseInventoryManager(InventoryBaseManager):
+@PluginRegistry.register
+class DatabaseInventoryPlugin(InventoryBasePlugin):
     """Inventory manager that stores items in a database."""
 
     name = "inventory"
@@ -923,11 +923,11 @@ class DatabaseInventoryManager(InventoryBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_inventory",  # Load custom inventory first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.inventory") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_inventory",  # Load custom inventory first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.inventory") ...
 ]
 ```
 
@@ -994,8 +994,8 @@ INSTALLED_SYSTEMS = [
 
 ## See Also
 
-- [DialogManager](dialog.md) - Conversation system
-- [ScriptManager](script.md) - Event-driven scripting
+- [DialogPlugin](dialog.md) - Conversation plugin
+- [ScriptPlugin](script.md) - Event-driven scripting
 - [Configuration Guide](../guides/configuration.md)
 - [Scripting Actions](../scripting/actions.md)
 - [Scripting Conditions](../scripting/conditions.md)

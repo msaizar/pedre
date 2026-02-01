@@ -1,16 +1,16 @@
-# CameraManager
+# CameraPlugin
 
 Manages camera movement with smooth following and boundary constraints.
 
 ## Location
 
-- Implementation: [src/pedre/systems/camera/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/manager.py)
-- Base class: [src/pedre/systems/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/base.py)
-- Actions: [src/pedre/systems/camera/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/actions.py)
+- Implementation: [src/pedre/plugins/camera/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/manager.py)
+- Base class: [src/pedre/plugins/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/base.py)
+- Actions: [src/pedre/plugins/camera/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/actions.py)
 
 ## Configuration
 
-The CameraManager uses the following settings from `pedre.conf.settings`:
+The CameraPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Movement Settings
 
@@ -256,21 +256,21 @@ camera_manager.restore_save_state(save_data["camera"])
 - Restores lerp speed, follow mode, follow target, and smooth setting
 - Missing keys fall back to defaults
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the camera system with game context.
+Initialize the camera plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### cleanup
@@ -282,7 +282,7 @@ Clean up camera resources when the scene unloads.
 **Notes:**
 
 - Clears camera, bounds, and follow configuration
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 #### update
 
@@ -296,7 +296,7 @@ Update camera position based on follow mode.
 
 **Notes:**
 
-- Called automatically every frame by SystemLoader
+- Called automatically every frame by PluginLoader
 - Follows the player or NPC depending on current follow mode
 - Uses smooth or instant follow based on configuration
 
@@ -315,7 +315,7 @@ Load camera configuration from a Tiled map and create the camera.
 
 **Notes:**
 
-- Automatically called by the scene system when loading maps
+- Automatically called by the scene plugin when loading maps
 - Reads camera properties from the map and applies configuration
 - Creates the camera with correct initial position and bounds
 
@@ -347,7 +347,7 @@ Apply camera following configuration loaded from Tiled.
 
 **Notes:**
 
-- Called by SceneManager after camera is created and set
+- Called by ScenePlugin after camera is created and set
 - Applies the configuration stored by `load_from_tiled()`
 
 #### get_follow_config
@@ -390,7 +390,7 @@ Make camera follow the player sprite continuously.
 **Notes:**
 
 - Action completes immediately after setting the follow mode
-- Camera movement happens in `CameraManager.update()` every frame
+- Camera movement happens in `CameraPlugin.update()` every frame
 
 ### FollowNPCAction
 
@@ -449,23 +449,23 @@ Stop camera following, keep at current position.
 
 ## Custom Camera Implementation
 
-If you need to replace the camera system with a custom implementation (e.g., for advanced camera effects or a different camera backend), you can extend the `CameraBaseManager` abstract base class.
+If you need to replace the camera plugin with a custom implementation (e.g., for advanced camera effects or a different camera backend), you can extend the `CameraBasePlugin` abstract base class.
 
-### CameraBaseManager
+### CameraBasePlugin
 
-**Location:** [src/pedre/systems/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/base.py)
+**Location:** [src/pedre/plugins/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/base.py)
 
-The `CameraBaseManager` class defines the minimum interface that any camera manager must implement. All methods are abstract and must be implemented by your custom class.
+The `CameraBasePlugin` class defines the minimum interface that any camera manager must implement. All methods are abstract and must be implemented by your custom class.
 
 #### Required Methods
 
 Your custom camera manager must implement these abstract methods:
 
 ```python
-from pedre.systems.camera.base import CameraBaseManager
+from pedre.plugins.camera.base import CameraBasePlugin
 import arcade
 
-class CustomCameraManager(CameraBaseManager):
+class CustomCameraPlugin(CameraBasePlugin):
     """Custom camera implementation."""
 
     name = "camera"
@@ -490,14 +490,14 @@ class CustomCameraManager(CameraBaseManager):
 
 #### Registration
 
-Register your custom camera manager using the `@SystemRegistry.register` decorator:
+Register your custom camera manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.camera.base import CameraBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.camera.base import CameraBasePlugin
 
-@SystemRegistry.register
-class CustomCameraManager(CameraBaseManager):
+@PluginRegistry.register
+class CustomCameraPlugin(CameraBasePlugin):
     name = "camera"
     dependencies = ["player", "npc"]
 
@@ -506,21 +506,21 @@ class CustomCameraManager(CameraBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `CameraBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `update()`
+- Your custom manager inherits from `BasePlugin` (via `CameraBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `update()`
 - The `role` attribute is set to `"camera_manager"` in the base class
 - Your implementation can use any camera system, not just Arcade's Camera2D
 - Additional methods beyond the required interface can be added as needed
-- Register your custom camera manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.camera"` to replace it
+- Register your custom camera manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.camera"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_camera.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.camera.base import CameraBaseManager
+# In myproject/plugins/custom_camera.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.camera.base import CameraBasePlugin
 
-@SystemRegistry.register
-class AdvancedCameraManager(CameraBaseManager):
+@PluginRegistry.register
+class AdvancedCameraPlugin(CameraBasePlugin):
     """Camera with zoom and screen shake effects."""
 
     name = "camera"
@@ -548,11 +548,11 @@ class AdvancedCameraManager(CameraBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_camera",  # Load custom camera first
-    "pedre.systems.audio",
-    "pedre.systems.debug",
-    # ... rest of systems (omit "pedre.systems.camera") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_camera",  # Load custom camera first
+    "pedre.plugins.audio",
+    "pedre.plugins.debug",
+    # ... rest of plugins (omit "pedre.plugins.camera") ...
 ]
 ```
 
@@ -613,8 +613,8 @@ camera_manager.set_bounds(
 
 ## See Also
 
-- [NPCManager](npc.md) - NPC sprites that can be followed
-- [PlayerManager](player.md) - Player sprite tracking
-- [SceneManager](scene.md) - Scene transitions and map loading
-- [ScriptManager](script.md) - Event-driven scripting
+- [NPCPlugin](npc.md) - NPC sprites that can be followed
+- [PlayerPlugin](player.md) - Player sprite tracking
+- [ScenePlugin](scene.md) - Scene transitions and map loading
+- [ScriptPlugin](script.md) - Event-driven scripting
 - [Configuration Guide](../guides/configuration.md)

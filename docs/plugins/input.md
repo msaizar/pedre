@@ -1,15 +1,15 @@
-# InputManager
+# InputPlugin
 
 Manages keyboard input state and movement calculation for player control.
 
 ## Location
 
-- Implementation: [src/pedre/systems/input/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/input/manager.py)
-- Base class: [src/pedre/systems/input/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/input/base.py)
+- Implementation: [src/pedre/plugins/input/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/input/manager.py)
+- Base class: [src/pedre/plugins/input/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/input/base.py)
 
 ## Configuration
 
-The InputManager uses the following settings from `pedre.conf.settings`:
+The InputPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Movement Settings
 
@@ -71,7 +71,7 @@ Register a key release event.
 
 **Returns:**
 
-- `False` (allows other systems to process if needed)
+- `False` (allows other plugins to process if needed)
 
 **Example:**
 
@@ -250,34 +250,34 @@ input_manager.restore_save_state(save_data["input"])
 
 ### Movement Keys
 
-The InputManager supports two control schemes simultaneously:
+The InputPlugin supports two control schemes simultaneously:
 
-| Arrow Keys | WASD | Direction |
-| ---------- | ---- | ----------- |
-| UP | W | Move up (positive Y) |
-| DOWN | S | Move down (negative Y) |
-| RIGHT | D | Move right (positive X) |
-| LEFT | A | Move left (negative X) |
+| Arrow Keys | WASD | Direction               |
+| ---------- | ---- | ----------------------- |
+| UP         | W    | Move up (positive Y)    |
+| DOWN       | S    | Move down (negative Y)  |
+| RIGHT      | D    | Move right (positive X) |
+| LEFT       | A    | Move left (negative X)  |
 
 ### Special Keys
 
 - **ESCAPE**: Publishes `ShowMenuEvent` to open the pause menu
 
-## System Lifecycle
+## Plugin Lifecycle
 
 ### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the input system with game context.
+Initialize the input plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 ### cleanup
@@ -289,26 +289,26 @@ Clean up input resources when the scene unloads.
 **Notes:**
 
 - Clears all pressed keys
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 ## Custom Input Implementation
 
-If you need to replace the input system with a custom implementation (e.g., for gamepad support, touch controls, or a different input handling approach), you can extend the `InputBaseManager` abstract base class.
+If you need to replace the input plugin with a custom implementation (e.g., for gamepad support, touch controls, or a different input handling approach), you can extend the `InputBasePlugin` abstract base class.
 
-### InputBaseManager
+### InputBasePlugin
 
-**Location:** [src/pedre/systems/input/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/input/base.py)
+**Location:** [src/pedre/plugins/input/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/input/base.py)
 
-The `InputBaseManager` class defines the minimum interface that any input manager must implement.
+The `InputBasePlugin` class defines the minimum interface that any input manager must implement.
 
 #### Required Methods
 
 Your custom input manager must implement this abstract method:
 
 ```python
-from pedre.systems.input.base import InputBaseManager
+from pedre.plugins.input.base import InputBasePlugin
 
-class CustomInputManager(InputBaseManager):
+class CustomInputPlugin(InputBasePlugin):
     """Custom input implementation."""
 
     name = "input"
@@ -326,14 +326,14 @@ class CustomInputManager(InputBaseManager):
 
 #### Registration
 
-Register your custom input manager using the `@SystemRegistry.register` decorator:
+Register your custom input manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.input.base import InputBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.input.base import InputBasePlugin
 
-@SystemRegistry.register
-class GamepadInputManager(InputBaseManager):
+@PluginRegistry.register
+class GamepadInputPlugin(InputBasePlugin):
     name = "input"
     dependencies = []
 
@@ -342,24 +342,24 @@ class GamepadInputManager(InputBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `InputBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
+- Your custom manager inherits from `BasePlugin` (via `InputBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
 - The `role` attribute is set to `"input_manager"` in the base class
 - Your implementation can use any input method, not just keyboard
 - The `get_movement_vector()` method is the minimum required interface
 - You can add additional methods for action keys, button presses, etc.
-- Register your custom input manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.input"` to replace it
+- Register your custom input manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.input"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_input.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.input.base import InputBaseManager
+# In myproject/plugins/custom_input.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.input.base import InputBasePlugin
 from pedre.conf import settings
 import arcade
 
-@SystemRegistry.register
-class GamepadInputManager(InputBaseManager):
+@PluginRegistry.register
+class GamepadInputPlugin(InputBasePlugin):
     """Custom gamepad-based input manager."""
 
     name = "input"
@@ -408,16 +408,16 @@ class GamepadInputManager(InputBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_input",  # Load custom input first
-    "pedre.systems.camera",
-    "pedre.systems.debug",
-    # ... rest of systems (omit "pedre.systems.input") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_input",  # Load custom input first
+    "pedre.plugins.camera",
+    "pedre.plugins.debug",
+    # ... rest of plugins (omit "pedre.plugins.input") ...
 ]
 ```
 
 ## See Also
 
-- [PlayerManager](player.md) - Player sprite and movement
-- [DialogManager](dialog.md) - Conversation system
+- [PlayerPlugin](player.md) - Player sprite and movement
+- [DialogPlugin](dialog.md) - Conversation plugin
 - [Configuration Guide](../guides/configuration.md)

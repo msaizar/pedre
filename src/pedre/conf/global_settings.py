@@ -67,7 +67,7 @@ PLAYER_MOVEMENT_SPEED = 180.0
 TILE_SIZE = 32
 """Size of tiles in pixels (for grid-based movement and positioning)."""
 
-INTERACTION_MANAGER_DISTANCE = 50
+INTERACTION_PLUGIN_DISTANCE = 50
 """Maximum distance in pixels for general interactions."""
 
 INTERACTION_KEY = "SPACE"

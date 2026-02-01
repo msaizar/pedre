@@ -1,16 +1,16 @@
-# AudioManager
+# AudioPlugin
 
 Manages background music and sound effects with caching.
 
 ## Location
 
-- Implementation: [src/pedre/systems/audio/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/manager.py)
-- Base class: [src/pedre/systems/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/base.py)
-- Actions: [src/pedre/systems/audio/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/actions.py)
+- Implementation: [src/pedre/plugins/audio/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/manager.py)
+- Base class: [src/pedre/plugins/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/base.py)
+- Actions: [src/pedre/plugins/audio/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/actions.py)
 
 ## Configuration
 
-The AudioManager uses the following settings from `pedre.conf.settings`:
+The AudioPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Volume and Playback Settings
 
@@ -433,21 +433,21 @@ audio_manager.from_dict(save_data["audio"])
 - Missing keys are ignored (current values are retained)
 - Volume values are clamped to 0.0-1.0 range
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the audio system with game context.
+Initialize the audio plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 
 #### cleanup
@@ -460,13 +460,13 @@ Clean up audio resources when the scene unloads.
 
 - Stops any playing music
 - Clears all caches
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 #### reset
 
 `reset() -> None`
 
-Reset audio system for new game.
+Reset audio plugin for new game.
 
 **Notes:**
 
@@ -488,7 +488,7 @@ Load and play background music from a Tiled map property.
 
 **Notes:**
 
-- Automatically called by the scene system when loading maps
+- Automatically called by the scene plugin when loading maps
 - Looks for a `music` property on the map
 - Music will loop continuously
 
@@ -573,23 +573,23 @@ Play a sound effect.
 
 ## Custom Audio Implementation
 
-If you need to replace the audio system with a custom implementation (e.g., for FMOD, Wwise, or a different audio backend), you can extend the `AudioBaseManager` abstract base class.
+If you need to replace the audio plugin with a custom implementation (e.g., for FMOD, Wwise, or a different audio backend), you can extend the `AudioBasePlugin` abstract base class.
 
-### AudioBaseManager
+### AudioBasePlugin
 
-**Location:** [src/pedre/systems/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/base.py)
+**Location:** [src/pedre/plugins/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/base.py)
 
-The `AudioBaseManager` class defines the minimum interface that any audio manager must implement. All methods are abstract and must be implemented by your custom class.
+The `AudioBasePlugin` class defines the minimum interface that any audio manager must implement. All methods are abstract and must be implemented by your custom class.
 
 #### Required Methods
 
 Your custom audio manager must implement these abstract methods:
 
 ```python
-from pedre.systems.audio.base import AudioBaseManager
+from pedre.plugins.audio.base import AudioBasePlugin
 import arcade
 
-class CustomAudioManager(AudioBaseManager):
+class CustomAudioPlugin(AudioBasePlugin):
     """Custom audio implementation."""
 
     name = "audio"
@@ -622,14 +622,14 @@ class CustomAudioManager(AudioBaseManager):
 
 #### Registration
 
-Register your custom audio manager using the `@SystemRegistry.register` decorator:
+Register your custom audio manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.audio.base import AudioBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.audio.base import AudioBasePlugin
 
-@SystemRegistry.register
-class CustomAudioManager(AudioBaseManager):
+@PluginRegistry.register
+class CustomAudioPlugin(AudioBasePlugin):
     name = "audio"
     dependencies = []
 
@@ -638,21 +638,21 @@ class CustomAudioManager(AudioBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `AudioBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- Your custom manager inherits from `BasePlugin` (via `AudioBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
 - The `role` attribute is set to `"audio_manager"` in the base class
 - Your implementation can use any audio backend, not just Arcade's audio system
 - The return types shown (e.g., `arcade.Sound`) are for compatibility with the default implementation; your custom version can use different types internally as long as the interface is maintained
-- Register your custom audio manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.audio"` to replace it
+- Register your custom audio manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.audio"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_audio.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.audio.base import AudioBaseManager
+# In myproject/plugins/custom_audio.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.audio.base import AudioBasePlugin
 
-@SystemRegistry.register
-class FMODAudioManager(AudioBaseManager):
+@PluginRegistry.register
+class FMODAudioPlugin(AudioBasePlugin):
     """Custom FMOD-based audio manager."""
 
     name = "audio"
@@ -660,13 +660,13 @@ class FMODAudioManager(AudioBaseManager):
 
     def __init__(self):
         # Initialize FMOD
-        self.fmod_system = initialize_fmod()
+        self.fmod_plugin = initialize_fmod()
         self.music_cache = {}
         # ... rest of initialization ...
 
     def play_music(self, filename: str, *, loop: bool = True, volume: float | None = None) -> bool:
         # Custom FMOD music playback logic
-        sound = self.fmod_system.create_sound(filename)
+        sound = self.fmod_plugin.create_sound(filename)
         sound.play(loop=loop, volume=volume)
         return True
 
@@ -675,11 +675,11 @@ class FMODAudioManager(AudioBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_audio",  # Load custom audio first
-    "pedre.systems.camera",
-    "pedre.systems.debug",
-    # ... rest of systems (omit "pedre.systems.audio") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_audio",  # Load custom audio first
+    "pedre.plugins.camera",
+    "pedre.plugins.debug",
+    # ... rest of plugins (omit "pedre.plugins.audio") ...
 ]
 ```
 
@@ -747,8 +747,8 @@ audio_manager.restore_save_state(save_data["audio"])
 
 ## See Also
 
-- [DialogManager](dialog.md) - Conversation system
-- [ScriptManager](script.md) - Event-driven scripting
-- [SaveManager](save.md) - Save/load system
+- [DialogPlugin](dialog.md) - Conversation plugin
+- [ScriptPlugin](script.md) - Event-driven scripting
+- [SavePlugin](save.md) - Save/load plugin
 - [Configuration Guide](../guides/configuration.md)
 - [Scripting Actions](../scripting/actions.md)

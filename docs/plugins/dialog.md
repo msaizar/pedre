@@ -1,17 +1,17 @@
-# DialogManager
+# DialogPlugin
 
 Manages dialog display and pagination for game conversations.
 
 ## Location
 
-- Implementation: [src/pedre/systems/dialog/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/manager.py)
-- Base class: [src/pedre/systems/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/base.py)
-- Events: [src/pedre/systems/dialog/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/events.py)
-- Actions: [src/pedre/systems/dialog/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/actions.py)
+- Implementation: [src/pedre/plugins/dialog/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/manager.py)
+- Base class: [src/pedre/plugins/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/base.py)
+- Events: [src/pedre/plugins/dialog/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/events.py)
+- Actions: [src/pedre/plugins/dialog/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/actions.py)
 
 ## Configuration
 
-The DialogManager uses the following settings from `pedre.conf.settings`:
+The DialogPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Behavior Settings
 
@@ -104,7 +104,7 @@ dialog_manager.show_dialog(
 
 # Auto-closing cutscene dialog
 dialog_manager.show_dialog(
-    "System",
+    "Plugin",
     ["Achievement unlocked!"],
     instant=True,
     auto_close=True
@@ -172,7 +172,7 @@ if symbol == arcade.key.SPACE and dialog_manager.is_showing():
 - If text is still being revealed, it instantly completes the reveal animation
 - Otherwise, advances to the next page if there are more pages
 - Closes the dialog and returns `True` if on the last page
-- Called automatically by the DialogManager's `on_key_press` method
+- Called automatically by the DialogPlugin's `on_key_press` method
 
 ### State Queries
 
@@ -267,13 +267,13 @@ if user_pressed_skip:
 - Called automatically when player presses SPACE while text is revealing
 - Useful for implementing skip functionality
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the dialog system with game settings.
+Initialize the dialog plugin with game settings.
 
 **Parameters:**
 
@@ -281,7 +281,7 @@ Initialize the dialog system with game settings.
 
 **Notes:**
 
-- Called automatically by the SystemLoader
+- Called automatically by the PluginLoader
 - Stores the game context for event publishing
 
 #### cleanup
@@ -293,7 +293,7 @@ Clean up dialog resources when the scene unloads.
 **Notes:**
 
 - Closes any open dialog and clears text objects
-- Called automatically by the SystemLoader
+- Called automatically by the PluginLoader
 
 #### update
 
@@ -329,7 +329,7 @@ Handle input for dialog advancement.
 
 **Notes:**
 
-- Called automatically by the SystemLoader
+- Called automatically by the PluginLoader
 - Handles the configured `DIALOG_KEY_ADVANCE` key to advance pages or close dialog
 - Publishes `DialogClosedEvent` when dialog closes
 
@@ -341,7 +341,7 @@ Draw the dialog overlay in screen coordinates.
 
 **Notes:**
 
-- Called automatically by the SystemLoader during UI draw phase
+- Called automatically by the PluginLoader during UI draw phase
 - Renders the complete dialog UI on top of the game world
 - Uses lazy initialization for text objects
 
@@ -544,13 +544,13 @@ Wait for dialog to be closed.
 
 ## Custom Dialog Implementation
 
-If you need to replace the dialog system with a custom implementation, you can extend the `DialogBaseManager` abstract base class.
+If you need to replace the dialog plugin with a custom implementation, you can extend the `DialogBasePlugin` abstract base class.
 
-### DialogBaseManager
+### DialogBasePlugin
 
-**Location:** [src/pedre/systems/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/base.py)
+**Location:** [src/pedre/plugins/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/base.py)
 
-The `DialogBaseManager` class defines the minimum interface that any dialog manager must implement.
+The `DialogBasePlugin` class defines the minimum interface that any dialog manager must implement.
 
 #### Required Methods
 
@@ -558,9 +558,9 @@ Your custom dialog manager must implement these abstract methods:
 
 ```python
 from pedre.conf import settings
-from pedre.systems.dialog.base import DialogBaseManager
+from pedre.plugins.dialog.base import DialogBasePlugin
 
-class CustomDialogManager(DialogBaseManager):
+class CustomDialogPlugin(DialogBasePlugin):
     """Custom dialog implementation."""
 
     name = "dialog"
@@ -594,14 +594,14 @@ class CustomDialogManager(DialogBaseManager):
 
 #### Registration
 
-Register your custom dialog manager using the `@SystemRegistry.register` decorator:
+Register your custom dialog manager using the `@PluginRegistry.register` decorator:
 
 ```python
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.dialog.base import DialogBaseManager
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.dialog.base import DialogBasePlugin
 
-@SystemRegistry.register
-class CustomDialogManager(DialogBaseManager):
+@PluginRegistry.register
+class CustomDialogPlugin(DialogBasePlugin):
     name = "dialog"
     dependencies = ["npc", "interaction"]
 
@@ -610,20 +610,20 @@ class CustomDialogManager(DialogBaseManager):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BaseSystem` (via `DialogBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `on_key_press()`
+- Your custom manager inherits from `BasePlugin` (via `DialogBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `on_key_press()`
 - The `role` attribute is set to `"dialog_manager"` in the base class
 - Your implementation can use any rendering backend, not just Arcade's text system
-- Register your custom dialog manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.dialog"` to replace it
+- Register your custom dialog manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.dialog"` to replace it
 
 **Example Custom Implementation:**
 
 ```python
-# In myproject/systems/custom_dialog.py
-from pedre.systems.registry import SystemRegistry
-from pedre.systems.dialog.base import DialogBaseManager
+# In myproject/plugins/custom_dialog.py
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.dialog.base import DialogBasePlugin
 
-@SystemRegistry.register
-class RichTextDialogManager(DialogBaseManager):
+@PluginRegistry.register
+class RichTextDialogPlugin(DialogBasePlugin):
     """Custom dialog manager with rich text support."""
 
     name = "dialog"
@@ -653,11 +653,11 @@ class RichTextDialogManager(DialogBaseManager):
 
 ```python
 # In myproject/settings.py
-INSTALLED_SYSTEMS = [
-    "myproject.systems.custom_dialog",  # Load custom dialog first
-    "pedre.systems.camera",
-    "pedre.systems.audio",
-    # ... rest of systems (omit "pedre.systems.dialog") ...
+INSTALLED_PLUGINS = [
+    "myproject.plugins.custom_dialog",  # Load custom dialog first
+    "pedre.plugins.camera",
+    "pedre.plugins.audio",
+    # ... rest of plugins (omit "pedre.plugins.dialog") ...
 ]
 ```
 
@@ -731,7 +731,7 @@ dialog_manager.show_dialog(
 
 ## See Also
 
-- [AudioManager](audio.md) - Background music and sound effects
-- [ScriptManager](script.md) - Event-driven scripting
-- [NPCManager](npc.md) - NPC state and interactions
+- [AudioPlugin](audio.md) - Background music and sound effects
+- [ScriptPlugin](script.md) - Event-driven scripting
+- [NPCPlugin](npc.md) - NPC state and interactions
 - [Configuration Guide](../guides/configuration.md)

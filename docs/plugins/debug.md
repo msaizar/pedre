@@ -1,14 +1,14 @@
-# DebugManager
+# DebugPlugin
 
 Displays development information overlays showing player and NPC positions in tile and pixel coordinates.
 
 ## Location
 
-- Implementation: [src/pedre/systems/debug/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/debug/manager.py)
+- Implementation: [src/pedre/plugins/debug/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/debug/manager.py)
 
 ## Configuration
 
-The DebugManager uses the following settings from `pedre.conf.settings`:
+The DebugPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Display Settings
 
@@ -37,13 +37,13 @@ Toggle debug mode on/off with Shift+D.
 
 ```python
 def on_key_press(self, symbol, modifiers):
-    # This is called automatically by SystemLoader
+    # This is called automatically by PluginLoader
     self.debug_manager.on_key_press(symbol, modifiers)
 ```
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Toggles debug overlay when Shift+D is pressed
 - Clears text objects when toggling off
 - Logs state change to logger
@@ -69,7 +69,7 @@ def on_draw(self):
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Only renders when debug_mode is True
 - Shows player position in tile and pixel coordinates
 - Shows visible NPC positions in tile and pixel coordinates
@@ -77,21 +77,21 @@ def on_draw(self):
 - Uses green text for player info
 - Uses yellow text for NPC info
 
-### System Lifecycle
+### Plugin Lifecycle
 
 #### setup
 
 `setup(context: GameContext) -> None`
 
-Initialize the debug system with game context.
+Initialize the debug plugin with game context.
 
 **Parameters:**
 
-- `context` - Game context providing access to other systems
+- `context` - Game context providing access to other plugins
 
 **Notes:**
 
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 - Stores reference to game context
 - Initializes empty text object list
 
@@ -105,7 +105,7 @@ Clean up debug resources when the scene unloads.
 
 - Clears all text objects
 - Resets debug mode to False
-- Called automatically by SystemLoader
+- Called automatically by PluginLoader
 
 ## Debug Information Display
 
@@ -199,19 +199,19 @@ tile_y = int(pixel_y / TILE_SIZE)
 - NPC iteration skips invisible sprites
 - Minimal overhead when debug mode is off
 
-## System Dependencies
+## Plugin Dependencies
 
-The DebugManager depends on:
+The DebugPlugin depends on:
 
 - `npc` - To access NPC manager for NPC position data
 
-The system also accesses:
+The plugin also accesses:
 
 - `player_manager` - Via game context for player position
 - `settings.TILE_SIZE` - For coordinate conversion
 
 ## See Also
 
-- [NPCManager](npc.md) - NPC system providing position data
-- [PlayerManager](player.md) - Player system providing player position
+- [NPCPlugin](npc.md) - NPC plugin providing position data
+- [PlayerPlugin](player.md) - Player plugin providing player position
 - [Configuration Guide](../guides/configuration.md)

@@ -7,15 +7,15 @@ Welcome to the **Pedre** documentation! Pedre is a Python RPG framework built on
 Pedre provides everything you need to build Zelda-like RPG games with:
 
 - **Tiled Map Integration** - Load .tmx maps with automatic layer detection
-- **NPC System** - Animated NPCs with dialog trees and pathfinding
-- **Dialog System** - Multi-page conversations with character names
+- **NPC Plugin** - Animated NPCs with dialog trees and pathfinding
+- **Dialog Plugin** - Multi-page conversations with character names
 - **Event-Driven Scripting** - JSON-based cutscenes and interactive sequences
 - **Inventory Management** - Item collection and categorization
-- **Portal System** - Map transitions with conditional triggers
-- **Save/Load System** - Automatic game state persistence
+- **Portal Plugin** - Map transitions with conditional triggers
+- **Save/Load Plugin** - Automatic game state persistence
 - **Audio Management** - Background music and sound effects
-- **Camera System** - Smooth camera following with optional bounds
-- **Particle Effects** - Visual feedback system for interactions
+- **Camera Plugin** - Smooth camera following with optional bounds
+- **Particle Effects** - Visual feedback plugin for interactions
 
 ## Installation
 
@@ -49,18 +49,18 @@ INITIAL_MAP="my_map.tmx"
 
 ### Framework Architecture
 
-The framework uses `SystemLoader` to initialize systems and `GameContext` to coordinate them:
+The framework uses `PluginLoader` to initialize plugins and `GameContext` to coordinate them:
 
 ```python
-from pedre.systems.loader import SystemLoader
+from pedre.plugins.loader import PluginLoader
 
 # Loader handles initialization and dependency injection
-loader = SystemLoader()
+loader = PluginLoader()
 loader.setup_all(context)
 
-# Systems access each other via context
+# Plugins access each other via context
 def update(self, delta_time):
-    audio = self.context.get_system("audio")
+    audio = self.context.get_plugin("audio")
 ```
 
 ## Documentation Overview
@@ -83,13 +83,13 @@ def update(self, delta_time):
 
     [:octicons-arrow-right-24: API docs](api/index.md)
 
--   :material-cog:{ .lg .middle } **Systems**
+-   :material-cog:{ .lg .middle } **Plugins**
 
     ---
 
     Detailed documentation for all manager classes
 
-    [:octicons-arrow-right-24: Explore systems](systems/index.md)
+    [:octicons-arrow-right-24: Explore plugins](plugins/index.md)
 
 -   :material-script-text:{ .lg .middle } **Scripting**
 
@@ -119,7 +119,7 @@ def update(self, delta_time):
 
     ---
 
-    Add custom actions, events, conditions, and systems
+    Add custom actions, events, conditions, and plugins
 
     [:octicons-arrow-right-24: Extend](extending/index.md)
 
