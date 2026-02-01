@@ -182,19 +182,35 @@ class ScriptPlugin(ScriptBasePlugin):
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving to disk.
 
-        Saves lists of completed scripts and run-once scripts that have executed.
-        Note: Active running scripts are NOT saved and will restart on load.
+        Saves lists of completed scripts, run-once scripts that have executed,
+        and currently active script sequences with their progress.
         """
+        active = []
+        for script_name, sequence in self.active_sequences:
+            is_fail = script_name.endswith("_fail")
+            base_name = script_name[:-5] if is_fail else script_name
+            active.append(
+                {
+                    "script_name": base_name,
+                    "current_index": sequence.current_index,
+                    "is_fail_sequence": is_fail,
+                }
+            )
+
         return {
             "completed_scripts": [name for name, script in self.scripts.items() if script.completed],
             "run_once_scripts": [name for name, script in self.scripts.items() if script.has_run],
+            "active_scripts": active,
         }
 
     def restore_save_state(self, state: dict[str, Any]) -> None:
         """Restore script plugin state from save file.
 
-        Restores completion flags and run-once history.
+        Restores completion flags, run-once history, and active script sequences.
         """
+        # Clear any existing active sequences (important for quick-load where reset() isn't called)
+        self.active_sequences.clear()
+
         # Restore completed scripts
         if "completed_scripts" in state:
             for name in state["completed_scripts"]:
@@ -206,6 +222,83 @@ class ScriptPlugin(ScriptBasePlugin):
             for name in state["run_once_scripts"]:
                 if name in self.scripts:
                     self.scripts[name].has_run = True
+
+        # Restore active scripts
+        self._restore_active_scripts(state.get("active_scripts", []))
+
+    def _restore_active_scripts(self, active_scripts_data: list[dict[str, Any]]) -> None:
+        """Restore active script sequences from save data.
+
+        Re-parses actions from the script's JSON data and resumes execution
+        at the appropriate action index, backing up past wait actions so that
+        initiating actions (like move_npc) re-execute and async operations
+        restart from the saved entity state.
+
+        Args:
+            active_scripts_data: List of dicts with script_name, current_index,
+                and is_fail_sequence keys.
+        """
+        for entry in active_scripts_data:
+            script_name = entry["script_name"]
+            saved_index = entry["current_index"]
+            is_fail = entry.get("is_fail_sequence", False)
+
+            script = self.scripts.get(script_name)
+            if not script:
+                logger.warning("Cannot restore active script '%s': not found", script_name)
+                continue
+
+            action_data_list = script.on_condition_fail if is_fail else script.actions
+            if not action_data_list:
+                continue
+
+            # Parse actions from JSON
+            actions = []
+            for action_data in action_data_list:
+                action = ActionRegistry.parse(action_data)
+                if action:
+                    actions.append(action)
+
+            if not actions:
+                continue
+
+            # Calculate resume index (back up past wait actions)
+            resume_index = self._calculate_resume_index(action_data_list, saved_index)
+            resume_index = min(resume_index, len(actions))
+
+            sequence = ActionSequence(actions)
+            sequence.current_index = resume_index
+
+            sequence_name = f"{script_name}_fail" if is_fail else script_name
+            self.active_sequences.append((sequence_name, sequence))
+            logger.info(
+                "Restored active script '%s' at action %d (saved: %d)",
+                sequence_name,
+                resume_index,
+                saved_index,
+            )
+
+    def _calculate_resume_index(self, actions: list[dict[str, Any]], saved_index: int) -> int:
+        """Find the best action index to resume from after loading.
+
+        If the saved action is a wait action, backs up to the preceding
+        non-wait action so initiating actions (like move_npc) re-execute
+        and async operations restart properly.
+
+        Args:
+            actions: List of action data dicts from the script definition.
+            saved_index: The action index that was executing when the game was saved.
+
+        Returns:
+            The adjusted index to resume execution from.
+        """
+        resume_index = saved_index
+        while resume_index > 0:
+            action_type = actions[resume_index].get("type", "")
+            if not action_type.startswith("wait_"):
+                break
+            resume_index -= 1
+        return resume_index
 
     def _load_all_scripts(self) -> None:
         """Load all scripts from the scripts directory.
