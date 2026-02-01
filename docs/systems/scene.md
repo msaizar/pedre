@@ -417,7 +417,7 @@ The SceneManager orchestrates a complex loading sequence to ensure all systems a
 Before loading a new map, the current scene state is cached:
 
 ```python
-cache_manager.cache_scene(current_scene, context)
+cache_manager.cache_scene(current_scene)
 ```
 
 This preserves:
@@ -488,7 +488,7 @@ Note: Scripts are loaded globally at system initialization, not per-scene. The `
 If returning to a previously visited scene, cached state is restored:
 
 ```python
-cache_manager.restore_scene(current_scene, context)
+cache_manager.restore_scene(current_scene)
 ```
 
 This overrides entity states with the cached version, preserving:
@@ -617,14 +617,14 @@ When leaving a scene:
 
 ```python
 # Before loading new scene
-cache_manager.cache_scene(current_scene, context)
+cache_manager.cache_scene(current_scene)
 ```
 
 ### When Cache is Restored
 
 ```python
 # After loading map and systems
-cache_manager.restore_scene(current_scene, context)
+cache_manager.restore_scene(current_scene)
 ```
 
 ### Cache vs Save
@@ -848,6 +848,229 @@ if state != TransitionState.NONE:
     print("Cannot pause during scene transition")
     return
 ```
+
+## Integration with Other Systems
+
+### CacheManager Integration
+
+The CacheManager preserves scene state during transitions:
+
+```python
+# Before loading new scene
+cache_manager.cache_scene(current_scene)
+
+# After loading, restore cached state
+cache_manager.restore_scene(current_scene)
+```
+
+**Notes:**
+
+- Cache is transparent to SceneManager
+- SceneManager calls CacheManager at appropriate times
+- Preserves NPC positions, dialog levels, object states
+- Cache is in-memory, separate from save files
+
+### WaypointManager Integration
+
+Waypoints are loaded and used for player spawning:
+
+```python
+# SceneManager loads waypoints from Tiled
+waypoint_manager.load_from_tiled(tile_map, arcade_scene)
+
+# PlayerManager uses waypoints for spawning
+spawn_waypoint = scene_manager.get_next_spawn_waypoint()
+if spawn_waypoint:
+    waypoint_pos = waypoint_manager.get_waypoint(spawn_waypoint)
+```
+
+**Notes:**
+
+- Waypoints loaded during map loading sequence
+- Spawn waypoint set via `request_transition()`
+- Cleared after player spawns
+
+### PortalManager Integration
+
+Portals are loaded from Tiled during scene setup:
+
+```python
+# SceneManager orchestrates portal loading
+portal_manager.load_from_tiled(tile_map, arcade_scene)
+```
+
+**Notes:**
+
+- Portals loaded from "Portals" object layer
+- Portal events trigger scene transitions
+- SceneManager handles the actual transition via `request_transition()`
+
+### NPCManager Integration
+
+NPCs are loaded and managed during scene transitions:
+
+```python
+# Load NPCs from Tiled
+npc_manager.load_from_tiled(tile_map, arcade_scene)
+
+# Load scene-specific dialogs
+npc_manager.load_scene_dialogs(current_scene)
+```
+
+**Notes:**
+
+- NPCs loaded from "NPCs" object layer
+- Dialog files loaded per-scene
+- NPC visibility synced with collision list
+
+### PlayerManager Integration
+
+Player is spawned at correct location during scene load:
+
+```python
+# PlayerManager loads player from Tiled
+player_manager.load_from_tiled(tile_map, arcade_scene)
+
+# Uses spawn waypoint if set
+spawn_waypoint = scene_manager.get_next_spawn_waypoint()
+```
+
+**Notes:**
+
+- Player loaded during map loading sequence
+- Spawn waypoint overrides default position
+- Player position restored from save data after load
+
+### PhysicsManager Integration
+
+Physics engine uses collision layers from scene:
+
+```python
+# SceneManager provides wall list
+wall_list = scene_manager.get_wall_list()
+
+# PhysicsManager creates engine with walls
+physics_manager.invalidate()
+```
+
+**Notes:**
+
+- Wall list extracted from collision layers
+- Physics engine invalidated after scene load
+- Dynamic sprites added/removed from wall list
+
+### SaveManager Integration
+
+Scene state is saved and restored:
+
+```python
+# Save current map filename
+save_state = scene_manager.get_save_state()
+
+# Restore and load saved map
+scene_manager.restore_save_state(save_state)
+scene_manager.load_level(save_state["current_map"])
+```
+
+**Notes:**
+
+- Only map filename saved by SceneManager
+- Entity states saved by individual systems
+- Scene loading orchestrated by SceneManager
+
+### ScriptManager Integration
+
+Scripts are triggered by scene events:
+
+```python
+# SceneStartEvent published after scene loads
+event_bus.publish(SceneStartEvent(current_scene))
+
+# Scripts filter by scene
+{
+    "scene": "village",
+    "trigger": {"event": "scene_start"},
+    "actions": [...]
+}
+```
+
+**Notes:**
+
+- Scripts loaded globally at startup
+- Scene field controls which scene script executes in
+- SceneStartEvent triggers scene-specific initialization
+
+## Troubleshooting
+
+### Map Not Loading
+
+If scenes fail to load:
+
+1. **Check map path** - Verify .tmx file exists in `SCENE_MAPS_FOLDER`
+2. **Verify file name** - Ensure filename matches exactly (case-sensitive)
+3. **Review Tiled map** - Open .tmx in Tiled to check for errors
+4. **Check logs** - Look for file not found or parsing errors
+5. **Verify scaling** - Check `SCENE_TILEMAP_SCALING` is appropriate
+
+### Collision Not Working
+
+If player passes through walls:
+
+1. **Check layer names** - Ensure collision layers match `SCENE_COLLISION_LAYER_NAMES`
+2. **Verify wall list** - Check `get_wall_list()` contains sprites
+3. **Review Tiled layers** - Ensure collision tiles are painted
+4. **Check physics** - Verify PhysicsManager is using wall list
+5. **Test visibility sync** - Ensure invisible NPCs removed from walls
+
+### Transition Stuck
+
+If transitions freeze or don't complete:
+
+1. **Check transition state** - Use `get_transition_state()` to debug
+2. **Review logs** - Look for errors during LOADING state
+3. **Verify map exists** - Ensure target map file is valid
+4. **Check transition speed** - Increase `SCENE_TRANSITION_SPEED` if too slow
+5. **Test directly** - Use `load_level()` to bypass transition
+
+### Wrong Spawn Location
+
+If player spawns at incorrect position:
+
+1. **Check waypoint** - Verify `spawn_waypoint` exists in target scene
+2. **Review Player layer** - Check default spawn position in Tiled
+3. **Verify spawn_at_portal** - Ensure player properties allow waypoint spawn
+4. **Check waypoint manager** - Test `get_waypoint()` returns correct position
+5. **Review logs** - Look for waypoint resolution warnings
+
+### Scene State Not Persisting
+
+If scene changes aren't remembered:
+
+1. **Check caching** - Verify CacheManager is enabled and working
+2. **Review cache calls** - Ensure `cache_scene()` called before transition
+3. **Test restore** - Check `restore_scene()` called after loading
+4. **Verify system support** - Ensure systems implement `cache_scene_state()`
+5. **Check save/load** - Test that cache survives save/load cycle
+
+### Objects Not Loading
+
+If waypoints, portals, or NPCs don't appear:
+
+1. **Check object layers** - Verify "Waypoints", "Portals", "NPCs" layers exist
+2. **Review properties** - Ensure objects have required custom properties
+3. **Check load order** - Verify systems' `load_from_tiled()` called in correct order
+4. **Test individually** - Load map and check each object layer
+5. **Review logs** - Look for parsing or validation errors
+
+### Performance Issues
+
+If scene transitions are slow:
+
+1. **Reduce tile count** - Simplify maps or use larger tiles
+2. **Optimize collision** - Use fewer collision sprites
+3. **Increase speed** - Adjust `SCENE_TRANSITION_SPEED` for faster fades
+4. **Profile loading** - Identify slow systems in load sequence
+5. **Lazy load assets** - Load textures on demand rather than all at once
 
 ## Custom Scene Implementation
 
