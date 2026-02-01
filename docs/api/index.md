@@ -108,7 +108,7 @@ Animated character sprites for player and NPCs.
 
 ## Game Plugins
 
-Pedre uses a manager-based architecture where each plugin handles specific functionality. All plugins are documented in the [Plugins Reference](../plugins/index.md).
+Pedre uses a plugin-based architecture where each plugin handles specific functionality. All plugins are documented in the [Plugins Reference](../plugins/index.md).
 
 **Core Plugins:**
 
@@ -143,9 +143,9 @@ Plugins are accessed through the GameContext:
 
 ```python
 # In a plugin or action
-dialog_manager = context.get_plugin("dialog")
-npc_manager = context.get_plugin("npc")
-audio_manager = context.get_plugin("audio")
+dialog_plugin = context.get_plugin("dialog")
+npc_plugin = context.get_plugin("npc")
+audio_plugin = context.get_plugin("audio")
 ```
 
 ### Publishing Events
@@ -179,13 +179,13 @@ Control game flow through the ViewManager:
 
 ```python
 # Show menu
-view_manager.show_menu()
+view_plugin.show_menu()
 
 # Start game
-view_manager.show_game()
+view_plugin.show_game()
 
 # Load a different map
-view_manager.load_map("forest.tmx", spawn_waypoint="entrance")
+view_plugin.load_map("forest.tmx", spawn_waypoint="entrance")
 ```
 
 ## Configuration
@@ -254,8 +254,8 @@ Prefer events over direct plugin calls:
 context.event_bus.publish(NPCInteractedEvent(npc_name="merchant"))
 
 # Avoid: Direct coupling
-npc_manager.interact("merchant")
-dialog_manager.show_dialog("merchant", ["Hello!"])
+npc_plugin.interact("merchant")
+dialog_plugin.show_dialog("merchant", ["Hello!"])
 ```
 
 ### Plugin Dependencies

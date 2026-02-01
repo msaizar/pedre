@@ -4,7 +4,7 @@ Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/npc/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/manager.py)
+- Implementation: [src/pedre/plugins/npc/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/plugin.py)
 - Base class: [src/pedre/plugins/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/base.py)
 - Events: [src/pedre/plugins/npc/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/events.py)
 - Actions: [src/pedre/plugins/npc/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/actions.py)
@@ -56,7 +56,7 @@ npc_sprite = AnimatedNPC(
     center_x=320,
     center_y=240
 )
-npc_manager.register_npc(npc_sprite, "merchant")
+npc_plugin.register_npc(npc_sprite, "merchant")
 ```
 
 **Notes:**
@@ -85,10 +85,10 @@ Load NPC dialog configurations from a JSON file or directory.
 
 ```python
 # Load from single file
-npc_manager.load_dialogs_from_json("assets/dialogs/village_dialogs.json")
+npc_plugin.load_dialogs_from_json("assets/dialogs/village_dialogs.json")
 
 # Load all dialogs from directory
-npc_manager.load_dialogs_from_json("assets/dialogs/")
+npc_plugin.load_dialogs_from_json("assets/dialogs/")
 ```
 
 **Notes:**
@@ -118,12 +118,12 @@ Get dialog for an NPC at a specific conversation level in a scene.
 **Example:**
 
 ```python
-current_scene = context.scene_manager.get_current_scene()
-dialog_data = npc_manager.get_dialog("merchant", 0, current_scene)
+current_scene = context.scene_plugin.get_current_scene()
+dialog_data = npc_plugin.get_dialog("merchant", 0, current_scene)
 if dialog_data:
     dialog_config, on_fail = dialog_data
     if dialog_config:
-        dialog_manager.show_dialog("Merchant", dialog_config.text)
+        dialog_plugin.show_dialog("Merchant", dialog_config.text)
 ```
 
 **Notes:**
@@ -150,7 +150,7 @@ Advance the dialog level for an NPC by 1.
 
 ```python
 # After completing a conversation
-new_level = npc_manager.advance_dialog("merchant")
+new_level = npc_plugin.advance_dialog("merchant")
 print(f"Merchant now at dialog level {new_level}")
 ```
 
@@ -178,7 +178,7 @@ Start moving an NPC to a target tile position using A* pathfinding.
 
 ```python
 # Move NPC to specific tile coordinates
-npc_manager.move_npc_to_tile("merchant", 10, 15)
+npc_plugin.move_npc_to_tile("merchant", 10, 15)
 ```
 
 **Notes:**
@@ -202,7 +202,7 @@ Update NPC movements and animations.
 
 ```python
 def on_update(self, delta_time):
-    self.npc_manager.update(delta_time)
+    self.npc_plugin.update(delta_time)
 ```
 
 **Notes:**
@@ -231,8 +231,8 @@ Find the nearest NPC within interaction distance.
 **Example:**
 
 ```python
-player_sprite = context.player_manager.get_player_sprite()
-nearby = npc_manager.get_nearby_npc(player_sprite)
+player_sprite = context.player_plugin.get_player_sprite()
+nearby = npc_plugin.get_nearby_npc(player_sprite)
 if nearby:
     sprite, name, dialog_level = nearby
     print(f"Near {name} at level {dialog_level}")
@@ -262,7 +262,7 @@ Trigger interaction with a specific NPC.
 **Example:**
 
 ```python
-if npc_manager.interact_with_npc("merchant"):
+if npc_plugin.interact_with_npc("merchant"):
     print("Started conversation with merchant")
 ```
 
@@ -288,10 +288,10 @@ Mark an NPC as interacted with in a specific scene.
 
 ```python
 # Mark NPC as interacted in current scene
-npc_manager.mark_npc_as_interacted("merchant")
+npc_plugin.mark_npc_as_interacted("merchant")
 
 # Mark NPC as interacted in specific scene
-npc_manager.mark_npc_as_interacted("guard", "castle")
+npc_plugin.mark_npc_as_interacted("guard", "castle")
 ```
 
 **Notes:**
@@ -318,7 +318,7 @@ Check if an NPC has been interacted with in a specific scene.
 **Example:**
 
 ```python
-if npc_manager.has_npc_been_interacted_with("merchant"):
+if npc_plugin.has_npc_been_interacted_with("merchant"):
     print("Player has talked to merchant before")
 ```
 
@@ -344,7 +344,7 @@ Make hidden NPCs visible and add them to collision.
 
 ```python
 # Reveal multiple NPCs at once
-npc_manager.show_npcs(["guard", "captain", "merchant"])
+npc_plugin.show_npcs(["guard", "captain", "merchant"])
 ```
 
 **Notes:**
@@ -373,7 +373,7 @@ Get NPC state by name.
 **Example:**
 
 ```python
-npc = npc_manager.get_npc_by_name("merchant")
+npc = npc_plugin.get_npc_by_name("merchant")
 if npc:
     print(f"Merchant at ({npc.sprite.center_x}, {npc.sprite.center_y})")
     print(f"Dialog level: {npc.dialog_level}")
@@ -393,7 +393,7 @@ Get all registered NPCs.
 **Example:**
 
 ```python
-for name, npc in npc_manager.get_npcs().items():
+for name, npc in npc_plugin.get_npcs().items():
     print(f"{name}: level {npc.dialog_level}, moving={npc.is_moving}")
 ```
 
@@ -410,7 +410,7 @@ Check if any NPCs are currently moving.
 **Example:**
 
 ```python
-if npc_manager.has_moving_npcs():
+if npc_plugin.has_moving_npcs():
     print("Cannot pause: NPCs are moving")
 ```
 
@@ -436,7 +436,7 @@ Return serializable state for saving.
 ```python
 save_data = {
     "player_position": (x, y),
-    "npc": npc_manager.get_save_state(),
+    "npc": npc_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -469,7 +469,7 @@ Phase 2: Apply saved NPC state after sprites exist.
 **Example:**
 
 ```python
-npc_manager.apply_entity_state(save_data["npc"])
+npc_plugin.apply_entity_state(save_data["npc"])
 ```
 
 **Notes:**
@@ -607,7 +607,7 @@ Runtime state tracking for a single NPC.
 **Example:**
 
 ```python
-npc = npc_manager.get_npc_by_name("merchant")
+npc = npc_plugin.get_npc_by_name("merchant")
 print(f"Dialog level: {npc.dialog_level}")
 print(f"Position: ({npc.sprite.center_x}, {npc.sprite.center_y})")
 print(f"Moving: {npc.is_moving}, Path length: {len(npc.path)}")
@@ -683,11 +683,11 @@ Dialogs are organized by scene, allowing NPCs to have different conversations de
 
 ```python
 # Load scene-specific dialogs
-npc_manager.load_scene_dialogs("village")
+npc_plugin.load_scene_dialogs("village")
 
 # Get dialog for current scene
-current_scene = context.scene_manager.get_current_scene()
-dialog_data = npc_manager.get_dialog("merchant", 0, current_scene)
+current_scene = context.scene_plugin.get_current_scene()
+dialog_data = npc_plugin.get_dialog("merchant", 0, current_scene)
 ```
 
 If no scene-specific dialog exists, the plugin falls back to "default" scene.
@@ -1252,8 +1252,8 @@ Check an NPC's dialog level.
 
 ```python
 # Check for nearby NPC
-player_sprite = context.player_manager.get_player_sprite()
-nearby = npc_manager.get_nearby_npc(player_sprite)
+player_sprite = context.player_plugin.get_player_sprite()
+nearby = npc_plugin.get_nearby_npc(player_sprite)
 if nearby:
     sprite, name, dialog_level = nearby
     print(f"Near {name} at dialog level {dialog_level}")
@@ -1385,11 +1385,11 @@ If you need to replace the NPC plugin with a custom implementation, you can exte
 
 **Location:** [src/pedre/plugins/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/base.py)
 
-The `NPCBasePlugin` class defines the minimum interface that any NPC manager must implement.
+The `NPCBasePlugin` class defines the minimum interface that any NPC plugin must implement.
 
 #### Required Methods
 
-Your custom NPC manager must implement these abstract methods:
+Your custom NPC plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.npc.base import NPCBasePlugin, NPCState
@@ -1431,7 +1431,7 @@ class CustomNPCPlugin(NPCBasePlugin):
 
 #### Registration
 
-Register your custom NPC manager using the `@PluginRegistry.register` decorator:
+Register your custom NPC plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -1447,10 +1447,10 @@ class CustomNPCPlugin(NPCBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `NPCBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
-- The `role` attribute is set to `"npc_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `NPCBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- The `role` attribute is set to `"npc_plugin"` in the base class
 - Your implementation can use any dialog storage or movement plugin
-- Register your custom NPC manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.npc"` to replace it
+- Register your custom NPC plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.npc"` to replace it
 
 **Example Custom Implementation:**
 
@@ -1461,7 +1461,7 @@ from pedre.plugins.npc.base import NPCBasePlugin
 
 @PluginRegistry.register
 class DatabaseNPCPlugin(NPCBasePlugin):
-    """NPC manager that stores state in a database."""
+    """NPC plugin that stores state in a database."""
 
     name = "npc"
     dependencies = ["pathfinding"]

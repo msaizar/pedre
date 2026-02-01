@@ -87,7 +87,7 @@ def update(self, delta_time):
 
     ---
 
-    Detailed documentation for all manager classes
+    Detailed documentation for all plugin classes
 
     [:octicons-arrow-right-24: Explore plugins](plugins/index.md)
 

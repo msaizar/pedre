@@ -4,7 +4,7 @@ Event-driven scripting plugin for cutscenes and interactive sequences.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/script/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/manager.py)
+- Implementation: [src/pedre/plugins/script/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/plugin.py)
 - Base class: [src/pedre/plugins/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/base.py)
 - Events: [src/pedre/plugins/script/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/events.py)
 - Conditions: [src/pedre/plugins/script/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/conditions.py)
@@ -27,8 +27,8 @@ Scripts are loaded automatically when ScriptPlugin initializes:
 
 ```python
 # Scripts are loaded during setup
-script_manager = ScriptPlugin()
-script_manager.setup(context)  # Loads all scripts from scripts directory
+script_plugin = ScriptPlugin()
+script_plugin.setup(context)  # Loads all scripts from scripts directory
 ```
 
 **Script File Naming:**
@@ -65,7 +65,7 @@ Update active action sequences (called every frame).
 
 ```python
 def on_update(self, delta_time):
-    self.script_manager.update(delta_time)
+    self.script_plugin.update(delta_time)
 ```
 
 **Notes:**
@@ -89,7 +89,7 @@ Get all loaded scripts.
 **Example:**
 
 ```python
-all_scripts = script_manager.get_scripts()
+all_scripts = script_plugin.get_scripts()
 for name, script in all_scripts.items():
     print(f"{name}: completed={script.completed}, has_run={script.has_run}")
 ```
@@ -111,7 +111,7 @@ Return serializable state for saving.
 ```python
 save_data = {
     "player_position": (x, y),
-    "script": script_manager.get_save_state(),
+    "script": script_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -134,7 +134,7 @@ Restore script plugin state from save file.
 **Example:**
 
 ```python
-script_manager.restore_save_state(save_data["script"])
+script_plugin.restore_save_state(save_data["script"])
 ```
 
 **Notes:**
@@ -572,11 +572,11 @@ If you need to replace the script plugin with a custom implementation, you can e
 
 **Location:** [src/pedre/plugins/script/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/script/base.py)
 
-The `ScriptBasePlugin` class defines the minimum interface that any script manager must implement.
+The `ScriptBasePlugin` class defines the minimum interface that any script plugin must implement.
 
 #### Required Methods
 
-Your custom script manager must implement these abstract methods:
+Your custom script plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.script.base import ScriptBasePlugin, Script
@@ -594,7 +594,7 @@ class CustomScriptPlugin(ScriptBasePlugin):
 
 #### Registration
 
-Register your custom script manager using the `@PluginRegistry.register` decorator:
+Register your custom script plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -610,10 +610,10 @@ class CustomScriptPlugin(ScriptBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `ScriptBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
-- The `role` attribute is set to `"script_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `ScriptBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- The `role` attribute is set to `"script_plugin"` in the base class
 - Your implementation can use any script storage or execution plugin
-- Register your custom script manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.script"` to replace it
+- Register your custom script plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.script"` to replace it
 
 **Example Custom Implementation:**
 
@@ -624,7 +624,7 @@ from pedre.plugins.script.base import ScriptBasePlugin
 
 @PluginRegistry.register
 class DatabaseScriptPlugin(ScriptBasePlugin):
-    """Script manager that stores state in a database."""
+    """Script plugin that stores state in a database."""
 
     name = "script"
     dependencies = []

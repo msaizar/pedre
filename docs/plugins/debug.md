@@ -4,7 +4,7 @@ Displays development information overlays showing player and NPC positions in ti
 
 ## Location
 
-- Implementation: [src/pedre/plugins/debug/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/debug/manager.py)
+- Implementation: [src/pedre/plugins/debug/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/debug/plugin.py)
 
 ## Configuration
 
@@ -38,7 +38,7 @@ Toggle debug mode on/off with Shift+D.
 ```python
 def on_key_press(self, symbol, modifiers):
     # This is called automatically by PluginLoader
-    self.debug_manager.on_key_press(symbol, modifiers)
+    self.debug_plugin.on_key_press(symbol, modifiers)
 ```
 
 **Notes:**
@@ -64,7 +64,7 @@ def on_draw(self):
     self.scene.draw()
 
     # Draw UI (debug overlay is drawn here)
-    self.debug_manager.on_draw_ui()
+    self.debug_plugin.on_draw_ui()
 ```
 
 **Notes:**
@@ -203,11 +203,11 @@ tile_y = int(pixel_y / TILE_SIZE)
 
 The DebugPlugin depends on:
 
-- `npc` - To access NPC manager for NPC position data
+- `npc` - To access NPC plugin for NPC position data
 
 The plugin also accesses:
 
-- `player_manager` - Via game context for player position
+- `player_plugin` - Via game context for player position
 - `settings.TILE_SIZE` - For coordinate conversion
 
 ## See Also

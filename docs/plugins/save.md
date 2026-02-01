@@ -4,7 +4,7 @@ Manages game state persistence with auto-save, manual save slots, and quick save
 
 ## Location
 
-- Implementation: [src/pedre/plugins/save/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/save/manager.py)
+- Implementation: [src/pedre/plugins/save/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/save/plugin.py)
 - Base class: [src/pedre/plugins/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/save/base.py)
 
 ## Configuration
@@ -50,7 +50,7 @@ Save game to a specified slot.
 
 ```python
 # Save to slot 1
-success = save_manager.save_game(slot=1)
+success = save_plugin.save_game(slot=1)
 if success:
     print("Game saved successfully!")
 ```
@@ -77,7 +77,7 @@ Auto-save to the special auto-save slot (slot 0).
 
 ```python
 # Perform auto-save
-if save_manager.auto_save():
+if save_plugin.auto_save():
     print("Auto-save completed")
 ```
 
@@ -107,9 +107,9 @@ Load game from a specified slot.
 **Example:**
 
 ```python
-save_data = save_manager.load_game(slot=1)
+save_data = save_plugin.load_game(slot=1)
 if save_data:
-    save_manager.restore_game_data(save_data)
+    save_plugin.restore_game_data(save_data)
     print("Game loaded successfully!")
 ```
 
@@ -134,9 +134,9 @@ Load from the auto-save slot (slot 0).
 **Example:**
 
 ```python
-save_data = save_manager.load_auto_save()
+save_data = save_plugin.load_auto_save()
 if save_data:
-    save_manager.restore_game_data(save_data)
+    save_plugin.restore_game_data(save_data)
 ```
 
 **Notes:**
@@ -157,10 +157,10 @@ Phase 1: Restore metadata state from save data before sprites exist.
 **Example:**
 
 ```python
-save_data = save_manager.load_game(slot=1)
+save_data = save_plugin.load_game(slot=1)
 if save_data:
     # Phase 1: Restore metadata (settings, flags, which map to load)
-    save_manager.restore_game_data(save_data)
+    save_plugin.restore_game_data(save_data)
 
     # Phase 2 happens automatically after ScenePlugin loads sprites
 ```
@@ -183,7 +183,7 @@ Phase 2: Apply entity-specific state after sprites exist.
 
 ```python
 # Called automatically by ScenePlugin after load_from_tiled()
-save_manager.apply_entity_states()
+save_plugin.apply_entity_states()
 ```
 
 **Notes:**
@@ -212,9 +212,9 @@ Check if a save file exists in a slot.
 **Example:**
 
 ```python
-if save_manager.save_exists(1):
+if save_plugin.save_exists(1):
     print("Slot 1 has a save")
-    info = save_manager.get_save_info(1)
+    info = save_plugin.get_save_info(1)
     print(f"Saved at: {info['date_string']}")
 ```
 
@@ -236,7 +236,7 @@ Get basic info about a save file without fully loading it.
 **Example:**
 
 ```python
-info = save_manager.get_save_info(1)
+info = save_plugin.get_save_info(1)
 if info:
     print(f"Slot: {info['slot']}")
     print(f"Map: {info['map']}")
@@ -270,7 +270,7 @@ Delete a save file.
 **Example:**
 
 ```python
-if save_manager.delete_save(2):
+if save_plugin.delete_save(2):
     print("Slot 2 deleted")
 ```
 
@@ -602,7 +602,7 @@ The SavePlugin uses a simple slot-based plugin:
 
 ### Current Slot Tracking
 
-The manager tracks which slot was last saved/loaded:
+The plugin tracks which slot was last saved/loaded:
 
 ```python
 self.current_slot: int | None = None
@@ -624,7 +624,7 @@ def on_key_press(self, symbol: int, modifiers: int) -> bool:
     if matches_key(symbol, settings.SAVE_QUICK_SAVE_KEY):
         # Quick save to slot 0
         if self.auto_save():
-            self.context.audio_manager.play_sfx(settings.SAVE_SFX_FILE)
+            self.context.audio_plugin.play_sfx(settings.SAVE_SFX_FILE)
         return True
 
     if matches_key(symbol, settings.SAVE_QUICK_LOAD_KEY):
@@ -643,13 +643,13 @@ def on_key_press(self, symbol: int, modifiers: int) -> bool:
 
 ```python
 # Save to slot 1
-if save_manager.save_game(slot=1):
+if save_plugin.save_game(slot=1):
     print("Game saved!")
 
 # Load from slot 1
-save_data = save_manager.load_game(slot=1)
+save_data = save_plugin.load_game(slot=1)
 if save_data:
-    save_manager.restore_game_data(save_data)
+    save_plugin.restore_game_data(save_data)
     # Scene will load and apply entity states automatically
 ```
 
@@ -658,8 +658,8 @@ if save_data:
 ```python
 # Check all save slots
 for slot in range(1, 4):
-    if save_manager.save_exists(slot):
-        info = save_manager.get_save_info(slot)
+    if save_plugin.save_exists(slot):
+        info = save_plugin.get_save_info(slot)
         print(f"Slot {slot}: {info['map']} - {info['date_string']}")
     else:
         print(f"Slot {slot}: Empty")
@@ -669,8 +669,8 @@ for slot in range(1, 4):
 
 ```python
 # Auto-save before boss fight
-if save_manager.auto_save():
-    audio_manager.play_sfx("save.wav")
+if save_plugin.auto_save():
+    audio_plugin.play_sfx("save.wav")
     print("Progress auto-saved")
 
 # Start boss fight
@@ -681,7 +681,7 @@ if save_manager.auto_save():
 ```python
 # Confirm with player first
 if player_confirmed_deletion:
-    if save_manager.delete_save(slot=2):
+    if save_plugin.delete_save(slot=2):
         print("Slot 2 cleared")
 ```
 
@@ -695,7 +695,7 @@ def on_key_press(self, symbol: int, modifiers: int) -> bool:
 
     if matches_key(symbol, settings.SAVE_QUICK_SAVE_KEY):
         # Custom save logic
-        if save_manager.auto_save():
+        if save_plugin.auto_save():
             show_save_notification()
         return True
 
@@ -711,13 +711,13 @@ The ScenePlugin coordinates scene loading during game restoration:
 ```python
 # SavePlugin triggers scene load
 scene_name = save_data.save_states["scene"]["current_map"]
-context.scene_manager.request_transition(
+context.scene_plugin.request_transition(
     map_file=scene_name,
     spawn_waypoint=None  # Position restored via entity state
 )
 
 # After scene loads, ScenePlugin calls apply_entity_states()
-context.save_manager.apply_entity_states()
+context.save_plugin.apply_entity_states()
 ```
 
 **Notes:**
@@ -786,8 +786,8 @@ Audio plays feedback for save/load operations:
 
 ```python
 # Play save sound
-if save_manager.auto_save():
-    context.audio_manager.play_sfx(settings.SAVE_SFX_FILE)
+if save_plugin.auto_save():
+    context.audio_plugin.play_sfx(settings.SAVE_SFX_FILE)
 ```
 
 **Notes:**
@@ -873,11 +873,11 @@ If you need to replace the save plugin with a custom implementation, you can ext
 
 **Location:** [src/pedre/plugins/save/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/save/base.py)
 
-The `SaveBasePlugin` class defines the minimum interface that any save manager must implement.
+The `SaveBasePlugin` class defines the minimum interface that any save plugin must implement.
 
 #### Required Methods
 
-Your custom save manager must implement these abstract methods:
+Your custom save plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.save.base import SaveBasePlugin, GameSaveData
@@ -920,7 +920,7 @@ class CustomSavePlugin(SaveBasePlugin):
 
 #### Registration
 
-Register your custom save manager using the `@PluginRegistry.register` decorator:
+Register your custom save plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -935,10 +935,10 @@ class CloudSavePlugin(SaveBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `SaveBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and potentially `reset()`
-- The `role` attribute is set to `"save_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `SaveBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and potentially `reset()`
+- The `role` attribute is set to `"save_plugin"` in the base class
 - Your implementation can use any storage backend (cloud, database, encrypted files, etc.)
-- Register your custom save manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.save"` to replace it
+- Register your custom save plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.save"` to replace it
 
 **Example Custom Implementation:**
 
@@ -949,7 +949,7 @@ from pedre.plugins.save.base import SaveBasePlugin, GameSaveData
 
 @PluginRegistry.register
 class CloudSavePlugin(SaveBasePlugin):
-    """Save manager that stores saves in the cloud."""
+    """Save plugin that stores saves in the cloud."""
 
     name = "save"
 

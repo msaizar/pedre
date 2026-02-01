@@ -28,16 +28,16 @@ game_view = GameView(view_manager, map_file="level1.tmx", scene_name="forest")
 
 The GameView provides access to all game plugins through its context:
 
-- `npc_manager: NPCPlugin` - NPC state and interactions
-- `dialog_manager: DialogPlugin` - Dialog display
-- `inventory_manager: InventoryPlugin` - Item management
-- `script_manager: ScriptPlugin` - Event-driven scripts
-- `audio_manager: AudioPlugin` - Sound and music
-- `save_manager: SavePlugin` - Game persistence
-- `camera_manager: CameraPlugin` - Camera control
-- `portal_manager: PortalPlugin` - Map transitions
-- `interaction_manager: InteractionPlugin` - Object interactions
-- `particle_manager: ParticlePlugin` - Visual effects
+- `npc_plugin: NPCPlugin` - NPC state and interactions
+- `dialog_plugin: DialogPlugin` - Dialog display
+- `inventory_plugin: InventoryPlugin` - Item management
+- `script_plugin: ScriptPlugin` - Event-driven scripts
+- `audio_plugin: AudioPlugin` - Sound and music
+- `save_plugin: SavePlugin` - Game persistence
+- `camera_plugin: CameraPlugin` - Camera control
+- `portal_plugin: PortalPlugin` - Map transitions
+- `interaction_plugin: InteractionPlugin` - Object interactions
+- `particle_plugin: ParticlePlugin` - Visual effects
 
 ### Example
 
@@ -47,8 +47,8 @@ game_view = view_manager.game_view
 
 # Access plugins through context
 context = game_view.context
-npc_manager = context.get_plugin("npc")
-dialog_manager = context.get_plugin("dialog")
+npc_plugin = context.get_plugin("npc")
+dialog_plugin = context.get_plugin("dialog")
 ```
 
 ## MenuView

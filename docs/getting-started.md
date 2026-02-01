@@ -529,7 +529,7 @@ Congratulations! You've created your first RPG with:
 
 ### Learn More
 
-- [Plugins Reference](plugins/index.md) - Deep dive into each manager
+- [Plugins Reference](plugins/index.md) - Deep dive into each plugin
 - [Tiled Integration](guides/tiled-integration.md) - Advanced Tiled features
 - [Scripting Guide](scripting/index.md) - All available actions and events
 - [API Reference](api/index.md) - Complete API documentation

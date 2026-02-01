@@ -58,9 +58,9 @@ class WeatherPlugin(BasePlugin):
         """Update weather effects each frame."""
         if self.current_weather == "rain":
             # Emit rain particles
-            particle_manager = self.context.get_plugin("particle")
-            if particle_manager:
-                particle_manager.emit_rain()
+            particle_plugin = self.context.get_plugin("particle")
+            if particle_plugin:
+                particle_plugin.emit_rain()
 
     def reset(self) -> None:
         """Reset to initial state for new game."""
@@ -204,7 +204,7 @@ class QuestPlugin(BasePlugin):
     def setup(self, context: GameContext) -> None:
         # These plugins are guaranteed to be initialized
         self.inventory = context.get_plugin("inventory")
-        self.npc_manager = context.get_plugin("npc")
+        self.npc_plugin = context.get_plugin("npc")
 ```
 
 The PluginLoader will:

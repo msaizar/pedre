@@ -4,7 +4,7 @@ Manages player's inventory and item collection with a visual grid overlay.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/inventory/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/manager.py)
+- Implementation: [src/pedre/plugins/inventory/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/plugin.py)
 - Base class: [src/pedre/plugins/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/base.py)
 - Events: [src/pedre/plugins/inventory/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/events.py)
 - Actions: [src/pedre/plugins/inventory/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/actions.py)
@@ -74,7 +74,7 @@ Mark an item as acquired by the player.
 
 ```python
 # When player picks up an item
-if inventory_manager.acquire_item("ancient_scroll"):
+if inventory_plugin.acquire_item("ancient_scroll"):
     # Item was newly acquired
     show_notification("Found: Ancient Scroll!")
 else:
@@ -107,7 +107,7 @@ Mark an item as consumed by the player.
 
 ```python
 # When player uses a consumable item
-if inventory_manager.consume_item("health_potion"):
+if inventory_plugin.consume_item("health_potion"):
     # Item was consumed successfully
     restore_player_health(50)
 else:
@@ -151,7 +151,7 @@ potion = InventoryItem(
     acquired=True,
     consumable=True
 )
-if inventory_manager.add_item(potion):
+if inventory_plugin.add_item(potion):
     show_notification("Found: Health Potion!")
 ```
 
@@ -180,11 +180,11 @@ Check if the player has acquired a specific item.
 
 ```python
 # Check for key before allowing door interaction
-if inventory_manager.has_item("tower_key"):
+if inventory_plugin.has_item("tower_key"):
     unlock_door("tower_entrance")
-    dialog_manager.show_dialog("Info", ["The key fits perfectly!"])
+    dialog_plugin.show_dialog("Info", ["The key fits perfectly!"])
 else:
-    dialog_manager.show_dialog("Info", ["The door is locked."])
+    dialog_plugin.show_dialog("Info", ["The door is locked."])
 ```
 
 **Notes:**
@@ -208,7 +208,7 @@ Check if inventory has been accessed by the player.
 **Example:**
 
 ```python
-if inventory_manager.has_been_accessed():
+if inventory_plugin.has_been_accessed():
     # Player knows about inventory plugin
     pass
 ```
@@ -236,7 +236,7 @@ Return serializable state for saving.
 ```python
 save_data = {
     "player_position": (x, y),
-    "inventory": inventory_manager.get_save_state(),
+    "inventory": inventory_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -254,7 +254,7 @@ Restore state from save data.
 **Example:**
 
 ```python
-inventory_manager.restore_save_state(save_data["inventory"])
+inventory_plugin.restore_save_state(save_data["inventory"])
 ```
 
 **Notes:**
@@ -837,11 +837,11 @@ If you need to replace the inventory plugin with a custom implementation, you ca
 
 **Location:** [src/pedre/plugins/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/inventory/base.py)
 
-The `InventoryBasePlugin` class defines the minimum interface that any inventory manager must implement.
+The `InventoryBasePlugin` class defines the minimum interface that any inventory plugin must implement.
 
 #### Required Methods
 
-Your custom inventory manager must implement these abstract methods:
+Your custom inventory plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
@@ -875,7 +875,7 @@ class CustomInventoryPlugin(InventoryBasePlugin):
 
 #### Registration
 
-Register your custom inventory manager using the `@PluginRegistry.register` decorator:
+Register your custom inventory plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -891,10 +891,10 @@ class CustomInventoryPlugin(InventoryBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `InventoryBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
-- The `role` attribute is set to `"inventory_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `InventoryBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- The `role` attribute is set to `"inventory_plugin"` in the base class
 - Your implementation can use any storage backend or UI plugin
-- Register your custom inventory manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.inventory"` to replace it
+- Register your custom inventory plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.inventory"` to replace it
 
 **Example Custom Implementation:**
 
@@ -905,7 +905,7 @@ from pedre.plugins.inventory.base import InventoryBasePlugin
 
 @PluginRegistry.register
 class DatabaseInventoryPlugin(InventoryBasePlugin):
-    """Inventory manager that stores items in a database."""
+    """Inventory plugin that stores items in a database."""
 
     name = "inventory"
     dependencies = []

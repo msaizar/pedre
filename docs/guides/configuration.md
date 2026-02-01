@@ -305,7 +305,7 @@ Particle plugin configuration for visual effects.
 **Notes:**
 
 - `PARTICLE_ENABLED` controls whether particles are active on game start
-  - Can be toggled at runtime using `particle_manager.toggle()`
+  - Can be toggled at runtime using `particle_plugin.toggle()`
   - Useful for performance optimization on low-end devices
 - Color settings define default colors for each particle type
   - Colors can be overridden per-action using the `color` parameter in scripts

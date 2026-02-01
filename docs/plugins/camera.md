@@ -4,7 +4,7 @@ Manages camera movement with smooth following and boundary constraints.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/camera/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/manager.py)
+- Implementation: [src/pedre/plugins/camera/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/plugin.py)
 - Base class: [src/pedre/plugins/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/base.py)
 - Actions: [src/pedre/plugins/camera/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/actions.py)
 
@@ -42,7 +42,7 @@ Smoothly move camera towards target position using linear interpolation.
 
 ```python
 # Follow player with smooth interpolation
-camera_manager.smooth_follow(player.center_x, player.center_y)
+camera_plugin.smooth_follow(player.center_x, player.center_y)
 ```
 
 **Notes:**
@@ -66,7 +66,7 @@ Instantly move camera to target position without interpolation.
 
 ```python
 # Teleport camera to spawn point
-camera_manager.instant_follow(spawn_x, spawn_y)
+camera_plugin.instant_follow(spawn_x, spawn_y)
 ```
 
 **Notes:**
@@ -88,10 +88,10 @@ Set camera to automatically follow the player sprite.
 
 ```python
 # Enable smooth player following
-camera_manager.set_follow_player()
+camera_plugin.set_follow_player()
 
 # Enable instant player following (no interpolation)
-camera_manager.set_follow_player(smooth=False)
+camera_plugin.set_follow_player(smooth=False)
 ```
 
 **Notes:**
@@ -114,7 +114,7 @@ Set camera to automatically follow a specific NPC sprite.
 
 ```python
 # Follow NPC during cutscene
-camera_manager.set_follow_npc("boss", smooth=True)
+camera_plugin.set_follow_npc("boss", smooth=True)
 ```
 
 **Notes:**
@@ -132,7 +132,7 @@ Stop camera following, keeping it at its current position.
 
 ```python
 # Static camera for cutscene
-camera_manager.stop_follow()
+camera_plugin.stop_follow()
 ```
 
 **Notes:**
@@ -159,7 +159,7 @@ Set camera movement boundaries based on map and viewport dimensions.
 
 ```python
 # Set bounds for a 50x40 tile map (32px tiles) on 1024x768 window
-camera_manager.set_bounds(
+camera_plugin.set_bounds(
     map_width=50 * 32,      # 1600 pixels
     map_height=40 * 32,     # 1280 pixels
     viewport_width=1024,
@@ -188,7 +188,7 @@ def on_draw(self):
     self.clear()
 
     # Activate camera for world rendering
-    camera_manager.use()
+    camera_plugin.use()
 
     # Draw world objects
     self.npc_list.draw()
@@ -230,7 +230,7 @@ Return serializable state for saving.
 
 ```python
 save_data = {
-    "camera": camera_manager.get_save_state(),
+    "camera": camera_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -248,7 +248,7 @@ Restore state from save data.
 **Example:**
 
 ```python
-camera_manager.restore_save_state(save_data["camera"])
+camera_plugin.restore_save_state(save_data["camera"])
 ```
 
 **Notes:**
@@ -455,11 +455,11 @@ If you need to replace the camera plugin with a custom implementation (e.g., for
 
 **Location:** [src/pedre/plugins/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/camera/base.py)
 
-The `CameraBasePlugin` class defines the minimum interface that any camera manager must implement. All methods are abstract and must be implemented by your custom class.
+The `CameraBasePlugin` class defines the minimum interface that any camera plugin must implement. All methods are abstract and must be implemented by your custom class.
 
 #### Required Methods
 
-Your custom camera manager must implement these abstract methods:
+Your custom camera plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.camera.base import CameraBasePlugin
@@ -490,7 +490,7 @@ class CustomCameraPlugin(CameraBasePlugin):
 
 #### Registration
 
-Register your custom camera manager using the `@PluginRegistry.register` decorator:
+Register your custom camera plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -506,11 +506,11 @@ class CustomCameraPlugin(CameraBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `CameraBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `update()`
-- The `role` attribute is set to `"camera_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `CameraBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `update()`
+- The `role` attribute is set to `"camera_plugin"` in the base class
 - Your implementation can use any camera system, not just Arcade's Camera2D
 - Additional methods beyond the required interface can be added as needed
-- Register your custom camera manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.camera"` to replace it
+- Register your custom camera plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.camera"` to replace it
 
 **Example Custom Implementation:**
 
@@ -597,13 +597,13 @@ INSTALLED_PLUGINS = [
 
 ```python
 # Set up camera for a new scene
-camera_manager.set_follow_player(smooth=True)
+camera_plugin.set_follow_player(smooth=True)
 
 # Teleport camera for scene transition
-camera_manager.instant_follow(spawn_x, spawn_y)
+camera_plugin.instant_follow(spawn_x, spawn_y)
 
 # Set bounds for the map
-camera_manager.set_bounds(
+camera_plugin.set_bounds(
     map_width=1600,
     map_height=1200,
     viewport_width=1024,

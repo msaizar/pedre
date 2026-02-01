@@ -23,9 +23,9 @@ Unlike a global singleton, `GameContext` is explicitly passed to methods that ne
 Retrieve a registered plugin by its name.
 
 ```python
-dialog_manager = context.get_plugin("dialog")
-if dialog_manager:
-    dialog_manager.show_dialog("Hello!")
+dialog_plugin = context.get_plugin("dialog")
+if dialog_plugin:
+    dialog_plugin.show_dialog("Hello!")
 ```
 
 ## Usage in Plugins

@@ -4,7 +4,7 @@ Manages background music and sound effects with caching.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/audio/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/manager.py)
+- Implementation: [src/pedre/plugins/audio/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/plugin.py)
 - Base class: [src/pedre/plugins/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/base.py)
 - Actions: [src/pedre/plugins/audio/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/actions.py)
 
@@ -52,10 +52,10 @@ Play background music from the `assets/audio/music/` directory.
 
 ```python
 # Play looping background music at default volume
-audio_manager.play_music("village_theme.ogg")
+audio_plugin.play_music("village_theme.ogg")
 
 # Play one-time victory music at high volume
-audio_manager.play_music("victory.ogg", loop=False, volume=0.9)
+audio_plugin.play_music("victory.ogg", loop=False, volume=0.9)
 ```
 
 **Notes:**
@@ -74,7 +74,7 @@ Stop the currently playing music immediately.
 **Example:**
 
 ```python
-audio_manager.stop_music()
+audio_plugin.stop_music()
 ```
 
 **Notes:**
@@ -92,7 +92,7 @@ Pause the currently playing music at its current position.
 
 ```python
 # Pause when entering menu
-audio_manager.pause_music()
+audio_plugin.pause_music()
 ```
 
 **Notes:**
@@ -110,7 +110,7 @@ Resume paused music from where it was paused.
 
 ```python
 # Resume when exiting menu
-audio_manager.resume_music()
+audio_plugin.resume_music()
 ```
 
 **Notes:**
@@ -138,10 +138,10 @@ Play a sound effect from the `assets/audio/sfx/` directory.
 
 ```python
 # Play NPC voice at default volume
-audio_manager.play_sfx("martin.mp3")
+audio_plugin.play_sfx("martin.mp3")
 
 # Play UI sound at lower volume
-audio_manager.play_sfx("click.wav", volume=0.3)
+audio_plugin.play_sfx("click.wav", volume=0.3)
 ```
 
 **Notes:**
@@ -165,7 +165,7 @@ Set the music volume level.
 **Example:**
 
 ```python
-audio_manager.set_music_volume(0.5)  # 50% volume
+audio_plugin.set_music_volume(0.5)  # 50% volume
 ```
 
 **Notes:**
@@ -186,7 +186,7 @@ Set the sound effects volume level.
 **Example:**
 
 ```python
-audio_manager.set_sfx_volume(0.8)  # 80% volume
+audio_plugin.set_sfx_volume(0.8)  # 80% volume
 ```
 
 **Notes:**
@@ -210,7 +210,7 @@ Toggle music on/off.
 
 ```python
 # Toggle music in response to user pressing 'M'
-new_state = audio_manager.toggle_music()
+new_state = audio_plugin.toggle_music()
 print(f"Music is now {'on' if new_state else 'off'}")
 ```
 
@@ -233,7 +233,7 @@ Toggle sound effects on/off.
 
 ```python
 # Toggle SFX in response to user pressing 'S'
-new_state = audio_manager.toggle_sfx()
+new_state = audio_plugin.toggle_sfx()
 print(f"Sound effects are now {'on' if new_state else 'off'}")
 ```
 
@@ -254,7 +254,7 @@ Clear the music cache to free memory.
 
 ```python
 # Clear music cache before loading a new scene
-audio_manager.clear_music_cache()
+audio_plugin.clear_music_cache()
 ```
 
 **Notes:**
@@ -272,7 +272,7 @@ Clear the sound effects cache to free memory.
 
 ```python
 # Clear SFX cache after completing a level
-audio_manager.clear_sfx_cache()
+audio_plugin.clear_sfx_cache()
 ```
 
 **Notes:**
@@ -290,7 +290,7 @@ Clear both music and SFX caches simultaneously.
 
 ```python
 # Full cache clear when returning to main menu
-audio_manager.clear_all_caches()
+audio_plugin.clear_all_caches()
 ```
 
 ### Advanced Methods
@@ -361,7 +361,7 @@ Return serializable state for saving.
 
 ```python
 save_data = {
-    "audio": audio_manager.get_save_state(),
+    "audio": audio_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -384,7 +384,7 @@ Restore state from save data.
 **Example:**
 
 ```python
-audio_manager.restore_save_state(save_data["audio"])
+audio_plugin.restore_save_state(save_data["audio"])
 ```
 
 **Notes:**
@@ -407,7 +407,7 @@ Convert audio settings to dictionary for serialization.
 
 ```python
 save_data = {
-    "audio": audio_manager.to_dict(),
+    "audio": audio_plugin.to_dict(),
     # ... other save data
 }
 ```
@@ -425,7 +425,7 @@ Load audio settings from a saved dictionary.
 **Example:**
 
 ```python
-audio_manager.from_dict(save_data["audio"])
+audio_plugin.from_dict(save_data["audio"])
 ```
 
 **Notes:**
@@ -579,11 +579,11 @@ If you need to replace the audio plugin with a custom implementation (e.g., for 
 
 **Location:** [src/pedre/plugins/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/audio/base.py)
 
-The `AudioBasePlugin` class defines the minimum interface that any audio manager must implement. All methods are abstract and must be implemented by your custom class.
+The `AudioBasePlugin` class defines the minimum interface that any audio plugin must implement. All methods are abstract and must be implemented by your custom class.
 
 #### Required Methods
 
-Your custom audio manager must implement these abstract methods:
+Your custom audio plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.audio.base import AudioBasePlugin
@@ -622,7 +622,7 @@ class CustomAudioPlugin(AudioBasePlugin):
 
 #### Registration
 
-Register your custom audio manager using the `@PluginRegistry.register` decorator:
+Register your custom audio plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -638,11 +638,11 @@ class CustomAudioPlugin(AudioBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `AudioBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
-- The `role` attribute is set to `"audio_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `AudioBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- The `role` attribute is set to `"audio_plugin"` in the base class
 - Your implementation can use any audio backend, not just Arcade's audio system
 - The return types shown (e.g., `arcade.Sound`) are for compatibility with the default implementation; your custom version can use different types internally as long as the interface is maintained
-- Register your custom audio manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.audio"` to replace it
+- Register your custom audio plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.audio"` to replace it
 
 **Example Custom Implementation:**
 
@@ -653,7 +653,7 @@ from pedre.plugins.audio.base import AudioBasePlugin
 
 @PluginRegistry.register
 class FMODAudioPlugin(AudioBasePlugin):
-    """Custom FMOD-based audio manager."""
+    """Custom FMOD-based audio plugin."""
 
     name = "audio"
     dependencies = []
@@ -689,20 +689,20 @@ INSTALLED_PLUGINS = [
 
 ```python
 # Play looping background music
-audio_manager.play_music("village_theme.ogg")
+audio_plugin.play_music("village_theme.ogg")
 
 # Switch to battle music
-audio_manager.play_music("battle.ogg")
+audio_plugin.play_music("battle.ogg")
 ```
 
 ### Sound Effects on Interaction
 
 ```python
 # Play NPC voice when interacting
-audio_manager.play_sfx("martin.mp3")
+audio_plugin.play_sfx("martin.mp3")
 
 # Play UI feedback
-audio_manager.play_sfx("click.wav", volume=0.3)
+audio_plugin.play_sfx("click.wav", volume=0.3)
 ```
 
 ### Scripted Audio Sequence
@@ -729,20 +729,20 @@ audio_manager.play_sfx("click.wav", volume=0.3)
 
 ```python
 # When opening pause menu
-audio_manager.pause_music()
+audio_plugin.pause_music()
 
 # When closing pause menu
-audio_manager.resume_music()
+audio_plugin.resume_music()
 ```
 
 ### Saving and Restoring Audio Settings
 
 ```python
 # Save
-save_data = {"audio": audio_manager.get_save_state()}
+save_data = {"audio": audio_plugin.get_save_state()}
 
 # Restore
-audio_manager.restore_save_state(save_data["audio"])
+audio_plugin.restore_save_state(save_data["audio"])
 ```
 
 ## See Also

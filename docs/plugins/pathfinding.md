@@ -4,7 +4,7 @@ A* pathfinding for NPC navigation on tile-based grids.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/pathfinding/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/pathfinding/manager.py)
+- Implementation: [src/pedre/plugins/pathfinding/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/pathfinding/plugin.py)
 - Base class: [src/pedre/plugins/pathfinding/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/pathfinding/base.py)
 
 ## Configuration
@@ -49,7 +49,7 @@ Find a path between a pixel position and a target tile using A* with automatic r
 **Example:**
 
 ```python
-path = pathfinding_manager.find_path(
+path = pathfinding_plugin.find_path(
     start_x=npc.center_x,
     start_y=npc.center_y,
     end_tile_x=10,
@@ -91,18 +91,18 @@ Check if a tile position is walkable (free of obstacles).
 **Example:**
 
 ```python
-if pathfinding_manager.is_tile_walkable(10, 15):
+if pathfinding_plugin.is_tile_walkable(10, 15):
     print("Tile is free")
 
 # Check walkability ignoring a specific NPC
-if pathfinding_manager.is_tile_walkable(10, 15, exclude_sprite=npc_sprite):
+if pathfinding_plugin.is_tile_walkable(10, 15, exclude_sprite=npc_sprite):
     print("Tile is free (ignoring NPC)")
 ```
 
 **Notes:**
 
 - Converts tile coordinates to pixel center for collision detection
-- Checks against the wall list from the scene manager
+- Checks against the wall list from the scene plugin
 - Returns `True` if the wall list is not set (fail-safe behavior)
 - The exclusion system prevents entities from blocking their own paths
 
@@ -165,7 +165,7 @@ When normal pathfinding fails (typically because NPCs are blocking the path), th
 ### Integration with Other Plugins
 
 - **NPCPlugin** calls `find_path` when moving NPCs to waypoints
-- **MoveNPCAction** triggers pathfinding via NPC manager
+- **MoveNPCAction** triggers pathfinding via NPC plugin
 - The wall list is obtained from the **ScenePlugin** via `get_wall_list()`
 
 ## Custom Pathfinding Implementation
@@ -176,11 +176,11 @@ If you need to replace the pathfinding plugin with a custom implementation, you 
 
 **Location:** [src/pedre/plugins/pathfinding/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/pathfinding/base.py)
 
-The `PathfindingBasePlugin` class defines the minimum interface that any pathfinding manager must implement.
+The `PathfindingBasePlugin` class defines the minimum interface that any pathfinding plugin must implement.
 
 #### Required Methods
 
-Your custom pathfinding manager must implement these abstract methods:
+Your custom pathfinding plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.pathfinding.base import PathfindingBasePlugin
@@ -206,7 +206,7 @@ class CustomPathfindingPlugin(PathfindingBasePlugin):
 
 #### Registration
 
-Register your custom pathfinding manager using the `@PluginRegistry.register` decorator:
+Register your custom pathfinding plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -222,10 +222,10 @@ class CustomPathfindingPlugin(PathfindingBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `PathfindingBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
-- The `role` attribute is set to `"pathfinding_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `PathfindingBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- The `role` attribute is set to `"pathfinding_plugin"` in the base class
 - Your implementation can use any pathfinding algorithm (Dijkstra, JPS, navmesh, etc.)
-- Register your custom pathfinding manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.pathfinding"` to replace it
+- Register your custom pathfinding plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.pathfinding"` to replace it
 
 ```python
 # In myproject/settings.py

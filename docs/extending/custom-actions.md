@@ -1,6 +1,6 @@
 # Actions & Registry
 
-Pedre uses an extensible action plugin where all script actions are managed by a central registry. This allows you to create custom actions that integrate seamlessly with the event-driven scripting plugin.
+Pedre uses an extensible action system where all script actions are managed by a central registry. This allows you to create custom actions that integrate seamlessly with the event-driven scripting plugin.
 
 ## How Actions Are Loaded
 

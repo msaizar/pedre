@@ -4,7 +4,7 @@ Manages particle effects and visual polish.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/particle/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/manager.py)
+- Implementation: [src/pedre/plugins/particle/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/plugin.py)
 - Base class: [src/pedre/plugins/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/base.py)
 - Actions: [src/pedre/plugins/particle/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/actions.py)
 
@@ -52,10 +52,10 @@ Emit heart particles for romantic or affectionate moments.
 
 ```python
 # Use default color
-particle_manager.emit_hearts(player_x, player_y)
+particle_plugin.emit_hearts(player_x, player_y)
 
 # Custom color (red hearts)
-particle_manager.emit_hearts(npc_x, npc_y, count=15, color=(255, 0, 0))
+particle_plugin.emit_hearts(npc_x, npc_y, count=15, color=(255, 0, 0))
 ```
 
 **Notes:**
@@ -83,10 +83,10 @@ Emit sparkle particles for interactions and discoveries.
 
 ```python
 # Use default color
-particle_manager.emit_sparkles(chest_x, chest_y)
+particle_plugin.emit_sparkles(chest_x, chest_y)
 
 # Custom color (blue sparkles)
-particle_manager.emit_sparkles(item_x, item_y, count=20, color=(0, 191, 255))
+particle_plugin.emit_sparkles(item_x, item_y, count=20, color=(0, 191, 255))
 ```
 
 **Notes:**
@@ -119,10 +119,10 @@ Emit subtle trail particles for player movement.
 
 ```python
 # Use default color
-particle_manager.emit_trail(player_x, player_y)
+particle_plugin.emit_trail(player_x, player_y)
 
 # Custom color (green trail)
-particle_manager.emit_trail(player_x, player_y, count=5, color=(0, 255, 100))
+particle_plugin.emit_trail(player_x, player_y, count=5, color=(0, 255, 100))
 ```
 
 **Notes:**
@@ -151,10 +151,10 @@ Emit burst particles for dramatic events and reveals.
 
 ```python
 # Use default color
-particle_manager.emit_burst(event_x, event_y)
+particle_plugin.emit_burst(event_x, event_y)
 
 # Custom color (gold burst for NPC reveals)
-particle_manager.emit_burst(npc_x, npc_y, count=25, color=(255, 215, 0))
+particle_plugin.emit_burst(npc_x, npc_y, count=25, color=(255, 215, 0))
 ```
 
 **Notes:**
@@ -188,7 +188,7 @@ Toggle particle effects on/off.
 
 ```python
 # Toggle particles
-is_enabled = particle_manager.toggle()
+is_enabled = particle_plugin.toggle()
 print(f"Particles {'enabled' if is_enabled else 'disabled'}")
 ```
 
@@ -210,7 +210,7 @@ Clear all active particles.
 
 ```python
 # Remove all particles
-particle_manager.clear()
+particle_plugin.clear()
 ```
 
 **Notes:**
@@ -235,7 +235,7 @@ Update all active particles.
 
 ```python
 def on_update(self, delta_time):
-    self.particle_manager.update(delta_time)
+    self.particle_plugin.update(delta_time)
 ```
 
 **Notes:**
@@ -256,7 +256,7 @@ Draw all active particles.
 
 ```python
 def on_draw(self):
-    self.particle_manager.draw()
+    self.particle_plugin.draw()
 ```
 
 **Notes:**
@@ -295,7 +295,7 @@ Return serializable state for saving.
 ```python
 save_data = {
     "player_position": (x, y),
-    "particle": particle_manager.get_save_state(),
+    "particle": particle_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -318,7 +318,7 @@ Restore state from save data.
 **Example:**
 
 ```python
-particle_manager.restore_save_state(save_data["particle"])
+particle_plugin.restore_save_state(save_data["particle"])
 ```
 
 **Notes:**
@@ -374,7 +374,7 @@ The particle plugin consists of:
 1. **Particle** - Individual particle data including position, velocity, and visual properties
 2. **ParticlePlugin** - Plugin for creating, updating, and rendering particles
 
-The manager provides several pre-configured particle effects:
+The plugin provides several pre-configured particle effects:
 
 - **Hearts** - Romantic/affection effects that float upward
 - **Sparkles** - Quick bursts for interactions and discoveries
@@ -467,16 +467,16 @@ Emit particle effects at specific locations or following entities.
 
 ```python
 # Emit hearts at player position
-player_sprite = context.player_manager.get_player_sprite()
-particle_manager.emit_hearts(player_sprite.center_x, player_sprite.center_y)
+player_sprite = context.player_plugin.get_player_sprite()
+particle_plugin.emit_hearts(player_sprite.center_x, player_sprite.center_y)
 
 # Emit sparkles at NPC position
-npc = context.npc_manager.get_npc_by_name("merchant")
+npc = context.npc_plugin.get_npc_by_name("merchant")
 if npc:
-    particle_manager.emit_sparkles(npc.sprite.center_x, npc.sprite.center_y)
+    particle_plugin.emit_sparkles(npc.sprite.center_x, npc.sprite.center_y)
 
 # Emit burst with custom color
-particle_manager.emit_burst(x, y, count=30, color=(255, 0, 255))
+particle_plugin.emit_burst(x, y, count=30, color=(255, 0, 255))
 ```
 
 ### Script-Based Particle Effects
@@ -543,7 +543,7 @@ particle_manager.emit_burst(x, y, count=30, color=(255, 0, 255))
 ```python
 # Disable particles on low-end devices
 if is_low_end_device():
-    particle_manager.toggle()  # Disables particles
+    particle_plugin.toggle()  # Disables particles
 
 # Or configure in settings.py
 PARTICLE_ENABLED = False  # Start with particles disabled
@@ -557,11 +557,11 @@ If you need to replace the particle plugin with a custom implementation, you can
 
 **Location:** [src/pedre/plugins/particle/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/particle/base.py)
 
-The `ParticleBasePlugin` class defines the minimum interface that any particle manager must implement.
+The `ParticleBasePlugin` class defines the minimum interface that any particle plugin must implement.
 
 #### Required Methods
 
-Your custom particle manager must implement these abstract methods:
+Your custom particle plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.particle.base import ParticleBasePlugin
@@ -632,7 +632,7 @@ class CustomParticlePlugin(ParticleBasePlugin):
 
 #### Registration
 
-Register your custom particle manager using the `@PluginRegistry.register` decorator:
+Register your custom particle plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry

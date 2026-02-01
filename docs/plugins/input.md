@@ -4,7 +4,7 @@ Manages keyboard input state and movement calculation for player control.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/input/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/input/manager.py)
+- Implementation: [src/pedre/plugins/input/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/input/plugin.py)
 - Base class: [src/pedre/plugins/input/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/input/base.py)
 
 ## Configuration
@@ -46,7 +46,7 @@ Register a key press event.
 ```python
 # Wire up to arcade window events
 def on_key_press(symbol, modifiers):
-    handled = input_manager.on_key_press(symbol, modifiers)
+    handled = input_plugin.on_key_press(symbol, modifiers)
     if not handled:
         # Handle other keys
         pass
@@ -78,7 +78,7 @@ Register a key release event.
 ```python
 # Wire up to arcade window events
 def on_key_release(symbol, modifiers):
-    input_manager.on_key_release(symbol, modifiers)
+    input_plugin.on_key_release(symbol, modifiers)
 ```
 
 **Notes:**
@@ -108,7 +108,7 @@ Calculate normalized movement vector from currently pressed keys.
 
 ```python
 # In update loop, get movement
-dx, dy = input_manager.get_movement_vector(delta_time)
+dx, dy = input_plugin.get_movement_vector(delta_time)
 player.center_x += dx
 player.center_y += dy
 ```
@@ -149,13 +149,13 @@ Check if a specific key is currently pressed.
 
 ```python
 # Check for action keys
-if input_manager.is_key_pressed(arcade.key.E):
+if input_plugin.is_key_pressed(arcade.key.E):
     interact_with_npc()
 
-if input_manager.is_key_pressed(arcade.key.SPACE):
+if input_plugin.is_key_pressed(arcade.key.SPACE):
     player_jump()
 
-if input_manager.is_key_pressed(arcade.key.I):
+if input_plugin.is_key_pressed(arcade.key.I):
     toggle_inventory()
 ```
 
@@ -177,11 +177,11 @@ Clear all pressed keys from the input state.
 ```python
 # In window focus handler
 def on_deactivate(self):
-    input_manager.clear()
+    input_plugin.clear()
 
 # Before showing dialog
-input_manager.clear()
-dialog_manager.show_dialog("npc", ["Hello!"])
+input_plugin.clear()
+dialog_plugin.show_dialog("npc", ["Hello!"])
 ```
 
 **Notes:**
@@ -215,7 +215,7 @@ Return serializable state for saving.
 ```python
 save_data = {
     "player_position": (x, y),
-    "input": input_manager.get_save_state(),
+    "input": input_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -238,7 +238,7 @@ Restore state from save data.
 **Example:**
 
 ```python
-input_manager.restore_save_state(save_data["input"])
+input_plugin.restore_save_state(save_data["input"])
 ```
 
 **Notes:**
@@ -299,11 +299,11 @@ If you need to replace the input plugin with a custom implementation (e.g., for 
 
 **Location:** [src/pedre/plugins/input/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/input/base.py)
 
-The `InputBasePlugin` class defines the minimum interface that any input manager must implement.
+The `InputBasePlugin` class defines the minimum interface that any input plugin must implement.
 
 #### Required Methods
 
-Your custom input manager must implement this abstract method:
+Your custom input plugin must implement this abstract method:
 
 ```python
 from pedre.plugins.input.base import InputBasePlugin
@@ -326,7 +326,7 @@ class CustomInputPlugin(InputBasePlugin):
 
 #### Registration
 
-Register your custom input manager using the `@PluginRegistry.register` decorator:
+Register your custom input plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -342,12 +342,12 @@ class GamepadInputPlugin(InputBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `InputBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
-- The `role` attribute is set to `"input_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `InputBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
+- The `role` attribute is set to `"input_plugin"` in the base class
 - Your implementation can use any input method, not just keyboard
 - The `get_movement_vector()` method is the minimum required interface
 - You can add additional methods for action keys, button presses, etc.
-- Register your custom input manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.input"` to replace it
+- Register your custom input plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.input"` to replace it
 
 **Example Custom Implementation:**
 
@@ -360,7 +360,7 @@ import arcade
 
 @PluginRegistry.register
 class GamepadInputPlugin(InputBasePlugin):
-    """Custom gamepad-based input manager."""
+    """Custom gamepad-based input plugin."""
 
     name = "input"
     dependencies = []

@@ -4,7 +4,7 @@ Manages scene state cache to preserve plugin states when the player transitions 
 
 ## Location
 
-- Implementation: [src/pedre/plugins/cache/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/cache/manager.py)
+- Implementation: [src/pedre/plugins/cache/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/cache/plugin.py)
 - Base class: [src/pedre/plugins/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/cache/base.py)
 
 ## Overview
@@ -35,7 +35,7 @@ Cache all plugin states for a scene when the player is leaving.
 
 ```python
 # Typically called automatically during scene transitions
-cache_manager.cache_scene("village")
+cache_plugin.cache_scene("village")
 ```
 
 **Notes:**
@@ -63,7 +63,7 @@ Restore cached plugin states for a scene when the player is returning.
 
 ```python
 # Typically called automatically during scene transitions
-restored = cache_manager.restore_scene("village")
+restored = cache_plugin.restore_scene("village")
 if restored:
     print("Scene state restored from cache")
 else:
@@ -94,7 +94,7 @@ Check if a scene has cached state.
 **Example:**
 
 ```python
-if cache_manager.has_cached_state("village"):
+if cache_plugin.has_cached_state("village"):
     print("Village scene has been visited before")
 else:
     print("First time visiting village")
@@ -116,7 +116,7 @@ Clear all cached state.
 
 ```python
 # Clear all cached scene data when starting a new game
-cache_manager.clear()
+cache_plugin.clear()
 ```
 
 **Notes:**
@@ -142,7 +142,7 @@ Return serializable state for saving.
 ```python
 save_data = {
     "player_position": (x, y),
-    "cache": cache_manager.get_save_state(),
+    "cache": cache_plugin.get_save_state(),
     # ... other save data
 }
 ```
@@ -166,7 +166,7 @@ Restore cache state from save file data.
 **Example:**
 
 ```python
-cache_manager.restore_save_state(save_data["cache"])
+cache_plugin.restore_save_state(save_data["cache"])
 ```
 
 **Notes:**
@@ -311,13 +311,13 @@ The cache plugin is typically used automatically during scene transitions:
 # When leaving a scene
 def transition_to_new_scene(old_scene: str, new_scene: str):
     # Cache current scene state
-    cache_manager.cache_scene(old_scene, context)
+    cache_plugin.cache_scene(old_scene, context)
 
     # Load new scene
-    scene_manager.load_level(new_scene)
+    scene_plugin.load_level(new_scene)
 
     # Try to restore cached state if returning to a known scene
-    cache_manager.restore_scene(new_scene, context)
+    cache_plugin.restore_scene(new_scene, context)
 ```
 
 ### Checking First-Time Visit
@@ -325,9 +325,9 @@ def transition_to_new_scene(old_scene: str, new_scene: str):
 ```python
 # Trigger special events on first visit
 scene_name = "haunted_house"
-if not cache_manager.has_cached_state(scene_name):
+if not cache_plugin.has_cached_state(scene_name):
     # First time visiting - trigger introduction cutscene
-    script_manager.run_script("haunted_house_intro")
+    script_plugin.run_script("haunted_house_intro")
 ```
 
 ### Manual Cache Management
@@ -337,10 +337,10 @@ if not cache_manager.has_cached_state(scene_name):
 def reset_village():
     """Reset village to initial state."""
     # Clear cached state for village
-    cache_manager.clear()
+    cache_plugin.clear()
 
     # Reload the scene fresh
-    scene_manager.load_level("village.tmx")
+    scene_plugin.load_level("village.tmx")
 ```
 
 ### Save Integration
@@ -353,7 +353,7 @@ def save_game(slot: int):
     save_data = {
         "version": 1,
         "timestamp": time.time(),
-        "cache": cache_manager.get_save_state(),  # Includes all scene caches
+        "cache": cache_plugin.get_save_state(),  # Includes all scene caches
         # ... other plugins
     }
     write_save_file(slot, save_data)
@@ -361,7 +361,7 @@ def save_game(slot: int):
 # During load
 def load_game(slot: int):
     save_data = read_save_file(slot)
-    cache_manager.restore_save_state(save_data["cache"])  # Restores all scene caches
+    cache_plugin.restore_save_state(save_data["cache"])  # Restores all scene caches
     # ... restore other plugins
 ```
 
@@ -373,11 +373,11 @@ If you need to replace the cache plugin with a custom implementation, you can ex
 
 **Location:** [src/pedre/plugins/cache/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/cache/base.py)
 
-The `CacheBasePlugin` class defines the minimum interface that any cache manager must implement.
+The `CacheBasePlugin` class defines the minimum interface that any cache plugin must implement.
 
 #### Required Methods
 
-Your custom cache manager must implement these abstract methods:
+Your custom cache plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.cache.base import CacheBasePlugin
@@ -399,7 +399,7 @@ class CustomCachePlugin(CacheBasePlugin):
 
 #### Registration
 
-Register your custom cache manager using the `@PluginRegistry.register` decorator:
+Register your custom cache plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -407,7 +407,7 @@ from pedre.plugins.cache.base import CacheBasePlugin
 
 @PluginRegistry.register
 class DatabaseCachePlugin(CacheBasePlugin):
-    """Cache manager that stores state in a database."""
+    """Cache plugin that stores state in a database."""
 
     name = "cache"
     dependencies = []
@@ -446,10 +446,10 @@ INSTALLED_PLUGINS = [
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `CacheBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
-- The `role` attribute is set to `"cache_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `CacheBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- The `role` attribute is set to `"cache_plugin"` in the base class
 - Your implementation can use any storage mechanism (database, files, network)
-- Register your custom cache manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.cache"` to replace it
+- Register your custom cache plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.cache"` to replace it
 
 ## Internal Structure
 

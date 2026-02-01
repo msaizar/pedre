@@ -229,44 +229,44 @@ Keyboard input handling and movement vector calculation. Processes player input.
 
 ### Event-Driven Design
 
-Prefer events over direct manager calls:
+Prefer events over direct plugin calls:
 
 ```python
 # Good: Event-driven
 def close_dialog():
-    dialog_manager.close()
+    dialog_plugin.close()
     event_bus.publish(DialogClosedEvent(npc_name="merchant"))
     # ScriptPlugin handles the rest
 
 # Avoid: Direct coupling
 def close_dialog():
-    dialog_manager.close()
-    npc_manager.increment_level("merchant")
+    dialog_plugin.close()
+    npc_plugin.increment_level("merchant")
 ```
 
 ### Update Order
 
-Call manager updates in the correct order:
+Call plugin updates in the correct order:
 
 ```python
 def on_update(self, delta_time):
     # 1. Input
-    dx, dy = self.input_manager.get_movement_vector()
+    dx, dy = self.input_plugin.get_movement_vector()
 
     # 2. Physics
     self.player.update_physics(dx, dy, delta_time)
 
     # 3. NPCs
-    self.npc_manager.update(delta_time)
+    self.npc_plugin.update(delta_time)
 
     # 4. Scripts
-    self.script_manager.update(delta_time, self.game_context)
+    self.script_plugin.update(delta_time, self.game_context)
 
     # 5. Particles
-    self.particle_manager.update(delta_time)
+    self.particle_plugin.update(delta_time)
 
     # 6. Camera
-    self.camera_manager.update(delta_time)
+    self.camera_plugin.update(delta_time)
 ```
 
 ## Next Steps

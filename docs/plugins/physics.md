@@ -4,7 +4,7 @@ Manages collision detection and physics simulation for the player sprite using A
 
 ## Location
 
-- Implementation: [src/pedre/plugins/physics/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/physics/manager.py)
+- Implementation: [src/pedre/plugins/physics/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/physics/plugin.py)
 - Base class: [src/pedre/plugins/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/physics/base.py)
 
 ## Configuration
@@ -42,8 +42,8 @@ Mark the physics engine for recreation on the next update cycle.
 
 ```python
 # After spawning a new player sprite
-player_manager.spawn_player(x=100, y=100)
-physics_manager.invalidate()
+player_plugin.spawn_player(x=100, y=100)
+physics_plugin.invalidate()
 ```
 
 **Notes:**
@@ -62,7 +62,7 @@ Initialize the physics plugin with game context and create the physics engine.
 
 **Parameters:**
 
-- `context` - Game context providing access to player and scene managers
+- `context` - Game context providing access to player and scene plugins
 
 **Notes:**
 
@@ -102,7 +102,7 @@ The PhysicsPlugin uses Arcade's `PhysicsEngineSimple`, which provides:
 The physics engine uses the wall list from the ScenePlugin:
 
 ```python
-wall_list = context.scene_manager.get_wall_list()
+wall_list = context.scene_plugin.get_wall_list()
 ```
 
 **Notes:**
@@ -182,7 +182,7 @@ The PhysicsPlugin depends on:
 
 The plugin also requires:
 
-- `scene_manager` - Via game context for wall list access
+- `scene_plugin` - Via game context for wall list access
 - Player sprite must exist before physics can work
 - Wall list should be populated from Tiled map
 
@@ -210,7 +210,7 @@ def spawn_player(self, x: float, y: float):
     self.player_sprite.center_y = y
 
     # Tell physics plugin to rebuild engine
-    self.context.physics_manager.invalidate()
+    self.context.physics_plugin.invalidate()
 ```
 
 ### Scene Transition
@@ -226,14 +226,14 @@ def load_level(self, map_file: str):
 
     # Physics engine will be invalidated and recreated
     # automatically by PlayerPlugin or scene loading
-    self.context.physics_manager.invalidate()
+    self.context.physics_plugin.invalidate()
 ```
 
 ### Checking Physics State
 
 ```python
 # Check if physics engine is active
-if physics_manager.physics_engine is not None:
+if physics_plugin.physics_engine is not None:
     print("Physics engine is running")
 else:
     print("Physics engine not initialized")
@@ -246,7 +246,7 @@ else:
 The PlayerPlugin provides the player sprite:
 
 ```python
-player_sprite = context.player_manager.get_player_sprite()
+player_sprite = context.player_plugin.get_player_sprite()
 ```
 
 **Important:**
@@ -259,7 +259,7 @@ player_sprite = context.player_manager.get_player_sprite()
 The ScenePlugin provides the wall list:
 
 ```python
-wall_list = context.scene_manager.get_wall_list()
+wall_list = context.scene_plugin.get_wall_list()
 ```
 
 **Wall List Contents:**
@@ -274,14 +274,14 @@ The InputPlugin provides movement input, which the physics engine applies:
 
 ```python
 # In game update loop
-dx, dy = input_manager.get_movement_vector()
+dx, dy = input_plugin.get_movement_vector()
 
 # Player sprite position updated
 player_sprite.change_x = dx
 player_sprite.change_y = dy
 
 # Physics engine prevents collision
-physics_manager.update(delta_time)
+physics_plugin.update(delta_time)
 ```
 
 ## Custom PhysicsPlugin Implementation
@@ -296,7 +296,7 @@ The `PhysicsBasePlugin` class defines the minimum interface for physics plugins.
 
 #### Required Methods
 
-Your custom physics manager must implement:
+Your custom physics plugin must implement:
 
 ```python
 from pedre.plugins.physics.base import PhysicsBasePlugin
@@ -353,9 +353,9 @@ class PlatformerPhysicsPlugin(PhysicsBasePlugin):
             self.physics_engine.update()
 
     def _create_engine(self) -> None:
-        player = self.context.player_manager.get_player_sprite()
-        walls = self.context.scene_manager.get_wall_list()
-        platforms = self.context.scene_manager.get_platform_list()
+        player = self.context.player_plugin.get_player_sprite()
+        walls = self.context.scene_plugin.get_wall_list()
+        platforms = self.context.scene_plugin.get_platform_list()
 
         if player:
             # Use platformer physics with gravity
@@ -385,17 +385,17 @@ INSTALLED_PLUGINS = [
 
 If the player passes through walls:
 
-1. **Check player sprite exists** - `player_manager.get_player_sprite()` should not be None
-2. **Check wall list** - `scene_manager.get_wall_list()` should contain wall sprites
-3. **Verify invalidation** - Call `physics_manager.invalidate()` after spawning player
+1. **Check player sprite exists** - `player_plugin.get_player_sprite()` should not be None
+2. **Check wall list** - `scene_plugin.get_wall_list()` should contain wall sprites
+3. **Verify invalidation** - Call `physics_plugin.invalidate()` after spawning player
 4. **Check collision layers** - Ensure Tiled map has properly configured collision layers
 
 ### Engine Not Updating
 
 If the physics engine seems frozen:
 
-1. **Check update loop** - Ensure `physics_manager.update(delta_time)` is called every frame
-2. **Verify setup** - Ensure `physics_manager.setup(context)` was called during initialization
+1. **Check update loop** - Ensure `physics_plugin.update(delta_time)` is called every frame
+2. **Verify setup** - Ensure `physics_plugin.setup(context)` was called during initialization
 3. **Check for errors** - Review logs for physics-related warnings
 
 ### Performance Issues

@@ -174,8 +174,8 @@ List of Python module paths containing plugin classes.
 
 ```python
 INSTALLED_PLUGINS = [
-    "pedre.plugins.audio.manager",
-    "pedre.plugins.dialog.manager",
+    "pedre.plugins.audio.plugin",
+    "pedre.plugins.dialog.plugin",
     "myproject.plugins.weather",  # Your custom plugin
 ]
 ```

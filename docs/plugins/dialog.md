@@ -4,7 +4,7 @@ Manages dialog display and pagination for game conversations.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/dialog/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/manager.py)
+- Implementation: [src/pedre/plugins/dialog/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/plugin.py)
 - Base class: [src/pedre/plugins/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/base.py)
 - Events: [src/pedre/plugins/dialog/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/events.py)
 - Actions: [src/pedre/plugins/dialog/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/actions.py)
@@ -89,21 +89,21 @@ Display a dialog from an NPC.
 
 ```python
 # Basic dialog with manual advancement
-dialog_manager.show_dialog("Martin", [
+dialog_plugin.show_dialog("Martin", [
     "Hello! I'm Martin, the village elder.",
     "Welcome to our humble town.",
     "Feel free to explore and talk to the other villagers!"
 ])
 
 # Instant narration dialog
-dialog_manager.show_dialog(
+dialog_plugin.show_dialog(
     "Narrator",
     ["The world fades to black..."],
     instant=True
 )
 
 # Auto-closing cutscene dialog
-dialog_manager.show_dialog(
+dialog_plugin.show_dialog(
     "Plugin",
     ["Achievement unlocked!"],
     instant=True,
@@ -111,7 +111,7 @@ dialog_manager.show_dialog(
 )
 
 # Dialog with level tracking
-dialog_manager.show_dialog(
+dialog_plugin.show_dialog(
     "Merchant",
     ["Thanks for your help!"],
     dialog_level=1,
@@ -135,8 +135,8 @@ Close the currently showing dialog.
 
 ```python
 # Force close on ESC key
-if key == arcade.key.ESCAPE and dialog_manager.is_showing():
-    dialog_manager.close_dialog()
+if key == arcade.key.ESCAPE and dialog_plugin.is_showing():
+    dialog_plugin.close_dialog()
 ```
 
 **Notes:**
@@ -160,8 +160,8 @@ Advance to the next page or close dialog if on last page.
 
 ```python
 # In your input handler
-if symbol == arcade.key.SPACE and dialog_manager.is_showing():
-    was_closed = dialog_manager.advance_page()
+if symbol == arcade.key.SPACE and dialog_plugin.is_showing():
+    was_closed = dialog_plugin.advance_page()
     if was_closed:
         # Dialog finished, can trigger follow-up actions
         pass
@@ -189,7 +189,7 @@ Check if dialog is currently displayed.
 **Example:**
 
 ```python
-if dialog_manager.is_showing():
+if dialog_plugin.is_showing():
     # Don't allow player movement during dialog
     return
 ```
@@ -208,7 +208,7 @@ Get the currently displayed page.
 **Example:**
 
 ```python
-page = dialog_manager.get_current_page()
+page = dialog_plugin.get_current_page()
 if page:
     print(f"{page.npc_name}: {page.text}")
     print(f"Page {page.page_num + 1}/{page.total_pages}")
@@ -259,7 +259,7 @@ Instantly reveal all text on the current page.
 ```python
 # Skip text reveal animation
 if user_pressed_skip:
-    dialog_manager.speed_up_text()
+    dialog_plugin.speed_up_text()
 ```
 
 **Notes:**
@@ -550,11 +550,11 @@ If you need to replace the dialog plugin with a custom implementation, you can e
 
 **Location:** [src/pedre/plugins/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/dialog/base.py)
 
-The `DialogBasePlugin` class defines the minimum interface that any dialog manager must implement.
+The `DialogBasePlugin` class defines the minimum interface that any dialog plugin must implement.
 
 #### Required Methods
 
-Your custom dialog manager must implement these abstract methods:
+Your custom dialog plugin must implement these abstract methods:
 
 ```python
 from pedre.conf import settings
@@ -594,7 +594,7 @@ class CustomDialogPlugin(DialogBasePlugin):
 
 #### Registration
 
-Register your custom dialog manager using the `@PluginRegistry.register` decorator:
+Register your custom dialog plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -610,10 +610,10 @@ class CustomDialogPlugin(DialogBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `DialogBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `on_key_press()`
-- The `role` attribute is set to `"dialog_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `DialogBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, and `on_key_press()`
+- The `role` attribute is set to `"dialog_plugin"` in the base class
 - Your implementation can use any rendering backend, not just Arcade's text system
-- Register your custom dialog manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.dialog"` to replace it
+- Register your custom dialog plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.dialog"` to replace it
 
 **Example Custom Implementation:**
 
@@ -624,7 +624,7 @@ from pedre.plugins.dialog.base import DialogBasePlugin
 
 @PluginRegistry.register
 class RichTextDialogPlugin(DialogBasePlugin):
-    """Custom dialog manager with rich text support."""
+    """Custom dialog plugin with rich text support."""
 
     name = "dialog"
     dependencies = ["npc", "interaction"]
@@ -667,7 +667,7 @@ INSTALLED_PLUGINS = [
 
 ```python
 # Show a simple greeting
-dialog_manager.show_dialog("Guard", [
+dialog_plugin.show_dialog("Guard", [
     "Halt! Who goes there?",
     "State your business in our town."
 ])
@@ -677,7 +677,7 @@ dialog_manager.show_dialog("Guard", [
 
 ```python
 # Narration that auto-advances
-dialog_manager.show_dialog(
+dialog_plugin.show_dialog(
     "Narrator",
     [
         "A long time ago...",
@@ -719,7 +719,7 @@ dialog_manager.show_dialog(
 
 ```python
 # Show dialog with level tracking for scripts
-dialog_manager.show_dialog(
+dialog_plugin.show_dialog(
     "Elder",
     ["You have completed the first trial."],
     dialog_level=1,

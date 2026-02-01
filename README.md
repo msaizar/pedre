@@ -122,11 +122,11 @@ This event-driven approach allows conditional portals, cutscenes before transiti
 
 ## Architecture
 
-The framework uses a **manager-based architecture** with event-driven communication:
+The framework uses a **plugin-based architecture** with event-driven communication:
 
 - **Views** - Menu, Game, Inventory, Load screens
 - **Sprites** - AnimatedPlayer, AnimatedNPC with sprite sheet support
-- **Plugins** - Modular managers for different game aspects:
+- **Plugins** - Modular plugins for different game aspects:
   - DialogPlugin - Conversation display
   - NPCPlugin - NPC state and interactions
   - PortalPlugin - Map transitions

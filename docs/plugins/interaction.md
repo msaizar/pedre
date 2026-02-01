@@ -4,7 +4,7 @@ Manages interactive objects that players can activate in the game world.
 
 ## Location
 
-- Implementation: [src/pedre/plugins/interaction/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/manager.py)
+- Implementation: [src/pedre/plugins/interaction/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/plugin.py)
 - Base class: [src/pedre/plugins/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/base.py)
 - Events: [src/pedre/plugins/interaction/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/events.py)
 - Conditions: [src/pedre/plugins/interaction/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/conditions.py)
@@ -34,7 +34,7 @@ INTERACTION_KEY = "E"
 
 `register_object(sprite: arcade.Sprite, name: str, properties: dict) -> None`
 
-Register an interactive object in the manager.
+Register an interactive object in the plugin.
 
 **Parameters:**
 
@@ -56,7 +56,7 @@ for obj in tiled_map.object_lists["Interactive"]:
 
 **Notes:**
 
-- Objects are stored by name, so each name must be unique within the manager
+- Objects are stored by name, so each name must be unique within the plugin
 - Registering an object with an existing name will overwrite the previous object
 - Usually called automatically by `load_from_tiled()`
 
@@ -198,7 +198,7 @@ else:
 
 `clear() -> None`
 
-Clear all registered interactive objects from the manager.
+Clear all registered interactive objects from the plugin.
 
 **Example:**
 
@@ -469,11 +469,11 @@ If you need to replace the interaction plugin with a custom implementation (e.g.
 
 **Location:** [src/pedre/plugins/interaction/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/interaction/base.py)
 
-The `InteractionBasePlugin` class defines the minimum interface that any interaction manager must implement.
+The `InteractionBasePlugin` class defines the minimum interface that any interaction plugin must implement.
 
 #### Required Methods
 
-Your custom interaction manager must implement these abstract methods:
+Your custom interaction plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObject
@@ -495,7 +495,7 @@ class CustomInteractionPlugin(InteractionBasePlugin):
 
 #### Registration
 
-Register your custom interaction manager using the `@PluginRegistry.register` decorator:
+Register your custom interaction plugin using the `@PluginRegistry.register` decorator:
 
 ```python
 from pedre.plugins.registry import PluginRegistry
@@ -503,7 +503,7 @@ from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObj
 
 @PluginRegistry.register
 class TargetedInteractionPlugin(InteractionBasePlugin):
-    """Custom interaction manager with cursor targeting."""
+    """Custom interaction plugin with cursor targeting."""
 
     name = "interaction"
     dependencies = []
@@ -513,11 +513,11 @@ class TargetedInteractionPlugin(InteractionBasePlugin):
 
 #### Notes on Custom Implementation
 
-- Your custom manager inherits from `BasePlugin` (via `InteractionBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
-- The `role` attribute is set to `"interaction_manager"` in the base class
+- Your custom plugin inherits from `BasePlugin` (via `InteractionBasePlugin`), so you must implement the standard plugin lifecycle methods: `setup()`, `cleanup()`, `get_save_state()`, and `restore_save_state()`
+- The `role` attribute is set to `"interaction_plugin"` in the base class
 - Your implementation can use any interaction method (distance-based, targeting, UI menus, etc.)
 - The two abstract methods (`get_interactive_objects()` and `has_interacted_with()`) are the minimum required interface
-- Register your custom interaction manager in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.interaction"` to replace it
+- Register your custom interaction plugin in your project's `INSTALLED_PLUGINS` setting before the default `"pedre.plugins.interaction"` to replace it
 
 **Example Custom Implementation:**
 
@@ -531,7 +531,7 @@ import arcade
 
 @PluginRegistry.register
 class MenuInteractionPlugin(InteractionBasePlugin):
-    """Interaction manager with radial menu selection."""
+    """Interaction plugin with radial menu selection."""
 
     name = "interaction"
     dependencies = []

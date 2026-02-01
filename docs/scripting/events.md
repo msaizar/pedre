@@ -759,7 +759,7 @@ Triggered when another script finishes executing.
 
 ## Event Matching
 
-When an event occurs, the script manager:
+When an event occurs, the script plugin:
 
 1. Finds all scripts with matching `event` type
 2. Checks if additional trigger fields match (e.g., `npc`, `dialog_level`)
