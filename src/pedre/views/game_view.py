@@ -4,7 +4,7 @@ This module provides the GameView class.
 
 Key responsibilities:
 - Load and render Tiled maps with layers (floor, walls, NPCs, interactive objects)
-- Initialize and coordinate all game systems (managers for dialog, NPCs, audio, etc.)
+- Initialize and coordinate all game plugins (managers for dialog, NPCs, audio, etc.)
 - Handle player input and movement with physics
 
 Example usage:
@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING
 import arcade
 
 from pedre.conf import settings
-from pedre.systems.scene import TransitionState
+from pedre.plugins.scene import TransitionState
 
 if TYPE_CHECKING:
     from pedre.view_manager import ViewManager
@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 
 
 class GameView(arcade.View):
-    """Main gameplay view coordinating all game systems.
+    """Main gameplay view coordinating all game plugins.
 
     The GameView is the primary view during active gameplay. It loads Tiled maps, initializes
-    all game systems (managers), handles player input, updates game logic, and renders the
+    all game plugins (managers), handles player input, updates game logic, and renders the
     game world. It serves as the central integration point for all gameplay functionality.
 
     The view follows arcade's View pattern with lifecycle callbacks:
@@ -116,7 +116,7 @@ class GameView(arcade.View):
     def on_update(self, delta_time: float) -> None:
         """Update game logic each frame (arcade lifecycle callback).
 
-        Called automatically by arcade each frame. Updates all game systems in order.
+        Called automatically by arcade each frame. Updates all game plugins in order.
         """
         if not self.view_manager.game_context:
             return
@@ -128,8 +128,8 @@ class GameView(arcade.View):
             # During transition, skip other game logic
             return
 
-        # Update ALL systems generically via system_loader
-        self.view_manager.system_loader.update_all(delta_time)
+        # Update ALL plugins generically via plugin_loader
+        self.view_manager.plugin_loader.update_all(delta_time)
 
     def on_draw(self) -> None:
         """Render the game world (arcade lifecycle callback).
@@ -146,34 +146,34 @@ class GameView(arcade.View):
         if camera_manager:
             camera_manager.use()
 
-        # Draw ALL systems (world coordinates) via system_loader
-        self.view_manager.system_loader.draw_all()
+        # Draw ALL plugins (world coordinates) via plugin_loader
+        self.view_manager.plugin_loader.draw_all()
 
         # Draw UI in screen coordinates
         arcade.camera.Camera2D().use()
 
-        # Draw ALL systems (screen coordinates) via system_loader
-        self.view_manager.system_loader.draw_ui_all()
+        # Draw ALL plugins (screen coordinates) via plugin_loader
+        self.view_manager.plugin_loader.draw_ui_all()
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key presses (arcade lifecycle callback).
 
-        Processes keyboard input. Most input handling is delegated to specific systems
-        via the SystemLoader. This view handles global hotkeys (like menus).
+        Processes keyboard input. Most input handling is delegated to specific plugins
+        via the PluginLoader. This view handles global hotkeys (like menus).
         """
-        if not self.view_manager.system_loader:
+        if not self.view_manager.plugin_loader:
             return None
 
-        # Delegate to systems first (e.g., Dialog might consume input)
-        if self.view_manager.system_loader.on_key_press_all(symbol, modifiers):
+        # Delegate to plugins first (e.g., Dialog might consume input)
+        if self.view_manager.plugin_loader.on_key_press_all(symbol, modifiers):
             return True
 
         return None
 
     def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key releases (arcade lifecycle callback)."""
-        if self.view_manager.system_loader:
-            self.view_manager.system_loader.on_key_release_all(symbol, modifiers)
+        if self.view_manager.plugin_loader:
+            self.view_manager.plugin_loader.on_key_release_all(symbol, modifiers)
         return None
 
     def cleanup(self) -> None:
@@ -199,8 +199,8 @@ class GameView(arcade.View):
             cache_manager = self.view_manager.game_context.cache_manager
             cache_manager.cache_scene(current_map)
 
-        # Reset ALL pluggable systems generically (clears session state but keeps wiring)
-        self.view_manager.system_loader.reset_all()
+        # Reset ALL pluggable plugins generically (clears session state but keeps wiring)
+        self.view_manager.plugin_loader.reset_all()
 
         # Reset initialization flag so game will be set up again on next show
         self.initialized = False

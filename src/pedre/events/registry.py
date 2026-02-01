@@ -1,7 +1,7 @@
 """Registry for mapping event names to event classes.
 
-This module provides the EventRegistry class which allows systems to register
-their events by name. This enables the script system to discover and subscribe
+This module provides the EventRegistry class which allows plugins to register
+their events by name. This enables the script plugin to discover and subscribe
 to events without direct class imports, improving decoupling.
 """
 
@@ -22,8 +22,8 @@ T = TypeVar("T", bound=type)
 class EventRegistry:
     """Central registry for mapping event string names to event classes.
 
-    The EventRegistry allows systems to register their event types using a
-    decorator. Other systems (like ScriptManager) can then retrieve the event
+    The EventRegistry allows plugins to register their event types using a
+    decorator. Other plugins (like ScriptManager) can then retrieve the event
     classes by name to perform dynamic subscriptions.
     """
 

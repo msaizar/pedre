@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 import arcade
 
 from pedre.conf import settings
-from pedre.systems.dialog.events import DialogClosedEvent, DialogOpenedEvent
-from pedre.systems.dialog.manager import DialogManager
+from pedre.plugins.dialog.events import DialogClosedEvent, DialogOpenedEvent
+from pedre.plugins.dialog.manager import DialogManager
 
 
 class TestDialogManager(unittest.TestCase):

@@ -1,14 +1,14 @@
 """Registry for pluggable script actions.
 
 This module provides the ActionRegistry class which tracks all available action types
-for the scripting system. Actions register themselves using the @ActionRegistry.register
+for the scripting plugin. Actions register themselves using the @ActionRegistry.register
 decorator, enabling users to create custom actions that work in JSON scripts.
 
 Example:
     Registering a custom action::
 
-        from pedre.systems.actions import Action
-        from pedre.systems.action_registry import ActionRegistry
+        from pedre.plugins.actions import Action
+        from pedre.plugins.action_registry import ActionRegistry
 
         @ActionRegistry.register("set_weather")
         class SetWeatherAction(Action):
@@ -26,7 +26,7 @@ Example:
 
             def execute(self, context):
                 if not self._executed:
-                    context.get_system("weather").set_weather(self.weather, self.intensity)
+                    context.get_plugin("weather").set_weather(self.weather, self.intensity)
                     self._executed = True
                 return True
 
@@ -67,7 +67,7 @@ class ActionRegistry:
     into Action instances without hardcoding every action type.
 
     This enables users to create custom actions that integrate seamlessly with
-    the scripting system.
+    the scripting plugin.
 
     Class Attributes:
         _actions: Dictionary mapping action type names to their classes.

@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from pedre.systems.camera.actions import (
+from pedre.plugins.camera.actions import (
     FollowNPCAction,
     FollowPlayerAction,
     StopCameraFollowAction,

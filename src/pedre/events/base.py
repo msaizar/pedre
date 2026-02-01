@@ -1,15 +1,15 @@
-"""Event system for decoupled game event handling.
+"""Event plugin for decoupled game event handling.
 
-This module provides a publish/subscribe event system that allows different parts
+This module provides a publish/subscribe event plugin that allows different parts
 of the game to communicate without tight coupling. Components can publish events
 when something happens, and other components can subscribe to those events to react.
 
-The event system consists of:
+The event plugin consists of:
 - Event: Base class for all game events
 - Concrete event classes: Specific event types for various game occurrences
 - EventBus: Central hub for subscribing to and publishing events
 
-Events are used throughout the game to trigger scripts, coordinate systems, and
+Events are used throughout the game to trigger scripts, coordinate plugins, and
 enable reactive behaviors. Scripts can register event triggers in JSON that will
 automatically execute when specific events occur.
 
@@ -47,12 +47,12 @@ class Event:
 class EventBus:
     """Central event bus for publish/subscribe event handling.
 
-    The EventBus provides a decoupled communication system where publishers emit events
+    The EventBus provides a decoupled communication plugin where publishers emit events
     without knowing who (if anyone) will handle them, and subscribers can listen for
     events without knowing who publishes them.
 
-    This pattern is essential for the game's script system, allowing different managers
-    and systems to react to game events without tight coupling. For example, when a
+    This pattern is essential for the game's script plugin, allowing different managers
+    and plugins to react to game events without tight coupling. For example, when a
     dialog closes, the dialog manager publishes a DialogClosedEvent, and the script
     manager (which has subscribed to that event type) can trigger appropriate scripts.
 
@@ -157,7 +157,7 @@ class EventBus:
         """Clear all event listeners.
 
         Removes all subscribed handlers for all event types. This is useful for cleanup
-        when shutting down the event system or when transitioning between major game states.
+        when shutting down the event plugin or when transitioning between major game states.
 
         After calling clear(), the event bus will be in the same state as a newly
         constructed EventBus (no listeners registered).
@@ -176,11 +176,11 @@ class EventBus:
         """Unregister all handlers for a specific subscriber.
 
         This method removes all registered callback functions that belong to the
-        specified subscriber instance. It's particularly useful during system
+        specified subscriber instance. It's particularly useful during plugin
         cleanup to ensure no stale references remain in the event bus.
 
         Args:
-            subscriber: The instance (e.g., manager, system) whose handlers should be removed.
+            subscriber: The instance (e.g., manager, plugin) whose handlers should be removed.
                        Matches handlers by their __self__ attribute if they are bound methods.
         """
         for event_type in self.listeners:

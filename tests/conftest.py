@@ -49,7 +49,7 @@ def _setup_arcade_resources() -> Generator[None]:
 
 @pytest.fixture(autouse=True)
 def configure_test_settings() -> Generator[None]:
-    """Configure settings for each test using the new settings system.
+    """Configure settings for each test using the new settings plugin.
 
     This fixture runs automatically before each test to configure settings
     and resets them after the test completes.

@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from pedre.systems.dialog.actions import DialogAction, WaitForDialogCloseAction
+from pedre.plugins.dialog.actions import DialogAction, WaitForDialogCloseAction
 
 
 class TestDialogAction(unittest.TestCase):

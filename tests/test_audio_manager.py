@@ -1,24 +1,24 @@
-"""Unit tests for AudioManager."""
+"""Unit tests for AudioPlugin."""
 
 import unittest
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
-from pedre.systems.audio.manager import AudioManager
+from pedre.plugins.audio.manager import AudioPlugin
 
 if TYPE_CHECKING:
     from unittest.mock import Mock
 
 
-class TestAudioManager(unittest.TestCase):
-    """Unit test class for AudioManager."""
+class TestAudioPlugin(unittest.TestCase):
+    """Unit test class for AudioPlugin."""
 
     def setUp(self) -> None:
-        """Set up AudioManager for each test."""
-        self.manager = AudioManager()
+        """Set up AudioPlugin for each test."""
+        self.manager = AudioPlugin()
 
-    @patch("pedre.systems.audio.manager.arcade.load_sound")
-    @patch("pedre.systems.audio.manager.asset_path")
+    @patch("pedre.plugins.audio.manager.arcade.load_sound")
+    @patch("pedre.plugins.audio.manager.asset_path")
     def test_load_from_tiled_with_music_property(self, mock_asset_path: Mock, mock_load_sound: Mock) -> None:
         """Test loading music from Tiled map property."""
         # Mock the tile map with a music property

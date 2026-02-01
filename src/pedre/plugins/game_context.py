@@ -1,0 +1,187 @@
+"""Game context for passing state to actions and scripts.
+
+This module provides the GameContext class, which serves as a central registry
+for all game plugins and state. The context is passed to all actions and scripts,
+giving them access to the plugins and resources they need to interact with the
+game world.
+
+The GameContext pattern enables:
+- Actions to be reusable and testable by providing dependencies explicitly
+- Scripts to interact with any game plugin without tight coupling
+- Easy mocking and testing by swapping out individual plugins
+- Pluggable architecture where custom plugins can be added without modifying core code
+
+Key components stored in the context:
+- Plugins registry: All pluggable plugins accessed via get_plugin()
+- View references: Game view for accessing view-specific functionality
+
+Example usage:
+    # Create context with game state
+    context = GameContext(
+        event_bus=event_bus
+    )
+
+    # Register plugins (done by PluginLoader)
+    context.register_plugin("dialog", dialog_manager)
+    context.register_plugin("npc", npc_manager)
+
+    # Actions access plugins by name
+    dialog = context.dialog_manager
+    if dialog:
+        dialog.show_dialog("Hello!")
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import arcade
+
+    from pedre.events import EventBus
+    from pedre.plugins.audio.base import AudioBasePlugin
+    from pedre.plugins.base import BasePlugin
+    from pedre.plugins.cache.base import CacheBaseManager
+    from pedre.plugins.camera.base import CameraBaseManager
+    from pedre.plugins.dialog.base import DialogBaseManager
+    from pedre.plugins.input.base import InputBaseManager
+    from pedre.plugins.interaction.base import InteractionBaseManager
+    from pedre.plugins.inventory.base import InventoryBaseManager
+    from pedre.plugins.npc.base import NPCBaseManager
+    from pedre.plugins.particle.base import ParticleBaseManager
+    from pedre.plugins.pathfinding.base import PathfindingBaseManager
+    from pedre.plugins.physics.base import PhysicsBaseManager
+    from pedre.plugins.player.base import PlayerBaseManager
+    from pedre.plugins.save.base import GameSaveData, SaveBaseManager
+    from pedre.plugins.scene.base import SceneBaseManager
+    from pedre.plugins.script.base import ScriptBaseManager
+    from pedre.plugins.waypoint.base import WaypointBaseManager
+
+
+class GameContext:
+    """Central context object providing access to all game plugins.
+
+    The GameContext acts as a plugin registry and state container that holds
+    references to all game plugins and essential state. It's passed to every
+    action's execute() method and every plugin's lifecycle methods.
+
+    Plugins are accessed by name using get_plugin(), which returns the plugin
+    or None if not registered. This allows for a fully pluggable architecture
+    where custom plugins can be added without modifying the context class.
+
+    This design pattern provides several benefits:
+    - **Pluggability**: Any plugin can be registered and accessed by name
+    - **Testability**: Plugins can be mocked by registering test implementations
+    - **Flexibility**: Plugins are decoupled from how they're created/configured
+    - **Extensibility**: Custom plugins integrate the same way as built-in ones
+
+    Attributes:
+        event_bus: Publish/subscribe event plugin for decoupled communication.
+        window: Reference to the arcade Window instance.
+    """
+
+    audio_manager: AudioBasePlugin
+    cache_manager: CacheBaseManager
+    save_manager: SaveBaseManager
+    npc_manager: NPCBaseManager
+    scene_manager: SceneBaseManager
+    camera_manager: CameraBaseManager
+    dialog_manager: DialogBaseManager
+    inventory_manager: InventoryBaseManager
+    interaction_manager: InteractionBaseManager
+    pathfinding_manager: PathfindingBaseManager
+    particle_manager: ParticleBaseManager
+    input_manager: InputBaseManager
+    physics_manager: PhysicsBaseManager
+    script_manager: ScriptBaseManager
+    player_manager: PlayerBaseManager
+    waypoint_manager: WaypointBaseManager
+
+    def __init__(
+        self,
+        event_bus: EventBus,
+        window: arcade.Window,
+    ) -> None:
+        """Initialize game context with game state.
+
+        Creates a new GameContext instance with essential game state. Plugins
+        are registered separately via register_plugin() after instantiation,
+        typically by the PluginLoader.
+
+        Args:
+            event_bus: Central event plugin for publishing and subscribing to game events.
+                      Actions can publish events to trigger scripts or notify other plugins.
+            window: Reference to the arcade Window instance. Used by plugins that need
+                   to access window properties (size, rendering context, etc).
+
+        """
+        self.event_bus = event_bus
+        self.window = window
+
+        # Registry for all pluggable plugins (accessed via get_plugin)
+        self._plugins: dict[str, BasePlugin] = {}
+
+        # Pending save data for two-phase restoration
+        self._pending_save_data: GameSaveData | None = None
+
+    def register_plugin(self, name: str, plugin: BasePlugin) -> None:
+        """Register a pluggable plugin with the context.
+
+        This method is called by the PluginLoader to register plugins that have been
+        instantiated. Once registered, the plugin can be accessed by name using
+        get_plugin().
+
+        Args:
+            name: Unique identifier for the plugin (e.g., "audio", "dialog", "npc").
+            plugin: The plugin instance to register.
+
+        Example:
+            # PluginLoader calls this for each instantiated plugin
+            context.register_plugin("weather", weather_manager)
+            context.register_plugin("dialog", dialog_manager)
+        """
+        self._plugins[name] = plugin
+
+        if plugin.role:
+            setattr(self, plugin.role, plugin)
+
+    def get_plugin(self, name: str) -> BasePlugin | None:
+        """Get a registered plugin by name.
+
+        This is the primary method for accessing game plugins. All plugins (built-in
+        and custom) are accessed this way, enabling a fully pluggable architecture.
+
+        Args:
+            name: The plugin's unique identifier (e.g., "audio", "dialog", "npc").
+
+        Returns:
+            The plugin instance if found, None otherwise.
+
+        Example:
+            # Get plugins by name
+            dialog = context.get_plugin("dialog")
+            if dialog:
+                dialog.show_dialog("Hello!")
+
+            # Custom plugins work the same way
+            weather = context.get_plugin("weather")
+            if weather:
+                weather.set_rain(intensity=0.7)
+        """
+        return self._plugins.get(name)
+
+    def get_plugins(self) -> dict[str, BasePlugin]:
+        """Get all registered plugins."""
+        return self._plugins
+
+    def set_pending_save_data(self, save_data: GameSaveData | None) -> None:
+        """Store save data for Phase 2 restoration after sprites exist."""
+        self._pending_save_data = save_data
+
+    def get_pending_save_data(self) -> GameSaveData | None:
+        """Get pending save data for Phase 2 restoration."""
+        return self._pending_save_data
+
+    def clear_pending_save_data(self) -> None:
+        """Clear pending save data after restoration is complete."""
+        self._pending_save_data = None

@@ -11,7 +11,7 @@ Example:
 
         # Configure settings in your settings.py:
         # INSTALLED_ACTIONS = [
-        #     "pedre.systems.dialog.actions",
+        #     "pedre.plugins.dialog.actions",
         #     "myapp.custom_actions",  # Custom actions
         # ]
 

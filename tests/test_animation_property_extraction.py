@@ -3,10 +3,10 @@
 import unittest
 from unittest.mock import MagicMock
 
+from pedre.plugins.npc.constants import ALL_ANIMATION_PROPERTIES, NPC_SPECIAL_ANIMATION_PROPERTIES
+from pedre.plugins.npc.manager import NPCManager
+from pedre.plugins.player.manager import PlayerManager
 from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
-from pedre.systems.npc.constants import ALL_ANIMATION_PROPERTIES, NPC_SPECIAL_ANIMATION_PROPERTIES
-from pedre.systems.npc.manager import NPCManager
-from pedre.systems.player.manager import PlayerManager
 
 
 class TestPlayerAnimationPropertyExtraction(unittest.TestCase):

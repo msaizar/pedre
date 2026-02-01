@@ -58,15 +58,15 @@ from pedre.events import (
     ShowSaveGameEvent,
 )
 from pedre.events.loader import EventLoader
-from pedre.systems.game_context import GameContext
-from pedre.systems.loader import SystemLoader
+from pedre.plugins.game_context import GameContext
+from pedre.plugins.loader import PluginLoader
 from pedre.views.game_view import GameView
 from pedre.views.load_game_view import LoadGameView
 from pedre.views.menu_view import MenuView
 from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
-    from pedre.systems.save.base import GameSaveData
+    from pedre.plugins.save.base import GameSaveData
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ class ViewManager:
             window=self.window,
         )
 
-        # Load actions, events, and conditions BEFORE systems (systems may depend on them)
+        # Load actions, events, and conditions BEFORE plugins (plugins may depend on them)
         action_loader = ActionLoader()
         action_loader.load_modules()
         logger.debug("Loaded action modules from settings.INSTALLED_ACTIONS")
@@ -129,16 +129,16 @@ class ViewManager:
         condition_loader.load_modules()
         logger.debug("Loaded condition modules from settings.INSTALLED_CONDITIONS")
 
-        # Load and instantiate systems
-        self.system_loader = SystemLoader()
-        system_instances = self.system_loader.instantiate_all()
+        # Load and instantiate plugins
+        self.plugin_loader = PluginLoader()
+        plugin_instances = self.plugin_loader.instantiate_all()
 
-        # Register all systems with the context
-        for name, system in system_instances.items():
-            self.game_context.register_system(name, system)
+        # Register all plugins with the context
+        for name, plugin in plugin_instances.items():
+            self.game_context.register_plugin(name, plugin)
 
-        # Setup all systems
-        self.system_loader.setup_all(self.game_context)
+        # Setup all plugins
+        self.plugin_loader.setup_all(self.game_context)
 
         # Subscribe to view transition events
         self.event_bus.subscribe(ShowMenuEvent, self._on_show_menu_event)
@@ -338,7 +338,7 @@ class ViewManager:
         # Full load: no game view exists, load from auto-save
         save_manager = self.game_context.save_manager
         if not save_manager:
-            logger.error("Save system not available")
+            logger.error("Save plugin not available")
             return
 
         save_data = save_manager.load_auto_save()
@@ -393,7 +393,7 @@ class ViewManager:
             return
 
         if not context.save_manager:
-            logger.error("ViewManager: Save system not found in context")
+            logger.error("ViewManager: Save plugin not found in context")
             return
 
         # Restore all state from save data
@@ -423,7 +423,7 @@ class ViewManager:
     def _on_show_menu_event(self, event: ShowMenuEvent) -> None:
         """Handle ShowMenuEvent by transitioning to menu view.
 
-        Event handler that responds to ShowMenuEvent published by game systems.
+        Event handler that responds to ShowMenuEvent published by game plugins.
         Delegates to show_menu() with the appropriate parameters.
 
         Args:
@@ -434,7 +434,7 @@ class ViewManager:
     def _on_show_save_game_event(self, event: ShowSaveGameEvent) -> None:
         """Handle ShowSaveGameEvent by transitioning to save game view.
 
-        Event handler that responds to ShowSaveGameEvent published by game systems.
+        Event handler that responds to ShowSaveGameEvent published by game plugins.
         Delegates to show_save_game().
 
         Args:
@@ -445,7 +445,7 @@ class ViewManager:
     def _on_show_load_game_event(self, event: ShowLoadGameEvent) -> None:
         """Handle ShowLoadGameEvent by transitioning to load game view.
 
-        Event handler that responds to ShowLoadGameEvent published by game systems.
+        Event handler that responds to ShowLoadGameEvent published by game plugins.
         Delegates to show_load_game().
 
         Args:

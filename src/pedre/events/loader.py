@@ -11,7 +11,7 @@ Example:
 
         # Configure settings in your settings.py:
         # INSTALLED_EVENTS = [
-        #     "pedre.systems.dialog.events",
+        #     "pedre.plugins.dialog.events",
         #     "myapp.custom_events",  # Custom events
         # ]
 

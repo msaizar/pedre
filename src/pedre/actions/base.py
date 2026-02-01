@@ -1,4 +1,4 @@
-"""Action system for reusable, chainable game actions."""
+"""Action plugin for reusable, chainable game actions."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from pedre.systems.game_context import GameContext
+    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class WaitForConditionAction(Action):
 
     The condition function receives the GameContext and should return True when the
     wait is over. The description is used for debug logging to help track what the
-    system is waiting for.
+    plugin is waiting for.
 
     This class is typically subclassed for specific wait conditions rather than used
     directly. See WaitForDialogCloseAction, WaitForNPCMovementAction, etc.

@@ -14,7 +14,7 @@ def test_action_loader_imports_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "pedre.conf.settings.INSTALLED_ACTIONS",
         [
-            "pedre.systems.dialog.actions",
+            "pedre.plugins.dialog.actions",
         ],
     )
 
@@ -58,7 +58,7 @@ def test_action_loader_loads_multiple_modules(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(
         "pedre.conf.settings.INSTALLED_ACTIONS",
         [
-            "pedre.systems.npc.actions",
+            "pedre.plugins.npc.actions",
         ],
     )
 
