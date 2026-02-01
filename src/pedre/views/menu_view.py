@@ -464,7 +464,7 @@ class MenuView(arcade.View):
 
                 # Load all music files in parallel using thread pool
                 # Only preload looping music (streaming music like turntable.mp3 loads instantly)
-                music_files = settings.MENU_MUSIC_FILES
+                music_files = settings.MENU_PRELOAD_MUSIC_FILES
 
                 with ThreadPoolExecutor(max_workers=4) as executor:
                     # Submit all music files for parallel loading
