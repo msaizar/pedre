@@ -35,7 +35,9 @@ PARTICLE_COLOR_BURST = (255, 140, 0)  # Dark orange
 
 ### Particle Emission
 
-#### `emit_hearts(x: float, y: float, count: int = 10, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_HEARTS) -> None`
+#### emit_hearts
+
+`emit_hearts(x: float, y: float, count: int = 10, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_HEARTS) -> None`
 
 Emit heart particles for romantic or affectionate moments.
 
@@ -64,7 +66,9 @@ particle_manager.emit_hearts(npc_x, npc_y, count=15, color=(255, 0, 0))
 - Each particle has random position offsets, velocities, and lifetimes
 - Particles fade out as they age and are affected by gravity
 
-#### `emit_sparkles(x: float, y: float, count: int = 15, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_SPARKLES) -> None`
+#### emit_sparkles
+
+`emit_sparkles(x: float, y: float, count: int = 15, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_SPARKLES) -> None`
 
 Emit sparkle particles for interactions and discoveries.
 
@@ -98,7 +102,9 @@ particle_manager.emit_sparkles(item_x, item_y, count=20, color=(0, 191, 255))
 - Item pickups and discoveries
 - General interaction feedback
 
-#### `emit_trail(x: float, y: float, count: int = 3, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_TRAIL) -> None`
+#### emit_trail
+
+`emit_trail(x: float, y: float, count: int = 3, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_TRAIL) -> None`
 
 Emit subtle trail particles for player movement.
 
@@ -128,7 +134,9 @@ particle_manager.emit_trail(player_x, player_y, count=5, color=(0, 255, 100))
 - Emitted with small random offsets and low velocities
 - Typically called continuously during player movement
 
-#### `emit_burst(x: float, y: float, count: int = 20, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_BURST) -> None`
+#### emit_burst
+
+`emit_burst(x: float, y: float, count: int = 20, *, color: tuple[int, int, int] = settings.PARTICLE_COLOR_BURST) -> None`
 
 Emit burst particles for dramatic events and reveals.
 
@@ -166,7 +174,9 @@ particle_manager.emit_burst(npc_x, npc_y, count=25, color=(255, 215, 0))
 
 ### System Control
 
-#### `toggle() -> bool`
+#### toggle
+
+`toggle() -> bool`
 
 Toggle particle effects on/off.
 
@@ -190,7 +200,9 @@ print(f"Particles {'enabled' if is_enabled else 'disabled'}")
 - When disabled, no particles are rendered (draw returns immediately)
 - Useful for performance optimization, player preference settings, or debugging
 
-#### `clear() -> None`
+#### clear
+
+`clear() -> None`
 
 Clear all active particles.
 
@@ -209,7 +221,9 @@ particle_manager.clear()
 
 ### Update and Rendering
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update all active particles.
 
@@ -232,7 +246,9 @@ def on_update(self, delta_time):
 - Applies downward gravity acceleration to all particles
 - Gravity simulation (50 pixels/second² downward) makes particles follow realistic arcs
 
-#### `draw() -> None`
+#### draw
+
+`draw() -> None`
 
 Draw all active particles.
 
@@ -251,7 +267,9 @@ def on_draw(self):
 - When the particle system is disabled, returns immediately without rendering
 - Should be called after drawing the game world but before UI elements
 
-#### `on_draw() -> None`
+#### on_draw
+
+`on_draw() -> None`
 
 Draw all active particles (BaseSystem interface).
 
@@ -262,7 +280,9 @@ Draw all active particles (BaseSystem interface).
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -285,7 +305,9 @@ save_data = {
 - Particle state is not persisted - particles are transient effects
 - Only saves the enabled/disabled state
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore state from save data.
 
@@ -306,7 +328,9 @@ particle_manager.restore_save_state(save_data["particle"])
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the particle system with game context and settings.
 
@@ -319,7 +343,9 @@ Initialize the particle system with game context and settings.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up particle resources when the scene unloads.
 
@@ -328,7 +354,9 @@ Clean up particle resources when the scene unloads.
 - Clears all active particles
 - Called automatically by SystemLoader
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset system state for a new game session.
 
