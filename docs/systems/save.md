@@ -32,7 +32,9 @@ SAVE_SFX_FILE = "menu_select.wav"
 
 ### Save Operations
 
-#### `save_game(slot: int) -> bool`
+#### save_game
+
+`save_game(slot: int) -> bool`
 
 Save game to a specified slot.
 
@@ -61,7 +63,9 @@ if success:
 - Updates `current_slot` tracker
 - Automatically caches current scene before saving
 
-#### `auto_save() -> bool`
+#### auto_save
+
+`auto_save() -> bool`
 
 Auto-save to the special auto-save slot (slot 0).
 
@@ -85,7 +89,9 @@ if save_manager.auto_save():
 
 ### Load Operations
 
-#### `load_game(slot: int) -> GameSaveData | None`
+#### load_game
+
+`load_game(slot: int) -> GameSaveData | None`
 
 Load game from a specified slot.
 
@@ -114,7 +120,9 @@ if save_data:
 - Updates `current_slot` tracker
 - Does NOT automatically restore state (call `restore_game_data` for that)
 
-#### `load_auto_save() -> GameSaveData | None`
+#### load_auto_save
+
+`load_auto_save() -> GameSaveData | None`
 
 Load from the auto-save slot (slot 0).
 
@@ -136,7 +144,9 @@ if save_data:
 - Convenience method for loading slot 0
 - Called automatically by quick load (F9 by default)
 
-#### `restore_game_data(save_data: GameSaveData) -> None`
+#### restore_game_data
+
+`restore_game_data(save_data: GameSaveData) -> None`
 
 Phase 1: Restore metadata state from save data before sprites exist.
 
@@ -163,7 +173,9 @@ if save_data:
 - Each system's `restore_save_state()` method is called
 - Scene cache state is also restored if present
 
-#### `apply_entity_states() -> None`
+#### apply_entity_states
+
+`apply_entity_states() -> None`
 
 Phase 2: Apply entity-specific state after sprites exist.
 
@@ -183,7 +195,9 @@ save_manager.apply_entity_states()
 
 ### Save Slot Management
 
-#### `save_exists(slot: int) -> bool`
+#### save_exists
+
+`save_exists(slot: int) -> bool`
 
 Check if a save file exists in a slot.
 
@@ -204,7 +218,9 @@ if save_manager.save_exists(1):
     print(f"Saved at: {info['date_string']}")
 ```
 
-#### `get_save_info(slot: int) -> dict[str, Any] | None`
+#### get_save_info
+
+`get_save_info(slot: int) -> dict[str, Any] | None`
 
 Get basic info about a save file without fully loading it.
 
@@ -236,7 +252,9 @@ if info:
 - `date_string` (str) - Formatted date string (YYYY-MM-DD HH:MM)
 - `version` (str) - Save format version
 
-#### `delete_save(slot: int) -> bool`
+#### delete_save
+
+`delete_save(slot: int) -> bool`
 
 Delete a save file.
 
@@ -282,7 +300,9 @@ The SaveManager automatically handles quick save and quick load via keyboard sho
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the save system with game context.
 
@@ -295,7 +315,9 @@ Initialize the save system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up save system resources.
 
@@ -304,7 +326,9 @@ Clean up save system resources.
 - Currently a no-op (no cleanup needed)
 - Called automatically by SystemLoader
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+#### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Handle quick save/load hotkeys.
 
