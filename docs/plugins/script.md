@@ -119,7 +119,8 @@ save_data = {
 **Notes:**
 
 - Saves lists of completed scripts and run-once scripts that have executed
-- Active running scripts are NOT saved and will restart on load
+- Saves currently active script sequences with their execution progress
+- On load, active scripts resume from where they left off
 
 #### restore_save_state
 
@@ -140,6 +141,8 @@ script_plugin.restore_save_state(save_data["script"])
 **Notes:**
 
 - Restores completion flags and run-once history
+- Resumes active script sequences from where they were when saved
+- For actions like NPC movement, backs up to re-initiate the operation from saved entity state
 - Critical for preventing one-time events from re-running
 
 ### Plugin Lifecycle
