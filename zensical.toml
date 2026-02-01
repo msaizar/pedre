@@ -7,16 +7,17 @@ repo_url = "https://github.com/msaizar/pedre"
 nav = [
     {"Home" = "index.md"},
     {"Getting Started" = "getting-started.md"},
-    {"Configuration" = "configuration.md"},
-    {"Tiled Integration" = "tiled-integration.md"},
-    {"Scripting" = [
-        "scripting/index.md",
-        "scripting/basics.md",
-        "scripting/events.md",
-        "scripting/conditions.md",
-        "scripting/actions.md",
-        "scripting/advanced.md",
-        "scripting/examples.md"
+    {"Guides" = [
+        "guides/tiled-integration.md",
+        "guides/configuration.md",
+    ]},
+    {"API Reference" = [
+        "api/index.md",
+        "api/view-manager.md",
+        "api/views.md",
+        "api/sprites.md",
+        "api/game_context.md",
+        "api/event-bus.md",
     ]},
     {"Systems" = [
         "systems/index.md",
@@ -25,7 +26,6 @@ nav = [
         "systems/camera.md",
         "systems/debug.md",
         "systems/dialog.md",
-        "systems/event-bus.md",
         "systems/input.md",
         "systems/interaction.md",
         "systems/inventory.md",
@@ -38,8 +38,25 @@ nav = [
         "systems/save.md",
         "systems/scene.md",
         "systems/script.md",
+        "systems/waypoint.md",
     ]},
-    {"API Reference" = "api-reference.md"},
+    {"Scripting" = [
+        "scripting/index.md",
+        "scripting/basics.md",
+        "scripting/events.md",
+        "scripting/conditions.md",
+        "scripting/actions.md",
+        "scripting/advanced.md",
+        "scripting/examples.md",
+    ]},
+    {"Extending Pedre" = [
+        "extending/index.md",
+        "extending/custom-actions.md",
+        "extending/custom-events.md",
+        "extending/custom-conditions.md",
+        "extending/custom-systems.md",
+        "extending/system-loader.md",
+    ]},
 ]
 
 [project.extra]

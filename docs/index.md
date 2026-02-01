@@ -44,12 +44,12 @@ Configure your game settings with `settings.py` in your project root:
 SCREEN_WIDTH=1280
 SCREEN_HEIGHT=720
 WINDOW_TITLE="My RPG"
-INITIAL_MAP="my_map.tmx
+INITIAL_MAP="my_map.tmx"
 ```
 
-### Manager Coordination
+### Framework Architecture
 
-The framework uses `SystemLoader` to initialize systems and `GameContext` to pass them to actions and other systems:
+The framework uses `SystemLoader` to initialize systems and `GameContext` to coordinate them:
 
 ```python
 from pedre.systems.loader import SystemLoader
@@ -75,6 +75,14 @@ def update(self, delta_time):
 
     [:octicons-arrow-right-24: Get started](getting-started.md)
 
+-   :material-api:{ .lg .middle } **API Reference**
+
+    ---
+
+    Framework architecture and Python API reference
+
+    [:octicons-arrow-right-24: API docs](api/index.md)
+
 -   :material-cog:{ .lg .middle } **Systems**
 
     ---
@@ -82,14 +90,6 @@ def update(self, delta_time):
     Detailed documentation for all manager classes
 
     [:octicons-arrow-right-24: Explore systems](systems/index.md)
-
--   :material-map:{ .lg .middle } **Tiled Integration**
-
-    ---
-
-    Learn how to create maps in Tiled for your game
-
-    [:octicons-arrow-right-24: Use Tiled](tiled-integration.md)
 
 -   :material-script-text:{ .lg .middle } **Scripting**
 
@@ -99,21 +99,29 @@ def update(self, delta_time):
 
     [:octicons-arrow-right-24: Write scripts](scripting/index.md)
 
+-   :material-map:{ .lg .middle } **Tiled Integration**
+
+    ---
+
+    Learn how to create maps in Tiled for your game
+
+    [:octicons-arrow-right-24: Use Tiled](guides/tiled-integration.md)
+
 -   :material-tune:{ .lg .middle } **Configuration**
 
     ---
 
     Configure framework settings and customize behavior
 
-    [:octicons-arrow-right-24: Configure](configuration.md)
+    [:octicons-arrow-right-24: Configure](guides/configuration.md)
 
--   :material-api:{ .lg .middle } **API Reference**
+-   :material-puzzle:{ .lg .middle } **Extending Pedre**
 
     ---
 
-    Complete reference for all classes and methods
+    Add custom actions, events, conditions, and systems
 
-    [:octicons-arrow-right-24: API docs](api-reference.md)
+    [:octicons-arrow-right-24: Extend](extending/index.md)
 
 </div>
 

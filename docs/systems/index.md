@@ -6,29 +6,9 @@ This documentation provides detailed information about each manager/system in th
 
 The Pedre framework follows a manager-based architecture where each system encapsulates specific functionality. Systems communicate through an event bus for loose coupling and maintainability.
 
-## Core Infrastructure
-
-### [SystemLoader](loader.md)
-
-Handles dynamic loading, initialization (setup), and lifecycle management (reset, cleanup) of all game systems.
-
-### [GameContext](game_context.md)
-
-Central registry providing systems with access to event bus and other systems.
-
-## Extensibility
-
-### [Actions](actions.md)
-
-How to create and register custom script actions using `ActionRegistry`.
-
-### [Events](events.md)
-
-How to define and register custom events using `EventRegistry`.
-
-### [Conditions](conditions.md)
-
-How to define and register custom conditions using `ConditionRegistry`.
+For framework architecture and extension points, see:
+- [API Reference](../api/index.md) - Core framework components
+- [Extending Pedre](../extending/index.md) - Custom actions, events, conditions, and systems
 
 ## Core Systems
 
@@ -244,19 +224,6 @@ Keyboard input handling and movement vector calculation. Processes player input.
 - Action mapping
 - Normalized input
 
-## Communication
-
-### [EventBus](event-bus.md)
-
-Publish-subscribe event system for loose coupling. Enables decoupled communication between systems.
-
-**Key Features:**
-
-- Event publishing
-- Subscriber management
-- Custom event support
-- Type-safe events
-
 ## Best Practices
 
 ### Event-Driven Design
@@ -264,16 +231,16 @@ Publish-subscribe event system for loose coupling. Enables decoupled communicati
 Prefer events over direct manager calls:
 
 ```python
-# Don't: Direct coupling
-def close_dialog():
-    dialog_manager.close()
-    npc_manager.increment_level("merchant")
-
-# Do: Event-driven
+# Good: Event-driven
 def close_dialog():
     dialog_manager.close()
     event_bus.publish(DialogClosedEvent(npc_name="merchant"))
     # ScriptManager handles the rest
+
+# Avoid: Direct coupling
+def close_dialog():
+    dialog_manager.close()
+    npc_manager.increment_level("merchant")
 ```
 
 ### Update Order
@@ -303,5 +270,7 @@ def on_update(self, delta_time):
 
 ## Next Steps
 
-- [Scripting Guide](../scripting/index.md) - Detailed scripting documentation
-- [API Reference](../api-reference.md) - Complete API documentation
+- [API Reference](../api/index.md) - Framework architecture and core components
+- [Scripting Guide](../scripting/index.md) - Event-driven scripting system
+- [Extending Pedre](../extending/index.md) - Add custom functionality
+- [Configuration Guide](../guides/configuration.md) - System settings reference

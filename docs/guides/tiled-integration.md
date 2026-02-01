@@ -409,16 +409,12 @@ The player is controlled via keyboard input:
 
 **Movement Configuration:**
 
-Player movement and interaction speeds are controlled by game settings. These can be configured when creating your `settings.py` file:
+Player movement and interaction speeds are controlled by game settings in your `settings.py` file. See [Configuration Guide](configuration.md#player-settings) for all available player and interaction settings including:
 
-| Property | Default | Description |
-| -------- | ------- | ----------- |
-| `PLAYER_MOVEMENT_SPEED` | 180.0 | Player movement speed (pixels per second) |
-| `TILE_SIZE` | 32 | Size of each game tile (pixels) |
-| `INTERACTION_MANAGER_DISTANCE` | 50 | Distance for object interaction (pixels, ~1.5 tiles) |
-| `NPC_INTERACTION_DISTANCE` | 50 | Distance for NPC interaction (pixels, ~1.5 tiles) |
-| `PORTAL_INTERACTION_DISTANCE` | 50 | Distance for portal activation (pixels, ~1.5 tiles) |
-| `WAYPOINT_THRESHOLD` | 2 | Distance threshold for reaching waypoints (pixels) |
+- `PLAYER_MOVEMENT_SPEED` - Player movement speed
+- `INTERACTION_MANAGER_DISTANCE` - Object interaction range
+- `NPC_INTERACTION_DISTANCE` - NPC interaction range
+- `PORTAL_INTERACTION_DISTANCE` - Portal activation range
 
 ### Player Collision
 

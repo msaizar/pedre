@@ -660,6 +660,6 @@ Look for condition check messages in console output.
 
 ## Next Steps
 
-- Learn about [Actions](../systems/actions.md) to see what happens when conditions are met
+- Learn about [Actions](../extending/custom-actions.md) to see what happens when conditions are met
 - Explore [Advanced Patterns](advanced.md) for complex conditional sequences
 - Browse [Examples](examples.md) for practical conditional script examples
