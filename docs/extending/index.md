@@ -18,6 +18,7 @@ The Pedre extension system uses a **plugin-style architecture** with automatic d
 Create custom script actions that can be triggered from JSON scripts.
 
 **Use Cases:**
+
 - Weather systems (rain, snow, fog)
 - Custom UI elements (tooltips, notifications)
 - Game mechanics (crafting, combat, puzzles)
@@ -30,6 +31,7 @@ Create custom script actions that can be triggered from JSON scripts.
 Define custom events that scripts can listen for and react to.
 
 **Use Cases:**
+
 - Custom player actions (jumping, crouching)
 - Environmental changes (time of day, weather)
 - Game state changes (level up, quest complete)
@@ -42,6 +44,7 @@ Define custom events that scripts can listen for and react to.
 Create conditional checks for script execution.
 
 **Use Cases:**
+
 - Player stats (health, level, attributes)
 - Time-based conditions (day/night, season)
 - Complex game state (quest progress, relationships)
@@ -54,6 +57,7 @@ Create conditional checks for script execution.
 Build entire game systems that integrate with the framework lifecycle.
 
 **Use Cases:**
+
 - Quest management
 - Combat system
 - Crafting system
@@ -188,6 +192,7 @@ INSTALLED_SYSTEMS = [
 ### Documentation
 
 Always include docstrings explaining:
+
 - What the component does
 - What parameters it accepts
 - Return values and side effects

@@ -46,7 +46,7 @@ The `ActionRegistry` maps action type strings (like `"dialog"`, `"move_npc"`) to
 
 ### Location
 
-`src/pedre/actions/registry.py`
+[src/pedre/actions/registry.py](https://github.com/msaizar/pedre/blob/main/src/pedre/actions/registry.py)
 
 ## Creating Custom Actions
 

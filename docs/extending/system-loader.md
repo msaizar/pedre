@@ -4,7 +4,7 @@ The `SystemLoader` is responsible for dynamically loading, initializing, and man
 
 ## Location
 
-`src/pedre/systems/loader.py`
+[src/pedre/systems/loader.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/loader.py)
 
 ## Overview
 
@@ -12,7 +12,9 @@ The loader implements a dependency injection pattern where systems declare their
 
 ## Key Methods
 
-### `instantiate_all() -> dict[str, BaseSystem]`
+### instantiate_all
+
+`instantiate_all() -> dict[str, BaseSystem]`
 
 Creates instances of all registered systems.
 
@@ -20,11 +22,15 @@ Creates instances of all registered systems.
 - Detects circular dependencies
 - Returns dictionary of instantiated systems
 
-### `setup_all(context: GameContext)`
+### setup_all
+
+`setup_all(context: GameContext) -> None`
 
 Calls `setup()` on all systems in dependency order. This is where systems should initialize their state and subscribe to events.
 
-### `reset_all()`
+### reset_all
+
+`reset_all() -> None`
 
 Resets all systems to their initial state for a new game session.
 
@@ -32,7 +38,9 @@ Resets all systems to their initial state for a new game session.
 - Preserves persistent wiring (event bus connections)
 - Called when starting a new game
 
-### `cleanup_all()`
+### cleanup_all
+
+`cleanup_all() -> None`
 
 Calls `cleanup()` on all systems in reverse dependency order.
 

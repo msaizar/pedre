@@ -46,7 +46,7 @@ The `EventRegistry` maps string names (like `"npc_interacted"`) to Event classes
 
 ### Location
 
-`src/pedre/events/registry.py`
+[src/pedre/events/registry.py](https://github.com/msaizar/pedre/blob/main/src/pedre/events/registry.py)
 
 ## Creating Custom Events
 

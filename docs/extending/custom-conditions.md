@@ -43,7 +43,7 @@ The `ConditionRegistry` maintains a mapping of condition names (like `"inventory
 
 ### Location
 
-`src/pedre/conditions/registry.py`
+[src/pedre/conditions/registry.py](https://github.com/msaizar/pedre/blob/main/src/pedre/conditions/registry.py)
 
 ## Creating Custom Conditions
 
