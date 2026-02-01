@@ -16,7 +16,7 @@ nav = [
         "api/view-manager.md",
         "api/views.md",
         "api/sprites.md",
-        "api/game_context.md",
+        "api/game-context.md",
         "api/event-bus.md",
     ]},
     {"Plugins" = [
