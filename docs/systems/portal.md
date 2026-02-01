@@ -46,7 +46,9 @@ This approach allows full flexibility: conditional portals, cutscenes before tra
 
 ### Portal Registration
 
-#### `register_portal(sprite: arcade.Sprite, name: str) -> None`
+#### register_portal
+
+`register_portal(sprite: arcade.Sprite, name: str) -> None`
 
 Register a portal from Tiled map data.
 
@@ -73,7 +75,9 @@ portal_manager.register_portal(
 
 ### Portal Checking
 
-#### `check_portals(player_sprite: arcade.Sprite | None) -> None`
+#### check_portals
+
+`check_portals(player_sprite: arcade.Sprite | None) -> None`
 
 Check if player is near any portal and publish events on entry.
 
@@ -97,7 +101,9 @@ def on_update(self, delta_time):
 - Distance calculation uses Euclidean distance (straight-line)
 - Publishes `PortalEnteredEvent` when player enters
 
-#### `clear() -> None`
+#### clear
+
+`clear() -> None`
 
 Clear all registered portals.
 
@@ -109,7 +115,9 @@ Clear all registered portals.
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the portal system with game context.
 
@@ -123,7 +131,9 @@ Initialize the portal system with game context.
 - Configures the manager with event bus and settings
 - Stores reference to game context
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update portal system, checking for player entry.
 
@@ -137,7 +147,9 @@ Update portal system, checking for player entry.
 - Calls `check_portals()` with current player sprite
 - Handles portal entry detection
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up portal resources when the scene unloads.
 
@@ -147,7 +159,9 @@ Clean up portal resources when the scene unloads.
 - Resets tracking state
 - Called automatically by SystemLoader
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load portals from Tiled map object layer.
 
