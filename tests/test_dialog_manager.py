@@ -4,9 +4,9 @@ import unittest
 from unittest.mock import MagicMock
 
 import arcade
-from pedre.plugins.dialog.plugin import DialogPlugin
 
 from pedre.conf import settings
+from pedre.plugins.dialog import DialogPlugin
 from pedre.plugins.dialog.events import DialogClosedEvent, DialogOpenedEvent
 
 

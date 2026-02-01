@@ -14,9 +14,7 @@ The script plugin enables event-driven storytelling, cutscenes, and complex
 game sequences through JSON-based script definitions.
 """
 
-from pedre.plugins.script.plugin import Script, ScriptPlugin
+from pedre.plugins.script.base import Script, ScriptBasePlugin
+from pedre.plugins.script.plugin import ScriptPlugin
 
-__all__ = [
-    "Script",
-    "ScriptPlugin",
-]
+__all__ = ["Script", "ScriptBasePlugin", "ScriptPlugin"]

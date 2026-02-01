@@ -8,8 +8,7 @@ with support for both arrow keys and WASD, normalized diagonal movement,
 and configurable movement speed.
 """
 
+from pedre.plugins.input.base import InputBasePlugin
 from pedre.plugins.input.plugin import InputPlugin
 
-__all__ = [
-    "InputPlugin",
-]
+__all__ = ["InputBasePlugin", "InputPlugin"]

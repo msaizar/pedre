@@ -4,7 +4,7 @@ import unittest
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
-from pedre.plugins.audio.plugin import AudioPlugin
+from pedre.plugins.audio import AudioPlugin
 
 if TYPE_CHECKING:
     from unittest.mock import Mock

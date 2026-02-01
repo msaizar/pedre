@@ -11,9 +11,7 @@ The particle plugin creates visual feedback through hearts, sparkles,
 trails, and burst effects that enhance player interactions and events.
 """
 
-from pedre.plugins.particle.plugin import Particle, ParticlePlugin
+from pedre.plugins.particle.base import Particle, ParticleBasePlugin
+from pedre.plugins.particle.plugin import ParticlePlugin
 
-__all__ = [
-    "Particle",
-    "ParticlePlugin",
-]
+__all__ = ["Particle", "ParticleBasePlugin", "ParticlePlugin"]

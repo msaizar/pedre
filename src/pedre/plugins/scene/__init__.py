@@ -10,6 +10,7 @@ Events (registered via INSTALLED_EVENTS):
 - SceneStartEvent
 """
 
-from pedre.plugins.scene.plugin import ScenePlugin, TransitionState
+from pedre.plugins.scene.base import SceneBasePlugin, TransitionState
+from pedre.plugins.scene.plugin import ScenePlugin
 
-__all__ = ["ScenePlugin", "TransitionState"]
+__all__ = ["SceneBasePlugin", "ScenePlugin", "TransitionState"]

@@ -19,9 +19,7 @@ provides methods for item acquisition and querying, and supports
 save/load functionality for persistent state.
 """
 
-from pedre.plugins.inventory.plugin import InventoryItem, InventoryPlugin
+from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
+from pedre.plugins.inventory.plugin import InventoryPlugin
 
-__all__ = [
-    "InventoryItem",
-    "InventoryPlugin",
-]
+__all__ = ["InventoryBasePlugin", "InventoryItem", "InventoryPlugin"]

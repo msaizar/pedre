@@ -11,8 +11,7 @@ boundary constraints to prevent showing areas outside the map, and instant
 teleportation for scene transitions.
 """
 
+from pedre.plugins.camera.base import CameraBasePlugin
 from pedre.plugins.camera.plugin import CameraPlugin
 
-__all__ = [
-    "CameraPlugin",
-]
+__all__ = ["CameraBasePlugin", "CameraPlugin"]

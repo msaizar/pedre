@@ -3,10 +3,9 @@
 import unittest
 from unittest.mock import MagicMock
 
-from pedre.plugins.npc.plugin import NPCPlugin
-from pedre.plugins.player.plugin import PlayerPlugin
-
+from pedre.plugins.npc import NPCPlugin
 from pedre.plugins.npc.constants import ALL_ANIMATION_PROPERTIES, NPC_SPECIAL_ANIMATION_PROPERTIES
+from pedre.plugins.player import PlayerPlugin
 from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
 
 

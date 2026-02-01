@@ -11,9 +11,7 @@ Events (registered via INSTALLED_EVENTS):
 - PortalEnteredEvent: Event fired when player enters a portal zone
 """
 
-from pedre.plugins.portal.plugin import Portal, PortalPlugin
+from pedre.plugins.portal.base import Portal
+from pedre.plugins.portal.plugin import PortalPlugin
 
-__all__ = [
-    "Portal",
-    "PortalPlugin",
-]
+__all__ = ["Portal", "PortalPlugin"]

@@ -15,9 +15,7 @@ supporting message dialogs, toggle states, and other interactive behaviors confi
 via Tiled map properties.
 """
 
-from pedre.plugins.interaction.plugin import InteractionPlugin, InteractiveObject
+from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObject
+from pedre.plugins.interaction.plugin import InteractionPlugin
 
-__all__ = [
-    "InteractionPlugin",
-    "InteractiveObject",
-]
+__all__ = ["InteractionBasePlugin", "InteractionPlugin", "InteractiveObject"]

@@ -17,9 +17,7 @@ Events (registered via INSTALLED_EVENTS):
 - DialogOpenedEvent: Event fired when a dialog is opened
 """
 
-from pedre.plugins.dialog.plugin import DialogPage, DialogPlugin
+from pedre.plugins.dialog.base import DialogBasePlugin, DialogPage
+from pedre.plugins.dialog.plugin import DialogPlugin
 
-__all__ = [
-    "DialogPage",
-    "DialogPlugin",
-]
+__all__ = ["DialogBasePlugin", "DialogPage", "DialogPlugin"]

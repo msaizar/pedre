@@ -12,6 +12,7 @@ Actions (registered via INSTALLED_ACTIONS):
 - PlaySFXAction: Script action to play sound effects
 """
 
-from pedre.plugins.audio.plugin import AudioBasePlugin, AudioPlugin
+from pedre.plugins.audio.base import AudioBasePlugin
+from pedre.plugins.audio.plugin import AudioPlugin
 
 __all__ = ["AudioBasePlugin", "AudioPlugin"]

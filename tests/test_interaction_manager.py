@@ -7,7 +7,7 @@ import arcade
 
 # Mocking parts of pedre that might not be easily importable without full setup
 # We assume pedre package is available in python path
-from pedre.plugins.interaction.plugin import InteractionPlugin
+from pedre.plugins.interaction import InteractionPlugin
 
 
 class TestInteractionPlugin(unittest.TestCase):

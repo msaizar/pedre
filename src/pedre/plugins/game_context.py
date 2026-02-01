@@ -39,23 +39,23 @@ if TYPE_CHECKING:
     import arcade
 
     from pedre.events import EventBus
-    from pedre.plugins.audio.base import AudioBasePlugin
+    from pedre.plugins.audio import AudioBasePlugin
     from pedre.plugins.base import BasePlugin
-    from pedre.plugins.cache.base import CacheBasePlugin
-    from pedre.plugins.camera.base import CameraBasePlugin
-    from pedre.plugins.dialog.base import DialogBasePlugin
-    from pedre.plugins.input.base import InputBasePlugin
-    from pedre.plugins.interaction.base import InteractionBasePlugin
-    from pedre.plugins.inventory.base import InventoryBasePlugin
-    from pedre.plugins.npc.base import NPCBasePlugin
-    from pedre.plugins.particle.base import ParticleBasePlugin
-    from pedre.plugins.pathfinding.base import PathfindingBasePlugin
-    from pedre.plugins.physics.base import PhysicsBasePlugin
-    from pedre.plugins.player.base import PlayerBasePlugin
-    from pedre.plugins.save.base import GameSaveData, SaveBasePlugin
-    from pedre.plugins.scene.base import SceneBasePlugin
-    from pedre.plugins.script.base import ScriptBasePlugin
-    from pedre.plugins.waypoint.base import WaypointBasePlugin
+    from pedre.plugins.cache import CacheBasePlugin
+    from pedre.plugins.camera import CameraBasePlugin
+    from pedre.plugins.dialog import DialogBasePlugin
+    from pedre.plugins.input import InputBasePlugin
+    from pedre.plugins.interaction import InteractionBasePlugin
+    from pedre.plugins.inventory import InventoryBasePlugin
+    from pedre.plugins.npc import NPCBasePlugin
+    from pedre.plugins.particle import ParticleBasePlugin
+    from pedre.plugins.pathfinding import PathfindingBasePlugin
+    from pedre.plugins.physics import PhysicsBasePlugin
+    from pedre.plugins.player import PlayerBasePlugin
+    from pedre.plugins.save import GameSaveData, SaveBasePlugin
+    from pedre.plugins.scene import SceneBasePlugin
+    from pedre.plugins.script import ScriptBasePlugin
+    from pedre.plugins.waypoint import WaypointBasePlugin
 
 
 class GameContext:
