@@ -26,7 +26,7 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
     for the first time. It's useful for tutorial sequences or quests that require
     the player to check their items.
 
-    The inventory manager tracks whether it has been accessed via the has_been_accessed
+    The inventory plugin tracks whether it has been accessed via the has_been_accessed
     flag, which this action monitors.
 
     Example usage in a tutorial sequence:
@@ -40,7 +40,7 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
 
     def __init__(self) -> None:
         """Initialize inventory access wait action."""
-        super().__init__(lambda ctx: ctx.inventory_manager.has_been_accessed, "Inventory accessed")
+        super().__init__(lambda ctx: ctx.inventory_plugin.has_been_accessed, "Inventory accessed")
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> WaitForInventoryAccessAction:  # noqa: ARG003
@@ -53,8 +53,8 @@ class AcquireItemAction(Action):
     """Give an item to the player's inventory.
 
     This action adds a specified item to the player's inventory by calling the
-    inventory manager's acquire_item() method. The item must already be defined
-    in the inventory manager - this action only marks it as acquired.
+    inventory plugin's acquire_item() method. The item must already be defined
+    in the inventory plugin - this action only marks it as acquired.
 
     When the item is successfully acquired, an ItemAcquiredEvent is published.
     If acquisition fails (inventory full, unknown item, or already owned), an
@@ -96,7 +96,7 @@ class AcquireItemAction(Action):
 
         Args:
             item_id: Unique identifier of the item to acquire. Must match an item
-                    ID in the inventory manager's registry.
+                    ID in the inventory plugin's registry.
         """
         self.item_id = item_id
         self.started = False
@@ -109,8 +109,8 @@ class AcquireItemAction(Action):
             True if item was successfully acquired, False otherwise (blocks script progression).
         """
         if not self.started:
-            inventory_manager = context.inventory_manager
-            self.success = inventory_manager.acquire_item(self.item_id)
+            inventory_plugin = context.inventory_plugin
+            self.success = inventory_plugin.acquire_item(self.item_id)
             self.started = True
 
             if self.success:
@@ -244,8 +244,8 @@ class AddItemAction(Action):
                 consumable=self.consumable,
             )
 
-            inventory_manager = context.inventory_manager
-            self.success = inventory_manager.add_item(item)
+            inventory_plugin = context.inventory_plugin
+            self.success = inventory_plugin.add_item(item)
             self.started = True
 
             if self.success:
@@ -279,7 +279,7 @@ class AddItemAction(Action):
 class ConsumeItemAction(Action):
     """Consume an item from the player's inventory.
 
-    This action consumes a specified item by calling the inventory manager's consume_item()
+    This action consumes a specified item by calling the inventory plugin's consume_item()
     method. The item must already be acquired and not previously consumed. Once consumed,
     the item will no longer appear in the inventory display.
 
@@ -313,7 +313,7 @@ class ConsumeItemAction(Action):
 
         Args:
             item_id: Unique identifier of the item to consume. Must match an item
-                    ID in the inventory manager's registry.
+                    ID in the inventory plugin's registry.
         """
         self.item_id = item_id
         self.started = False
@@ -321,8 +321,8 @@ class ConsumeItemAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Consume the item if not already started."""
         if not self.started:
-            inventory_manager = context.inventory_manager
-            inventory_manager.consume_item(self.item_id)
+            inventory_plugin = context.inventory_plugin
+            inventory_plugin.consume_item(self.item_id)
             self.started = True
             logger.debug("ConsumeItemAction: Consumed item %s", self.item_id)
 

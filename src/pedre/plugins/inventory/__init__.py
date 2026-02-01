@@ -1,7 +1,7 @@
 """Inventory plugin for managing player's collectible items.
 
 This package provides:
-- InventoryManager: Core inventory management plugin
+- InventoryPlugin: Core inventory management plugin
 - InventoryItem: Data class for inventory items
 
 Actions (registered via INSTALLED_ACTIONS):
@@ -19,9 +19,9 @@ provides methods for item acquisition and querying, and supports
 save/load functionality for persistent state.
 """
 
-from pedre.plugins.inventory.manager import InventoryItem, InventoryManager
+from pedre.plugins.inventory.plugin import InventoryItem, InventoryPlugin
 
 __all__ = [
     "InventoryItem",
-    "InventoryManager",
+    "InventoryPlugin",
 ]

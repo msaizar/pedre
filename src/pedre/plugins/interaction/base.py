@@ -1,4 +1,4 @@
-"""Base class for InteractionManager."""
+"""Base class for InteractionPlugin."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -41,10 +41,10 @@ class InteractiveObject:
     properties: dict
 
 
-class InteractionBaseManager(BasePlugin, ABC):
-    """Base class for InteractionManager."""
+class InteractionBasePlugin(BasePlugin, ABC):
+    """Base class for InteractionPlugin."""
 
-    role = "interaction_manager"
+    role = "interaction_plugin"
 
     @abstractmethod
     def get_interactive_objects(self) -> dict[str, InteractiveObject]:

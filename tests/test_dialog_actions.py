@@ -106,56 +106,56 @@ class TestDialogAction(unittest.TestCase):
         assert action.auto_close is True
 
     def test_execute_calls_show_dialog(self) -> None:
-        """Test that execute calls show_dialog on DialogManager."""
+        """Test that execute calls show_dialog on DialogPlugin."""
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
-        dialog_manager = MagicMock()
-        context.dialog_manager = dialog_manager
+        dialog_plugin = MagicMock()
+        context.dialog_plugin = dialog_plugin
 
         result = action.execute(context)
 
         assert result is True
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=False)
+        dialog_plugin.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=False)
         assert action.started is True
 
     def test_execute_passes_instant_flag(self) -> None:
-        """Test that execute passes instant flag to DialogManager."""
+        """Test that execute passes instant flag to DialogPlugin."""
         action = DialogAction("TestNPC", ["Hello!"], instant=True)
         context = MagicMock()
-        dialog_manager = MagicMock()
-        context.dialog_manager = dialog_manager
+        dialog_plugin = MagicMock()
+        context.dialog_plugin = dialog_plugin
 
         action.execute(context)
 
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=False)
+        dialog_plugin.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=False)
 
     def test_execute_passes_auto_close_flag(self) -> None:
-        """Test that execute passes auto_close flag to DialogManager."""
+        """Test that execute passes auto_close flag to DialogPlugin."""
         action = DialogAction("TestNPC", ["Hello!"], auto_close=True)
         context = MagicMock()
-        dialog_manager = MagicMock()
-        context.dialog_manager = dialog_manager
+        dialog_plugin = MagicMock()
+        context.dialog_plugin = dialog_plugin
 
         action.execute(context)
 
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=True)
+        dialog_plugin.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=False, auto_close=True)
 
     def test_execute_passes_both_flags(self) -> None:
-        """Test that execute passes both flags to DialogManager."""
+        """Test that execute passes both flags to DialogPlugin."""
         action = DialogAction("TestNPC", ["Hello!"], instant=True, auto_close=True)
         context = MagicMock()
-        dialog_manager = MagicMock()
-        context.dialog_manager = dialog_manager
+        dialog_plugin = MagicMock()
+        context.dialog_plugin = dialog_plugin
 
         action.execute(context)
 
-        dialog_manager.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=True)
+        dialog_plugin.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=True)
 
-    def test_execute_without_dialog_manager(self) -> None:
-        """Test execute handles missing dialog manager gracefully."""
+    def test_execute_without_dialog_plugin(self) -> None:
+        """Test execute handles missing dialog plugin gracefully."""
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
-        context.dialog_manager = None
+        context.dialog_plugin = None
 
         result = action.execute(context)
 
@@ -166,20 +166,20 @@ class TestDialogAction(unittest.TestCase):
         """Test that dialog is only shown once even if execute called multiple times."""
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
-        dialog_manager = MagicMock()
-        context.dialog_manager = dialog_manager
+        dialog_plugin = MagicMock()
+        context.dialog_plugin = dialog_plugin
 
         action.execute(context)
         action.execute(context)
 
-        dialog_manager.show_dialog.assert_called_once()
+        dialog_plugin.show_dialog.assert_called_once()
 
     def test_reset(self) -> None:
         """Test reset clears started flag."""
         action = DialogAction("TestNPC", ["Hello!"])
         context = MagicMock()
-        dialog_manager = MagicMock()
-        context.dialog_manager = dialog_manager
+        dialog_plugin = MagicMock()
+        context.dialog_plugin = dialog_plugin
 
         action.execute(context)
         assert action.started is True

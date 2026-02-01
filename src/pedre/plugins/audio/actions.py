@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 class PlaySFXAction(Action):
     """Play a sound effect.
 
-    This action plays a one-time sound effect through the audio manager. Sound effects
+    This action plays a one-time sound effect through the audio plugin. Sound effects
     are short audio clips that don't loop, such as footsteps, item pickups, or interaction
     sounds.
 
-    The sfx_file should be the filename without the path - the audio manager handles
+    The sfx_file should be the filename without the path - the audio plugin handles
     locating the file in the appropriate sound effects directory.
 
     Example usage:
@@ -44,8 +44,8 @@ class PlaySFXAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Play the sound effect."""
         if not self.executed:
-            audio_manager = context.audio_manager
-            audio_manager.play_sfx(self.sfx_file)
+            audio_plugin = context.audio_plugin
+            audio_plugin.play_sfx(self.sfx_file)
             self.executed = True
             logger.debug("PlaySFXAction: Playing %s", self.sfx_file)
 
@@ -70,7 +70,7 @@ class PlayMusicAction(Action):
     optionally override the default volume level.
 
     If music is already playing, it will be stopped and the new track will start.
-    The music_file should be the filename without the path - the audio manager handles
+    The music_file should be the filename without the path - the audio plugin handles
     locating the file in the appropriate music directory.
 
     Example usage:
@@ -105,8 +105,8 @@ class PlayMusicAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Play the background music."""
         if not self.executed:
-            audio_manager = context.audio_manager
-            audio_manager.play_music(self.music_file, loop=self.loop, volume=self.volume)
+            audio_plugin = context.audio_plugin
+            audio_plugin.play_music(self.music_file, loop=self.loop, volume=self.volume)
             self.executed = True
             logger.debug("PlayMusicAction: Playing %s (loop=%s)", self.music_file, self.loop)
 

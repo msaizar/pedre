@@ -1,14 +1,14 @@
-"""Base class for PhysicsManager."""
+"""Base class for PhysicsPlugin."""
 
 from abc import ABC, abstractmethod
 
 from pedre.plugins.base import BasePlugin
 
 
-class PhysicsBaseManager(BasePlugin, ABC):
-    """Base class for PhysicsManager."""
+class PhysicsBasePlugin(BasePlugin, ABC):
+    """Base class for PhysicsPlugin."""
 
-    role = "physics_manager"
+    role = "physics_plugin"
 
     @abstractmethod
     def invalidate(self) -> None:

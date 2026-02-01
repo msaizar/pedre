@@ -1,4 +1,4 @@
-"""Base class for SceneManager."""
+"""Base class for ScenePlugin."""
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto
@@ -19,10 +19,10 @@ class TransitionState(Enum):
     FADING_IN = auto()  # Fading in new scene
 
 
-class SceneBaseManager(BasePlugin, ABC):
-    """Base class for SceneManager."""
+class SceneBasePlugin(BasePlugin, ABC):
+    """Base class for ScenePlugin."""
 
-    role = "scene_manager"
+    role = "scene_plugin"
 
     @abstractmethod
     def get_current_scene(self) -> str:

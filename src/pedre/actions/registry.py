@@ -63,7 +63,7 @@ class ActionRegistry:
 
     The ActionRegistry maintains a mapping of action type names to their classes
     and parser functions. Actions register themselves using the @ActionRegistry.register
-    decorator, which allows the ScriptManager to parse JSON action definitions
+    decorator, which allows the ScriptPlugin to parse JSON action definitions
     into Action instances without hardcoding every action type.
 
     This enables users to create custom actions that integrate seamlessly with
@@ -83,7 +83,7 @@ class ActionRegistry:
                     return cls(color=data.get("color", "white"))
                 ...
 
-            # ScriptManager uses the registry to parse:
+            # ScriptPlugin uses the registry to parse:
             action = ActionRegistry.parse({"type": "flash_screen", "color": "red"})
     """
 
@@ -115,7 +115,7 @@ class ActionRegistry:
                         return cls(sfx_file=data["file"])
 
                     def execute(self, context):
-                        context.audio_manager.play_sfx(self.sfx_file)
+                        context.audio_plugin.play_sfx(self.sfx_file)
                         return True
 
                     def reset(self):

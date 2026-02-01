@@ -118,7 +118,7 @@ class EmitParticlesAction(Action):
             emit_y: float | None = None
 
             if self.player:
-                player_sprite = context.player_manager.get_player_sprite()
+                player_sprite = context.player_plugin.get_player_sprite()
                 if player_sprite:
                     emit_x = player_sprite.center_x
                     emit_y = player_sprite.center_y
@@ -127,8 +127,8 @@ class EmitParticlesAction(Action):
                     return True
 
             elif self.npc_name:
-                npc_manager = context.npc_manager
-                npc_state = npc_manager.get_npcs().get(self.npc_name)
+                npc_plugin = context.npc_plugin
+                npc_state = npc_plugin.get_npcs().get(self.npc_name)
                 if npc_state:
                     emit_x = npc_state.sprite.center_x
                     emit_y = npc_state.sprite.center_y
@@ -137,10 +137,10 @@ class EmitParticlesAction(Action):
                     return True
 
             elif self.interactive_object:
-                interaction_manager = context.interaction_manager
+                interaction_plugin = context.interaction_plugin
                 # Lowercase for case-insensitive matching
                 obj_name = self.interactive_object.lower()
-                interactive_obj = interaction_manager.get_interactive_objects().get(obj_name)
+                interactive_obj = interaction_plugin.get_interactive_objects().get(obj_name)
                 if interactive_obj:
                     emit_x = interactive_obj.sprite.center_x
                     emit_y = interactive_obj.sprite.center_y
@@ -150,27 +150,27 @@ class EmitParticlesAction(Action):
 
             # Emit particles
             if emit_x is not None and emit_y is not None:
-                particle_manager = context.particle_manager
+                particle_plugin = context.particle_plugin
                 if self.particle_type == "hearts":
                     if self.color:
-                        particle_manager.emit_hearts(emit_x, emit_y, color=self.color)
+                        particle_plugin.emit_hearts(emit_x, emit_y, color=self.color)
                     else:
-                        particle_manager.emit_hearts(emit_x, emit_y)
+                        particle_plugin.emit_hearts(emit_x, emit_y)
                 elif self.particle_type == "sparkles":
                     if self.color:
-                        particle_manager.emit_sparkles(emit_x, emit_y, color=self.color)
+                        particle_plugin.emit_sparkles(emit_x, emit_y, color=self.color)
                     else:
-                        particle_manager.emit_sparkles(emit_x, emit_y)
+                        particle_plugin.emit_sparkles(emit_x, emit_y)
                 elif self.particle_type == "trail":
                     if self.color:
-                        particle_manager.emit_trail(emit_x, emit_y, color=self.color)
+                        particle_plugin.emit_trail(emit_x, emit_y, color=self.color)
                     else:
-                        particle_manager.emit_trail(emit_x, emit_y)
+                        particle_plugin.emit_trail(emit_x, emit_y)
                 elif self.particle_type == "burst":
                     if self.color:
-                        particle_manager.emit_burst(emit_x, emit_y, color=self.color)
+                        particle_plugin.emit_burst(emit_x, emit_y, color=self.color)
                     else:
-                        particle_manager.emit_burst(emit_x, emit_y)
+                        particle_plugin.emit_burst(emit_x, emit_y)
 
                 self.executed = True
                 logger.debug("EmitParticlesAction: Emitted %s at (%s, %s)", self.particle_type, emit_x, emit_y)

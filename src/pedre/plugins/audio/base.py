@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class AudioBasePlugin(BasePlugin, ABC):
     """Base class for AudioPlugin."""
 
-    role = "audio_manager"
+    role = "audio_plugin"
 
     @abstractmethod
     def get_music_cache(self) -> dict[str, arcade.Sound]:

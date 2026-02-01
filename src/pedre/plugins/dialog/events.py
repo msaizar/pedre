@@ -12,7 +12,7 @@ from pedre.events.registry import EventRegistry
 class DialogClosedEvent(Event):
     """Fired when a dialog is closed.
 
-    This event is published by the dialog manager when the player dismisses a dialog
+    This event is published by the dialog plugin when the player dismisses a dialog
     window. It's commonly used to trigger scripts that should run after a conversation,
     such as advancing the story or showing follow-up actions.
 
@@ -50,7 +50,7 @@ class DialogClosedEvent(Event):
 class DialogOpenedEvent(Event):
     """Fired when a dialog is opened.
 
-    This event is published by the dialog manager when a dialog window is shown to
+    This event is published by the dialog plugin when a dialog window is shown to
     the player. It's commonly used to trigger scripts that should run when a conversation
     begins, such as playing sound effects, pausing music, or coordinating other plugins.
 

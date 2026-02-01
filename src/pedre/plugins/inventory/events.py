@@ -44,7 +44,7 @@ class InventoryClosedEvent(Event):
 class ItemAcquiredEvent(Event):
     """Fired when player acquires an inventory item.
 
-    This event is published by the inventory manager when an item is added to the
+    This event is published by the inventory plugin when an item is added to the
     player's inventory for the first time. It can be used to trigger congratulatory
     messages, unlock new areas, or advance quest chains.
 
@@ -80,7 +80,7 @@ class ItemAcquiredEvent(Event):
 class ItemAcquisitionFailedEvent(Event):
     """Fired when an attempt to acquire an item fails.
 
-    This event is published by the inventory manager when an item cannot be acquired,
+    This event is published by the inventory plugin when an item cannot be acquired,
     which can happen for several reasons:
     - Inventory is at maximum capacity
     - Item doesn't exist in the registry
@@ -115,7 +115,7 @@ class ItemAcquisitionFailedEvent(Event):
 class ItemConsumedEvent(Event):
     """Fired when player consumes an inventory item.
 
-    This event is published by the inventory manager when an item is consumed
+    This event is published by the inventory plugin when an item is consumed
     by the player, typically through the inventory overlay UI. This allows scripts
     to react to item consumption, such as restoring health for a potion or
     triggering special effects.

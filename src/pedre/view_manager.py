@@ -83,7 +83,7 @@ class ViewManager:
     performance by avoiding redundant initialization and preserves view state
     across transitions (useful for game view state when showing inventory).
 
-    The inventory view is special - it requires the game view's inventory_manager,
+    The inventory view is special - it requires the game view's inventory_plugin,
     so it's only created after the game view exists.
 
     Attributes:
@@ -336,12 +336,12 @@ class ViewManager:
             return
 
         # Full load: no game view exists, load from auto-save
-        save_manager = self.game_context.save_manager
-        if not save_manager:
+        save_plugin = self.game_context.save_plugin
+        if not save_plugin:
             logger.error("Save plugin not available")
             return
 
-        save_data = save_manager.load_auto_save()
+        save_data = save_plugin.load_auto_save()
 
         if not save_data:
             logger.warning("Cannot continue: no game view or auto-save found")
@@ -369,7 +369,7 @@ class ViewManager:
         2. Create new game view with saved map file
         3. Show the new game view (triggers setup)
         4. Restore player position
-        5. Restore all manager states (NPCs, inventory, audio, interacted objects)
+        5. Restore all plugin states (NPCs, inventory, audio, interacted objects)
 
         Args:
             save_data: GameSaveData instance containing all saved game state.
@@ -379,25 +379,25 @@ class ViewManager:
             - Creates new game view with saved map
             - Shows game view via window.show_view()
             - Restores player sprite position
-            - Restores all manager states via save_manager.restore_all_state()
+            - Restores all plugin states via save_plugin.restore_all_state()
         """
         # Clean up old game view if it exists
         if self._game_view is not None:
             self._game_view.cleanup()
             self._game_view = None
 
-        # Restore all manager states using the centralized method
+        # Restore all plugin states using the centralized method
         context = self.game_context
         if not context:
             logger.error("ViewManager: No GameContext after showing GameView")
             return
 
-        if not context.save_manager:
+        if not context.save_plugin:
             logger.error("ViewManager: Save plugin not found in context")
             return
 
         # Restore all state from save data
-        context.save_manager.restore_game_data(save_data)
+        context.save_plugin.restore_game_data(save_data)
 
         self._game_view = GameView(self)
 

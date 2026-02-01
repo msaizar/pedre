@@ -1,4 +1,4 @@
-"""Base class for InventoryManager."""
+"""Base class for InventoryPlugin."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -15,7 +15,7 @@ class InventoryItem:
     state (whether the player has acquired it).
 
     The dataclass structure makes items easy to define in code or load from data files.
-    Items are typically created during game initialization and added to the InventoryManager,
+    Items are typically created during game initialization and added to the InventoryPlugin,
     where they persist throughout the game session.
 
     The 'acquired' flag determines whether the player currently possesses the item. Items
@@ -87,10 +87,10 @@ class InventoryItem:
     consumable: bool = False  # Whether the item can be consumed from the inventory overlay
 
 
-class InventoryBaseManager(BasePlugin, ABC):
-    """Base class for InventoryManager."""
+class InventoryBasePlugin(BasePlugin, ABC):
+    """Base class for InventoryPlugin."""
 
-    role = "inventory_manager"
+    role = "inventory_plugin"
 
     @abstractmethod
     def has_been_accessed(self) -> bool:

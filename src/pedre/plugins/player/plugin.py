@@ -1,6 +1,6 @@
 """Player management plugin for handling player controls and state.
 
-This module provides the PlayerManager class, which handles player spawning,
+This module provides the PlayerPlugin class, which handles player spawning,
 movement processing, and animation updates. It decouples the player logic
 from the main GameView.
 """
@@ -14,7 +14,7 @@ import arcade
 
 from pedre.conf import settings
 from pedre.constants import asset_path
-from pedre.plugins.player.base import PlayerBaseManager
+from pedre.plugins.player.base import PlayerBasePlugin
 from pedre.plugins.player.sprites import AnimatedPlayer
 from pedre.plugins.registry import PluginRegistry
 from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
@@ -28,12 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class PlayerManager(PlayerBaseManager):
+class PlayerPlugin(PlayerBasePlugin):
     """Manages player spawning, movement, and animation.
 
     Responsibilities:
     - Spawn player sprite based on map data (Tiled 'Player' layer)
-    - Handle player movement based on InputManager state
+    - Handle player movement based on InputPlugin state
     - Update player animation state
     - Update GameContext with player sprite reference
     """
@@ -42,7 +42,7 @@ class PlayerManager(PlayerBaseManager):
     dependencies: ClassVar[list[str]] = ["input", "waypoint"]
 
     def __init__(self) -> None:
-        """Initialize the player manager."""
+        """Initialize the player plugin."""
         self.player_sprite: AnimatedPlayer | None = None
         self.player_list: arcade.SpriteList | None = None
 
@@ -75,16 +75,16 @@ class PlayerManager(PlayerBaseManager):
 
         # Check for portal spawn override (defaults to True)
         spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
-        next_spawn_waypoint = self.context.scene_manager.get_next_spawn_waypoint()
+        next_spawn_waypoint = self.context.scene_plugin.get_next_spawn_waypoint()
         logger.debug(
-            "PlayerManager: spawn_at_portal=%s, next_spawn_waypoint=%s",
+            "PlayerPlugin: spawn_at_portal=%s, next_spawn_waypoint=%s",
             spawn_at_portal,
             next_spawn_waypoint,
         )
         if spawn_at_portal and next_spawn_waypoint:
-            waypoints = self.context.waypoint_manager.get_waypoints()
+            waypoints = self.context.waypoint_plugin.get_waypoints()
             logger.debug(
-                "PlayerManager: Available waypoints: %s",
+                "PlayerPlugin: Available waypoints: %s",
                 list(waypoints.keys()) if waypoints else [],
             )
             if waypoints and next_spawn_waypoint in waypoints:
@@ -92,7 +92,7 @@ class PlayerManager(PlayerBaseManager):
                 spawn_x = tile_x * settings.TILE_SIZE + settings.TILE_SIZE / 2
                 spawn_y = tile_y * settings.TILE_SIZE + settings.TILE_SIZE / 2
                 logger.debug(
-                    "PlayerManager: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
+                    "PlayerPlugin: Spawning at waypoint '%s': tile (%d, %d) -> pixel (%.1f, %.1f), tile_size=%d",
                     next_spawn_waypoint,
                     tile_x,
                     tile_y,
@@ -101,10 +101,10 @@ class PlayerManager(PlayerBaseManager):
                     settings.TILE_SIZE,
                 )
                 # Clear the spawn waypoint
-                self.context.scene_manager.clear_next_spawn_waypoint()
+                self.context.scene_plugin.clear_next_spawn_waypoint()
             else:
                 logger.warning(
-                    "PlayerManager: Waypoint '%s' not found in available waypoints",
+                    "PlayerPlugin: Waypoint '%s' not found in available waypoints",
                     next_spawn_waypoint,
                 )
 
@@ -173,18 +173,18 @@ class PlayerManager(PlayerBaseManager):
             return
 
         # Check if dialog is showing (blocking movement)
-        dialog_manager = self.context.dialog_manager
-        dialog_showing = dialog_manager.is_showing() if dialog_manager else False
+        dialog_plugin = self.context.dialog_plugin
+        dialog_showing = dialog_plugin.is_showing() if dialog_plugin else False
 
-        # Get input manager
-        input_manager = self.context.input_manager
+        # Get input plugin
+        input_plugin = self.context.input_plugin
 
         # Determine movement
         dx, dy = 0.0, 0.0
         moving = False
 
-        if input_manager and not dialog_showing:
-            dx, dy = input_manager.get_movement_vector(delta_time)
+        if input_plugin and not dialog_showing:
+            dx, dy = input_plugin.get_movement_vector(delta_time)
             moving = dx != 0 or dy != 0
 
         # Apply movement
@@ -230,7 +230,7 @@ class PlayerManager(PlayerBaseManager):
             )
 
     def reset(self) -> None:
-        """Reset player manager state for new game."""
+        """Reset player plugin state for new game."""
         self.player_sprite = None
         self.player_list = None
 

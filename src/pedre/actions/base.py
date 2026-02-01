@@ -22,7 +22,7 @@ class Action(ABC):
         """Execute the action.
 
         Args:
-            context: Game context containing all managers and state.
+            context: Game context containing all plugins and state.
 
         Returns:
             True if action is complete, False if still executing.
@@ -54,7 +54,7 @@ class WaitForConditionAction(Action):
         class WaitForCustomAction(WaitForConditionAction):
             def __init__(self):
                 super().__init__(
-                    lambda ctx: ctx.custom_manager.is_ready,
+                    lambda ctx: ctx.custom_plugin.is_ready,
                     "Custom event ready"
                 )
     """

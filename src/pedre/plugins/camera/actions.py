@@ -23,7 +23,7 @@ class FollowPlayerAction(Action):
     another camera action changes the follow behavior or the scene changes.
 
     The action completes immediately after setting the follow mode. The actual
-    camera movement happens in CameraManager.update() which is called every frame.
+    camera movement happens in CameraPlugin.update() which is called every frame.
 
     By default, the camera smoothly interpolates to the player's position using
     lerp (creates a slight lag effect). Set smooth=false for instant tracking.
@@ -53,15 +53,15 @@ class FollowPlayerAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Set camera to follow player."""
         if not self.executed:
-            camera_manager = context.camera_manager
-            if camera_manager:
-                camera_manager.set_follow_player(smooth=self.smooth)
+            camera_plugin = context.camera_plugin
+            if camera_plugin:
+                camera_plugin.set_follow_player(smooth=self.smooth)
                 logger.debug(
                     "FollowPlayerAction: Camera now following player (smooth=%s)",
                     self.smooth,
                 )
             else:
-                logger.warning("FollowPlayerAction: No camera manager available")
+                logger.warning("FollowPlayerAction: No camera plugin available")
             self.executed = True
 
         return True  # Complete immediately
@@ -88,7 +88,7 @@ class FollowNPCAction(Action):
     the camera on an NPC rather than the player.
 
     The action completes immediately after setting the follow mode. The actual
-    camera movement happens in CameraManager.update() which is called every frame.
+    camera movement happens in CameraPlugin.update() which is called every frame.
 
     By default, the camera smoothly interpolates to the NPC's position using
     lerp. Set smooth=false for instant tracking.
@@ -135,23 +135,23 @@ class FollowNPCAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Set camera to follow NPC."""
         if not self.executed:
-            camera_manager = context.camera_manager
-            if camera_manager:
+            camera_plugin = context.camera_plugin
+            if camera_plugin:
                 # Validate NPC exists
-                npc_manager = context.npc_manager
-                if npc_manager:
-                    npc_state = npc_manager.get_npc_by_name(self.npc_name)
+                npc_plugin = context.npc_plugin
+                if npc_plugin:
+                    npc_state = npc_plugin.get_npc_by_name(self.npc_name)
                     if not npc_state:
                         logger.warning("FollowNPCAction: NPC '%s' not found", self.npc_name)
 
-                camera_manager.set_follow_npc(self.npc_name, smooth=self.smooth)
+                camera_plugin.set_follow_npc(self.npc_name, smooth=self.smooth)
                 logger.debug(
                     "FollowNPCAction: Camera now following '%s' (smooth=%s)",
                     self.npc_name,
                     self.smooth,
                 )
             else:
-                logger.warning("FollowNPCAction: No camera manager available")
+                logger.warning("FollowNPCAction: No camera plugin available")
             self.executed = True
 
         return True  # Complete immediately
@@ -202,12 +202,12 @@ class StopCameraFollowAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Stop camera following."""
         if not self.executed:
-            camera_manager = context.camera_manager
-            if camera_manager:
-                camera_manager.stop_follow()
+            camera_plugin = context.camera_plugin
+            if camera_plugin:
+                camera_plugin.stop_follow()
                 logger.debug("StopCameraFollowAction: Camera following stopped")
             else:
-                logger.warning("StopCameraFollowAction: No camera manager available")
+                logger.warning("StopCameraFollowAction: No camera plugin available")
             self.executed = True
 
         return True

@@ -1,5 +1,5 @@
 """Waypoint management plugin."""
 
-from pedre.plugins.waypoint.manager import WaypointManager
+from pedre.plugins.waypoint.plugin import WaypointPlugin
 
-__all__ = ["WaypointManager"]
+__all__ = ["WaypointPlugin"]

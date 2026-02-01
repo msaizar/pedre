@@ -1,4 +1,4 @@
-"""Debug manager for rendering debug overlays."""
+"""Debug plugin for rendering debug overlays."""
 
 import logging
 from typing import TYPE_CHECKING, ClassVar
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class DebugManager(BasePlugin):
+class DebugPlugin(BasePlugin):
     """Plugin for rendering debug information.
 
     Handles the debug overlay showing player and NPC positions in tile coordinates.
@@ -27,7 +27,7 @@ class DebugManager(BasePlugin):
     dependencies: ClassVar[list[str]] = ["npc"]
 
     def __init__(self) -> None:
-        """Initialize the debug manager with default state."""
+        """Initialize the debug plugin with default state."""
         self.debug_mode = False
         self.debug_text_objects: list[arcade.Text] = []
 
@@ -70,7 +70,7 @@ class DebugManager(BasePlugin):
         tile_size = settings.TILE_SIZE
 
         # Collect player position (from context)
-        player_sprite = self.context.player_manager.get_player_sprite()
+        player_sprite = self.context.player_plugin.get_player_sprite()
         if player_sprite:
             player_tile_x = int(player_sprite.center_x / tile_size)
             player_tile_y = int(player_sprite.center_y / tile_size)
@@ -79,9 +79,9 @@ class DebugManager(BasePlugin):
             player_y = int(player_sprite.center_y)
             debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
         # Collect NPC positions
-        npc_manager = self.context.npc_manager
-        if npc_manager:
-            for npc_name, npc_state in npc_manager.get_npcs().items():
+        npc_plugin = self.context.npc_plugin
+        if npc_plugin:
+            for npc_name, npc_state in npc_plugin.get_npcs().items():
                 if npc_state.sprite and npc_state.sprite.visible:
                     npc_tile_x = int(npc_state.sprite.center_x / tile_size)
                     npc_tile_y = int(npc_state.sprite.center_y / tile_size)

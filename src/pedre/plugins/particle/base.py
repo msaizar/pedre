@@ -1,4 +1,4 @@
-"""Base class for ParticleManager."""
+"""Base class for ParticlePlugin."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -42,10 +42,10 @@ class Particle:
     fade: bool = True
 
 
-class ParticleBaseManager(BasePlugin, ABC):
+class ParticleBasePlugin(BasePlugin, ABC):
     """Manages particle effects and visual polish."""
 
-    role = "particle_manager"
+    role = "particle_plugin"
 
     @abstractmethod
     def emit_hearts(

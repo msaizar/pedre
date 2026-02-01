@@ -1,5 +1,5 @@
 """Debug plugin for displaying development information overlays."""
 
-from pedre.plugins.debug.manager import DebugManager
+from pedre.plugins.debug.plugin import DebugPlugin
 
-__all__ = ["DebugManager"]
+__all__ = ["DebugPlugin"]

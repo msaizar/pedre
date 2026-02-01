@@ -47,7 +47,7 @@ Dialog Configuration:
     in the dialog box instead of the NPC's key name (e.g., "Merchant" instead of "merchant").
 
 Example usage from code:
-    dialog_manager.show_dialog("Martin", [
+    dialog_plugin.show_dialog("Martin", [
         "Welcome to the game!",
         "Press E to interact with NPCs.",
         "Have fun exploring!"
@@ -63,7 +63,7 @@ import arcade
 
 from pedre.conf import settings
 from pedre.helpers import matches_key
-from pedre.plugins.dialog.base import DialogBaseManager, DialogPage
+from pedre.plugins.dialog.base import DialogBasePlugin, DialogPage
 from pedre.plugins.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.plugins.registry import PluginRegistry
 
@@ -74,17 +74,17 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class DialogManager(DialogBaseManager):
+class DialogPlugin(DialogBasePlugin):
     """Manages dialog display and pagination.
 
-    The DialogManager is the core plugin for displaying conversations in the game.
+    The DialogPlugin is the core plugin for displaying conversations in the game.
     It handles:
     - Converting multi-page text into individual dialog pages
     - Tracking the current page being displayed
     - Advancing through pages or closing the dialog
     - Rendering the dialog UI with a semi-transparent overlay and styled dialog box
 
-    The manager maintains state about whether a dialog is currently showing and
+    The plugin maintains state about whether a dialog is currently showing and
     which page the player is viewing. Players advance through pages by pressing
     SPACE, and the dialog automatically closes after the last page.
 
@@ -121,9 +121,9 @@ class DialogManager(DialogBaseManager):
     dependencies: ClassVar[list[str]] = ["npc", "interaction"]
 
     def __init__(self) -> None:
-        """Initialize the dialog manager.
+        """Initialize the dialog plugin.
 
-        Creates an empty dialog manager ready to display conversations.
+        Creates an empty dialog plugin ready to display conversations.
         Initially no dialog is showing.
         """
         self.showing = False
@@ -172,7 +172,7 @@ class DialogManager(DialogBaseManager):
             context: Game context for accessing the event bus.
         """
         self.context = context
-        logger.debug("DialogManager setup complete")
+        logger.debug("DialogPlugin setup complete")
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle input for dialog advancement.
@@ -187,11 +187,11 @@ class DialogManager(DialogBaseManager):
         if self.showing and matches_key(symbol, settings.DIALOG_KEY_ADVANCE):
             closed = self.advance_page()
             if closed and self.current_npc_name is not None:
-                # Get actual current level from NPC manager if available
+                # Get actual current level from NPC plugin if available
                 current_level = self.current_dialog_level or 0
-                npc_manager = self.context.npc_manager
-                if npc_manager:
-                    npc_state = npc_manager.get_npcs().get(self.current_npc_name)
+                npc_plugin = self.context.npc_plugin
+                if npc_plugin:
+                    npc_state = npc_plugin.get_npcs().get(self.current_npc_name)
                     if npc_state:
                         current_level = npc_state.dialog_level
 
@@ -212,7 +212,7 @@ class DialogManager(DialogBaseManager):
         self.dialog_text = None
         self.page_indicator_text = None
         self.instruction_text = None
-        logger.debug("DialogManager cleanup complete")
+        logger.debug("DialogPlugin cleanup complete")
 
     def show_dialog(
         self,
@@ -234,7 +234,7 @@ class DialogManager(DialogBaseManager):
         advance through pages sequentially by pressing SPACE.
 
         This method is called by:
-        - NPCManager when player interacts with an NPC (presses E nearby)
+        - NPCPlugin when player interacts with an NPC (presses E nearby)
         - DialogAction when scripted sequences trigger dialog
         - Game plugins for tutorials or story moments
 
@@ -255,7 +255,7 @@ class DialogManager(DialogBaseManager):
                 differs from the NPC's key name in the dialog plugin.
 
         Example from code:
-            dialog_manager.show_dialog("Martin", [
+            dialog_plugin.show_dialog("Martin", [
                 "Hello! I'm Martin, the village elder.",
                 "Welcome to our humble town.",
                 "Feel free to explore and talk to the other villagers!"
@@ -273,7 +273,7 @@ class DialogManager(DialogBaseManager):
                 }
             }
 
-            When player interacts with martin at dialog level 0, NPCManager automatically calls:
+            When player interacts with martin at dialog level 0, NPCPlugin automatically calls:
 
             show_dialog("Martin", ["Buenos días...", "Te hice..."], dialog_level=0, npc_key="martin")
         """
@@ -314,7 +314,7 @@ class DialogManager(DialogBaseManager):
         - By the game view when handling dialog closed events
         - When a dialog needs to be forcefully dismissed
 
-        After closing, the dialog manager is ready to show a new dialog.
+        After closing, the dialog plugin is ready to show a new dialog.
         """
         self.showing = False
         self.pages = []
@@ -449,9 +449,9 @@ class DialogManager(DialogBaseManager):
                 if closed and self.current_npc_name:
                     # Publish DialogClosedEvent (similar to on_key_press)
                     current_level = self.current_dialog_level or 0
-                    npc_manager = self.context.npc_manager
-                    if npc_manager:
-                        npc_state = npc_manager.get_npcs().get(self.current_npc_name)
+                    npc_plugin = self.context.npc_plugin
+                    if npc_plugin:
+                        npc_state = npc_plugin.get_npcs().get(self.current_npc_name)
                         if npc_state:
                             current_level = npc_state.dialog_level
 

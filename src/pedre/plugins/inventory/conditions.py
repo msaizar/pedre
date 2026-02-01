@@ -11,14 +11,14 @@ if TYPE_CHECKING:
 @ConditionRegistry.register("inventory_accessed")
 def check_inventory_accessed(_condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if inventory has been accessed."""
-    inventory = context.inventory_manager
+    inventory = context.inventory_plugin
     return inventory.has_been_accessed()
 
 
 @ConditionRegistry.register("item_acquired")
 def check_item_acquired(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if we've acquired an item."""
-    inventory = context.inventory_manager
+    inventory = context.inventory_plugin
     item_id = condition_data.get("item_id")
     if not item_id:
         return False

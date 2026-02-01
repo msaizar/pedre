@@ -1,6 +1,6 @@
 """Inventory plugin for managing collectible items.
 
-This module provides the InventoryManager class, which manages the player's collection
+This module provides the InventoryPlugin class, which manages the player's collection
 of items throughout the game. Items can represent various collectibles like photos,
 notes, keys, or quest items that the player discovers and acquires during gameplay.
 
@@ -18,7 +18,7 @@ Items are organized into categories to allow for different types of collectibles
 - "key": Items that unlock doors or areas
 - "general": Miscellaneous items
 
-The manager maintains a master list of all possible items, each with an 'acquired'
+The plugin maintains a master list of all possible items, each with an 'acquired'
 flag that tracks whether the player has collected it. This approach supports both
 showing acquired items to the player and tracking completion progress.
 
@@ -60,7 +60,7 @@ import arcade
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.helpers import matches_key
-from pedre.plugins.inventory.base import InventoryBaseManager, InventoryItem
+from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
 from pedre.plugins.inventory.events import (
     InventoryClosedEvent,
     ItemAcquiredEvent,
@@ -78,26 +78,26 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class InventoryManager(InventoryBaseManager):
+class InventoryPlugin(InventoryBasePlugin):
     """Manages player's inventory and item collection.
 
-    The InventoryManager acts as a central registry for all collectible items in game.
+    The InventoryPlugin acts as a central registry for all collectible items in game.
     It maintains a master list of possible items, tracks which ones player has acquired,
     and provides methods for querying, filtering, and persisting inventory state.
 
-    This manager supports multiple gameplay patterns:
+    This plugin supports multiple gameplay patterns:
     - **Collectathon**: Track progress toward collecting all items in a category
     - **Key items**: Gate progression behind acquiring specific items
     - **Gallery/album**: Display acquired photos or memories in a collection view
     - **Achievement tracking**: Monitor first-time inventory access for tutorials
 
-    The manager uses a dictionary-based storage where items are indexed by their unique ID
+    The plugin uses a dictionary-based storage where items are indexed by their unique ID
     for O(1) lookups. Items maintain insertion order (Python 3.7+), which is important for
     displaying items in a consistent, meaningful order (e.g., chronological for photos).
 
     The inventory state is designed to be serializable to/from dictionaries, making it
     compatible with JSON-based save plugins. The get_save_state() and restore_save_state() methods handle
-    conversion between manager's internal state and save data format.
+    conversion between plugin's internal state and save data format.
 
     Attributes:
         items: Dictionary mapping item IDs to InventoryItem instances. Maintains insertion
@@ -113,14 +113,14 @@ class InventoryManager(InventoryBaseManager):
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize inventory manager with default items.
+        """Initialize inventory plugin with default items.
 
-        Creates a new InventoryManager with an empty items dictionary and unaccessed status.
+        Creates a new InventoryPlugin with an empty items dictionary and unaccessed status.
         Items will be loaded in setup() method.
 
-        This initialization approach separates the manager's setup (empty state) from
+        This initialization approach separates the plugin's setup (empty state) from
         the game's content (default items), making it easier to modify starting items
-        or load from save data without changing the manager's core initialization.
+        or load from save data without changing the plugin's core initialization.
         """
         # Asset paths are resolved via resource handles - no need to store them
 
@@ -163,13 +163,13 @@ class InventoryManager(InventoryBaseManager):
         # Initialize default items
         self._initialize_default_items()
 
-        logger.debug("InventoryManager setup complete")
+        logger.debug("InventoryPlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up inventory resources when the scene unloads."""
         self.items.clear()
         self.accessed = False
-        logger.debug("InventoryManager cleanup complete")
+        logger.debug("InventoryPlugin cleanup complete")
 
     def reset(self) -> None:
         """Reset inventory state for new game."""
@@ -182,7 +182,7 @@ class InventoryManager(InventoryBaseManager):
         self.all_items = []
         self.icon_textures.clear()
         self._initialize_default_items()
-        logger.debug("InventoryManager reset complete")
+        logger.debug("InventoryPlugin reset complete")
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle key presses for inventory overlay."""
@@ -761,7 +761,7 @@ class InventoryManager(InventoryBaseManager):
 
         Args:
             item_id: The unique identifier of the item to acquire (e.g., "rusty_key",
-                    "photo_01"). Must match an item previously added to the manager.
+                    "photo_01"). Must match an item previously added to the plugin.
 
         Returns:
             True if the item was newly acquired (transitioned from unacquired to acquired),
@@ -823,7 +823,7 @@ class InventoryManager(InventoryBaseManager):
 
         Args:
             item_id: The unique identifier of the item to consume (e.g., "health_potion",
-                    "key_card"). Must match an item previously added to the manager.
+                    "key_card"). Must match an item previously added to the plugin.
 
         Returns:
             True if the item was successfully consumed (was acquired and not already consumed),
@@ -890,7 +890,7 @@ class InventoryManager(InventoryBaseManager):
         """Get all items the player has acquired and not consumed, optionally filtered by category.
 
         Returns a list of all items where acquired=True and consumed=False, maintaining the
-        insertion order from when items were added to the manager. This method is commonly used
+        insertion order from when items were added to the plugin. This method is commonly used
         to display the player's inventory in UI screens.
 
         Consumed items are excluded from the results, so only available (usable) items are returned.

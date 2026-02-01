@@ -1,14 +1,14 @@
-"""Base class for InputManager."""
+"""Base class for InputPlugin."""
 
 from abc import ABC, abstractmethod
 
 from pedre.plugins.base import BasePlugin
 
 
-class InputBaseManager(BasePlugin, ABC):
-    """Base class for InputManager."""
+class InputBasePlugin(BasePlugin, ABC):
+    """Base class for InputPlugin."""
 
-    role = "input_manager"
+    role = "input_plugin"
 
     @abstractmethod
     def get_movement_vector(self, delta_time: float) -> tuple[float, float]:

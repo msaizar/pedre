@@ -7,7 +7,7 @@ complex sequences of actions.
 
 The scripting plugin consists of:
 - Script: Container for action sequences with trigger conditions and metadata
-- ScriptManager: Loads scripts from JSON, registers event triggers, and executes sequences
+- ScriptPlugin: Loads scripts from JSON, registers event triggers, and executes sequences
 - Integration with Actions: Scripts execute Action objects (dialog, movement, effects, etc.)
 - Integration with Events: Scripts can be triggered by game events via EventBus
 
@@ -48,7 +48,7 @@ Workflow:
 Integration with other plugins:
 - EventBus: Subscribes to game events for automatic script triggering
 - ActionSequence: Executes actions from the actions module
-- GameContext: Provides access to all managers for condition evaluation
+- GameContext: Provides access to all plugins for condition evaluation
 """
 
 from __future__ import annotations
@@ -66,7 +66,7 @@ from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
 from pedre.plugins.registry import PluginRegistry
-from pedre.plugins.script.base import Script, ScriptBaseManager, ScriptEvent
+from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptEvent
 from pedre.plugins.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
@@ -77,10 +77,10 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class ScriptManager(ScriptBaseManager):
+class ScriptPlugin(ScriptBasePlugin):
     """Manages loading, triggering, and execution of scripted event sequences.
 
-    The ScriptManager is the central plugin for the game's scripting engine. It loads
+    The ScriptPlugin is the central plugin for the game's scripting engine. It loads
     all scripts globally during setup, registers event triggers with the EventBus,
     evaluates conditions, and executes action sequences frame-by-frame.
 
@@ -93,16 +93,16 @@ class ScriptManager(ScriptBaseManager):
     - Track run_once scripts
     - Handle deferred condition checking to avoid race conditions
 
-    The manager maintains a registry of all loaded scripts (from all scenes) and a list
+    The plugin maintains a registry of all loaded scripts (from all scenes) and a list
     of currently active sequences. Scripts are triggered by events or manual calls, and
     their action sequences execute incrementally across multiple frames. The scene field
     in each script definition controls when it can execute.
 
     Integration points:
     - EventBus: Subscribes to game events for automatic triggering
-    - GameContext: Provides access to all managers for action execution and conditions
+    - GameContext: Provides access to all plugins for action execution and conditions
     - Action classes: Instantiates and executes actions from JSON data
-    - Condition plugin: Used for condition evaluation across all managers
+    - Condition plugin: Used for condition evaluation across all plugins
 
     Attributes:
         scripts: Registry of all loaded scripts (from all scenes), keyed by script name.
@@ -112,12 +112,12 @@ class ScriptManager(ScriptBaseManager):
 
     Example usage:
         # Initialize (loads all scripts globally)
-        script_manager = ScriptManager()
-        script_manager.setup(context)
+        script_plugin = ScriptPlugin()
+        script_plugin.setup(context)
 
         # Game loop
         def update(delta_time):
-            script_manager.update(delta_time)
+            script_plugin.update(delta_time)
 
     """
 
@@ -125,7 +125,7 @@ class ScriptManager(ScriptBaseManager):
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize script manager."""
+        """Initialize script plugin."""
         super().__init__()
         self.scripts: dict[str, Script] = {}
         self.active_sequences: list[tuple[str, ActionSequence]] = []
@@ -265,7 +265,7 @@ class ScriptManager(ScriptBaseManager):
         for i, (script_name, sequence) in enumerate(self.active_sequences):
             if sequence.execute(self.context):
                 completed_sequences.append(i)
-                logger.debug("ScriptManager: Script '%s' completed", script_name)
+                logger.debug("ScriptPlugin: Script '%s' completed", script_name)
                 # Mark script as completed
                 if script_name in self.scripts:
                     self.scripts[script_name].completed = True
@@ -296,14 +296,14 @@ class ScriptManager(ScriptBaseManager):
 
             event_class = EventRegistry.get(event_name)
             if not event_class:
-                logger.warning("ScriptManager: Event '%s' in script trigger is not registered", event_name)
+                logger.warning("ScriptPlugin: Event '%s' in script trigger is not registered", event_name)
                 continue
 
             # Cast to proper type after None check - EventRegistry returns type | None
             event_type = cast("type[Event]", event_class)
             self.context.event_bus.subscribe(event_type, self._on_generic_event)
             self._subscribed_events.add(event_name)
-            logger.debug("ScriptManager: Subscribed to '%s' for script triggers", event_name)
+            logger.debug("ScriptPlugin: Subscribed to '%s' for script triggers", event_name)
 
     def _on_generic_event(self, event: Event) -> None:
         """Generic event handler for any registered event.
@@ -323,7 +323,7 @@ class ScriptManager(ScriptBaseManager):
         script_event = cast("ScriptEvent", event)
         event_data = script_event.get_script_data() if hasattr(event, "get_script_data") else asdict(event)
 
-        logger.debug("ScriptManager: Handling event '%s' with data: %s", event_name, event_data)
+        logger.debug("ScriptPlugin: Handling event '%s' with data: %s", event_name, event_data)
 
         # Trigger scripts matching this event and data
         self._handle_event_trigger(event_name, event_data)
@@ -346,7 +346,7 @@ class ScriptManager(ScriptBaseManager):
 
             self.scripts[script_name] = script
 
-        logger.debug("ScriptManager: Parsed %d scripts", len(self.scripts))
+        logger.debug("ScriptPlugin: Parsed %d scripts", len(self.scripts))
 
     def _check_conditions(self, conditions: list[dict[str, Any]]) -> bool:
         """Check if all conditions are satisfied.
@@ -376,7 +376,7 @@ class ScriptManager(ScriptBaseManager):
 
         check_type = condition.get("check")
         if not check_type:
-            logger.warning("ScriptManager: Condition missing 'check' field")
+            logger.warning("ScriptPlugin: Condition missing 'check' field")
             return False
 
         # Delegate to ConditionRegistry
@@ -408,14 +408,14 @@ class ScriptManager(ScriptBaseManager):
             if action:
                 actions.append(action)
             else:
-                logger.warning("ScriptManager: Failed to parse action: %s", action_data)
+                logger.warning("ScriptPlugin: Failed to parse action: %s", action_data)
 
         if actions:
             sequence = ActionSequence(actions)
             self.active_sequences.append((sequence_name, sequence))
-            logger.info("ScriptManager: Executing '%s' with %d actions", sequence_name, len(actions))
+            logger.info("ScriptPlugin: Executing '%s' with %d actions", sequence_name, len(actions))
         else:
-            logger.warning("ScriptManager: '%s' has no valid actions", sequence_name)
+            logger.warning("ScriptPlugin: '%s' has no valid actions", sequence_name)
 
     def _process_pending_checks(self) -> None:
         """Process scripts that were queued for deferred condition checking."""
@@ -447,7 +447,7 @@ class ScriptManager(ScriptBaseManager):
             # Check if trigger matches this event
             if self._trigger_matches_event(script.trigger, event_type, event_data):
                 # Check scene restriction
-                if script.scene and self.context and script.scene != self.context.scene_manager.get_current_scene():
+                if script.scene and self.context and script.scene != self.context.scene_plugin.get_current_scene():
                     continue
 
                 # Check run_once restriction
@@ -462,13 +462,13 @@ class ScriptManager(ScriptBaseManager):
                 elif script.on_condition_fail:
                     # Conditions failed - execute on_condition_fail actions
                     logger.debug(
-                        "ScriptManager: Script '%s' conditions failed, executing on_condition_fail",
+                        "ScriptPlugin: Script '%s' conditions failed, executing on_condition_fail",
                         script_name,
                     )
                     self._execute_actions(f"{script_name}_fail", script.on_condition_fail)
                 else:
                     logger.debug(
-                        "ScriptManager: Script '%s' conditions failed, no on_condition_fail defined",
+                        "ScriptPlugin: Script '%s' conditions failed, no on_condition_fail defined",
                         script_name,
                     )
 

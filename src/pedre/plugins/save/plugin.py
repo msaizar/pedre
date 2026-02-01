@@ -6,7 +6,7 @@ for human-readable storage and supports multiple save slots plus automatic savin
 
 The save plugin consists of:
 - GameSaveData: Data class representing complete game state snapshot
-- SaveManager: Handles file I/O and save slot management
+- SavePlugin: Handles file I/O and save slot management
 
 Key features:
 - Multiple save slots (typically 1-3) for manual saves
@@ -36,16 +36,16 @@ File structure:
 - JSON format with 2-space indentation for readability
 
 Example usage:
-    # Create save manager
-    save_manager = SaveManager()
+    # Create save plugin
+    save_plugin = SavePlugin()
 
     # Save to slot 1
-    success = save_manager.save_game(slot=1, context=context)
+    success = save_plugin.save_game(slot=1, context=context)
 
     # Load from slot 1
-    save_data = save_manager.load_game(slot=1)
+    save_data = save_plugin.load_game(slot=1)
     if save_data:
-        save_manager.restore_game_data(save_data, context)
+        save_plugin.restore_game_data(save_data, context)
 """
 
 import json
@@ -57,7 +57,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from pedre.conf import settings
 from pedre.helpers import matches_key
 from pedre.plugins.registry import PluginRegistry
-from pedre.plugins.save.base import GameSaveData, SaveBaseManager
+from pedre.plugins.save.base import GameSaveData, SaveBasePlugin
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -66,10 +66,10 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class SaveManager(SaveBaseManager):
+class SavePlugin(SaveBasePlugin):
     """Manages game save and load operations.
 
-    The SaveManager coordinates all save/load functionality, handling file I/O, slot
+    The SavePlugin coordinates all save/load functionality, handling file I/O, slot
     management, and state serialization via SaveLoader.
 
     Attributes:
@@ -81,7 +81,7 @@ class SaveManager(SaveBaseManager):
     name: ClassVar[str] = "save"
 
     def __init__(self) -> None:
-        """Initialize the save manager."""
+        """Initialize the save plugin."""
         self.saves_dir = Path.cwd() / settings.SAVE_FOLDER
         self.saves_dir.mkdir(exist_ok=True)
 
@@ -117,9 +117,9 @@ class SaveManager(SaveBaseManager):
         """Perform a quick save using current context state."""
         success = self.auto_save()
 
-        audio_manager = self.context.audio_manager
+        audio_plugin = self.context.audio_plugin
         if success:
-            audio_manager.play_sfx(settings.SAVE_SFX_FILE)
+            audio_plugin.play_sfx(settings.SAVE_SFX_FILE)
             logger.info("Quick save completed")
         else:
             logger.warning("Quick save failed")
@@ -134,8 +134,8 @@ class SaveManager(SaveBaseManager):
         # Restore state from save providers
         self.restore_game_data(save_data)
 
-        audio_manager = self.context.audio_manager
-        audio_manager.play_sfx(settings.SAVE_SFX_FILE)
+        audio_plugin = self.context.audio_plugin
+        audio_plugin.play_sfx(settings.SAVE_SFX_FILE)
         logger.info("Quick load completed")
 
     def save_game(self, slot: int) -> bool:
@@ -157,7 +157,7 @@ class SaveManager(SaveBaseManager):
         Returns:
             True if save succeeded and file was written, False if any error occurred.
         """
-        scene_manager = self.context.scene_manager
+        scene_plugin = self.context.scene_plugin
 
         try:
             # Gather state from all plugins
@@ -169,11 +169,11 @@ class SaveManager(SaveBaseManager):
                     logger.debug("Gathered save state from plugin: %s", plugin.name)
 
             # Cache the current active scene before saving (in case we never left it)
-            cache_manager = self.context.cache_manager
-            cache_manager.cache_scene(scene_manager.get_current_scene())
+            cache_plugin = self.context.cache_plugin
+            cache_plugin.cache_scene(scene_plugin.get_current_scene())
 
             # Create save data
-            player_sprite = self.context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_plugin.get_player_sprite()
             if player_sprite:
                 save_data = GameSaveData(
                     save_states=save_states,
@@ -251,7 +251,7 @@ class SaveManager(SaveBaseManager):
     def apply_entity_states(self) -> None:
         """Phase 2: Apply entity-specific state after sprites exist.
 
-        Called by SceneManager after load_from_tiled() has created all sprites.
+        Called by ScenePlugin after load_from_tiled() has created all sprites.
         This applies positions, visibility, and other state that requires
         sprites to exist.
         """

@@ -51,10 +51,10 @@ class EventBus:
     without knowing who (if anyone) will handle them, and subscribers can listen for
     events without knowing who publishes them.
 
-    This pattern is essential for the game's script plugin, allowing different managers
+    This pattern is essential for the game's script plugin, allowing different plugins
     and plugins to react to game events without tight coupling. For example, when a
-    dialog closes, the dialog manager publishes a DialogClosedEvent, and the script
-    manager (which has subscribed to that event type) can trigger appropriate scripts.
+    dialog closes, the dialog plugin publishes a DialogClosedEvent, and the script
+    plugin (which has subscribed to that event type) can trigger appropriate scripts.
 
     Thread safety: This implementation is NOT thread-safe. All subscribe, publish, and
     unsubscribe calls should happen on the main game thread.
@@ -180,7 +180,7 @@ class EventBus:
         cleanup to ensure no stale references remain in the event bus.
 
         Args:
-            subscriber: The instance (e.g., manager, plugin) whose handlers should be removed.
+            subscriber: The instance (e.g., plugin, plugin) whose handlers should be removed.
                        Matches handlers by their __self__ attribute if they are bound methods.
         """
         for event_type in self.listeners:

@@ -1,14 +1,14 @@
-"""Base class for CameraManager."""
+"""Base class for CameraPlugin."""
 
 from abc import ABC, abstractmethod
 
 from pedre.plugins.base import BasePlugin
 
 
-class CameraBaseManager(BasePlugin, ABC):
-    """Base class for CameraManager."""
+class CameraBasePlugin(BasePlugin, ABC):
+    """Base class for CameraPlugin."""
 
-    role = "camera_manager"
+    role = "camera_plugin"
 
     @abstractmethod
     def use(self) -> None:

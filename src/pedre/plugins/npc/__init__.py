@@ -1,11 +1,11 @@
-"""NPC plugin with manager, actions, and events.
+"""NPC plugin with plugin, actions, and events.
 
 This module provides the NPC management plugin for the game, handling NPC state,
 movement, dialog, and interactions with support for pathfinding-based movement
 and animation state tracking.
 
 The NPC plugin consists of:
-- NPCManager: Main plugin for managing NPC state and behavior
+- NPCPlugin: Main plugin for managing NPC state and behavior
 - NPCState: Runtime state tracking for individual NPCs
 - NPCDialogConfig: Configuration for NPC dialog at specific levels
 - AnimatedNPC: Animated sprite class for NPCs with special animations
@@ -24,12 +24,12 @@ Conditions (registered via INSTALLED_CONDITIONS):
 - check_npc_interacted: Check if an NPC has been interacted with
 """
 
-from pedre.plugins.npc.base import NPCBaseManager, NPCState
-from pedre.plugins.npc.manager import NPCDialogConfig, NPCManager
+from pedre.plugins.npc.base import NPCBasePlugin, NPCState
+from pedre.plugins.npc.plugin import NPCDialogConfig, NPCPlugin
 
 __all__ = [
-    "NPCBaseManager",
+    "NPCBasePlugin",
     "NPCDialogConfig",
-    "NPCManager",
+    "NPCPlugin",
     "NPCState",
 ]

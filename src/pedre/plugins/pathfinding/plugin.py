@@ -5,7 +5,7 @@ to navigate around obstacles in the game world. It uses the A* algorithm with Ma
 distance heuristic for optimal path calculation on a tile-based grid.
 
 The pathfinding plugin consists of:
-- PathfindingManager: Coordinates path calculation and collision detection
+- PathfindingPlugin: Coordinates path calculation and collision detection
 - A* algorithm implementation with tile-based navigation
 - Automatic retry logic with NPC passthrough for blocked paths
 
@@ -26,12 +26,12 @@ Pathfinding workflow:
 4. Return path as deque for efficient pop operations during movement
 
 Integration with other plugins:
-- NPCManager calls find_path when moving NPCs to waypoints
-- MoveNPCAction triggers pathfinding via NPC manager
+- NPCPlugin calls find_path when moving NPCs to waypoints
+- MoveNPCAction triggers pathfinding via NPC plugin
 - Wall list is shared with the physics/collision plugin
 
 Example usage:
-    # Get pathfinding manager from context
+    # Get pathfinding plugin from context
     pathfinding = context.get_plugin("pathfinding")
 
     # Find path from pixel position to tile coordinates
@@ -56,7 +56,7 @@ from heapq import heappop, heappush
 from typing import TYPE_CHECKING, ClassVar
 
 from pedre.conf import settings
-from pedre.plugins.pathfinding.base import PathfindingBaseManager
+from pedre.plugins.pathfinding.base import PathfindingBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -68,14 +68,14 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class PathfindingManager(PathfindingBaseManager):
+class PathfindingPlugin(PathfindingBasePlugin):
     """Manages pathfinding calculations using A* algorithm.
 
-    The PathfindingManager provides efficient navigation for game entities across a
+    The PathfindingPlugin provides efficient navigation for game entities across a
     tile-based grid world. It uses the A* search algorithm with Manhattan distance
     heuristic to find optimal paths while avoiding obstacles.
 
-    The manager operates in two coordinate plugins:
+    The plugin operates in two coordinate plugins:
     - Pixel coordinates: World positions used by sprites (e.g., 320.0, 240.0)
     - Tile coordinates: Grid positions used for pathfinding (e.g., 10, 7)
 
@@ -100,9 +100,9 @@ class PathfindingManager(PathfindingBaseManager):
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize the pathfinding manager with default values.
+        """Initialize the pathfinding plugin with default values.
 
-        Creates a pathfinding manager with default tile size.
+        Creates a pathfinding plugin with default tile size.
         """
         self.tile_size: int = settings.TILE_SIZE
 
@@ -110,20 +110,20 @@ class PathfindingManager(PathfindingBaseManager):
         """Initialize the pathfinding plugin with game context and settings.
 
         This method is called by the PluginLoader after all plugins have been
-        instantiated. It configures the manager with tile size from settings.
+        instantiated. It configures the plugin with tile size from settings.
 
         Args:
             context: Game context providing access to other plugins.
         """
         self.context = context
-        logger.debug("PathfindingManager setup complete (tile_size=%d)", self.tile_size)
+        logger.debug("PathfindingPlugin setup complete (tile_size=%d)", self.tile_size)
 
     def cleanup(self) -> None:
         """Clean up pathfinding resources when the scene unloads.
 
         Clears the wall list reference.
         """
-        logger.debug("PathfindingManager cleanup complete")
+        logger.debug("PathfindingPlugin cleanup complete")
 
     def is_tile_walkable(
         self,
@@ -160,8 +160,8 @@ class PathfindingManager(PathfindingBaseManager):
         Returns:
             True if the tile is walkable, False if blocked by any wall sprite.
         """
-        scene_manager = self.context.scene_manager
-        wall_list = scene_manager.get_wall_list()
+        scene_plugin = self.context.scene_plugin
+        wall_list = scene_plugin.get_wall_list()
         if not wall_list:
             return True
 
@@ -241,8 +241,8 @@ class PathfindingManager(PathfindingBaseManager):
         path = self._find_path_internal(start_x, start_y, end_tile_x, end_tile_y, exclude_sprite, exclude_sprites)
 
         # If no path found, retry with NPC passthrough enabled
-        scene_manager = self.context.scene_manager
-        wall_list = scene_manager.get_wall_list()
+        scene_plugin = self.context.scene_plugin
+        wall_list = scene_plugin.get_wall_list()
         if not path:
             logger.info("  No path found, retrying with NPC passthrough enabled")
             # Collect all NPC sprites from wall_list to exclude them temporarily

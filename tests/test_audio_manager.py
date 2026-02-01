@@ -4,7 +4,7 @@ import unittest
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
-from pedre.plugins.audio.manager import AudioPlugin
+from pedre.plugins.audio.plugin import AudioPlugin
 
 if TYPE_CHECKING:
     from unittest.mock import Mock
@@ -15,10 +15,10 @@ class TestAudioPlugin(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up AudioPlugin for each test."""
-        self.manager = AudioPlugin()
+        self.plugin = AudioPlugin()
 
-    @patch("pedre.plugins.audio.manager.arcade.load_sound")
-    @patch("pedre.plugins.audio.manager.asset_path")
+    @patch("pedre.plugins.audio.plugin.arcade.load_sound")
+    @patch("pedre.plugins.audio.plugin.asset_path")
     def test_load_from_tiled_with_music_property(self, mock_asset_path: Mock, mock_load_sound: Mock) -> None:
         """Test loading music from Tiled map property."""
         # Mock the tile map with a music property
@@ -34,13 +34,13 @@ class TestAudioPlugin(unittest.TestCase):
         mock_scene = MagicMock()
 
         # Call load_from_tiled (no longer needs settings parameter)
-        self.manager.load_from_tiled(mock_tile_map, mock_scene)
+        self.plugin.load_from_tiled(mock_tile_map, mock_scene)
 
         # Verify music was loaded and played
         mock_asset_path.assert_called_once_with("audio/music/village_theme.ogg")
         mock_load_sound.assert_called_once()
         mock_sound.play.assert_called_once()
-        assert self.manager.current_music == mock_sound
+        assert self.plugin.current_music == mock_sound
 
     def test_load_from_tiled_without_music_property(self) -> None:
         """Test that missing music property is handled gracefully."""
@@ -50,10 +50,10 @@ class TestAudioPlugin(unittest.TestCase):
         mock_scene = MagicMock()
 
         # Should not raise exception
-        self.manager.load_from_tiled(mock_tile_map, mock_scene)
+        self.plugin.load_from_tiled(mock_tile_map, mock_scene)
 
         # No music should be playing
-        assert self.manager.current_music is None
+        assert self.plugin.current_music is None
 
     def test_load_from_tiled_without_properties_attribute(self) -> None:
         """Test handling of tile_map without properties attribute."""
@@ -61,9 +61,9 @@ class TestAudioPlugin(unittest.TestCase):
         mock_scene = MagicMock()
 
         # Should not raise exception
-        self.manager.load_from_tiled(mock_tile_map, mock_scene)
+        self.plugin.load_from_tiled(mock_tile_map, mock_scene)
 
-        assert self.manager.current_music is None
+        assert self.plugin.current_music is None
 
     def test_load_from_tiled_with_invalid_music_value(self) -> None:
         """Test handling of invalid music property values."""
@@ -72,13 +72,13 @@ class TestAudioPlugin(unittest.TestCase):
 
         mock_scene = MagicMock()
 
-        self.manager.load_from_tiled(mock_tile_map, mock_scene)
+        self.plugin.load_from_tiled(mock_tile_map, mock_scene)
 
-        assert self.manager.current_music is None
+        assert self.plugin.current_music is None
 
     def test_load_from_tiled_respects_music_disabled(self) -> None:
         """Test that load_from_tiled respects music_enabled flag."""
-        self.manager.music_enabled = False
+        self.plugin.music_enabled = False
 
         mock_tile_map = MagicMock()
         mock_tile_map.properties = {"music": "village_theme.ogg"}
@@ -86,9 +86,9 @@ class TestAudioPlugin(unittest.TestCase):
         mock_scene = MagicMock()
 
         # Should not play music when disabled
-        self.manager.load_from_tiled(mock_tile_map, mock_scene)
+        self.plugin.load_from_tiled(mock_tile_map, mock_scene)
 
-        assert self.manager.current_music is None
+        assert self.plugin.current_music is None
 
 
 if __name__ == "__main__":

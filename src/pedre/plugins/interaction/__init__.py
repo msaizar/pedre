@@ -1,7 +1,7 @@
 """Interaction plugin for handling interactive objects in the game world.
 
 This package provides:
-- InteractionManager: Core plugin for managing interactive objects
+- InteractionPlugin: Core plugin for managing interactive objects
 - InteractiveObject: Data class representing an interactive object
 
 Events (registered via INSTALLED_EVENTS):
@@ -15,9 +15,9 @@ supporting message dialogs, toggle states, and other interactive behaviors confi
 via Tiled map properties.
 """
 
-from pedre.plugins.interaction.manager import InteractionManager, InteractiveObject
+from pedre.plugins.interaction.plugin import InteractionPlugin, InteractiveObject
 
 __all__ = [
-    "InteractionManager",
+    "InteractionPlugin",
     "InteractiveObject",
 ]

@@ -1,4 +1,4 @@
-"""Base class for ScriptManager."""
+"""Base class for ScriptPlugin."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -44,10 +44,10 @@ class Script:
     completed: bool = False
 
 
-class ScriptBaseManager(BasePlugin, ABC):
-    """Base class for ScriptManager."""
+class ScriptBasePlugin(BasePlugin, ABC):
+    """Base class for ScriptPlugin."""
 
-    role = "script_manager"
+    role = "script_plugin"
 
     @abstractmethod
     def get_scripts(self) -> dict[str, Script]:

@@ -17,7 +17,7 @@ def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -
             - npc: Name of the NPC to check
             - scene: Optional scene name (defaults to current scene)
             - equals: Expected value (default: True)
-        context: Game context providing access to managers
+        context: Game context providing access to plugins
 
     Returns:
         True if the interaction status matches the expected value.
@@ -32,7 +32,7 @@ def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -
         # Check if NPC was NOT interacted with
         {"check": "npc_interacted", "npc": "guard", "equals": False}
     """
-    npc_mgr = context.npc_manager
+    npc_mgr = context.npc_plugin
     npc_name = condition_data.get("npc")
     scene_name = condition_data.get("scene")
     expected = condition_data.get("equals", True)
@@ -44,7 +44,7 @@ def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -
 @ConditionRegistry.register("npc_dialog_level")
 def check_npc_dialog_level(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check an NPC's dialog level."""
-    npc_mgr = context.npc_manager
+    npc_mgr = context.npc_plugin
     npc_name = condition_data.get("npc")
     expected_level = condition_data.get("equals")
     if not npc_name or expected_level is None:

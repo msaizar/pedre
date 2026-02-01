@@ -1,4 +1,4 @@
-"""Base class for PathfindingManager."""
+"""Base class for PathfindingPlugin."""
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
@@ -11,10 +11,10 @@ if TYPE_CHECKING:
     import arcade
 
 
-class PathfindingBaseManager(BasePlugin, ABC):
-    """Base class for PathfindingManager."""
+class PathfindingBasePlugin(BasePlugin, ABC):
+    """Base class for PathfindingPlugin."""
 
-    role = "pathfinding_manager"
+    role = "pathfinding_plugin"
 
     @abstractmethod
     def find_path(

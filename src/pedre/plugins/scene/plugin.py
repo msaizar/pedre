@@ -1,6 +1,6 @@
 """Scene management plugin for handling scene transitions, lifecycle, and map loading.
 
-This module provides the SceneManager class, which manages the high-level state of the game
+This module provides the ScenePlugin class, which manages the high-level state of the game
 scenes, including:
 - Loading and processing Tiled map files
 - Tracking the current scene information
@@ -18,7 +18,7 @@ import arcade
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.plugins.registry import PluginRegistry
-from pedre.plugins.scene.base import SceneBaseManager, TransitionState
+from pedre.plugins.scene.base import SceneBasePlugin, TransitionState
 from pedre.plugins.scene.events import SceneStartEvent
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class SceneManager(SceneBaseManager):
+class ScenePlugin(SceneBasePlugin):
     """Manages scene transitions, lifecycle, and map loading.
 
     Responsibilities:
@@ -41,9 +41,9 @@ class SceneManager(SceneBaseManager):
     - Manage transition state machine (FADING_OUT -> LOADING -> FADING_IN -> NONE)
     - Render transition overlay
     - Orchestrate loading of map-dependent data for other plugins:
-        - Portals (PortalManager)
-        - Interactive objects (InteractionManager)
-        - NPCs (NPCManager)
+        - Portals (PortalPlugin)
+        - Interactive objects (InteractionPlugin)
+        - NPCs (NPCPlugin)
 
     Attributes:
         tile_map: The loaded arcade.TileMap instance.
@@ -69,7 +69,7 @@ class SceneManager(SceneBaseManager):
         return self.transition_state
 
     def __init__(self) -> None:
-        """Initialize the scene manager."""
+        """Initialize the scene plugin."""
         self.current_scene: str = ""
 
         # Transition state
@@ -81,7 +81,7 @@ class SceneManager(SceneBaseManager):
         self.pending_map_file: str | None = None
         self.pending_spawn_waypoint: str | None = None
 
-        # Map data (merged from MapManager)
+        # Map data (merged from MapPlugin)
         self.tile_map: arcade.TileMap | None = None
         self.arcade_scene: arcade.Scene | None = None
         self.current_map: str = ""
@@ -93,7 +93,7 @@ class SceneManager(SceneBaseManager):
         self.context = context
 
     def reset(self) -> None:
-        """Reset scene manager state for new game."""
+        """Reset scene plugin state for new game."""
         self.current_scene = ""
         self.current_map = ""
         self.transition_state = TransitionState.NONE
@@ -101,7 +101,7 @@ class SceneManager(SceneBaseManager):
         self.pending_map_file = None
         self.pending_spawn_waypoint = None
         self.wall_list.clear()
-        logger.debug("SceneManager reset complete")
+        logger.debug("ScenePlugin reset complete")
 
     def get_wall_list(self) -> arcade.SpriteList | None:
         """Get wall list."""
@@ -131,11 +131,11 @@ class SceneManager(SceneBaseManager):
             initial: If it's the first level loading. Don't cache if not transitioning.
         """
         # Cache current scene state before transitioning
-        cache_manager = self.context.cache_manager
+        cache_plugin = self.context.cache_plugin
         if not initial:
-            cache_manager.cache_scene(self.get_current_scene())
+            cache_plugin.cache_scene(self.get_current_scene())
 
-        logger.info("SceneManager: Loading level %s", map_file)
+        logger.info("ScenePlugin: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
         self.current_scene = current_scene
 
@@ -143,21 +143,21 @@ class SceneManager(SceneBaseManager):
         self._load_map(map_file)
 
         # Phase 2: Apply entity state from pending save data
-        save_manager = self.context.save_manager
-        save_manager.apply_entity_states()
+        save_plugin = self.context.save_plugin
+        save_plugin.apply_entity_states()
 
         # Load scene-specific dialogs
-        npc_manager = self.context.npc_manager
-        npc_manager.load_scene_dialogs(current_scene)
+        npc_plugin = self.context.npc_plugin
+        npc_plugin.load_scene_dialogs(current_scene)
 
         # Scripts are loaded globally at initialization, no per-scene loading needed
 
-        # Restore scene state using cache manager
-        cache_manager.restore_scene(current_scene)
+        # Restore scene state using cache plugin
+        cache_plugin.restore_scene(current_scene)
 
         # Sync wall_list with NPC visibility after restore
         if self.wall_list:
-            for npc_state in npc_manager.get_npcs().values():
+            for npc_state in npc_plugin.get_npcs().values():
                 if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:
                     self.wall_list.remove(npc_state.sprite)
                 elif npc_state.sprite.visible and npc_state.sprite not in self.wall_list:
@@ -189,8 +189,8 @@ class SceneManager(SceneBaseManager):
         self._load_plugins_from_tiled()
 
         # 4. Invalidate physics engine (needs new player/walls)
-        physics_manager = self.context.physics_manager
-        physics_manager.invalidate()
+        physics_plugin = self.context.physics_plugin
+        physics_plugin.invalidate()
 
     def _extract_collision_layers(self, arcade_scene: arcade.Scene | None) -> arcade.SpriteList:
         """Extract collision layers into a wall list."""
@@ -293,7 +293,7 @@ class SceneManager(SceneBaseManager):
         waypoint = self.pending_spawn_waypoint
 
         logger.debug(
-            "SceneManager._perform_map_switch: map_file=%s, waypoint=%s",
+            "ScenePlugin._perform_map_switch: map_file=%s, waypoint=%s",
             map_file,
             waypoint,
         )
@@ -305,7 +305,7 @@ class SceneManager(SceneBaseManager):
         # Set spawn waypoint before loading if specified
         if waypoint:
             self.next_spawn_waypoint = waypoint
-            logger.debug("SceneManager: Set next_spawn_waypoint to '%s'", waypoint)
+            logger.debug("ScenePlugin: Set next_spawn_waypoint to '%s'", waypoint)
 
         # Load the level through our own load_level method
         self.load_level(map_file)

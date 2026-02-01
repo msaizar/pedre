@@ -1,4 +1,4 @@
-"""Audio plugin with manager and actions.
+"""Audio plugin with plugin and actions.
 
 This module provides the audio management plugin for the game, handling both
 background music and sound effects with caching, volume control, and playback
@@ -12,6 +12,6 @@ Actions (registered via INSTALLED_ACTIONS):
 - PlaySFXAction: Script action to play sound effects
 """
 
-from pedre.plugins.audio.manager import AudioBasePlugin, AudioPlugin
+from pedre.plugins.audio.plugin import AudioBasePlugin, AudioPlugin
 
 __all__ = ["AudioBasePlugin", "AudioPlugin"]

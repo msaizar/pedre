@@ -1,10 +1,10 @@
 """Physics plugin.
 
-This module provides the PhysicsManager class, which handles collision detection
+This module provides the PhysicsPlugin class, which handles collision detection
 and resolution.
 """
 
-from pedre.plugins.physics.base import PhysicsBaseManager
-from pedre.plugins.physics.manager import PhysicsManager
+from pedre.plugins.physics.base import PhysicsBasePlugin
+from pedre.plugins.physics.plugin import PhysicsPlugin
 
-__all__ = ["PhysicsBaseManager", "PhysicsManager"]
+__all__ = ["PhysicsBasePlugin", "PhysicsPlugin"]

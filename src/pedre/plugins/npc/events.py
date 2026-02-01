@@ -48,7 +48,7 @@ class NPCInteractedEvent(Event):
 class NPCMovementCompleteEvent(Event):
     """Fired when an NPC completes movement to target.
 
-    This event is published by the NPC manager when an NPC finishes pathfinding and
+    This event is published by the NPC plugin when an NPC finishes pathfinding and
     arrives at their destination. It's useful for chaining actions that should occur
     after an NPC reaches a specific location.
 
@@ -82,7 +82,7 @@ class NPCMovementCompleteEvent(Event):
 class NPCAppearCompleteEvent(Event):
     """Fired when an NPC completes appear animation.
 
-    This event is published by the NPC manager when an AnimatedNPC finishes its appear
+    This event is published by the NPC plugin when an AnimatedNPC finishes its appear
     animation. AnimatedNPCs play a special animation when they're revealed, and this
     event signals that the animation has completed.
 
@@ -116,7 +116,7 @@ class NPCAppearCompleteEvent(Event):
 class NPCDisappearCompleteEvent(Event):
     """Fired when an NPC completes disappear animation.
 
-    This event is published by the NPC manager when an AnimatedNPC finishes its disappear
+    This event is published by the NPC plugin when an AnimatedNPC finishes its disappear
     animation. The disappear animation is triggered by the StartDisappearAnimationAction,
     and this event signals when it's safe to perform cleanup or trigger follow-up actions.
 

@@ -27,14 +27,14 @@ Key Features:
 
 Usage from Code:
     # Play background music
-    audio_manager.play_music("background.ogg", loop=True, volume=0.7)
+    audio_plugin.play_music("background.ogg", loop=True, volume=0.7)
 
     # Play a sound effect
-    audio_manager.play_sfx("avi.mp3")
+    audio_plugin.play_sfx("avi.mp3")
 
     # Control volume
-    audio_manager.set_music_volume(0.5)
-    audio_manager.set_sfx_volume(0.8)
+    audio_plugin.set_music_volume(0.5)
+    audio_plugin.set_sfx_volume(0.8)
 
 Usage from Scripts:
     [
@@ -98,9 +98,9 @@ class AudioPlugin(AudioBasePlugin):
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize the audio manager.
+        """Initialize the audio plugin.
 
-        Creates an audio manager with settings from configuration:
+        Creates an audio plugin with settings from configuration:
         - Music volume: from AUDIO_MUSIC_VOLUME setting
         - SFX volume: from AUDIO_SFX_VOLUME setting
         - Music enabled: from AUDIO_MUSIC_ENABLED setting
@@ -188,10 +188,10 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Play looping background music at default volume
-            audio_manager.play_music("background.ogg")
+            audio_plugin.play_music("background.ogg")
 
             # Play one-time victory music at high volume
-            audio_manager.play_music("victory.ogg", loop=False, volume=0.9)
+            audio_plugin.play_music("victory.ogg", loop=False, volume=0.9)
 
         Note:
             This method automatically stops any currently playing music before
@@ -259,7 +259,7 @@ class AudioPlugin(AudioBasePlugin):
         Also called when music is toggled off via toggle_music().
 
         Example:
-            audio_manager.stop_music()  # Silence the music
+            audio_plugin.stop_music()  # Silence the music
         """
         if self.music_player:
             try:
@@ -282,7 +282,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Pause when entering menu
-            audio_manager.pause_music()
+            audio_plugin.pause_music()
         """
         if self.music_player:
             try:
@@ -299,7 +299,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Resume when exiting menu
-            audio_manager.resume_music()
+            audio_plugin.resume_music()
         """
         if self.music_player:
             try:
@@ -321,10 +321,10 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Set to half volume
-            audio_manager.set_music_volume(0.5)
+            audio_plugin.set_music_volume(0.5)
 
             # Mute music (alternative to toggle_music())
-            audio_manager.set_music_volume(0.0)
+            audio_plugin.set_music_volume(0.0)
         """
         self.music_volume = max(0.0, min(1.0, volume))
 
@@ -361,10 +361,10 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Play NPC voice at default volume
-            audio_manager.play_sfx("martin.mp3")
+            audio_plugin.play_sfx("martin.mp3")
 
             # Play UI sound at lower volume
-            audio_manager.play_sfx("click.wav", volume=0.3)
+            audio_plugin.play_sfx("click.wav", volume=0.3)
 
         Note:
             Unlike music, multiple sound effects can overlap and play
@@ -409,7 +409,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Set SFX to 80% volume
-            audio_manager.set_sfx_volume(0.8)
+            audio_plugin.set_sfx_volume(0.8)
         """
         self.sfx_volume = max(0.0, min(1.0, volume))
 
@@ -427,7 +427,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Toggle music in response to user pressing 'M'
-            new_state = audio_manager.toggle_music()
+            new_state = audio_plugin.toggle_music()
             print(f"Music is now {'on' if new_state else 'off'}")
         """
         self.music_enabled = not self.music_enabled
@@ -451,7 +451,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Toggle SFX in response to user pressing 'S'
-            new_state = audio_manager.toggle_sfx()
+            new_state = audio_plugin.toggle_sfx()
             print(f"Sound effects are now {'on' if new_state else 'off'}")
         """
         self.sfx_enabled = not self.sfx_enabled
@@ -469,7 +469,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Clear SFX cache after completing a level
-            audio_manager.clear_sfx_cache()
+            audio_plugin.clear_sfx_cache()
         """
         self.sfx_cache.clear()
         logger.debug("SFX cache cleared")
@@ -486,7 +486,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Clear music cache before loading a new scene
-            audio_manager.clear_music_cache()
+            audio_plugin.clear_music_cache()
         """
         self.music_cache.clear()
         logger.debug("Music cache cleared")
@@ -500,7 +500,7 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # Full cache clear when returning to main menu
-            audio_manager.clear_all_caches()
+            audio_plugin.clear_all_caches()
         """
         self.clear_music_cache()
         self.clear_sfx_cache()
@@ -521,9 +521,9 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # In background preload task
-            audio_manager.mark_music_loading("beach.ogg")
+            audio_plugin.mark_music_loading("beach.ogg")
             # ... load the file ...
-            audio_manager.unmark_music_loading("beach.ogg")
+            audio_plugin.unmark_music_loading("beach.ogg")
         """
         self._music_loading.add(filename)
 
@@ -538,8 +538,8 @@ class AudioPlugin(AudioBasePlugin):
 
         Example:
             # After background load completes
-            audio_manager.music_cache[filename] = loaded_sound
-            audio_manager.unmark_music_loading(filename)
+            audio_plugin.music_cache[filename] = loaded_sound
+            audio_plugin.unmark_music_loading(filename)
         """
         self._music_loading.discard(filename)
 
@@ -584,7 +584,7 @@ class AudioPlugin(AudioBasePlugin):
         Example:
             # Save audio settings to JSON
             save_data = {
-                "audio": audio_manager.to_dict(),
+                "audio": audio_plugin.to_dict(),
                 # ... other save data
             }
         """
@@ -615,7 +615,7 @@ class AudioPlugin(AudioBasePlugin):
             with open("save.json", "r") as f:
                 save_data = json.load(f)
 
-            audio_manager.from_dict(save_data["audio"])
+            audio_plugin.from_dict(save_data["audio"])
             # User's audio preferences are now restored
         """
         if "music_volume" in data:

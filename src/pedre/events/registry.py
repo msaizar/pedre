@@ -23,7 +23,7 @@ class EventRegistry:
     """Central registry for mapping event string names to event classes.
 
     The EventRegistry allows plugins to register their event types using a
-    decorator. Other plugins (like ScriptManager) can then retrieve the event
+    decorator. Other plugins (like ScriptPlugin) can then retrieve the event
     classes by name to perform dynamic subscriptions.
     """
 

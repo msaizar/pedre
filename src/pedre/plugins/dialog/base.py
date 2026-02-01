@@ -1,4 +1,4 @@
-"""Base class for DialogManager."""
+"""Base class for DialogPlugin."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -44,10 +44,10 @@ class DialogPage:
     total_pages: int
 
 
-class DialogBaseManager(BasePlugin, ABC):
-    """Base class for DialogManager."""
+class DialogBasePlugin(BasePlugin, ABC):
+    """Base class for DialogPlugin."""
 
-    role = "dialog_manager"
+    role = "dialog_plugin"
 
     @abstractmethod
     def show_dialog(

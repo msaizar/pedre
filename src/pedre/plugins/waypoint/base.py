@@ -1,14 +1,14 @@
-"""Base class for WaypointManager."""
+"""Base class for WaypointPlugin."""
 
 from abc import ABC, abstractmethod
 
 from pedre.plugins.base import BasePlugin
 
 
-class WaypointBaseManager(BasePlugin, ABC):
-    """Base class for WaypointManager."""
+class WaypointBasePlugin(BasePlugin, ABC):
+    """Base class for WaypointPlugin."""
 
-    role = "waypoint_manager"
+    role = "waypoint_plugin"
 
     @abstractmethod
     def get_waypoints(self) -> dict[str, tuple[float, float]]:

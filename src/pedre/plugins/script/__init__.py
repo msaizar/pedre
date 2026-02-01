@@ -1,7 +1,7 @@
 """Script plugin for managing game scripts and event-driven sequences.
 
 This package provides:
-- ScriptManager: Core scripting plugin that loads and executes JSON-based scripts
+- ScriptPlugin: Core scripting plugin that loads and executes JSON-based scripts
 - Script: Data class for script definitions with triggers and conditions
 
 Events (registered via INSTALLED_EVENTS):
@@ -14,9 +14,9 @@ The script plugin enables event-driven storytelling, cutscenes, and complex
 game sequences through JSON-based script definitions.
 """
 
-from pedre.plugins.script.manager import Script, ScriptManager
+from pedre.plugins.script.plugin import Script, ScriptPlugin
 
 __all__ = [
     "Script",
-    "ScriptManager",
+    "ScriptPlugin",
 ]

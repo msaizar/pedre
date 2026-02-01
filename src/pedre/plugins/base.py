@@ -12,7 +12,7 @@ Example:
         from pedre.conf import settings
 
         @PluginRegistry.register
-        class WeatherManager(BasePlugin):
+        class WeatherPlugin(BasePlugin):
             name = "weather"
             dependencies = ["particle", "audio"]
 
@@ -56,7 +56,7 @@ class BasePlugin(ABC):
             from pedre.conf import settings
 
             @PluginRegistry.register
-            class WeatherManager(BasePlugin):
+            class WeatherPlugin(BasePlugin):
                 name = "weather"
                 dependencies = ["particle"]
 
@@ -104,13 +104,13 @@ class BasePlugin(ABC):
         data from the Tiled map and register/configure their entities.
 
         Call order:
-        1. SceneManager loads tile_map and arcade_scene
+        1. ScenePlugin loads tile_map and arcade_scene
         2. load_from_tiled() called on all plugins in dependency order
-           - WaypointManager populates context.waypoints
-           - PortalManager registers portals
-           - InteractionManager registers interactive objects
-           - PlayerManager creates player sprite (uses waypoints)
-           - NPCManager creates NPC sprites (depends on player)
+           - WaypointPlugin populates context.waypoints
+           - PortalPlugin registers portals
+           - InteractionPlugin registers interactive objects
+           - PlayerPlugin creates player sprite (uses waypoints)
+           - NPCPlugin creates NPC sprites (depends on player)
         3. Physics setup, pathfinding setup, camera setup
 
         Args:

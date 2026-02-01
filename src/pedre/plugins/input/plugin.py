@@ -1,10 +1,10 @@
 """Input management plugin for handling player controls.
 
-This module provides the InputManager class, which handles keyboard input for player
+This module provides the InputPlugin class, which handles keyboard input for player
 movement and actions. It maintains the state of currently pressed keys and calculates
 movement vectors with proper normalization for smooth, consistent player control.
 
-The InputManager uses a key state tracking approach where keys are added to a set when
+The InputPlugin uses a key state tracking approach where keys are added to a set when
 pressed and removed when released. This allows for:
 - Simultaneous multi-key input (e.g., holding W+D for diagonal movement)
 - Smooth movement without key repeat delays
@@ -22,8 +22,8 @@ same speed as cardinal movement. Without normalization, moving diagonally would 
 √2 times faster (≈1.414x) than moving straight, which feels unnatural in gameplay.
 
 Example usage:
-    # Create input manager with movement speed
-    input_mgr = InputManager(movement_speed=180.0)
+    # Create input plugin with movement speed
+    input_mgr = InputPlugin(movement_speed=180.0)
 
     # Wire up to arcade window events
     def on_key_press(symbol, modifiers):
@@ -51,7 +51,7 @@ import arcade
 
 from pedre.conf import settings
 from pedre.events import ShowMenuEvent
-from pedre.plugins.input.base import InputBaseManager
+from pedre.plugins.input.base import InputBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -61,10 +61,10 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class InputManager(InputBaseManager):
+class InputPlugin(InputBasePlugin):
     """Manages player input state and movement calculation.
 
-    The InputManager provides a clean interface for handling keyboard input in the game.
+    The InputPlugin provides a clean interface for handling keyboard input in the game.
     It tracks which keys are currently pressed and provides methods to query input state
     and calculate movement vectors.
 
@@ -74,7 +74,7 @@ class InputManager(InputBaseManager):
     - No need to track key repeat events (continuous input is implicit)
     - Easy to clear all keys when window loses focus
 
-    The manager supports both arrow keys and WASD for movement, making the controls
+    The plugin supports both arrow keys and WASD for movement, making the controls
     accessible to players with different preferences. The movement calculation normalizes
     diagonal movement so it has the same speed as cardinal movement, preventing the
     common game feel issue where diagonal movement is faster.
@@ -88,9 +88,9 @@ class InputManager(InputBaseManager):
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize the input manager with configurable movement speed.
+        """Initialize the input plugin with configurable movement speed.
 
-        Creates a new InputManager with an empty key state. The movement speed determines
+        Creates a new InputPlugin with an empty key state. The movement speed determines
         how many pixels the player moves per second when a movement key is held. This speed
         is applied to the normalized movement vector returned by get_movement_vector().
 
@@ -112,12 +112,12 @@ class InputManager(InputBaseManager):
             context: Game context providing access to other plugins.
         """
         self.context = context
-        logger.debug("InputManager setup complete with speed=%s", self.movement_speed)
+        logger.debug("InputPlugin setup complete with speed=%s", self.movement_speed)
 
     def cleanup(self) -> None:
         """Clean up input resources when the scene unloads."""
         self.keys_pressed.clear()
-        logger.debug("InputManager cleanup complete")
+        logger.debug("InputPlugin cleanup complete")
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BasePlugin interface).
@@ -141,7 +141,7 @@ class InputManager(InputBaseManager):
             modifiers: Bitfield of modifier keys held.
 
         Returns:
-            False (allows other plugins to process if needed, though typically input manager is low-level).
+            False (allows other plugins to process if needed, though typically input plugin is low-level).
         """
         self.keys_pressed.add(symbol)
 
@@ -260,7 +260,7 @@ class InputManager(InputBaseManager):
         """Clear all pressed keys from the input state.
 
         This method removes all keys from the pressed state, effectively resetting the
-        input manager as if no keys are being held. This is essential for handling
+        input plugin as if no keys are being held. This is essential for handling
         window focus changes and preventing stuck keys.
 
         When to use this method:
@@ -278,10 +278,10 @@ class InputManager(InputBaseManager):
         Example usage:
             # In window focus handler
             def on_deactivate(self):
-                self.input_manager.clear()
+                self.input_plugin.clear()
 
             # Before showing dialog
-            self.input_manager.clear()
-            self.dialog_manager.show_dialog("npc", ["Hello!"])
+            self.input_plugin.clear()
+            self.dialog_plugin.show_dialog("npc", ["Hello!"])
         """
         self.keys_pressed.clear()

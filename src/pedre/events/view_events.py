@@ -8,7 +8,7 @@ The ViewManager subscribes to these events and handles the actual view transitio
 allowing game plugins to remain decoupled from view management.
 
 Example usage:
-    # From a game plugin (e.g., InputManager)
+    # From a game plugin (e.g., InputPlugin)
     context.event_bus.publish(ShowMenuEvent(from_game_pause=True))
 
     # ViewManager handles the event

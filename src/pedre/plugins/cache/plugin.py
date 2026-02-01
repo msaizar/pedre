@@ -1,6 +1,6 @@
 """Cache plugin for scene state transitions.
 
-This module provides the CacheManager plugin, which manages scene state cache
+This module provides the CachePlugin plugin, which manages scene state cache
 to preserve plugin states when the player transitions between scenes.
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pedre.plugins.cache.base import CacheBaseManager
+from pedre.plugins.cache.base import CacheBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class CacheManager(CacheBaseManager):
+class CachePlugin(CacheBasePlugin):
     """Manages scene state cache for transitions.
 
-    The CacheManager holds in-memory state for each scene, allowing plugins
+    The CachePlugin holds in-memory state for each scene, allowing plugins
     to preserve their state when the player leaves a scene and restore it
     when they return.
 
@@ -34,20 +34,20 @@ class CacheManager(CacheBaseManager):
 
     Example:
         # Access via context
-        cache_manager = context.cache_manager
+        cache_plugin = context.cache_plugin
 
         # When leaving a scene
-        cache_manager.cache_scene("village")
+        cache_plugin.cache_scene("village")
 
         # When returning to a scene
-        restored = cache_manager.restore_scene("village")
+        restored = cache_plugin.restore_scene("village")
     """
 
     name: ClassVar[str] = "cache"
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize the cache manager with empty cache."""
+        """Initialize the cache plugin with empty cache."""
         # scene_name -> plugin_name -> state dict
         self._cache: dict[str, dict[str, Any]] = {}
         self.context: GameContext

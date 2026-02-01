@@ -1,6 +1,6 @@
 """Scene management plugin.
 
-This module provides the SceneManager class, which handles scene transitions,
+This module provides the ScenePlugin class, which handles scene transitions,
 map loading from Tiled files, and plugin updates during scene changes.
 
 Actions (registered via INSTALLED_ACTIONS):
@@ -10,6 +10,6 @@ Events (registered via INSTALLED_EVENTS):
 - SceneStartEvent
 """
 
-from pedre.plugins.scene.manager import SceneManager, TransitionState
+from pedre.plugins.scene.plugin import ScenePlugin, TransitionState
 
-__all__ = ["SceneManager", "TransitionState"]
+__all__ = ["ScenePlugin", "TransitionState"]

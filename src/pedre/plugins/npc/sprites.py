@@ -572,7 +572,7 @@ class AnimatedNPC(AnimatedSprite):
         the scene dramatically.
 
         The animation plays once, sets disappear_complete = True, and sets sprite.visible = False
-        when finished. The NPC manager typically emits an NPCDisappearCompleteEvent afterward.
+        when finished. The NPC plugin typically emits an NPCDisappearCompleteEvent afterward.
 
         Side effects:
             - Sets is_disappearing = True

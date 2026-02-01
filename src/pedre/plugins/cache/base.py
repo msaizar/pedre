@@ -5,10 +5,10 @@ from abc import ABC, abstractmethod
 from pedre.plugins.base import BasePlugin
 
 
-class CacheBaseManager(BasePlugin, ABC):
-    """Base class for cache manager."""
+class CacheBasePlugin(BasePlugin, ABC):
+    """Base class for cache plugin."""
 
-    role = "cache_manager"
+    role = "cache_plugin"
 
     @abstractmethod
     def cache_scene(self, scene_name: str) -> None:

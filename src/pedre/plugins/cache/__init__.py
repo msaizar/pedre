@@ -4,7 +4,7 @@ This plugin manages scene state cache, allowing plugins to preserve their state
 when the player leaves a scene and restore it when they return.
 """
 
-from pedre.plugins.cache.base import CacheBaseManager
-from pedre.plugins.cache.manager import CacheManager
+from pedre.plugins.cache.base import CacheBasePlugin
+from pedre.plugins.cache.plugin import CachePlugin
 
-__all__ = ["CacheBaseManager", "CacheManager"]
+__all__ = ["CacheBasePlugin", "CachePlugin"]

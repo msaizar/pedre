@@ -12,7 +12,7 @@ from pedre.events.registry import EventRegistry
 class ScriptCompleteEvent(Event):
     """Fired when a script completes execution.
 
-    This event is published by the script manager when a script's action sequence
+    This event is published by the script plugin when a script's action sequence
     finishes executing. It allows scripts to chain together, where one script waits
     for another to complete before starting.
 

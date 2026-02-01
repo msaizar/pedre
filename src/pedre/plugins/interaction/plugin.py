@@ -1,6 +1,6 @@
-"""Interaction manager for handling interactive objects in the game world.
+"""Interaction plugin for handling interactive objects in the game world.
 
-This module provides the InteractionManager class, which manages interactive objects
+This module provides the InteractionPlugin class, which manages interactive objects
 that the player can activate by pressing an interaction key. Interactive objects are
 typically defined in Tiled maps as objects with special properties that determine their
 behavior when interacted with.
@@ -17,7 +17,7 @@ Interactive objects are commonly used for:
 - Item pickups and loot containers
 - Quest triggers and progression markers
 
-The manager uses a simple distance check to determine which objects are within
+The plugin uses a simple distance check to determine which objects are within
 interaction range, automatically selecting the nearest one when multiple objects
 are nearby. This provides intuitive player interaction without requiring precise
 positioning or targeting.
@@ -53,7 +53,7 @@ import arcade
 
 from pedre.conf import settings
 from pedre.helpers import matches_key
-from pedre.plugins.interaction.base import InteractionBaseManager, InteractiveObject
+from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObject
 from pedre.plugins.interaction.events import ObjectInteractedEvent
 from pedre.plugins.registry import PluginRegistry
 
@@ -64,16 +64,16 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class InteractionManager(InteractionBaseManager):
+class InteractionPlugin(InteractionBasePlugin):
     """Manages interactive objects and their behaviors.
 
-    The InteractionManager acts as a registry and handler for all interactive objects
+    The InteractionPlugin acts as a registry and handler for all interactive objects
     in the game world. It maintains a collection of registered objects, determines which
     objects are within interaction range of the player.
 
-    This manager provides a flexible, data-driven approach to game interactions where
+    This plugin provides a flexible, data-driven approach to game interactions where
     designers can configure interactive elements in Tiled without requiring code changes.
-    The manager handles the common patterns (distance checking, nearest object selection)
+    The plugin handles the common patterns (distance checking, nearest object selection)
     while allowing custom interaction types to be added through handler methods.
 
     Key responsibilities:
@@ -96,9 +96,9 @@ class InteractionManager(InteractionBaseManager):
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize the interaction manager with configurable interaction distance.
+        """Initialize the interaction plugin with configurable interaction distance.
 
-        Creates a new InteractionManager with an empty registry of interactive objects.
+        Creates a new InteractionPlugin with an empty registry of interactive objects.
         The interaction distance determines how close the player must be to an object
         to interact with it.
 
@@ -124,7 +124,7 @@ class InteractionManager(InteractionBaseManager):
             context: Game context providing access to other plugins.
         """
         self.context = context
-        logger.debug("InteractionManager setup complete with distance=%s", self.interaction_distance)
+        logger.debug("InteractionPlugin setup complete with distance=%s", self.interaction_distance)
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load interactive objects from Tiled scene layer."""
@@ -183,10 +183,10 @@ class InteractionManager(InteractionBaseManager):
             True if interaction occurred.
         """
         if matches_key(symbol, settings.INTERACTION_KEY):
-            player_sprite = self.context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_plugin.get_player_sprite()
             if player_sprite:
                 logger.debug(
-                    "InteractionManager: %s pressed, player at (%.1f, %.1f)",
+                    "InteractionPlugin: %s pressed, player at (%.1f, %.1f)",
                     settings.INTERACTION_KEY,
                     player_sprite.center_x,
                     player_sprite.center_y,
@@ -202,16 +202,16 @@ class InteractionManager(InteractionBaseManager):
     def cleanup(self) -> None:
         """Clean up interaction resources when the scene unloads."""
         self.clear()
-        logger.debug("InteractionManager cleanup complete")
+        logger.debug("InteractionPlugin cleanup complete")
 
     def register_object(self, sprite: arcade.Sprite, name: str, properties: dict) -> None:
-        """Register an interactive object in the manager.
+        """Register an interactive object in the plugin.
 
-        Adds a new interactive object to the manager's registry, making it available for
+        Adds a new interactive object to the plugin's registry, making it available for
         interaction queries and handling. This method is typically called during map
         loading when processing Tiled object layers that contain interactive elements.
 
-        Objects are stored by name, so each name must be unique within the manager.
+        Objects are stored by name, so each name must be unique within the plugin.
         Registering an object with an existing name will overwrite the previous object.
 
         Args:
@@ -323,7 +323,7 @@ class InteractionManager(InteractionBaseManager):
             object_name: Name of the object.
         """
         self.interacted_objects.add(object_name)
-        logger.debug("InteractionManager: Object '%s' marked as interacted", object_name)
+        logger.debug("InteractionPlugin: Object '%s' marked as interacted", object_name)
 
     def has_interacted_with(self, object_name: str) -> bool:
         """Check if an object has been interacted with.
@@ -342,16 +342,16 @@ class InteractionManager(InteractionBaseManager):
         self.interacted_objects.clear()
 
     def clear(self) -> None:
-        """Clear all registered interactive objects from the manager.
+        """Clear all registered interactive objects from the plugin.
 
         Removes all interactive objects from the registry, effectively resetting the
-        manager to its initial empty state. This method is typically called when
+        plugin to its initial empty state. This method is typically called when
         transitioning between maps or scenes to clean up objects from the previous map.
 
         After calling clear(), get_nearby_object() will always return None until new
         objects are registered. Any references to InteractiveObject instances remain
         valid (the objects themselves aren't destroyed), but they are no longer tracked
-        by this manager.
+        by this plugin.
 
         This is an important cleanup step to prevent memory leaks and ensure that
         objects from previous maps don't interfere with the current map's interactions.

@@ -1,6 +1,6 @@
 """Physics plugin for handling collision detection.
 
-This module provides the PhysicsManager class, which wraps the arcade physics engine
+This module provides the PhysicsPlugin class, which wraps the arcade physics engine
 and manages collision handling between the player and walls/objects.
 """
 
@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
-from pedre.plugins.physics.base import PhysicsBaseManager
+from pedre.plugins.physics.base import PhysicsBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class PhysicsManager(PhysicsBaseManager):
+class PhysicsPlugin(PhysicsBasePlugin):
     """Manages physics engine and collision updates.
 
     Responsibilities:
@@ -34,7 +34,7 @@ class PhysicsManager(PhysicsBaseManager):
     dependencies: ClassVar[list[str]] = ["player"]
 
     def __init__(self) -> None:
-        """Initialize the physics manager."""
+        """Initialize the physics plugin."""
         self.physics_engine: arcade.PhysicsEngineSimple | None = None
         self._needs_recreate: bool = True
 
@@ -56,8 +56,8 @@ class PhysicsManager(PhysicsBaseManager):
             self.physics_engine.update()
 
     def _create_engine(self) -> None:
-        player_sprite = self.context.player_manager.get_player_sprite()
+        player_sprite = self.context.player_plugin.get_player_sprite()
         if player_sprite:
-            self.physics_engine = arcade.PhysicsEngineSimple(player_sprite, self.context.scene_manager.get_wall_list())
+            self.physics_engine = arcade.PhysicsEngineSimple(player_sprite, self.context.scene_plugin.get_wall_list())
         self._needs_recreate = False
         logger.debug("Physics engine initialized")

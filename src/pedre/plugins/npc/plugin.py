@@ -1,6 +1,6 @@
 """NPC management plugin for tracking state, movement, and interactions.
 
-This module provides the NPCManager class, which serves as the central hub for all
+This module provides the NPCPlugin class, which serves as the central hub for all
 NPC-related functionality in the game. It manages NPC registration, pathfinding-based
 movement, dialog plugin with conditional branching, and animation state tracking.
 
@@ -24,13 +24,13 @@ Key features:
 - **Scene Awareness**: Dialog can vary by scene/map, allowing NPCs to have location-specific
   conversations.
 
-The manager uses an event-driven architecture where NPC actions (movement complete,
+The plugin uses an event-driven architecture where NPC actions (movement complete,
 animations finished) publish events that scripts can listen for to create complex
 scripted sequences.
 
 Example usage:
-    # Get the NPC manager from context
-    npc_mgr = context.npc_manager
+    # Get the NPC plugin from context
+    npc_mgr = context.npc_plugin
 
     # Load dialog from JSON files
     npc_mgr.load_dialogs_from_json("assets/dialogs/")
@@ -67,7 +67,7 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.helpers import matches_key
-from pedre.plugins.npc.base import NPCBaseManager, NPCDialogConfig, NPCState
+from pedre.plugins.npc.base import NPCBasePlugin, NPCDialogConfig, NPCState
 from pedre.plugins.npc.constants import ALL_ANIMATION_PROPERTIES
 from pedre.plugins.npc.events import (
     NPCAppearCompleteEvent,
@@ -85,10 +85,10 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class NPCManager(NPCBaseManager):
+class NPCPlugin(NPCBasePlugin):
     """Manages NPC state, movement, and interactions.
 
-    The NPCManager is the central controller for all NPC-related plugins. It coordinates
+    The NPCPlugin is the central controller for all NPC-related plugins. It coordinates
     NPC registration, dialog management, pathfinding movement, animation tracking, and
     event emission for NPC lifecycle events.
 
@@ -100,7 +100,7 @@ class NPCManager(NPCBaseManager):
     - **Animation**: Track animation state for appear/disappear effects
     - **Events**: Publish events when NPCs complete movements or animations
 
-    The manager uses a scene-based dialog plugin where conversations are organized by
+    The plugin uses a scene-based dialog plugin where conversations are organized by
     map/scene name, allowing NPCs to have different dialog depending on location. Dialog
     progression is tracked per-NPC via dialog_level, supporting multi-stage conversations.
 
@@ -113,11 +113,11 @@ class NPCManager(NPCBaseManager):
              registered NPCs and their current runtime state.
         dialogs: Nested dictionary structure: scene -> npc_name -> dialog_level -> config.
                 Stores all loaded dialog configurations organized by scene and progression.
-        pathfinding: PathfindingManager instance used for calculating NPC movement paths.
+        pathfinding: PathfindingPlugin instance used for calculating NPC movement paths.
         interaction_distance: Maximum distance in pixels for player to interact with NPCs.
         waypoint_threshold: Distance in pixels to consider an NPC has reached a waypoint.
         movement_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
-        inventory_manager: Optional reference for checking inventory conditions in dialog.
+        inventory_plugin: Optional reference for checking inventory conditions in dialog.
         event_bus: Optional EventBus for publishing NPC lifecycle events.
         interacted_npcs: Dictionary mapping scene names to sets of NPC names that have
                         been interacted with in that scene. Allows scene-specific interaction tracking.
@@ -131,9 +131,9 @@ class NPCManager(NPCBaseManager):
     _dialog_cache: ClassVar[dict[str, dict[str, dict[int | str, NPCDialogConfig]]]] = {}
 
     def __init__(self) -> None:
-        """Initialize the NPC manager with default values.
+        """Initialize the NPC plugin with default values.
 
-        Creates an NPC manager with empty registries and default configuration.
+        Creates an NPC plugin with empty registries and default configuration.
         Actual initialization with dependencies happens in setup().
         """
         self.npcs: dict[str, NPCState] = {}
@@ -148,7 +148,7 @@ class NPCManager(NPCBaseManager):
         """Initialize the NPC plugin with game context and settings.
 
         This method is called by the PluginLoader after all plugins have been
-        instantiated. It configures the manager with references to required
+        instantiated. It configures the plugin with references to required
         plugins and settings.
 
         Args:
@@ -156,7 +156,7 @@ class NPCManager(NPCBaseManager):
             settings: Game configuration containing NPC-related settings.
         """
         self.context = context
-        logger.debug("NPCManager setup complete")
+        logger.debug("NPCPlugin setup complete")
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load NPCs from Tiled object layer."""
@@ -175,14 +175,14 @@ class NPCManager(NPCBaseManager):
         """
         self.npcs.clear()
         self.dialogs.clear()
-        logger.debug("NPCManager cleanup complete")
+        logger.debug("NPCPlugin cleanup complete")
 
     def reset(self) -> None:
         """Reset NPC plugin for new game."""
         self.npcs.clear()
         self.dialogs.clear()
         self.interacted_npcs.clear()
-        logger.debug("NPCManager reset complete")
+        logger.debug("NPCPlugin reset complete")
 
     def get_npcs(self) -> dict[str, NPCState]:
         """Get NPCs."""
@@ -389,12 +389,12 @@ class NPCManager(NPCBaseManager):
             True if interaction occurred.
         """
         if matches_key(symbol, settings.NPC_INTERACTION_KEY):
-            player_sprite = self.context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_plugin.get_player_sprite()
 
             if player_sprite:
                 nearby = self.get_nearby_npc(player_sprite)
                 logger.debug(
-                    "NPCManager: Interaction, player at (%.1f, %.1f), npcs=%d, nearby=%s",
+                    "NPCPlugin: Interaction, player at (%.1f, %.1f), npcs=%d, nearby=%s",
                     player_sprite.center_x,
                     player_sprite.center_y,
                     len(self.npcs),
@@ -420,10 +420,10 @@ class NPCManager(NPCBaseManager):
         if not npc:
             return False
 
-        dialog_manager = self.context.dialog_manager
+        dialog_plugin = self.context.dialog_plugin
 
         # Get dialog
-        current_scene = self.context.scene_manager.get_current_scene()
+        current_scene = self.context.scene_plugin.get_current_scene()
 
         dialog_data = self.get_dialog(name, npc.dialog_level, current_scene)
         if not dialog_data:
@@ -431,23 +431,21 @@ class NPCManager(NPCBaseManager):
 
         dialog_config, on_condition_fail = dialog_data
 
-        if dialog_manager:
+        if dialog_plugin:
             # If conditions failed, execute on_condition_fail actions
             if on_condition_fail:
                 for action in on_condition_fail:
                     if action.get("type") == "dialog":
                         fail_text = action.get("text", [])
                         speaker = action.get("speaker", name)
-                        dialog_manager.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
+                        dialog_plugin.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
                         return True
                 return False
 
             # Show dialog - use display name from config if available, otherwise use NPC key name
             if dialog_config:
                 display_name = dialog_config.name or name
-                dialog_manager.show_dialog(
-                    display_name, dialog_config.text, dialog_level=npc.dialog_level, npc_key=name
-                )
+                dialog_plugin.show_dialog(display_name, dialog_config.text, dialog_level=npc.dialog_level, npc_key=name)
                 self.mark_npc_as_interacted(name)
                 return True
 
@@ -461,13 +459,13 @@ class NPCManager(NPCBaseManager):
             scene_name: Scene name (defaults to current scene if not provided).
         """
         if scene_name is None:
-            scene_name = self.context.scene_manager.get_current_scene()
+            scene_name = self.context.scene_plugin.get_current_scene()
 
         if scene_name not in self.interacted_npcs:
             self.interacted_npcs[scene_name] = set()
 
         self.interacted_npcs[scene_name].add(npc_name)
-        logger.debug("NPCManager: NPC '%s' marked as interacted in scene '%s'", npc_name, scene_name)
+        logger.debug("NPCPlugin: NPC '%s' marked as interacted in scene '%s'", npc_name, scene_name)
 
     def has_npc_been_interacted_with(self, npc_name: str, scene_name: str | None = None) -> bool:
         """Check if an NPC has been interacted with in a specific scene.
@@ -480,7 +478,7 @@ class NPCManager(NPCBaseManager):
             True if the NPC has been interacted with in the specified scene, False otherwise.
         """
         if scene_name is None:
-            scene_name = self.context.scene_manager.get_current_scene()
+            scene_name = self.context.scene_plugin.get_current_scene()
 
         return npc_name in self.interacted_npcs.get(scene_name, set())
 
@@ -497,7 +495,7 @@ class NPCManager(NPCBaseManager):
         for condition in conditions:
             check_type = condition.get("check")
             if not check_type:
-                logger.warning("NPCManager: Condition missing 'check' field")
+                logger.warning("NPCPlugin: Condition missing 'check' field")
                 return False
 
             # Delegate to ConditionRegistry
@@ -615,7 +613,7 @@ class NPCManager(NPCBaseManager):
         if not npc:
             logger.warning("Cannot move unknown NPC: %s", npc_name)
             return
-        pathfinding = self.context.pathfinding_manager
+        pathfinding = self.context.pathfinding_plugin
         if not pathfinding:
             logger.warning("Cannot move NPC %s: pathfinding not available", npc_name)
             return
@@ -657,9 +655,9 @@ class NPCManager(NPCBaseManager):
                 # Start appear animation for animated NPCs
                 if isinstance(npc.sprite, AnimatedNPC):
                     npc.sprite.start_appear_animation()
-                scene_manager = self.context.scene_manager
-                if scene_manager:
-                    scene_manager.add_to_wall_list(npc.sprite)
+                scene_plugin = self.context.scene_plugin
+                if scene_plugin:
+                    scene_plugin.add_to_wall_list(npc.sprite)
                 logger.info("Showing hidden NPC: %s", npc_name)
 
     def update(self, delta_time: float) -> None:
@@ -762,7 +760,7 @@ class NPCManager(NPCBaseManager):
 
         Example:
             # Save NPC positions
-            npc_positions = npc_manager.get_npc_positions()
+            npc_positions = npc_plugin.get_npc_positions()
             save_data["npc_positions"] = npc_positions
         """
         positions = {}
@@ -795,9 +793,9 @@ class NPCManager(NPCBaseManager):
 
         Example:
             # After loading save data
-            save_data = save_manager.load_game(slot=1)
+            save_data = save_plugin.load_game(slot=1)
             if save_data and save_data.npc_positions:
-                npc_manager._restore_positions(save_data.npc_positions)
+                npc_plugin._restore_positions(save_data.npc_positions)
                 # All NPCs now at their saved positions with correct visibility
         """
         for npc_name, position_data in npc_positions.items():
@@ -828,7 +826,7 @@ class NPCManager(NPCBaseManager):
 
         Example:
             # Check before allowing pause
-            if npc_manager.has_moving_npcs():
+            if npc_plugin.has_moving_npcs():
                 logger.debug("Cannot pause: NPCs are moving")
                 return
         """
@@ -929,16 +927,16 @@ class NPCManager(NPCBaseManager):
                 if npc_obj.properties.get("initially_hidden", False):
                     animated_npc.visible = False
 
-                # Register with manager
+                # Register with plugin
                 self.register_npc(animated_npc, npc_name)
 
                 # Add to sprite list
                 npc_sprite_list.append(animated_npc)
 
                 # Add to wall list if visible
-                scene_manager = self.context.scene_manager
-                if scene_manager and animated_npc.visible:
-                    scene_manager.add_to_wall_list(animated_npc)
+                scene_plugin = self.context.scene_plugin
+                if scene_plugin and animated_npc.visible:
+                    scene_plugin.add_to_wall_list(animated_npc)
 
                 logger.debug("Loaded NPC %s at (%.1f, %.1f)", npc_name, spawn_x, spawn_y)
 

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 @ConditionRegistry.register("object_interacted")
 def check_object_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if an object has been interacted with."""
-    interaction = context.interaction_manager
+    interaction = context.interaction_plugin
     if not interaction:
         return False
     object_name = condition_data.get("object")

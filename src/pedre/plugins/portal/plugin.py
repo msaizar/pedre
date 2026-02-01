@@ -1,4 +1,4 @@
-"""Portal manager for handling map transitions via events.
+"""Portal plugin for handling map transitions via events.
 
 This module provides a plugin for creating and managing portals that allow the player
 to transition between different maps or scenes in the game. Portals are trigger zones
@@ -7,7 +7,7 @@ with full control over conditions, cutscenes, and effects.
 
 The portal plugin consists of:
 - Portal: Data class representing a single portal with its properties
-- PortalManager: Coordinates portal registration and event publishing
+- PortalPlugin: Coordinates portal registration and event publishing
 
 Key features:
 - Proximity-based portal activation (player must be within interaction distance)
@@ -21,8 +21,8 @@ Portal properties from Tiled:
 
 Workflow:
 1. Portals are created in Tiled map editor as objects with a name
-2. During map loading, portal sprites are registered with the PortalManager
-3. Each frame, the manager checks if player is near any portal
+2. During map loading, portal sprites are registered with the PortalPlugin
+3. Each frame, the plugin checks if player is near any portal
 4. When player enters a portal zone, PortalEnteredEvent is published
 5. Scripts respond to the event with conditions, actions, and change_scene
 
@@ -85,14 +85,14 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class PortalManager(BasePlugin):
+class PortalPlugin(BasePlugin):
     """Manages portals and publishes events when player enters them.
 
-    The PortalManager coordinates all portal-related functionality in the game. It maintains
+    The PortalPlugin coordinates all portal-related functionality in the game. It maintains
     a registry of portals loaded from map data, checks for player proximity to portals,
     and publishes PortalEnteredEvent when the player enters a portal zone.
 
-    The manager uses distance-based activation: portals only trigger when the player
+    The plugin uses distance-based activation: portals only trigger when the player
     sprite is within the configured interaction_distance. This prevents accidental activations
     and gives players control over when to transition.
 
@@ -104,7 +104,7 @@ class PortalManager(BasePlugin):
     - Track which portals player is inside to only fire on entry
     - Clear portals when changing maps
 
-    The manager does NOT handle the actual map loading/transition - it only publishes
+    The plugin does NOT handle the actual map loading/transition - it only publishes
     events. Scripts respond to PortalEnteredEvent and use change_scene action to
     trigger transitions with full control over conditions and sequences.
 
@@ -118,12 +118,12 @@ class PortalManager(BasePlugin):
 
     def update(self, delta_time: float) -> None:
         """Update portal plugin, checking for player entry."""
-        self.check_portals(self.context.player_manager.get_player_sprite())
+        self.check_portals(self.context.player_plugin.get_player_sprite())
 
     def __init__(self) -> None:
-        """Initialize portal manager with default values.
+        """Initialize portal plugin with default values.
 
-        Creates an empty portal manager ready to register portals. The interaction
+        Creates an empty portal plugin ready to register portals. The interaction
         distance and event_bus are configured during setup().
         """
         self.portals: list[Portal] = []
@@ -134,13 +134,13 @@ class PortalManager(BasePlugin):
         """Initialize the portal plugin with game context and settings.
 
         This method is called by the PluginLoader after all plugins have been
-        instantiated. It configures the manager with the event bus and settings.
+        instantiated. It configures the plugin with the event bus and settings.
 
         Args:
             context: Game context providing access to event bus.
         """
         self.context = context
-        logger.debug("PortalManager setup complete (interaction_distance=%.1f)", self.interaction_distance)
+        logger.debug("PortalPlugin setup complete (interaction_distance=%.1f)", self.interaction_distance)
 
     def load_from_tiled(
         self,
@@ -193,12 +193,12 @@ class PortalManager(BasePlugin):
         Clears all registered portals and resets state.
         """
         self.clear()
-        logger.debug("PortalManager cleanup complete")
+        logger.debug("PortalPlugin cleanup complete")
 
     def register_portal(self, sprite: arcade.Sprite, name: str) -> None:
         """Register a portal from Tiled map data.
 
-        Creates a Portal object from Tiled map editor data and adds it to the manager's
+        Creates a Portal object from Tiled map editor data and adds it to the plugin's
         portal list. This method is called during map loading for each portal object
         found in the Tiled map.
 
@@ -267,13 +267,13 @@ class PortalManager(BasePlugin):
     def clear(self) -> None:
         """Clear all registered portals.
 
-        Removes all portals from the manager's registry. This should be called when
+        Removes all portals from the plugin's registry. This should be called when
         changing maps to ensure portals from the previous map don't persist.
 
         The map loading plugin typically calls this before loading a new map, then
         re-registers portals from the new map data.
 
-        After calling clear(), the manager has an empty portal list and no events
+        After calling clear(), the plugin has an empty portal list and no events
         will be published until new portals are registered.
         """
         self.portals.clear()

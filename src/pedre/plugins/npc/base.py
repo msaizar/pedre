@@ -1,4 +1,4 @@
-"""Base class for NPCManager."""
+"""Base class for NPCPlugin."""
 
 from abc import ABC, abstractmethod
 from collections import deque
@@ -106,10 +106,10 @@ class NPCState:
     disappear_event_emitted: bool = False
 
 
-class NPCBaseManager(BasePlugin, ABC):
-    """Base class for NPCManager."""
+class NPCBasePlugin(BasePlugin, ABC):
+    """Base class for NPCPlugin."""
 
-    role = "npc_manager"
+    role = "npc_plugin"
 
     @abstractmethod
     def get_npcs(self) -> dict[str, NPCState]:

@@ -70,8 +70,8 @@ class ChangeSceneAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Trigger the scene transition."""
         if not self.executed:
-            scene_manager = context.scene_manager
-            scene_manager.request_transition(
+            scene_plugin = context.scene_plugin
+            scene_plugin.request_transition(
                 self.target_map,
                 self.spawn_waypoint,
             )

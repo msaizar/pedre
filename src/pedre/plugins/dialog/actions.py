@@ -20,7 +20,7 @@ class DialogAction(Action):
     """Show a dialog to the player.
 
     This action displays a dialog box with text from a speaker. The dialog
-    is handled by the dialog manager and can consist of multiple pages that
+    is handled by the dialog plugin and can consist of multiple pages that
     the player advances through.
 
     The action completes immediately after queuing the dialog - it doesn't
@@ -78,12 +78,12 @@ class DialogAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Show dialog if not already showing."""
         if not self.started:
-            dialog_manager = context.dialog_manager
-            if dialog_manager:
-                dialog_manager.show_dialog(self.speaker, self.text, instant=self.instant, auto_close=self.auto_close)
+            dialog_plugin = context.dialog_plugin
+            if dialog_plugin:
+                dialog_plugin.show_dialog(self.speaker, self.text, instant=self.instant, auto_close=self.auto_close)
                 logger.debug("DialogAction: Showing dialog from %s", self.speaker)
             else:
-                logger.warning("DialogAction: No dialog manager available")
+                logger.warning("DialogAction: No dialog plugin available")
             self.started = True
 
         # Action completes immediately, dialog plugin handles display
@@ -98,7 +98,7 @@ class DialogAction(Action):
         """Create DialogAction from a dictionary.
 
         Note: This handles basic dialog creation. For text_from references,
-        the ScriptManager handles resolution before calling this method.
+        the ScriptPlugin handles resolution before calling this method.
         """
         return cls(
             speaker=data.get("speaker", ""),
@@ -131,8 +131,8 @@ class WaitForDialogCloseAction(WaitForConditionAction):
         """Initialize dialog wait action."""
 
         def check_dialog_closed(ctx: GameContext) -> bool:
-            dialog_manager = ctx.dialog_manager
-            return dialog_manager is None or not dialog_manager.is_showing()
+            dialog_plugin = ctx.dialog_plugin
+            return dialog_plugin is None or not dialog_plugin.is_showing()
 
         super().__init__(check_dialog_closed, "Dialog closed")
 

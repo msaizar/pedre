@@ -1,4 +1,4 @@
-"""Unit tests for InteractionManager."""
+"""Unit tests for InteractionPlugin."""
 
 import unittest
 from unittest.mock import MagicMock
@@ -7,15 +7,15 @@ import arcade
 
 # Mocking parts of pedre that might not be easily importable without full setup
 # We assume pedre package is available in python path
-from pedre.plugins.interaction.manager import InteractionManager
+from pedre.plugins.interaction.plugin import InteractionPlugin
 
 
-class TestInteractionManager(unittest.TestCase):
-    """Unit test class for InteractionManager."""
+class TestInteractionPlugin(unittest.TestCase):
+    """Unit test class for InteractionPlugin."""
 
     def setUp(self) -> None:
-        """Set up InteractionManager."""
-        self.manager = InteractionManager()
+        """Set up InteractionPlugin."""
+        self.plugin = InteractionPlugin()
 
     def test_register_object(self) -> None:
         """Test registering objects."""
@@ -23,10 +23,10 @@ class TestInteractionManager(unittest.TestCase):
         name = "test_obj"
         properties = {"interaction_type": "message", "message": "Hello"}
 
-        self.manager.register_object(sprite, name, properties)
+        self.plugin.register_object(sprite, name, properties)
 
-        assert name in self.manager.interactive_objects
-        obj = self.manager.interactive_objects[name]
+        assert name in self.plugin.interactive_objects
+        obj = self.plugin.interactive_objects[name]
         assert obj.name == name
         assert obj.sprite == sprite
         assert obj.properties == properties
@@ -42,16 +42,16 @@ class TestInteractionManager(unittest.TestCase):
         close_sprite = arcade.Sprite()
         close_sprite.center_x = 30
         close_sprite.center_y = 0
-        self.manager.register_object(close_sprite, "close", {})
+        self.plugin.register_object(close_sprite, "close", {})
 
         # Create a far object (outside 50)
         far_sprite = arcade.Sprite()
         far_sprite.center_x = 200
         far_sprite.center_y = 0
-        self.manager.register_object(far_sprite, "far", {})
+        self.plugin.register_object(far_sprite, "far", {})
 
         # Check nearby object
-        nearby = self.manager.get_nearby_object(player)
+        nearby = self.plugin.get_nearby_object(player)
         assert nearby is not None
         assert nearby.name == "close"
 
@@ -65,9 +65,9 @@ class TestInteractionManager(unittest.TestCase):
         far_sprite = arcade.Sprite()
         far_sprite.center_x = 200
         far_sprite.center_y = 0
-        self.manager.register_object(far_sprite, "far", {})
+        self.plugin.register_object(far_sprite, "far", {})
 
-        nearby = self.manager.get_nearby_object(player)
+        nearby = self.plugin.get_nearby_object(player)
         assert nearby is None
 
     def test_load_from_tiled(self) -> None:
@@ -93,10 +93,10 @@ class TestInteractionManager(unittest.TestCase):
 
         mock_scene = MagicMock()  # arcade.Scene
 
-        self.manager.load_from_tiled(mock_tile_map, mock_scene)
+        self.plugin.load_from_tiled(mock_tile_map, mock_scene)
 
-        assert "testobj" in self.manager.interactive_objects
-        obj = self.manager.interactive_objects["testobj"]
+        assert "testobj" in self.plugin.interactive_objects
+        obj = self.plugin.interactive_objects["testobj"]
 
         # Check if sprite was created with correct dimensions
         # min x=0, max x=10 -> width 10, center_x 5

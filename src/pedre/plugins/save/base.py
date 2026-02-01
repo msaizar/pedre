@@ -1,4 +1,4 @@
-"""Base class for SaveManager."""
+"""Base class for SavePlugin."""
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
@@ -58,10 +58,10 @@ class GameSaveData:
         )
 
 
-class SaveBaseManager(BasePlugin, ABC):
-    """Base class for SaveManager."""
+class SaveBasePlugin(BasePlugin, ABC):
+    """Base class for SavePlugin."""
 
-    role = "save_manager"
+    role = "save_plugin"
 
     @abstractmethod
     def restore_game_data(self, save_data: GameSaveData) -> None:

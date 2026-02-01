@@ -25,14 +25,14 @@ def check_script_completed(condition: dict[str, Any], context: GameContext) -> b
     Returns:
         True if the script has completed all actions, False otherwise.
     """
-    script_manager = context.script_manager
+    script_plugin = context.script_plugin
 
     script_name = condition.get("script", "")
     if not script_name:
         logger.warning("script_completed condition missing 'script' field")
         return False
 
-    script = script_manager.get_scripts().get(script_name)
+    script = script_plugin.get_scripts().get(script_name)
     if not script:
         logger.warning("script_completed condition script not found")
         return False

@@ -6,9 +6,9 @@ player interactions, NPC behaviors, and world events.
 
 The particle plugin consists of:
 - Particle: Individual particle data including position, velocity, and visual properties
-- ParticleManager: Plugin for creating, updating, and rendering particles
+- ParticlePlugin: Plugin for creating, updating, and rendering particles
 
-The manager provides several pre-configured particle effects:
+The plugin provides several pre-configured particle effects:
 - Hearts: Romantic/affection effects that float upward
 - Sparkles: Quick bursts for interactions and discoveries
 - Trail: Subtle movement trails for the player
@@ -18,19 +18,19 @@ Particles automatically fade out over their lifetime and are removed when expire
 The plugin uses simple physics including gravity simulation for realistic movement.
 
 Example usage:
-    # Create manager
-    particle_manager = ParticleManager()
+    # Create plugin
+    particle_plugin = ParticlePlugin()
 
     # Emit effects
-    particle_manager.emit_hearts(player_x, player_y)
-    particle_manager.emit_sparkles(chest_x, chest_y, color=(255, 215, 0))
+    particle_plugin.emit_hearts(player_x, player_y)
+    particle_plugin.emit_sparkles(chest_x, chest_y, color=(255, 215, 0))
 
     # Update and render each frame
-    particle_manager.update(delta_time)
-    particle_manager.draw()
+    particle_plugin.update(delta_time)
+    particle_plugin.draw()
 
     # Toggle effects on/off
-    particle_manager.toggle()
+    particle_plugin.toggle()
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.plugins.particle.base import Particle, ParticleBaseManager
+from pedre.plugins.particle.base import Particle, ParticleBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -53,14 +53,14 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class ParticleManager(ParticleBaseManager):
+class ParticlePlugin(ParticleBasePlugin):
     """Manages particle effects and visual polish.
 
-    The ParticleManager coordinates creation, updating, and rendering of particle effects
+    The ParticlePlugin coordinates creation, updating, and rendering of particle effects
     throughout the game. It maintains a list of active particles and provides methods for
     emitting different types of effects.
 
-    The manager handles:
+    The plugin handles:
     - Creating particles with randomized properties for natural variation
     - Updating particle positions and ages each frame
     - Applying physics (velocity, gravity) to particles
@@ -87,9 +87,9 @@ class ParticleManager(ParticleBaseManager):
     dependencies: ClassVar[list[str]] = ["scene"]
 
     def __init__(self) -> None:
-        """Initialize the particle manager.
+        """Initialize the particle plugin.
 
-        Creates an empty particle list and enables the particle plugin. The manager
+        Creates an empty particle list and enables the particle plugin. The plugin
         uses its own random number generator for particle properties to ensure
         consistent behavior independent of other game randomness.
         """
@@ -104,12 +104,12 @@ class ParticleManager(ParticleBaseManager):
             context: Game context (not used by particle plugin).
         """
         self.context = context
-        logger.debug("ParticleManager setup complete")
+        logger.debug("ParticlePlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up particle resources when the scene unloads."""
         self.clear()
-        logger.debug("ParticleManager cleanup complete")
+        logger.debug("ParticlePlugin cleanup complete")
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving.

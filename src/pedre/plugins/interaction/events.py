@@ -16,7 +16,7 @@ class ObjectInteractedEvent(Event):
     an interactive object in the game world. Objects are tiles or sprites marked as
     interactive in the map data.
 
-    The script manager tracks which objects have been interacted with, allowing
+    The script plugin tracks which objects have been interacted with, allowing
     conditions to check if an object was previously activated.
 
     Script trigger example:

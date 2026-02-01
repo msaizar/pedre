@@ -22,11 +22,11 @@ Example usage:
     )
 
     # Register plugins (done by PluginLoader)
-    context.register_plugin("dialog", dialog_manager)
-    context.register_plugin("npc", npc_manager)
+    context.register_plugin("dialog", dialog_plugin)
+    context.register_plugin("npc", npc_plugin)
 
     # Actions access plugins by name
-    dialog = context.dialog_manager
+    dialog = context.dialog_plugin
     if dialog:
         dialog.show_dialog("Hello!")
 """
@@ -41,21 +41,21 @@ if TYPE_CHECKING:
     from pedre.events import EventBus
     from pedre.plugins.audio.base import AudioBasePlugin
     from pedre.plugins.base import BasePlugin
-    from pedre.plugins.cache.base import CacheBaseManager
-    from pedre.plugins.camera.base import CameraBaseManager
-    from pedre.plugins.dialog.base import DialogBaseManager
-    from pedre.plugins.input.base import InputBaseManager
-    from pedre.plugins.interaction.base import InteractionBaseManager
-    from pedre.plugins.inventory.base import InventoryBaseManager
-    from pedre.plugins.npc.base import NPCBaseManager
-    from pedre.plugins.particle.base import ParticleBaseManager
-    from pedre.plugins.pathfinding.base import PathfindingBaseManager
-    from pedre.plugins.physics.base import PhysicsBaseManager
-    from pedre.plugins.player.base import PlayerBaseManager
-    from pedre.plugins.save.base import GameSaveData, SaveBaseManager
-    from pedre.plugins.scene.base import SceneBaseManager
-    from pedre.plugins.script.base import ScriptBaseManager
-    from pedre.plugins.waypoint.base import WaypointBaseManager
+    from pedre.plugins.cache.base import CacheBasePlugin
+    from pedre.plugins.camera.base import CameraBasePlugin
+    from pedre.plugins.dialog.base import DialogBasePlugin
+    from pedre.plugins.input.base import InputBasePlugin
+    from pedre.plugins.interaction.base import InteractionBasePlugin
+    from pedre.plugins.inventory.base import InventoryBasePlugin
+    from pedre.plugins.npc.base import NPCBasePlugin
+    from pedre.plugins.particle.base import ParticleBasePlugin
+    from pedre.plugins.pathfinding.base import PathfindingBasePlugin
+    from pedre.plugins.physics.base import PhysicsBasePlugin
+    from pedre.plugins.player.base import PlayerBasePlugin
+    from pedre.plugins.save.base import GameSaveData, SaveBasePlugin
+    from pedre.plugins.scene.base import SceneBasePlugin
+    from pedre.plugins.script.base import ScriptBasePlugin
+    from pedre.plugins.waypoint.base import WaypointBasePlugin
 
 
 class GameContext:
@@ -80,22 +80,22 @@ class GameContext:
         window: Reference to the arcade Window instance.
     """
 
-    audio_manager: AudioBasePlugin
-    cache_manager: CacheBaseManager
-    save_manager: SaveBaseManager
-    npc_manager: NPCBaseManager
-    scene_manager: SceneBaseManager
-    camera_manager: CameraBaseManager
-    dialog_manager: DialogBaseManager
-    inventory_manager: InventoryBaseManager
-    interaction_manager: InteractionBaseManager
-    pathfinding_manager: PathfindingBaseManager
-    particle_manager: ParticleBaseManager
-    input_manager: InputBaseManager
-    physics_manager: PhysicsBaseManager
-    script_manager: ScriptBaseManager
-    player_manager: PlayerBaseManager
-    waypoint_manager: WaypointBaseManager
+    audio_plugin: AudioBasePlugin
+    cache_plugin: CacheBasePlugin
+    save_plugin: SaveBasePlugin
+    npc_plugin: NPCBasePlugin
+    scene_plugin: SceneBasePlugin
+    camera_plugin: CameraBasePlugin
+    dialog_plugin: DialogBasePlugin
+    inventory_plugin: InventoryBasePlugin
+    interaction_plugin: InteractionBasePlugin
+    pathfinding_plugin: PathfindingBasePlugin
+    particle_plugin: ParticleBasePlugin
+    input_plugin: InputBasePlugin
+    physics_plugin: PhysicsBasePlugin
+    script_plugin: ScriptBasePlugin
+    player_plugin: PlayerBasePlugin
+    waypoint_plugin: WaypointBasePlugin
 
     def __init__(
         self,
@@ -137,8 +137,8 @@ class GameContext:
 
         Example:
             # PluginLoader calls this for each instantiated plugin
-            context.register_plugin("weather", weather_manager)
-            context.register_plugin("dialog", dialog_manager)
+            context.register_plugin("weather", weather_plugin)
+            context.register_plugin("dialog", dialog_plugin)
         """
         self._plugins[name] = plugin
 

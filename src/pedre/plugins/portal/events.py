@@ -16,7 +16,7 @@ from pedre.events.registry import EventRegistry
 class PortalEnteredEvent(Event):
     """Fired when player enters a portal zone.
 
-    This event is published by the portal manager when the player walks into a portal's
+    This event is published by the portal plugin when the player walks into a portal's
     activation zone. Scripts can subscribe to this event to handle portal transitions,
     including conditional checks, cutscenes, and map transitions.
 

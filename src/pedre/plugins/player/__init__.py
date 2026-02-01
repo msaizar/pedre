@@ -1,9 +1,9 @@
 """Player management plugin.
 
-This module provides the PlayerManager class, which handles player spawning,
+This module provides the PlayerPlugin class, which handles player spawning,
 movement, and animation, along with the AnimatedPlayer sprite class.
 """
 
-from pedre.plugins.player.manager import PlayerManager
+from pedre.plugins.player.plugin import PlayerPlugin
 
-__all__ = ["PlayerManager"]
+__all__ = ["PlayerPlugin"]

@@ -25,11 +25,11 @@ Boundary Plugin:
     For maps smaller than the viewport, the camera centers on the map.
 
 Usage Example:
-    # Initialize camera manager
-    camera_manager = CameraManager(camera)
+    # Initialize camera plugin
+    camera_plugin = CameraPlugin(camera)
 
     # Set boundaries based on map size
-    camera_manager.set_bounds(
+    camera_plugin.set_bounds(
         map_width=1600,
         map_height=1200,
         viewport_width=1024,
@@ -37,10 +37,10 @@ Usage Example:
     )
 
     # Each frame, follow the player smoothly
-    camera_manager.smooth_follow(player.center_x, player.center_y)
+    camera_plugin.smooth_follow(player.center_x, player.center_y)
 
     # Activate camera for rendering
-    camera_manager.use()
+    camera_plugin.use()
 
 Integration:
     - Created during map loading in GameView
@@ -56,7 +56,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.plugins.camera.base import CameraBaseManager
+from pedre.plugins.camera.base import CameraBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -66,15 +66,15 @@ logger = logging.getLogger(__name__)
 
 
 @PluginRegistry.register
-class CameraManager(CameraBaseManager):
+class CameraPlugin(CameraBasePlugin):
     """Manages camera with smooth following and optional boundaries.
 
-    The CameraManager wraps an Arcade Camera2D object and provides smooth
+    The CameraPlugin wraps an Arcade Camera2D object and provides smooth
     following behavior with boundary constraints. It uses linear interpolation
     (lerp) to gradually move the camera toward the target position each frame,
     creating a pleasant, non-jarring camera experience.
 
-    The manager can constrain the camera to map boundaries, ensuring the
+    The plugin can constrain the camera to map boundaries, ensuring the
     viewport never shows areas outside the game world. This is essential for
     maintaining immersion and preventing visual glitches.
 
@@ -102,9 +102,9 @@ class CameraManager(CameraBaseManager):
         camera: arcade.camera.Camera2D | None = None,
         lerp_speed: float = settings.CAMERA_LERP_SPEED,
     ) -> None:
-        """Initialize the camera manager.
+        """Initialize the camera plugin.
 
-        Creates a camera manager that will smooth follow a target position
+        Creates a camera plugin that will smooth follow a target position
         with optional boundary constraints.
 
         Args:
@@ -117,10 +117,10 @@ class CameraManager(CameraBaseManager):
 
         Example:
             # Create smooth camera with default settings
-            camera_manager = CameraManager(camera)
+            camera_plugin = CameraPlugin(camera)
 
             # Create more responsive camera
-            camera_manager = CameraManager(camera, lerp_speed=0.2)
+            camera_plugin = CameraPlugin(camera, lerp_speed=0.2)
         """
         self.camera: arcade.camera.Camera2D | None = camera
         self.lerp_speed = lerp_speed
@@ -138,7 +138,7 @@ class CameraManager(CameraBaseManager):
             context: Game context providing access to other plugins.
         """
         self.context = context
-        logger.debug("CameraManager setup complete")
+        logger.debug("CameraPlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up camera resources when the scene unloads."""
@@ -147,7 +147,7 @@ class CameraManager(CameraBaseManager):
         self.follow_mode = None
         self.follow_target_npc = None
         self._follow_config = None
-        logger.debug("CameraManager cleanup complete")
+        logger.debug("CameraPlugin cleanup complete")
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BasePlugin interface).
@@ -211,7 +211,7 @@ class CameraManager(CameraBaseManager):
         Example:
             # Set bounds for a 50x40 tile map with 32px tiles
             # on a 1024x768 window
-            camera_manager.set_bounds(
+            camera_plugin.set_bounds(
                 map_width=50 * 32,      # 1600 pixels
                 map_height=40 * 32,     # 1280 pixels
                 viewport_width=1024,
@@ -272,7 +272,7 @@ class CameraManager(CameraBaseManager):
 
         Example:
             # In game update loop (60 FPS)
-            camera_manager.smooth_follow(
+            camera_plugin.smooth_follow(
                 player_sprite.center_x,
                 player_sprite.center_y
             )
@@ -324,10 +324,10 @@ class CameraManager(CameraBaseManager):
         Example:
             # Teleport camera to spawn point when loading map
             spawn_x, spawn_y = get_spawn_position()
-            camera_manager.instant_follow(spawn_x, spawn_y)
+            camera_plugin.instant_follow(spawn_x, spawn_y)
 
             # Cut to specific location for cutscene
-            camera_manager.instant_follow(1024, 768)
+            camera_plugin.instant_follow(1024, 768)
 
         Note:
             Use smooth_follow() for normal gameplay camera following.
@@ -382,16 +382,16 @@ class CameraManager(CameraBaseManager):
             delta_time: Time since last update (unused).
         """
         if self.follow_mode == "player":
-            player_sprite = self.context.player_manager.get_player_sprite()
+            player_sprite = self.context.player_plugin.get_player_sprite()
             if player_sprite:
                 if self.follow_smooth:
                     self.smooth_follow(player_sprite.center_x, player_sprite.center_y)
                 else:
                     self.instant_follow(player_sprite.center_x, player_sprite.center_y)
         elif self.follow_mode == "npc":
-            npc_manager = self.context.npc_manager
-            if npc_manager and self.follow_target_npc:
-                npc_state = npc_manager.get_npc_by_name(self.follow_target_npc)
+            npc_plugin = self.context.npc_plugin
+            if npc_plugin and self.follow_target_npc:
+                npc_state = npc_plugin.get_npc_by_name(self.follow_target_npc)
                 if npc_state:
                     if self.follow_smooth:
                         self.smooth_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
@@ -407,7 +407,7 @@ class CameraManager(CameraBaseManager):
         3. Creates the camera with correct initial position
         4. Sets bounds and applies follow configuration
 
-        Dependencies are satisfied at this point (player and npc managers loaded).
+        Dependencies are satisfied at this point (player and npc plugins loaded).
 
         Map Property Configuration in Tiled:
             1. Click on the map name in Layers panel (deselect any layers)
@@ -468,10 +468,10 @@ class CameraManager(CameraBaseManager):
                 config = {"mode": "player", "smooth": camera_smooth}
             else:
                 # Validate NPC exists
-                npc_manager = self.context.npc_manager
+                npc_plugin = self.context.npc_plugin
                 # NPCs are registered during load_from_tiled phase
                 # We can check if NPC will exist (it's in the map)
-                npc_state = npc_manager.get_npc_by_name(npc_name)
+                npc_state = npc_plugin.get_npc_by_name(npc_name)
                 if npc_state is None:
                     logger.warning(
                         "camera_follow references NPC '%s' which does not exist, using 'player'",
@@ -498,7 +498,7 @@ class CameraManager(CameraBaseManager):
     def apply_follow_config(self) -> None:
         """Apply camera following configuration loaded from Tiled.
 
-        Called by SceneManager after camera is created and set.
+        Called by ScenePlugin after camera is created and set.
         This applies the configuration stored by load_from_tiled().
 
         """
@@ -552,7 +552,7 @@ class CameraManager(CameraBaseManager):
     def _get_initial_position(self, map_width: float, map_height: float) -> tuple[float, float]:
         """Determine initial camera position based on follow configuration.
 
-        Requires player_manager and npc_manager dependencies to be satisfied.
+        Requires player_plugin and npc_plugin dependencies to be satisfied.
 
         Args:
             map_width: Width of the map in pixels.
@@ -567,9 +567,9 @@ class CameraManager(CameraBaseManager):
         if follow_config and follow_config.get("mode") == "npc":
             npc_name = follow_config.get("target")
             if npc_name:
-                npc_manager = self.context.npc_manager
-                if npc_manager:
-                    npc_state = npc_manager.get_npc_by_name(npc_name)
+                npc_plugin = self.context.npc_plugin
+                if npc_plugin:
+                    npc_state = npc_plugin.get_npc_by_name(npc_name)
                     if npc_state:
                         logger.debug(
                             "Initial camera position: NPC '%s' at (%.1f, %.1f)",
@@ -580,7 +580,7 @@ class CameraManager(CameraBaseManager):
                         return (npc_state.sprite.center_x, npc_state.sprite.center_y)
 
         # Default: position at player
-        player_sprite = self.context.player_manager.get_player_sprite()
+        player_sprite = self.context.player_plugin.get_player_sprite()
         if player_sprite:
             logger.debug(
                 "Initial camera position: Player at (%.1f, %.1f)",
@@ -627,10 +627,10 @@ class CameraManager(CameraBaseManager):
 
         Example (when implemented):
             # Shake camera on explosion
-            camera_manager.shake(intensity=20.0, duration=0.3)
+            camera_plugin.shake(intensity=20.0, duration=0.3)
 
             # Subtle shake for damage feedback
-            camera_manager.shake(intensity=5.0, duration=0.2)
+            camera_plugin.shake(intensity=5.0, duration=0.2)
         """
         # Future enhancement: Implement camera shake
         # This would require tracking shake state and updating in the game loop
@@ -651,7 +651,7 @@ class CameraManager(CameraBaseManager):
                 self.clear()
 
                 # Activate game camera for world rendering
-                self.camera_manager.use()
+                self.camera_plugin.use()
 
                 # Draw world objects
                 self.npc_list.draw()
@@ -663,7 +663,7 @@ class CameraManager(CameraBaseManager):
 
         Note:
             This is a thin wrapper around arcade.camera.Camera2D.use() for
-            convenience and consistency with the manager pattern.
+            convenience and consistency with the plugin pattern.
         """
         if self.camera is not None:
             self.camera.use()

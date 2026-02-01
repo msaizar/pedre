@@ -66,8 +66,8 @@ class MoveNPCAction(Action):
         """Start NPC movement."""
         if not self.started:
             # Resolve waypoint to tile coordinates
-            waypoints = context.waypoint_manager.get_waypoints()
-            if self.waypoint in context.waypoint_manager.get_waypoints():
+            waypoints = context.waypoint_plugin.get_waypoints()
+            if self.waypoint in context.waypoint_plugin.get_waypoints():
                 tile_x, tile_y = waypoints[self.waypoint]
                 logger.debug(
                     "MoveNPCAction: Resolved waypoint '%s' to tile (%d, %d)",
@@ -80,9 +80,9 @@ class MoveNPCAction(Action):
                 return True  # Complete immediately on error
 
             # Move all NPCs to the target
-            npc_manager = context.npc_manager
+            npc_plugin = context.npc_plugin
             for npc_name in self.npc_names:
-                npc_manager.move_npc_to_tile(npc_name, tile_x, tile_y)
+                npc_plugin.move_npc_to_tile(npc_name, tile_x, tile_y)
                 logger.debug("MoveNPCAction: Moving %s to (%d, %d)", npc_name, tile_x, tile_y)
 
             self.started = True
@@ -132,8 +132,8 @@ class RevealNPCsAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Reveal NPCs and show particle effects."""
         if not self.executed:
-            npc_manager = context.npc_manager
-            npc_manager.show_npcs(self.npc_names)
+            npc_plugin = context.npc_plugin
+            npc_plugin.show_npcs(self.npc_names)
             self.executed = True
             logger.debug("RevealNPCsAction: Revealed NPCs %s", self.npc_names)
 
@@ -179,8 +179,8 @@ class AdvanceDialogAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Advance the dialog."""
         if not self.executed:
-            npc_manager = context.npc_manager
-            npc_manager.advance_dialog(self.npc_name)
+            npc_plugin = context.npc_plugin
+            npc_plugin.advance_dialog(self.npc_name)
             self.executed = True
             logger.debug("AdvanceDialogAction: Advanced %s dialog", self.npc_name)
 
@@ -237,8 +237,8 @@ class SetDialogLevelAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Set the dialog level."""
         if not self.executed:
-            npc_manager = context.npc_manager
-            npc_state = npc_manager.get_npcs().get(self.npc_name)
+            npc_plugin = context.npc_plugin
+            npc_state = npc_plugin.get_npcs().get(self.npc_name)
             if npc_state:
                 old_level = npc_state.dialog_level
                 npc_state.dialog_level = self.level
@@ -311,12 +311,12 @@ class SetCurrentNPCAction(Action):
         """
         if not self.executed:
             # Access game view through context to set current NPC
-            npc_manager = context.npc_manager
-            dialog_manager = context.dialog_manager
-            npc_state = npc_manager.get_npcs().get(self.npc_name)
+            npc_plugin = context.npc_plugin
+            dialog_plugin = context.dialog_plugin
+            npc_state = npc_plugin.get_npcs().get(self.npc_name)
             if npc_state:
-                dialog_manager.set_current_npc_name(self.npc_name)
-                dialog_manager.set_current_dialog_level(npc_state.dialog_level)
+                dialog_plugin.set_current_npc_name(self.npc_name)
+                dialog_plugin.set_current_dialog_level(npc_state.dialog_level)
             logger.debug(
                 "SetCurrentNPCAction: Set current NPC to %s at level %d",
                 self.npc_name,
@@ -368,8 +368,8 @@ class WaitForNPCMovementAction(WaitForConditionAction):
         self.npc_name = npc_name
 
         def check_movement(ctx: GameContext) -> bool:
-            npc_manager = ctx.npc_manager
-            npc_state = npc_manager.get_npcs().get(npc_name)
+            npc_plugin = ctx.npc_plugin
+            npc_state = npc_plugin.get_npcs().get(npc_name)
             if not npc_state:
                 return True
             # NPC is not moving if path is empty and is_moving is False
@@ -416,9 +416,9 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
         self.npc_names = npc_names
 
         def check_all_appeared(ctx: GameContext) -> bool:
-            npc_manager = ctx.npc_manager
+            npc_plugin = ctx.npc_plugin
             for npc_name in npc_names:
-                npc_state = npc_manager.get_npcs().get(npc_name)
+                npc_state = npc_plugin.get_npcs().get(npc_name)
                 if not npc_state:
                     continue
                 # Check if it's an AnimatedNPC and if appear animation is complete
@@ -468,9 +468,9 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
         self.npc_names = npc_names
 
         def check_all_disappeared(ctx: GameContext) -> bool:
-            npc_manager = ctx.npc_manager
+            npc_plugin = ctx.npc_plugin
             for npc_name in npc_names:
-                npc_state = npc_manager.get_npcs().get(npc_name)
+                npc_state = npc_plugin.get_npcs().get(npc_name)
                 if not npc_state:
                     continue
                 # Check if it's an AnimatedNPC and if disappear animation is complete
@@ -529,9 +529,9 @@ class StartDisappearAnimationAction(Action):
         """Start the disappear animation and wait for completion."""
         # Start animations for all NPCs on first call
         if not self.animation_started:
-            npc_manager = context.npc_manager
+            npc_plugin = context.npc_plugin
             for npc_name in self.npc_names:
-                npc_state = npc_manager.get_npcs().get(npc_name)
+                npc_state = npc_plugin.get_npcs().get(npc_name)
                 if npc_state and isinstance(npc_state.sprite, AnimatedNPC):
                     npc_state.sprite.start_disappear_animation()
                     # Reset the disappear event flag so event can be emitted
@@ -545,20 +545,20 @@ class StartDisappearAnimationAction(Action):
             self.animation_started = True
 
         # Check if all animations have completed
-        npc_manager = context.npc_manager
+        npc_plugin = context.npc_plugin
         for npc_name in self.npc_names:
-            npc_state = npc_manager.get_npcs().get(npc_name)
+            npc_state = npc_plugin.get_npcs().get(npc_name)
             if not npc_state:
                 continue
             # Check if it's an AnimatedNPC and if disappear animation is still running
             if isinstance(npc_state.sprite, AnimatedNPC) and not npc_state.sprite.disappear_complete:
                 return False
-        scene_manager = context.scene_manager
+        scene_plugin = context.scene_plugin
         # All animations complete - remove NPCs from walls
         for npc_name in self.npc_names:
-            npc_state = npc_manager.get_npcs().get(npc_name)
+            npc_state = npc_plugin.get_npcs().get(npc_name)
             if npc_state and npc_state.sprite:
-                scene_manager.remove_from_wall_list(npc_state.sprite)
+                scene_plugin.remove_from_wall_list(npc_state.sprite)
                 logger.debug("StartDisappearAnimationAction: Removed %s from wall list", npc_name)
 
         return True
