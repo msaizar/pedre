@@ -7,9 +7,26 @@ Manages collision detection and physics simulation for the player sprite using A
 - Implementation: [src/pedre/systems/physics/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/manager.py)
 - Base class: [src/pedre/systems/physics/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/physics/base.py)
 
-## Overview
+## Configuration
 
-The PhysicsManager wraps Arcade's `PhysicsEngineSimple` to provide collision handling between the player sprite and the environment (walls, obstacles). It automatically manages the physics engine lifecycle and provides an invalidation mechanism to rebuild the engine when the player or collision layers change.
+The PhysicsManager uses the following settings from `pedre.conf.settings`:
+
+### Movement and Collision Settings
+
+- `PLAYER_MOVEMENT_SPEED` - Player movement speed in pixels per second (affects physics response)
+- `TILE_SIZE` - Size of tiles in the map (affects collision precision)
+
+These can be overridden in your project's `settings.py`:
+
+```python
+# Custom physics settings
+PLAYER_MOVEMENT_SPEED = 200.0
+TILE_SIZE = 32
+```
+
+**Additional Configuration:**
+
+- **Map collision layers** - Defined in Tiled map editor, determines which sprites act as walls
 
 ## Public API
 
@@ -221,14 +238,6 @@ if physics_manager.physics_engine is not None:
 else:
     print("Physics engine not initialized")
 ```
-
-## Configuration
-
-The PhysicsManager has no direct configuration settings. Physics behavior is controlled by:
-
-- **Player movement speed** - `PLAYER_MOVEMENT_SPEED` in settings
-- **Tile size** - `TILE_SIZE` in settings (affects collision precision)
-- **Map collision layers** - Defined in Tiled map editor
 
 ## Integration with Other Systems
 
