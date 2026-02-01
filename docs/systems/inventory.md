@@ -4,11 +4,11 @@ Manages player's inventory and item collection with a visual grid overlay.
 
 ## Location
 
-- Implementation: [src/pedre/systems/inventory/manager.py](../../src/pedre/systems/inventory/manager.py)
-- Base class: [src/pedre/systems/inventory/base.py](../../src/pedre/systems/inventory/base.py)
-- Events: [src/pedre/systems/inventory/events.py](../../src/pedre/systems/inventory/events.py)
-- Actions: [src/pedre/systems/inventory/actions.py](../../src/pedre/systems/inventory/actions.py)
-- Conditions: [src/pedre/systems/inventory/conditions.py](../../src/pedre/systems/inventory/conditions.py)
+- Implementation: [src/pedre/systems/inventory/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/manager.py)
+- Base class: [src/pedre/systems/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/base.py)
+- Events: [src/pedre/systems/inventory/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/events.py)
+- Actions: [src/pedre/systems/inventory/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/actions.py)
+- Conditions: [src/pedre/systems/inventory/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/conditions.py)
 
 ## Configuration
 
@@ -56,7 +56,9 @@ INVENTORY_ITEMS_FILE = "data/items.json"
 
 ### Item Management
 
-#### `acquire_item(item_id: str) -> bool`
+#### acquire_item
+
+`acquire_item(item_id: str) -> bool`
 
 Mark an item as acquired by the player.
 
@@ -87,7 +89,9 @@ else:
 - Publishes `ItemAcquisitionFailedEvent` if acquisition fails
 - Returns `False` if item doesn't exist in the registry
 
-#### `consume_item(item_id: str) -> bool`
+#### consume_item
+
+`consume_item(item_id: str) -> bool`
 
 Mark an item as consumed by the player.
 
@@ -117,7 +121,9 @@ else:
 - Consumed items no longer appear in the inventory display
 - Publishes `ItemConsumedEvent` when successful
 
-#### `add_item(item: InventoryItem) -> bool`
+#### add_item
+
+`add_item(item: InventoryItem) -> bool`
 
 Add a new item to the inventory system and optionally acquire it.
 
@@ -156,7 +162,9 @@ if inventory_manager.add_item(potion):
 - If `acquired=True`, publishes `ItemAcquiredEvent`
 - Checks inventory capacity before adding
 
-#### `has_item(item_id: str) -> bool`
+#### has_item
+
+`has_item(item_id: str) -> bool`
 
 Check if the player has acquired a specific item.
 
@@ -187,7 +195,9 @@ else:
 
 ### State Queries
 
-#### `has_been_accessed() -> bool`
+#### has_been_accessed
+
+`has_been_accessed() -> bool`
 
 Check if inventory has been accessed by the player.
 
@@ -211,7 +221,9 @@ if inventory_manager.has_been_accessed():
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -229,7 +241,9 @@ save_data = {
 }
 ```
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore state from save data.
 
@@ -243,48 +257,16 @@ Restore state from save data.
 inventory_manager.restore_save_state(save_data["inventory"])
 ```
 
-### Internal Serialization Methods
+**Notes:**
 
-#### `to_dict() -> dict[str, dict[str, bool]]`
+- Restores item acquired/consumed flags and accessed state
+- Dynamically added items are recreated from save data
 
-Convert inventory state to dictionary for save data serialization.
+## System Lifecycle
 
-**Returns:**
+### setup
 
-- Dictionary mapping item IDs to state dictionaries with `acquired` and `consumed` flags
-
-**Example:**
-
-```python
-import json
-save_data = {
-    "inventory": inventory_manager.to_dict(),
-    "player_position": (x, y),
-}
-with open("save.json", "w") as f:
-    json.dump(save_data, f)
-```
-
-#### `from_dict(data: dict[str, dict[str, bool]]) -> None`
-
-Load inventory state from saved dictionary data.
-
-**Parameters:**
-
-- `data` - Dictionary mapping item IDs to state dictionaries
-
-**Example:**
-
-```python
-import json
-with open("save.json", "r") as f:
-    save_data = json.load(f)
-inventory_manager.from_dict(save_data["inventory"])
-```
-
-### System Lifecycle
-
-#### `setup(context: GameContext) -> None`
+`setup(context: GameContext) -> None`
 
 Initialize the inventory system with game context.
 
@@ -297,7 +279,9 @@ Initialize the inventory system with game context.
 - Called automatically by the SystemLoader
 - Loads items from `INVENTORY_ITEMS_FILE`
 
-#### `cleanup() -> None`
+### cleanup
+
+`cleanup() -> None`
 
 Clean up inventory resources when the scene unloads.
 
@@ -306,7 +290,9 @@ Clean up inventory resources when the scene unloads.
 - Clears all items and resets accessed flag
 - Called automatically by the SystemLoader
 
-#### `reset() -> None`
+### reset
+
+`reset() -> None`
 
 Reset inventory state for new game.
 
@@ -315,7 +301,9 @@ Reset inventory state for new game.
 - Clears items, accessed flag, and overlay state
 - Reloads default items from JSON
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Handle key presses for inventory overlay.
 
@@ -337,7 +325,9 @@ Handle key presses for inventory overlay.
 - `INVENTORY_KEY_CONSUME` (default: `C`) consumes selected item
 - `ESC` closes overlay
 
-#### `on_draw_ui() -> None`
+### on_draw_ui
+
+`on_draw_ui() -> None`
 
 Draw the inventory overlay in screen coordinates.
 
@@ -845,7 +835,7 @@ If you need to replace the inventory system with a custom implementation, you ca
 
 ### InventoryBaseManager
 
-**Location:** [src/pedre/systems/inventory/base.py](../../src/pedre/systems/inventory/base.py)
+**Location:** [src/pedre/systems/inventory/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/inventory/base.py)
 
 The `InventoryBaseManager` class defines the minimum interface that any inventory manager must implement.
 
@@ -943,37 +933,6 @@ INSTALLED_SYSTEMS = [
 
 ## Usage Examples
 
-### Basic Item Collection
-
-```python
-# When player picks up an item
-if inventory_manager.acquire_item("ancient_scroll"):
-    show_notification("Found: Ancient Scroll!")
-    audio_manager.play_sfx("item_get.wav")
-```
-
-### Conditional Door Unlock
-
-```python
-# Check for key before unlocking door
-if inventory_manager.has_item("tower_key"):
-    unlock_door("tower_entrance")
-    dialog_manager.show_dialog("Info", ["The key fits perfectly!"])
-else:
-    dialog_manager.show_dialog("Info", ["The door is locked."])
-```
-
-### Consumable Item
-
-```python
-# When player uses a health potion
-if inventory_manager.consume_item("health_potion"):
-    restore_player_health(50)
-    show_notification("HP restored!")
-else:
-    show_message("You don't have any health potions!")
-```
-
 ### Tutorial Sequence
 
 ```json
@@ -1037,6 +996,7 @@ else:
 
 - [DialogManager](dialog.md) - Conversation system
 - [ScriptManager](script.md) - Event-driven scripting
-- [Configuration Guide](../configuration.md) - Inventory system settings
-- [Scripting Actions](../scripting/actions.md) - Inventory actions
-- [Scripting Conditions](../scripting/conditions.md) - Inventory conditions
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)
+- [Scripting Conditions](../scripting/conditions.md)
+- [Scripting Events](../scripting/events.md)

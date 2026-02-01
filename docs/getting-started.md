@@ -530,8 +530,8 @@ Congratulations! You've created your first RPG with:
 ### Learn More
 
 - [Systems Reference](systems/index.md) - Deep dive into each manager
-- [Tiled Integration](tiled-integration.md) - Advanced Tiled features
+- [Tiled Integration](guides/tiled-integration.md) - Advanced Tiled features
 - [Scripting Guide](scripting/index.md) - All available actions and events
-- [API Reference](api-reference.md) - Complete API documentation
+- [API Reference](api/index.md) - Complete API documentation
 
 Happy game dev! 🎮

@@ -4,10 +4,10 @@ Manages dialog display and pagination for game conversations.
 
 ## Location
 
-- Implementation: [src/pedre/systems/dialog/manager.py](../../src/pedre/systems/dialog/manager.py)
-- Base class: [src/pedre/systems/dialog/base.py](../../src/pedre/systems/dialog/base.py)
-- Events: [src/pedre/systems/dialog/events.py](../../src/pedre/systems/dialog/events.py)
-- Actions: [src/pedre/systems/dialog/actions.py](../../src/pedre/systems/dialog/actions.py)
+- Implementation: [src/pedre/systems/dialog/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/manager.py)
+- Base class: [src/pedre/systems/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/base.py)
+- Events: [src/pedre/systems/dialog/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/events.py)
+- Actions: [src/pedre/systems/dialog/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/actions.py)
 
 ## Configuration
 
@@ -70,7 +70,9 @@ DIALOG_TEXT_FONT_SIZE = 18
 
 ### Dialog Display
 
-#### `show_dialog(npc_name: str, text: list[str], *, instant: bool = settings.DIALOG_INSTANT_TEXT_DEFAULT, auto_close: bool = settings.DIALOG_AUTO_CLOSE_DEFAULT, dialog_level: int | None = None, npc_key: str | None = None) -> None`
+#### show_dialog
+
+`show_dialog(npc_name: str, text: list[str], *, instant: bool = settings.DIALOG_INSTANT_TEXT_DEFAULT, auto_close: bool = settings.DIALOG_AUTO_CLOSE_DEFAULT, dialog_level: int | None = None, npc_key: str | None = None) -> None`
 
 Display a dialog from an NPC.
 
@@ -143,7 +145,9 @@ if key == arcade.key.ESCAPE and dialog_manager.is_showing():
 - Called automatically when the player advances past the last page
 - Does not publish `DialogClosedEvent` (that only happens via player interaction)
 
-#### `advance_page() -> bool`
+#### advance_page
+
+`advance_page() -> bool`
 
 Advance to the next page or close dialog if on last page.
 
@@ -172,7 +176,9 @@ if symbol == arcade.key.SPACE and dialog_manager.is_showing():
 
 ### State Queries
 
-#### `is_showing() -> bool`
+#### is_showing
+
+`is_showing() -> bool`
 
 Check if dialog is currently displayed.
 
@@ -188,7 +194,9 @@ if dialog_manager.is_showing():
     return
 ```
 
-#### `get_current_page() -> DialogPage | None`
+#### get_current_page
+
+`get_current_page() -> DialogPage | None`
 
 Get the currently displayed page.
 
@@ -208,7 +216,9 @@ if page:
 
 ### Dialog State Management
 
-#### `set_current_dialog_level(dialog_level: int) -> None`
+#### set_current_dialog_level
+
+`set_current_dialog_level(dialog_level: int) -> None`
 
 Set the current dialog level for event tracking.
 
@@ -221,7 +231,9 @@ Set the current dialog level for event tracking.
 - Used internally for event emission
 - Typically set automatically when showing dialog
 
-#### `set_current_npc_name(npc_name: str) -> None`
+#### set_current_npc_name
+
+`set_current_npc_name(npc_name: str) -> None`
 
 Set the current NPC name for event tracking.
 
@@ -236,7 +248,9 @@ Set the current NPC name for event tracking.
 
 ### Text Reveal Control
 
-#### `speed_up_text() -> None`
+#### speed_up_text
+
+`speed_up_text() -> None`
 
 Instantly reveal all text on the current page.
 
@@ -255,7 +269,9 @@ if user_pressed_skip:
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the dialog system with game settings.
 
@@ -268,7 +284,9 @@ Initialize the dialog system with game settings.
 - Called automatically by the SystemLoader
 - Stores the game context for event publishing
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up dialog resources when the scene unloads.
 
@@ -277,7 +295,9 @@ Clean up dialog resources when the scene unloads.
 - Closes any open dialog and clears text objects
 - Called automatically by the SystemLoader
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update the dialog text reveal animation and auto-close timer.
 
@@ -291,7 +311,9 @@ Update the dialog text reveal animation and auto-close timer.
 - Handles text reveal animation at rate controlled by `DIALOG_CHAR_REVEAL_SPEED`
 - Manages auto-close countdown when enabled
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+#### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Handle input for dialog advancement.
 
@@ -311,7 +333,9 @@ Handle input for dialog advancement.
 - Handles the configured `DIALOG_KEY_ADVANCE` key to advance pages or close dialog
 - Publishes `DialogClosedEvent` when dialog closes
 
-#### `on_draw_ui() -> None`
+#### on_draw_ui
+
+`on_draw_ui() -> None`
 
 Draw the dialog overlay in screen coordinates.
 
@@ -524,7 +548,7 @@ If you need to replace the dialog system with a custom implementation, you can e
 
 ### DialogBaseManager
 
-**Location:** [src/pedre/systems/dialog/base.py](../../src/pedre/systems/dialog/base.py)
+**Location:** [src/pedre/systems/dialog/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/dialog/base.py)
 
 The `DialogBaseManager` class defines the minimum interface that any dialog manager must implement.
 
@@ -710,4 +734,4 @@ dialog_manager.show_dialog(
 - [AudioManager](audio.md) - Background music and sound effects
 - [ScriptManager](script.md) - Event-driven scripting
 - [NPCManager](npc.md) - NPC state and interactions
-- [Configuration Guide](../configuration.md) - Dialog system settings
+- [Configuration Guide](../guides/configuration.md)

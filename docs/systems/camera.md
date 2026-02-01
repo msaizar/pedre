@@ -4,14 +4,17 @@ Manages camera movement with smooth following and boundary constraints.
 
 ## Location
 
-- Implementation: `src/pedre/systems/camera/manager.py`
-- Base class: `src/pedre/systems/camera/base.py`
+- Implementation: [src/pedre/systems/camera/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/manager.py)
+- Base class: [src/pedre/systems/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/base.py)
+- Actions: [src/pedre/systems/camera/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/actions.py)
 
 ## Configuration
 
 The CameraManager uses the following settings from `pedre.conf.settings`:
 
-- `CAMERA_LERP_SPEED` - Camera interpolation speed (0.0 to 1.0, default: 0.1)
+### Movement Settings
+
+- `CAMERA_LERP_SPEED` - Camera interpolation speed (0.0 to 1.0, default: `0.1`)
 
 This can be overridden in your project's `settings.py`:
 
@@ -24,7 +27,9 @@ CAMERA_LERP_SPEED = 0.2  # More responsive camera
 
 ### Camera Following
 
-#### `smooth_follow(target_x: float, target_y: float) -> None`
+#### smooth_follow
+
+`smooth_follow(target_x: float, target_y: float) -> None`
 
 Smoothly move camera towards target position using linear interpolation.
 
@@ -46,7 +51,9 @@ camera_manager.smooth_follow(player.center_x, player.center_y)
 - Automatically applies boundary constraints if enabled
 - Call this every frame in your update loop for continuous following
 
-#### `instant_follow(target_x: float, target_y: float) -> None`
+#### instant_follow
+
+`instant_follow(target_x: float, target_y: float) -> None`
 
 Instantly move camera to target position without interpolation.
 
@@ -67,7 +74,9 @@ camera_manager.instant_follow(spawn_x, spawn_y)
 - Useful for scene transitions and initial positioning
 - Still respects boundary constraints if enabled
 
-#### `set_follow_player(*, smooth: bool = True) -> None`
+#### set_follow_player
+
+`set_follow_player(*, smooth: bool = True) -> None`
 
 Set camera to automatically follow the player sprite.
 
@@ -90,7 +99,9 @@ camera_manager.set_follow_player(smooth=False)
 - The camera will automatically track player position every frame
 - Called automatically when loading maps with `camera_follow: "player"` property
 
-#### `set_follow_npc(npc_name: str, *, smooth: bool = True) -> None`
+#### set_follow_npc
+
+`set_follow_npc(npc_name: str, *, smooth: bool = True) -> None`
 
 Set camera to automatically follow a specific NPC sprite.
 
@@ -111,7 +122,9 @@ camera_manager.set_follow_npc("boss", smooth=True)
 - NPC must exist in the current scene
 - Useful for cutscenes and cinematic sequences
 
-#### `stop_follow() -> None`
+#### stop_follow
+
+`stop_follow() -> None`
 
 Stop camera following, keeping it at its current position.
 
@@ -129,7 +142,9 @@ camera_manager.stop_follow()
 
 ### Boundary Management
 
-#### `set_bounds(map_width: float, map_height: float, viewport_width: float, viewport_height: float) -> None`
+#### set_bounds
+
+`set_bounds(map_width: float, map_height: float, viewport_width: float, viewport_height: float) -> None`
 
 Set camera movement boundaries based on map and viewport dimensions.
 
@@ -160,7 +175,9 @@ camera_manager.set_bounds(
 
 ### Rendering
 
-#### `use() -> None`
+#### use
+
+`use() -> None`
 
 Activate this camera for rendering world objects.
 
@@ -183,9 +200,111 @@ def on_draw(self):
 - Must be called before drawing any world objects
 - UI elements typically use a separate camera
 
+#### set_camera
+
+`set_camera(camera: arcade.camera.Camera2D) -> None`
+
+Set the camera to manage.
+
+**Parameters:**
+
+- `camera` - The arcade Camera2D to manage
+
+**Notes:**
+
+- Used when the camera needs to be set or replaced after initialization
+
+### Save/Load Support
+
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
+
+Return serializable state for saving.
+
+**Returns:**
+
+- Dictionary containing lerp speed, follow mode, follow target NPC, and smooth setting
+
+**Example:**
+
+```python
+save_data = {
+    "camera": camera_manager.get_save_state(),
+    # ... other save data
+}
+```
+
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
+
+Restore state from save data.
+
+**Parameters:**
+
+- `state` - Previously saved state dictionary
+
+**Example:**
+
+```python
+camera_manager.restore_save_state(save_data["camera"])
+```
+
+**Notes:**
+
+- Restores lerp speed, follow mode, follow target, and smooth setting
+- Missing keys fall back to defaults
+
+### System Lifecycle
+
+#### setup
+
+`setup(context: GameContext) -> None`
+
+Initialize the camera system with game context.
+
+**Parameters:**
+
+- `context` - Game context providing access to other systems
+
+**Notes:**
+
+- Called automatically by SystemLoader
+- Stores reference to game context
+
+#### cleanup
+
+`cleanup() -> None`
+
+Clean up camera resources when the scene unloads.
+
+**Notes:**
+
+- Clears camera, bounds, and follow configuration
+- Called automatically by SystemLoader
+
+#### update
+
+`update(delta_time: float) -> None`
+
+Update camera position based on follow mode.
+
+**Parameters:**
+
+- `delta_time` - Time since last update in seconds
+
+**Notes:**
+
+- Called automatically every frame by SystemLoader
+- Follows the player or NPC depending on current follow mode
+- Uses smooth or instant follow based on configuration
+
 ### Integration Methods
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load camera configuration from a Tiled map and create the camera.
 
@@ -220,17 +339,38 @@ camera_follow: "none"             # Static camera
 camera_smooth: false              # Instant following (no interpolation)
 ```
 
-## Camera Actions
+#### apply_follow_config
 
-The camera system provides script actions for camera control during cutscenes and gameplay.
+`apply_follow_config() -> None`
 
-### `follow_player`
+Apply camera following configuration loaded from Tiled.
 
-Make camera follow player sprite continuously.
+**Notes:**
+
+- Called by SceneManager after camera is created and set
+- Applies the configuration stored by `load_from_tiled()`
+
+#### get_follow_config
+
+`get_follow_config() -> dict[str, Any] | None`
+
+Get the stored follow configuration.
+
+**Returns:**
+
+- Dictionary with follow mode configuration, or `None` if not loaded
+
+## Actions
+
+### FollowPlayerAction
+
+Make camera follow the player sprite continuously.
+
+**Type:** `follow_player`
 
 **Parameters:**
 
-- `smooth` (bool, optional) - Use smooth interpolation (default: `true`)
+- `smooth: bool` - Use smooth interpolation (default: `true`)
 
 **Example:**
 
@@ -240,14 +380,28 @@ Make camera follow player sprite continuously.
 }
 ```
 
-### `follow_npc`
+```json
+{
+    "type": "follow_player",
+    "smooth": false
+}
+```
+
+**Notes:**
+
+- Action completes immediately after setting the follow mode
+- Camera movement happens in `CameraManager.update()` every frame
+
+### FollowNPCAction
 
 Make camera follow a specific NPC sprite continuously.
 
+**Type:** `follow_npc`
+
 **Parameters:**
 
-- `npc` (string, required) - Name of NPC to follow
-- `smooth` (bool, optional) - Use smooth interpolation (default: `true`)
+- `npc: str` - Name of NPC to follow
+- `smooth: bool` - Use smooth interpolation (default: `true`)
 
 **Example:**
 
@@ -258,9 +412,27 @@ Make camera follow a specific NPC sprite continuously.
 }
 ```
 
-### `stop_camera_follow`
+```json
+{
+    "type": "follow_npc",
+    "npc": "boss_enemy",
+    "smooth": false
+}
+```
+
+**Notes:**
+
+- NPC must exist in the current scene
+- Logs a warning if NPC is not found
+- Action completes immediately after setting the follow mode
+
+### StopCameraFollowAction
 
 Stop camera following, keep at current position.
+
+**Type:** `stop_camera_follow`
+
+**Parameters:** None
 
 **Example:**
 
@@ -270,29 +442,10 @@ Stop camera following, keep at current position.
 }
 ```
 
-### Common Patterns
+**Notes:**
 
-**Cutscene focusing on NPC:**
-
-```json
-[
-    {"type": "follow_npc", "npc": "boss"},
-    {"type": "dialog", "speaker": "boss", "text": ["You cannot defeat me!"]},
-    {"type": "wait_for_dialog_close"},
-    {"type": "follow_player"}
-]
-```
-
-**Static camera shot:**
-
-```json
-[
-    {"type": "stop_camera_follow"},
-    {"type": "dialog", "speaker": "narrator", "text": ["Meanwhile..."]},
-    {"type": "wait_for_dialog_close"},
-    {"type": "follow_player"}
-]
-```
+- Camera remains at its current position
+- Action completes immediately
 
 ## Custom Camera Implementation
 
@@ -300,7 +453,7 @@ If you need to replace the camera system with a custom implementation (e.g., for
 
 ### CameraBaseManager
 
-**Location:** `src/pedre/systems/camera/base.py`
+**Location:** [src/pedre/systems/camera/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/camera/base.py)
 
 The `CameraBaseManager` class defines the minimum interface that any camera manager must implement. All methods are abstract and must be implemented by your custom class.
 
@@ -402,3 +555,66 @@ INSTALLED_SYSTEMS = [
     # ... rest of systems (omit "pedre.systems.camera") ...
 ]
 ```
+
+## Usage Examples
+
+### Cutscene Focusing on NPC
+
+```json
+[
+    {"type": "follow_npc", "npc": "boss"},
+    {"type": "dialog", "speaker": "Boss", "text": ["You cannot defeat me!"]},
+    {"type": "wait_for_dialog_close"},
+    {"type": "follow_player"}
+]
+```
+
+### Static Camera Shot
+
+```json
+[
+    {"type": "stop_camera_follow"},
+    {"type": "dialog", "speaker": "Narrator", "text": ["Meanwhile..."]},
+    {"type": "wait_for_dialog_close"},
+    {"type": "follow_player"}
+]
+```
+
+### NPC Movement with Camera Follow
+
+```json
+[
+    {"type": "follow_npc", "npc": "martin"},
+    {"type": "move_npc", "npcs": ["martin"], "waypoint": "destination"},
+    {"type": "wait_for_movement", "npc": "martin"},
+    {"type": "dialog", "speaker": "Martin", "text": ["I've arrived!"]},
+    {"type": "wait_for_dialog_close"},
+    {"type": "follow_player"}
+]
+```
+
+### Programmatic Camera Control
+
+```python
+# Set up camera for a new scene
+camera_manager.set_follow_player(smooth=True)
+
+# Teleport camera for scene transition
+camera_manager.instant_follow(spawn_x, spawn_y)
+
+# Set bounds for the map
+camera_manager.set_bounds(
+    map_width=1600,
+    map_height=1200,
+    viewport_width=1024,
+    viewport_height=768
+)
+```
+
+## See Also
+
+- [NPCManager](npc.md) - NPC sprites that can be followed
+- [PlayerManager](player.md) - Player sprite tracking
+- [SceneManager](scene.md) - Scene transitions and map loading
+- [ScriptManager](script.md) - Event-driven scripting
+- [Configuration Guide](../guides/configuration.md)

@@ -4,11 +4,13 @@ Publish-subscribe event system for loose coupling.
 
 ## Location
 
-`src/pedre/systems/events/base.py`
+[src/pedre/systems/events/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/view_manager.py)
 
 ## Key Methods
 
-### `subscribe(event_type: type[Event], callback: Callable) -> None`
+### subscribe
+
+`subscribe(event_type: type[Event], callback: Callable) -> None`
 
 Subscribe to an event type.
 
@@ -26,7 +28,9 @@ def on_dialog_closed(event: DialogClosedEvent):
 event_bus.subscribe(DialogClosedEvent, on_dialog_closed)
 ```
 
-### `publish(event: Event) -> None`
+### publish
+
+`publish(event: Event) -> None`
 
 Publish an event to all subscribers.
 
@@ -45,7 +49,9 @@ event_bus.publish(DialogClosedEvent(
 ))
 ```
 
-### `unsubscribe(event_type: type[Event], callback: Callable) -> None`
+### unsubscribe
+
+`unsubscribe(event_type: type[Event], callback: Callable) -> None`
 
 Unsubscribe from an event type.
 

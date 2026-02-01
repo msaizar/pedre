@@ -4,9 +4,9 @@ Handles map transitions through an event-driven system integrated with the scrip
 
 ## Location
 
-- Implementation: [src/pedre/systems/portal/manager.py](../../src/pedre/systems/portal/manager.py)
-- Base class: [src/pedre/systems/portal/base.py](../../src/pedre/systems/portal/base.py)
-- Events: [src/pedre/systems/portal/events.py](../../src/pedre/systems/portal/events.py)
+- Implementation: [src/pedre/systems/portal/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/manager.py)
+- Base class: [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
+- Events: [src/pedre/systems/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/events.py)
 
 ## Configuration
 
@@ -46,7 +46,9 @@ This approach allows full flexibility: conditional portals, cutscenes before tra
 
 ### Portal Registration
 
-#### `register_portal(sprite: arcade.Sprite, name: str) -> None`
+#### register_portal
+
+`register_portal(sprite: arcade.Sprite, name: str) -> None`
 
 Register a portal from Tiled map data.
 
@@ -73,7 +75,9 @@ portal_manager.register_portal(
 
 ### Portal Checking
 
-#### `check_portals(player_sprite: arcade.Sprite | None) -> None`
+#### check_portals
+
+`check_portals(player_sprite: arcade.Sprite | None) -> None`
 
 Check if player is near any portal and publish events on entry.
 
@@ -97,7 +101,9 @@ def on_update(self, delta_time):
 - Distance calculation uses Euclidean distance (straight-line)
 - Publishes `PortalEnteredEvent` when player enters
 
-#### `clear() -> None`
+#### clear
+
+`clear() -> None`
 
 Clear all registered portals.
 
@@ -109,7 +115,9 @@ Clear all registered portals.
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the portal system with game context.
 
@@ -123,7 +131,9 @@ Initialize the portal system with game context.
 - Configures the manager with event bus and settings
 - Stores reference to game context
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update portal system, checking for player entry.
 
@@ -137,7 +147,9 @@ Update portal system, checking for player entry.
 - Calls `check_portals()` with current player sprite
 - Handles portal entry detection
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up portal resources when the scene unloads.
 
@@ -147,7 +159,9 @@ Clean up portal resources when the scene unloads.
 - Resets tracking state
 - Called automatically by SystemLoader
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load portals from Tiled map object layer.
 
@@ -170,7 +184,7 @@ Load portals from Tiled map object layer.
 
 Runtime data for a single portal.
 
-**Location:** [src/pedre/systems/portal/base.py](../../src/pedre/systems/portal/base.py)
+**Location:** [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
 
 **Attributes:**
 
@@ -200,7 +214,7 @@ portal = Portal(
 
 Published when player enters a portal zone.
 
-**Location:** [src/pedre/systems/portal/events.py](../../src/pedre/systems/portal/events.py)
+**Location:** [src/pedre/systems/portal/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/events.py)
 
 **Attributes:**
 
@@ -322,13 +336,396 @@ The portal name is used in script triggers to match specific portals:
 {"trigger": {"event": "portal_entered", "portal": "forest_gate"}}
 ```
 
+## Portal Behavior
+
+### Entry Detection
+
+The portal system uses zone-based detection:
+
+1. **Distance Check** - Calculates Euclidean distance from player center to portal center
+2. **Zone Entry** - Player enters when distance < `PORTAL_INTERACTION_DISTANCE`
+3. **Event Publishing** - `PortalEnteredEvent` published on zone entry
+4. **Entry Tracking** - Tracks which portals player is currently inside
+5. **Exit Detection** - Player exits when distance >= `PORTAL_INTERACTION_DISTANCE`
+6. **Re-entry** - Can re-fire if player leaves and returns
+
+### Distance Calculation
+
+```python
+distance = arcade.get_distance_between_sprites(player_sprite, portal_sprite)
+if distance < PORTAL_INTERACTION_DISTANCE:
+    # Player is in portal zone
+```
+
+**Notes:**
+
+- Uses center points of both sprites
+- Creates circular activation zone
+- Works with portals of any size
+- Distance is in pixels
+
+### Portal Lifecycle
+
+1. **Registration** - Portals loaded from Tiled during scene setup
+2. **Checking** - Distance checked every frame in `update()`
+3. **Event Publishing** - Events published on zone entry
+4. **Script Execution** - Scripts respond to events
+5. **Cleanup** - Portals cleared when scene unloads
+
+## Implementation Details
+
+### Portal Tracking
+
+The manager tracks portal entry state to prevent duplicate events:
+
+```python
+# Internal tracking set
+self._player_in_portals = set()
+
+# Check if player just entered
+if portal.name not in self._player_in_portals:
+    self._player_in_portals.add(portal.name)
+    # Publish event only on entry
+```
+
+**Benefits:**
+
+- Events fire once per entry
+- No spam while standing in portal
+- Clean re-entry detection
+- Minimal state tracking
+
+### Portal Loading from Tiled
+
+Portals are registered during map loading:
+
+```python
+for portal_object in portal_layer:
+    portal_sprite = arcade.Sprite()
+    portal_sprite.center_x = portal_object.shape.x
+    portal_sprite.center_y = portal_object.shape.y
+
+    self.register_portal(
+        sprite=portal_sprite,
+        name=portal_object.properties.get("name")
+    )
+```
+
+**Requirements:**
+
+- Portal object must have `name` property
+- Portal sprite defines activation zone
+- Usually rectangular objects in Tiled
+
+## Usage Examples
+
+### Basic Portal Transition
+
+```json
+{
+  "go_to_forest": {
+    "trigger": {
+      "event": "portal_entered",
+      "portal": "forest_entrance"
+    },
+    "actions": [
+      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "entrance"}
+    ]
+  }
+}
+```
+
+### Two-Way Portal
+
+Create matching portals in both maps:
+
+**village.tmx:**
+
+```json
+{
+  "to_forest": {
+    "trigger": {"event": "portal_entered", "portal": "forest_gate"},
+    "actions": [
+      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+    ]
+  }
+}
+```
+
+**forest.tmx:**
+
+```json
+{
+  "to_village": {
+    "trigger": {"event": "portal_entered", "portal": "village_gate"},
+    "actions": [
+      {"type": "change_scene", "target_map": "village.tmx", "spawn_waypoint": "from_forest"}
+    ]
+  }
+}
+```
+
+### Quest-Locked Portal
+
+```json
+{
+  "castle_open": {
+    "trigger": {"event": "portal_entered", "portal": "castle_gate"},
+    "conditions": [
+      {"check": "npc_interacted", "npc": "king", "scene": "throne_room"}
+    ],
+    "actions": [
+      {"type": "change_scene", "target_map": "castle_interior.tmx", "spawn_waypoint": "entrance"}
+    ]
+  },
+  "castle_locked": {
+    "trigger": {"event": "portal_entered", "portal": "castle_gate"},
+    "conditions": [
+      {"check": "npc_interacted", "npc": "king", "scene": "throne_room", "equals": false}
+    ],
+    "actions": [
+      {"type": "dialog", "speaker": "Guard", "text": ["The castle is closed to visitors."]}
+    ]
+  }
+}
+```
+
+### Portal with Sound Effect
+
+```json
+{
+  "enter_cave": {
+    "trigger": {"event": "portal_entered", "portal": "cave_entrance"},
+    "actions": [
+      {"type": "play_sfx", "file": "cave_echo.wav"},
+      {"type": "wait", "duration": 0.5},
+      {"type": "change_scene", "target_map": "cave.tmx", "spawn_waypoint": "entrance"}
+    ]
+  }
+}
+```
+
+## Integration with Other Systems
+
+### SceneManager Integration
+
+The SceneManager handles map transitions:
+
+```python
+# Portal triggers scene change via script action
+context.scene_manager.request_transition(
+    map_file="forest.tmx",
+    spawn_waypoint="entrance"
+)
+```
+
+**Notes:**
+
+- Portal event triggers script
+- Script executes `change_scene` action
+- SceneManager handles the actual transition
+- Player spawns at specified waypoint
+
+### PlayerManager Integration
+
+The PlayerManager provides player position:
+
+```python
+# Portal system checks player position
+player_sprite = context.player_manager.get_player_sprite()
+if player_sprite:
+    portal_manager.check_portals(player_sprite)
+```
+
+**Notes:**
+
+- Player must exist for portal checking
+- Uses player sprite center position
+- Checked every frame in update loop
+
+### ScriptManager Integration
+
+Scripts handle portal responses:
+
+```python
+# PortalEnteredEvent published
+event = PortalEnteredEvent(portal_name="forest_gate")
+context.event_bus.publish(event)
+
+# Scripts listen and respond
+# Execute actions (change_scene, dialog, etc.)
+```
+
+**Notes:**
+
+- Portal system only publishes events
+- Scripts define what happens
+- Full flexibility for conditional behavior
+- Can chain multiple actions
+
+### WaypointManager Integration
+
+Waypoints define spawn positions:
+
+```python
+# Scene transition with waypoint
+{"type": "change_scene", "target_map": "castle.tmx", "spawn_waypoint": "main_gate"}
+
+# Player spawns at waypoint location
+waypoint = context.waypoint_manager.get_waypoint("main_gate")
+player.center_x = waypoint.x
+player.center_y = waypoint.y
+```
+
+**Notes:**
+
+- Waypoints must exist in target scene
+- Falls back to default position if waypoint missing
+- Enables precise spawn positioning
+
+## Troubleshooting
+
+### Portal Not Triggering
+
+If portals don't activate when player walks over them:
+
+1. **Check portal layer** - Ensure Tiled map has "Portals" object layer
+2. **Verify name property** - Each portal object must have unique `name` property
+3. **Check distance setting** - Increase `PORTAL_INTERACTION_DISTANCE` if needed
+4. **Review scripts** - Ensure script exists with matching portal name
+5. **Test player position** - Verify player sprite exists and has valid position
+
+### Portal Triggers Multiple Times
+
+If portal events fire repeatedly:
+
+1. **Check script conditions** - Ensure conditions prevent re-triggering
+2. **Use run_once** - Add `"run_once": true` to script if it should only run once
+3. **Review exit detection** - Player must fully exit zone before re-entry triggers
+
+### Portal Activates from Too Far
+
+If portals trigger from unexpected distance:
+
+1. **Reduce distance** - Lower `PORTAL_INTERACTION_DISTANCE` value
+2. **Check portal size** - Portal sprite size affects center point
+3. **Verify collision** - Ensure portal sprite position is correct in Tiled
+
+### Scene Transition Not Working
+
+If portal event fires but scene doesn't change:
+
+1. **Check action** - Verify script has `change_scene` action
+2. **Verify map file** - Ensure `target_map` path is correct
+3. **Check waypoint** - Verify `spawn_waypoint` exists in target scene
+4. **Review logs** - Look for scene loading errors
+
+## Custom Portal Implementation
+
+If you need to replace the portal system with a custom implementation, you can extend the `PortalBaseManager` abstract base class.
+
+### PortalBaseManager
+
+**Location:** [src/pedre/systems/portal/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/portal/base.py)
+
+The `PortalBaseManager` class defines the minimum interface that any portal manager must implement.
+
+#### Required Methods
+
+Your custom portal manager must implement these abstract methods:
+
+```python
+from pedre.systems.portal.base import PortalBaseManager
+
+class CustomPortalManager(PortalBaseManager):
+    """Custom portal implementation."""
+
+    name = "portal"
+
+    def register_portal(self, sprite: arcade.Sprite, name: str) -> None:
+        """Register a portal."""
+        ...
+
+    def check_portals(self, player_sprite: arcade.Sprite | None) -> None:
+        """Check for portal activation."""
+        ...
+
+    def clear(self) -> None:
+        """Clear all portals."""
+        ...
+```
+
+#### Registration
+
+Register your custom portal manager using the `@SystemRegistry.register` decorator:
+
+```python
+from pedre.systems.registry import SystemRegistry
+from pedre.systems.portal.base import PortalBaseManager
+
+@SystemRegistry.register
+class TriggerPortalManager(PortalBaseManager):
+    """Portal manager with touch triggers instead of zones."""
+
+    name = "portal"
+
+    # ... implement all abstract methods ...
+```
+
+#### Notes on Custom Implementation
+
+- Your custom manager inherits from `BaseSystem` (via `PortalBaseManager`), so you must implement the standard system lifecycle methods: `setup()`, `cleanup()`, and `reset()`
+- The `role` attribute is set to `"portal_manager"` in the base class
+- Your implementation can use any detection system (zones, triggers, collisions)
+- Register your custom portal manager in your project's `INSTALLED_SYSTEMS` setting before the default `"pedre.systems.portal"` to replace it
+
+**Example Custom Implementation:**
+
+```python
+# In myproject/systems/custom_portal.py
+from pedre.systems.registry import SystemRegistry
+from pedre.systems.portal.base import PortalBaseManager
+
+@SystemRegistry.register
+class CollisionPortalManager(PortalBaseManager):
+    """Portal manager using collision detection instead of distance."""
+
+    name = "portal"
+
+    def __init__(self):
+        self.portals = []
+        # ... rest of initialization ...
+
+    def check_portals(self, player_sprite: arcade.Sprite | None) -> None:
+        if not player_sprite:
+            return
+
+        # Use collision detection instead of distance
+        for portal in self.portals:
+            if arcade.check_for_collision(player_sprite, portal.sprite):
+                # Publish event
+                event = PortalEnteredEvent(portal_name=portal.name)
+                self.context.event_bus.publish(event)
+
+    # ... implement other abstract methods ...
+```
+
+```python
+# In myproject/settings.py
+INSTALLED_SYSTEMS = [
+    "myproject.systems.custom_portal",  # Load custom portal first
+    "pedre.systems.camera",
+    "pedre.systems.audio",
+    # ... rest of systems (omit "pedre.systems.portal") ...
+]
+```
+
 ## See Also
 
 - [SceneManager](scene.md) - Map loading and transitions
 - [ScriptManager](script.md) - Event-driven scripting
-- [Configuration Guide](../configuration.md) - Portal system settings
-- [Events Reference](../scripting/events.md) - `portal_entered` event
-- [Actions Reference](../scripting/actions.md) - `change_scene` action
-- [Conditions Reference](../scripting/conditions.md) - Conditional portal access
-- [Tiled Integration](../tiled-integration.md) - Portal setup in Tiled
-- [API Reference](../api-reference.md) - PortalManager API
+- [Configuration Guide](../guides/configuration.md)
+- [Events Reference](../scripting/events.md)
+- [Actions Reference](../scripting/actions.md)
+- [Conditions Reference](../scripting/conditions.md)
+- [Tiled Integration](../guides/tiled-integration.md)

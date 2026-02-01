@@ -4,7 +4,7 @@ The `GameContext` serves as a central registry and state container for the game.
 
 ## Location
 
-`src/pedre/systems/game_context.py`
+[src/pedre/systems/game_context.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/game_context.py)
 
 ## Overview
 
@@ -16,7 +16,9 @@ Unlike a global singleton, `GameContext` is explicitly passed to methods that ne
 
 ## Key Methods
 
-### `get_system(name: str) -> BaseSystem | None`
+### get_system
+
+`get_system(name: str) -> BaseSystem | None`
 
 Retrieve a registered system by its name.
 

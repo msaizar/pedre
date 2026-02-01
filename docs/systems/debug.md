@@ -4,7 +4,7 @@ Displays development information overlays showing player and NPC positions in ti
 
 ## Location
 
-- Implementation: [src/pedre/systems/debug/manager.py](../../src/pedre/systems/debug/manager.py)
+- Implementation: [src/pedre/systems/debug/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/debug/manager.py)
 
 ## Configuration
 
@@ -18,7 +18,9 @@ The DebugManager uses the following settings from `pedre.conf.settings`:
 
 ### Debug Mode Control
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+#### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Toggle debug mode on/off with Shift+D.
 
@@ -48,7 +50,9 @@ def on_key_press(self, symbol, modifiers):
 
 ### Debug Display
 
-#### `on_draw_ui() -> None`
+#### on_draw_ui
+
+`on_draw_ui() -> None`
 
 Render debug information overlay in screen coordinates.
 
@@ -75,7 +79,9 @@ def on_draw(self):
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the debug system with game context.
 
@@ -89,7 +95,9 @@ Initialize the debug system with game context.
 - Stores reference to game context
 - Initializes empty text object list
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up debug resources when the scene unloads.
 
@@ -105,7 +113,7 @@ When debug mode is enabled with Shift+D, the overlay shows:
 
 ### Player Information
 
-```
+```text
 Player: tile (10, 15)
 Player: coords (320, 480)
 ```
@@ -119,7 +127,7 @@ Player: coords (320, 480)
 
 For each visible NPC:
 
-```
+```text
 merchant: tile (12, 15) level 2
 merchant: coords (384, 480) level 2
 ```
@@ -206,4 +214,4 @@ The system also accesses:
 
 - [NPCManager](npc.md) - NPC system providing position data
 - [PlayerManager](player.md) - Player system providing player position
-- [Configuration Guide](../configuration.md) - TILE_SIZE setting
+- [Configuration Guide](../guides/configuration.md)

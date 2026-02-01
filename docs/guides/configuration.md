@@ -623,5 +623,5 @@ SAVE_SFX_FILE: str = "save.wav"
 
 ## See Also
 
-- [Getting Started Guide](getting-started.md) - Build your first RPG
-- [API Reference](api-reference.md) - Core classes and methods
+- [Getting Started Guide](../getting-started.md) - Build your first RPG
+- [API Reference](../api/index.md) - API Reference

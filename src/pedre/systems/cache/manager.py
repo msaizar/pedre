@@ -37,10 +37,10 @@ class CacheManager(CacheBaseManager):
         cache_manager = context.cache_manager
 
         # When leaving a scene
-        cache_manager.cache_scene("village", context)
+        cache_manager.cache_scene("village")
 
         # When returning to a scene
-        restored = cache_manager.restore_scene("village", context)
+        restored = cache_manager.restore_scene("village")
     """
 
     name: ClassVar[str] = "cache"
@@ -64,7 +64,7 @@ class CacheManager(CacheBaseManager):
         """Reset cache for new game."""
         self.clear()
 
-    def cache_scene(self, scene_name: str, context: GameContext) -> None:
+    def cache_scene(self, scene_name: str) -> None:
         """Cache all system states for a scene.
 
         Iterates through all systems and calls cache_scene_state() on each,
@@ -72,10 +72,9 @@ class CacheManager(CacheBaseManager):
 
         Args:
             scene_name: Name of the scene being left.
-            context: Game context providing access to all systems.
         """
         scene_state: dict[str, Any] = {}
-        for system in context.get_systems().values():
+        for system in self.context.get_systems().values():
             state = system.cache_scene_state(scene_name)
             if state:
                 scene_state[system.name] = state
@@ -84,7 +83,7 @@ class CacheManager(CacheBaseManager):
         self._cache[scene_name] = scene_state
         logger.info("Cached state for %d systems in scene '%s'", len(scene_state), scene_name)
 
-    def restore_scene(self, scene_name: str, context: GameContext) -> bool:
+    def restore_scene(self, scene_name: str) -> bool:
         """Restore cached system states for a scene.
 
         Iterates through all systems and calls restore_scene_state() on each
@@ -92,7 +91,6 @@ class CacheManager(CacheBaseManager):
 
         Args:
             scene_name: Name of the scene being entered.
-            context: Game context providing access to all systems.
 
         Returns:
             True if cached state was found and restored, False if no cache exists.
@@ -103,7 +101,7 @@ class CacheManager(CacheBaseManager):
             return False
 
         restored_count = 0
-        for system in context.get_systems().values():
+        for system in self.context.get_systems().values():
             if system.name in scene_state:
                 system.restore_scene_state(scene_name, scene_state[system.name])
                 restored_count += 1

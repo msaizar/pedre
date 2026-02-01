@@ -4,12 +4,12 @@ Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 
 ## Location
 
-- Implementation: [src/pedre/systems/npc/manager.py](../../src/pedre/systems/npc/manager.py)
-- Base class: [src/pedre/systems/npc/base.py](../../src/pedre/systems/npc/base.py)
-- Events: [src/pedre/systems/npc/events.py](../../src/pedre/systems/npc/events.py)
-- Actions: [src/pedre/systems/npc/actions.py](../../src/pedre/systems/npc/actions.py)
-- Conditions: [src/pedre/systems/npc/conditions.py](../../src/pedre/systems/npc/conditions.py)
-- Sprites: [src/pedre/systems/npc/sprites.py](../../src/pedre/systems/npc/sprites.py)
+- Implementation: [src/pedre/systems/npc/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/manager.py)
+- Base class: [src/pedre/systems/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/base.py)
+- Events: [src/pedre/systems/npc/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/events.py)
+- Actions: [src/pedre/systems/npc/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/actions.py)
+- Conditions: [src/pedre/systems/npc/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/conditions.py)
+- Sprites: [src/pedre/systems/npc/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/sprites.py)
 
 ## Configuration
 
@@ -36,7 +36,9 @@ NPC_INTERACTION_KEY = "E"
 
 ### NPC Registration
 
-#### `register_npc(sprite: arcade.Sprite, name: str) -> None`
+#### register_npc
+
+`register_npc(sprite: arcade.Sprite, name: str) -> None`
 
 Register an NPC sprite for management.
 
@@ -65,7 +67,9 @@ npc_manager.register_npc(npc_sprite, "merchant")
 
 ### Dialog Management
 
-#### `load_dialogs_from_json(json_path: Path | str) -> bool`
+#### load_dialogs_from_json
+
+`load_dialogs_from_json(json_path: Path | str) -> bool`
 
 Load NPC dialog configurations from a JSON file or directory.
 
@@ -93,7 +97,9 @@ npc_manager.load_dialogs_from_json("assets/dialogs/")
 - Scene name is extracted from filename
 - Loading a directory processes all `.json` files
 
-#### `get_dialog(npc_name: str, dialog_level: int, scene: str = "default") -> tuple[NPCDialogConfig | None, list[dict[str, Any]] | None]`
+#### get_dialog
+
+`get_dialog(npc_name: str, dialog_level: int, scene: str = "default") -> tuple[NPCDialogConfig | None, list[dict[str, Any]] | None]`
 
 Get dialog for an NPC at a specific conversation level in a scene.
 
@@ -126,7 +132,9 @@ if dialog_data:
 - Falls back to "default" scene if scene-specific dialog not found
 - Returns `on_condition_fail` actions when conditions aren't met
 
-#### `advance_dialog(npc_name: str) -> int`
+#### advance_dialog
+
+`advance_dialog(npc_name: str) -> int`
 
 Advance the dialog level for an NPC by 1.
 
@@ -154,7 +162,9 @@ print(f"Merchant now at dialog level {new_level}")
 
 ### Movement and Pathfinding
 
-#### `move_npc_to_tile(npc_name: str, tile_x: int | float, tile_y: int | float) -> None`
+#### move_npc_to_tile
+
+`move_npc_to_tile(npc_name: str, tile_x: int | float, tile_y: int | float) -> None`
 
 Start moving an NPC to a target tile position using A* pathfinding.
 
@@ -178,7 +188,9 @@ npc_manager.move_npc_to_tile("merchant", 10, 15)
 - Publishes `NPCMovementCompleteEvent` when destination reached
 - Automatically excludes other moving NPCs from pathfinding
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update NPC movements and animations.
 
@@ -202,7 +214,9 @@ def on_update(self, delta_time):
 
 ### Interaction
 
-#### `get_nearby_npc(player_sprite: arcade.Sprite) -> tuple[arcade.Sprite, str, int] | None`
+#### get_nearby_npc
+
+`get_nearby_npc(player_sprite: arcade.Sprite) -> tuple[arcade.Sprite, str, int] | None`
 
 Find the nearest NPC within interaction distance.
 
@@ -231,7 +245,9 @@ if nearby:
 - Skips NPCs that are currently moving
 - Skips invisible NPCs
 
-#### `interact_with_npc(name: str) -> bool`
+#### interact_with_npc
+
+`interact_with_npc(name: str) -> bool`
 
 Trigger interaction with a specific NPC.
 
@@ -257,7 +273,9 @@ if npc_manager.interact_with_npc("merchant"):
 - Shows dialog via DialogManager
 - Marks NPC as interacted in current scene
 
-#### `mark_npc_as_interacted(npc_name: str, scene_name: str | None = None) -> None`
+#### mark_npc_as_interacted
+
+`mark_npc_as_interacted(npc_name: str, scene_name: str | None = None) -> None`
 
 Mark an NPC as interacted with in a specific scene.
 
@@ -282,7 +300,9 @@ npc_manager.mark_npc_as_interacted("guard", "castle")
 - Used by `npc_interacted` condition check
 - Called automatically during normal interactions
 
-#### `has_npc_been_interacted_with(npc_name: str, scene_name: str | None = None) -> bool`
+#### has_npc_been_interacted_with
+
+`has_npc_been_interacted_with(npc_name: str, scene_name: str | None = None) -> bool`
 
 Check if an NPC has been interacted with in a specific scene.
 
@@ -310,7 +330,9 @@ if npc_manager.has_npc_been_interacted_with("merchant"):
 
 ### Visibility Management
 
-#### `show_npcs(npc_names: list[str]) -> None`
+#### show_npcs
+
+`show_npcs(npc_names: list[str]) -> None`
 
 Make hidden NPCs visible and add them to collision.
 
@@ -334,7 +356,9 @@ npc_manager.show_npcs(["guard", "captain", "merchant"])
 
 ### State Queries
 
-#### `get_npc_by_name(name: str) -> NPCState | None`
+#### get_npc_by_name
+
+`get_npc_by_name(name: str) -> NPCState | None`
 
 Get NPC state by name.
 
@@ -356,7 +380,9 @@ if npc:
     print(f"Moving: {npc.is_moving}")
 ```
 
-#### `get_npcs() -> dict[str, NPCState]`
+#### get_npcs
+
+`get_npcs() -> dict[str, NPCState]`
 
 Get all registered NPCs.
 
@@ -371,7 +397,9 @@ for name, npc in npc_manager.get_npcs().items():
     print(f"{name}: level {npc.dialog_level}, moving={npc.is_moving}")
 ```
 
-#### `has_moving_npcs() -> bool`
+#### has_moving_npcs
+
+`has_moving_npcs() -> bool`
 
 Check if any NPCs are currently moving.
 
@@ -393,7 +421,9 @@ if npc_manager.has_moving_npcs():
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -416,7 +446,9 @@ save_data = {
 - Saves positions, visibility, dialog levels, animation flags
 - Saves per-scene interaction history
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Phase 1: No metadata to restore for NPCs (sprites don't exist yet).
 
@@ -424,7 +456,9 @@ Phase 1: No metadata to restore for NPCs (sprites don't exist yet).
 
 - `state` - Dictionary containing saved NPC state
 
-#### `apply_entity_state(state: dict[str, Any]) -> None`
+#### apply_entity_state
+
+`apply_entity_state(state: dict[str, Any]) -> None`
 
 Phase 2: Apply saved NPC state after sprites exist.
 
@@ -446,7 +480,9 @@ npc_manager.apply_entity_state(save_data["npc"])
 
 ### Scene Caching
 
-#### `cache_scene_state(scene_name: str) -> dict[str, Any]`
+#### cache_scene_state
+
+`cache_scene_state(scene_name: str) -> dict[str, Any]`
 
 Return state to cache during scene transitions.
 
@@ -463,7 +499,9 @@ Return state to cache during scene transitions.
 - Only caches NPC entity state (positions, visibility, dialog levels)
 - Interaction history is global and saved separately
 
-#### `restore_scene_state(scene_name: str, state: dict[str, Any]) -> None`
+#### restore_scene_state
+
+`restore_scene_state(scene_name: str, state: dict[str, Any]) -> None`
 
 Restore cached state when returning to a scene.
 
@@ -474,7 +512,9 @@ Restore cached state when returning to a scene.
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the NPC system with game context.
 
@@ -487,7 +527,9 @@ Initialize the NPC system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up NPC resources when the scene unloads.
 
@@ -497,7 +539,9 @@ Clean up NPC resources when the scene unloads.
 - Clears dialog cache
 - Called automatically by SystemLoader
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset NPC system for new game.
 
@@ -506,7 +550,9 @@ Reset NPC system for new game.
 - Clears NPCs, dialogs, and interaction history
 - Called when starting a new game
 
-#### `on_key_press(symbol: int, modifiers: int) -> bool`
+#### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Handle key presses for NPC interaction.
 
@@ -525,7 +571,9 @@ Handle key presses for NPC interaction.
 - Checks for NPC_INTERACTION_KEY press
 - Finds nearby NPC and triggers interaction
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load NPCs from Tiled map object layer.
 
@@ -1335,7 +1383,7 @@ If you need to replace the NPC system with a custom implementation, you can exte
 
 ### NPCBaseManager
 
-**Location:** [src/pedre/systems/npc/base.py](../../src/pedre/systems/npc/base.py)
+**Location:** [src/pedre/systems/npc/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/npc/base.py)
 
 The `NPCBaseManager` class defines the minimum interface that any NPC manager must implement.
 
@@ -1444,7 +1492,7 @@ INSTALLED_SYSTEMS = [
 - [DialogManager](dialog.md) - Conversation system
 - [ScriptManager](script.md) - Event-driven scripting
 - [PathfindingManager](pathfinding.md) - A* pathfinding system
-- [Configuration Guide](../configuration.md) - NPC system settings
-- [Scripting Actions](../scripting/actions.md) - NPC actions
-- [Scripting Conditions](../scripting/conditions.md) - NPC conditions
-- [Scripting Events](../scripting/events.md) - NPC events
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)
+- [Scripting Conditions](../scripting/conditions.md)
+- [Scripting Events](../scripting/events.md)

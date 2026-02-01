@@ -4,8 +4,8 @@ Manages named positions in the map used for NPC navigation, player spawning, and
 
 ## Location
 
-- Implementation: [src/pedre/systems/waypoint/manager.py](../../src/pedre/systems/waypoint/manager.py)
-- Base class: [src/pedre/systems/waypoint/base.py](../../src/pedre/systems/waypoint/base.py)
+- Implementation: [src/pedre/systems/waypoint/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/manager.py)
+- Base class: [src/pedre/systems/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/base.py)
 
 ## Overview
 
@@ -17,11 +17,26 @@ The WaypointManager is a simple but essential system that stores named positions
 
 Waypoints are defined as Point objects in Tiled's "Waypoints" object layer and automatically loaded when a map is loaded.
 
+## Configuration
+
+The WaypointManager uses the following setting from `pedre.conf.settings`:
+
+- `TILE_SIZE` - Size of each tile in pixels, used to convert waypoint pixel coordinates to tile coordinates (default: 32)
+
+This can be overridden in your project's `settings.py`:
+
+```python
+# Custom tile size
+TILE_SIZE = 16  # For smaller tiles
+```
+
 ## Public API
 
 ### Waypoint Retrieval
 
-#### `get_waypoint(name: str) -> tuple[float, float] | None`
+#### get_waypoint
+
+`get_waypoint(name: str) -> tuple[float, float] | None`
 
 Get waypoint position by name.
 
@@ -49,7 +64,9 @@ if waypoint:
 - Waypoint names are case-sensitive
 - Returns `None` for non-existent waypoints
 
-#### `get_waypoints() -> dict[str, tuple[float, float]]`
+#### get_waypoints
+
+`get_waypoints() -> dict[str, tuple[float, float]]`
 
 Get all waypoints in the current map.
 
@@ -73,7 +90,9 @@ for name, (x, y) in waypoint_manager.get_waypoints().items():
 
 ### Tiled Integration
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load waypoints from Tiled map object layer.
 
@@ -92,7 +111,9 @@ Load waypoints from Tiled map object layer.
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the waypoint system with game context.
 
@@ -105,7 +126,9 @@ Initialize the waypoint system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset waypoint manager for new game.
 
@@ -294,7 +317,7 @@ If you need to replace the waypoint system with a custom implementation, you can
 
 ### WaypointBaseManager
 
-**Location:** [src/pedre/systems/waypoint/base.py](../../src/pedre/systems/waypoint/base.py)
+**Location:** [src/pedre/systems/waypoint/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/waypoint/base.py)
 
 The `WaypointBaseManager` class defines the minimum interface that any waypoint manager must implement.
 
@@ -381,5 +404,5 @@ INSTALLED_SYSTEMS = [
 - [NPCManager](npc.md) - Uses waypoints for NPC movement
 - [PortalManager](portal.md) - Uses waypoints for player spawning
 - [ScriptManager](script.md) - Uses waypoints in scripted actions
-- [Tiled Integration](../tiled-integration.md) - How to create waypoints in Tiled
-- [Configuration Guide](../configuration.md) - Waypoint system settings
+- [Configuration Guide](../guides/configuration.md)
+- [Tiled Integration](../guides/tiled-integration.md)

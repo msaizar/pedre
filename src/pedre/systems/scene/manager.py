@@ -133,7 +133,7 @@ class SceneManager(SceneBaseManager):
         # Cache current scene state before transitioning
         cache_manager = self.context.cache_manager
         if not initial:
-            cache_manager.cache_scene(self.get_current_scene(), self.context)
+            cache_manager.cache_scene(self.get_current_scene())
 
         logger.info("SceneManager: Loading level %s", map_file)
         current_scene = map_file.replace(".tmx", "").lower()
@@ -153,7 +153,7 @@ class SceneManager(SceneBaseManager):
         # Scripts are loaded globally at initialization, no per-scene loading needed
 
         # Restore scene state using cache manager
-        cache_manager.restore_scene(current_scene, self.context)
+        cache_manager.restore_scene(current_scene)
 
         # Sync wall_list with NPC visibility after restore
         if self.wall_list:

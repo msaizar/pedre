@@ -4,17 +4,20 @@ Manages background music and sound effects with caching.
 
 ## Location
 
-- Implementation: `src/pedre/systems/audio/manager.py`
-- Base class: `src/pedre/systems/audio/base.py`
+- Implementation: [src/pedre/systems/audio/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/manager.py)
+- Base class: [src/pedre/systems/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/base.py)
+- Actions: [src/pedre/systems/audio/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/actions.py)
 
 ## Configuration
 
 The AudioManager uses the following settings from `pedre.conf.settings`:
 
-- `AUDIO_MUSIC_VOLUME` - Default music volume (0.0 to 1.0, default: 0.5)
-- `AUDIO_MUSIC_ENABLED` - Whether music is enabled by default (default: True)
-- `AUDIO_SFX_VOLUME` - Default sound effects volume (0.0 to 1.0, default: 0.7)
-- `AUDIO_SFX_ENABLED` - Whether sound effects are enabled by default (default: True)
+### Volume and Playback Settings
+
+- `AUDIO_MUSIC_VOLUME` - Default music volume (0.0 to 1.0, default: `0.5`)
+- `AUDIO_MUSIC_ENABLED` - Whether music is enabled by default (default: `True`)
+- `AUDIO_SFX_VOLUME` - Default sound effects volume (0.0 to 1.0, default: `0.7`)
+- `AUDIO_SFX_ENABLED` - Whether sound effects are enabled by default (default: `True`)
 
 These can be overridden in your project's `settings.py`:
 
@@ -29,7 +32,9 @@ AUDIO_MUSIC_ENABLED = False  # Start with music muted
 
 ### Music Playback
 
-#### `play_music(filename: str, *, loop: bool = True, volume: float | None = None) -> bool`
+#### play_music
+
+`play_music(filename: str, *, loop: bool = True, volume: float | None = None) -> bool`
 
 Play background music from the `assets/audio/music/` directory.
 
@@ -58,8 +63,11 @@ audio_manager.play_music("victory.ogg", loop=False, volume=0.9)
 - Automatically stops any currently playing music
 - Music files are cached for faster replay
 - Non-looping music uses streaming to reduce memory usage
+- If a file is being preloaded in background, waits briefly for preload to complete
 
-#### `stop_music() -> None`
+#### stop_music
+
+`stop_music() -> None`
 
 Stop the currently playing music immediately.
 
@@ -74,7 +82,9 @@ audio_manager.stop_music()
 - Music file remains cached and can be replayed without reloading
 - Called automatically when starting new music
 
-#### `pause_music() -> None`
+#### pause_music
+
+`pause_music() -> None`
 
 Pause the currently playing music at its current position.
 
@@ -90,7 +100,9 @@ audio_manager.pause_music()
 - Use `resume_music()` to continue from the same position
 - Use `stop_music()` if you want to restart from the beginning
 
-#### `resume_music() -> None`
+#### resume_music
+
+`resume_music() -> None`
 
 Resume paused music from where it was paused.
 
@@ -107,7 +119,9 @@ audio_manager.resume_music()
 
 ### Sound Effects
 
-#### `play_sfx(sound_name: str, *, volume: float | None = None) -> bool`
+#### play_sfx
+
+`play_sfx(sound_name: str, *, volume: float | None = None) -> bool`
 
 Play a sound effect from the `assets/audio/sfx/` directory.
 
@@ -138,7 +152,9 @@ audio_manager.play_sfx("click.wav", volume=0.3)
 
 ### Volume Control
 
-#### `set_music_volume(volume: float) -> None`
+#### set_music_volume
+
+`set_music_volume(volume: float) -> None`
 
 Set the music volume level.
 
@@ -157,7 +173,9 @@ audio_manager.set_music_volume(0.5)  # 50% volume
 - Volume is automatically clamped to 0.0-1.0 range
 - If music is currently playing, the change takes effect immediately
 
-#### `set_sfx_volume(volume: float) -> None`
+#### set_sfx_volume
+
+`set_sfx_volume(volume: float) -> None`
 
 Set the sound effects volume level.
 
@@ -178,7 +196,9 @@ audio_manager.set_sfx_volume(0.8)  # 80% volume
 
 ### Enable/Disable
 
-#### `toggle_music() -> bool`
+#### toggle_music
+
+`toggle_music() -> bool`
 
 Toggle music on/off.
 
@@ -199,7 +219,9 @@ print(f"Music is now {'on' if new_state else 'off'}")
 - When music is disabled, any currently playing music is stopped
 - When re-enabled, music does not automatically resume
 
-#### `toggle_sfx() -> bool`
+#### toggle_sfx
+
+`toggle_sfx() -> bool`
 
 Toggle sound effects on/off.
 
@@ -222,7 +244,9 @@ print(f"Sound effects are now {'on' if new_state else 'off'}")
 
 ### Cache Management
 
-#### `clear_music_cache() -> None`
+#### clear_music_cache
+
+`clear_music_cache() -> None`
 
 Clear the music cache to free memory.
 
@@ -238,7 +262,9 @@ audio_manager.clear_music_cache()
 - Music will be reloaded from disk on next use
 - May cause a brief delay when starting music again
 
-#### `clear_sfx_cache() -> None`
+#### clear_sfx_cache
+
+`clear_sfx_cache() -> None`
 
 Clear the sound effects cache to free memory.
 
@@ -254,7 +280,9 @@ audio_manager.clear_sfx_cache()
 - Sound effects will be reloaded from disk on next use
 - May cause a brief delay the first time each sound is played again
 
-#### `clear_all_caches() -> None`
+#### clear_all_caches
+
+`clear_all_caches() -> None`
 
 Clear both music and SFX caches simultaneously.
 
@@ -267,7 +295,9 @@ audio_manager.clear_all_caches()
 
 ### Advanced Methods
 
-#### `mark_music_loading(filename: str) -> None`
+#### mark_music_loading
+
+`mark_music_loading(filename: str) -> None`
 
 Mark a music file as currently being loaded in the background.
 
@@ -280,7 +310,9 @@ Mark a music file as currently being loaded in the background.
 - Used for background preloading coordination
 - `play_music()` will wait briefly if a file is being preloaded
 
-#### `unmark_music_loading(filename: str) -> None`
+#### unmark_music_loading
+
+`unmark_music_loading(filename: str) -> None`
 
 Unmark a music file as being loaded.
 
@@ -292,7 +324,9 @@ Unmark a music file as being loaded.
 
 - Should be called after `mark_music_loading()` once the file is loaded
 
-#### `get_music_cache() -> dict[str, arcade.Sound]`
+#### get_music_cache
+
+`get_music_cache() -> dict[str, arcade.Sound]`
 
 Get the music cache dictionary.
 
@@ -300,7 +334,9 @@ Get the music cache dictionary.
 
 - Dictionary mapping filename to `arcade.Sound` objects
 
-#### `set_music_cache(cache_key: str, sound: arcade.Sound) -> None`
+#### set_music_cache
+
+`set_music_cache(cache_key: str, sound: arcade.Sound) -> None`
 
 Set a music file in the cache.
 
@@ -309,9 +345,139 @@ Set a music file in the cache.
 - `cache_key` - Filename to use as cache key
 - `sound` - The `arcade.Sound` object to cache
 
+### Save/Load Support
+
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
+
+Return serializable state for saving.
+
+**Returns:**
+
+- Dictionary containing audio settings (volume levels and enabled states)
+
+**Example:**
+
+```python
+save_data = {
+    "audio": audio_manager.get_save_state(),
+    # ... other save data
+}
+```
+
+**Notes:**
+
+- Saves music volume, SFX volume, music enabled, and SFX enabled states
+- Delegates to `to_dict()`
+
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
+
+Restore state from save data.
+
+**Parameters:**
+
+- `state` - Previously saved state dictionary
+
+**Example:**
+
+```python
+audio_manager.restore_save_state(save_data["audio"])
+```
+
+**Notes:**
+
+- Restores volume levels and enabled states
+- Does not affect currently playing audio or cached files
+- Delegates to `from_dict()`
+
+#### to_dict
+
+`to_dict() -> dict[str, bool | float]`
+
+Convert audio settings to dictionary for serialization.
+
+**Returns:**
+
+- Dictionary with keys: `music_volume`, `sfx_volume`, `music_enabled`, `sfx_enabled`
+
+**Example:**
+
+```python
+save_data = {
+    "audio": audio_manager.to_dict(),
+    # ... other save data
+}
+```
+
+#### from_dict
+
+`from_dict(data: dict[str, bool | float]) -> None`
+
+Load audio settings from a saved dictionary.
+
+**Parameters:**
+
+- `data` - Dictionary with audio settings
+
+**Example:**
+
+```python
+audio_manager.from_dict(save_data["audio"])
+```
+
+**Notes:**
+
+- Missing keys are ignored (current values are retained)
+- Volume values are clamped to 0.0-1.0 range
+
+### System Lifecycle
+
+#### setup
+
+`setup(context: GameContext) -> None`
+
+Initialize the audio system with game context.
+
+**Parameters:**
+
+- `context` - Game context providing access to other systems
+
+**Notes:**
+
+- Called automatically by SystemLoader
+- Stores reference to game context
+
+#### cleanup
+
+`cleanup() -> None`
+
+Clean up audio resources when the scene unloads.
+
+**Notes:**
+
+- Stops any playing music
+- Clears all caches
+- Called automatically by SystemLoader
+
+#### reset
+
+`reset() -> None`
+
+Reset audio system for new game.
+
+**Notes:**
+
+- Stops currently playing music
+- Keeps caches intact for performance
+
 ### Integration Methods
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load and play background music from a Tiled map property.
 
@@ -344,13 +510,74 @@ music: "peaceful_village.ogg"
 - **Music**: `.mp3`, `.ogg`, `.wav`
 - **SFX**: `.wav`, `.ogg`, `.mp3`
 
+## Actions
+
+### PlayMusicAction
+
+Play background music.
+
+**Type:** `play_music`
+
+**Parameters:**
+
+- `file: str` - Music file name (in `assets/audio/music/`)
+- `loop: bool` - Whether to loop the music (default: `true`)
+- `volume: float` - Optional volume override (0.0 to 1.0)
+
+**Example:**
+
+```json
+{
+    "type": "play_music",
+    "file": "town_theme.ogg"
+}
+```
+
+```json
+{
+    "type": "play_music",
+    "file": "victory_fanfare.ogg",
+    "loop": false,
+    "volume": 0.8
+}
+```
+
+**Notes:**
+
+- Stops any currently playing music before starting the new track
+- Action completes immediately after starting playback
+
+### PlaySFXAction
+
+Play a sound effect.
+
+**Type:** `play_sfx`
+
+**Parameters:**
+
+- `file: str` - Sound effect file name (in `assets/audio/sfx/`)
+
+**Example:**
+
+```json
+{
+    "type": "play_sfx",
+    "file": "door_open.wav"
+}
+```
+
+**Notes:**
+
+- Action completes immediately after playing the sound
+- Multiple sound effects can play simultaneously
+
 ## Custom Audio Implementation
 
 If you need to replace the audio system with a custom implementation (e.g., for FMOD, Wwise, or a different audio backend), you can extend the `AudioBaseManager` abstract base class.
 
 ### AudioBaseManager
 
-**Location:** `src/pedre/systems/audio/base.py`
+**Location:** [src/pedre/systems/audio/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/audio/base.py)
 
 The `AudioBaseManager` class defines the minimum interface that any audio manager must implement. All methods are abstract and must be implemented by your custom class.
 
@@ -455,3 +682,73 @@ INSTALLED_SYSTEMS = [
     # ... rest of systems (omit "pedre.systems.audio") ...
 ]
 ```
+
+## Usage Examples
+
+### Background Music for Scenes
+
+```python
+# Play looping background music
+audio_manager.play_music("village_theme.ogg")
+
+# Switch to battle music
+audio_manager.play_music("battle.ogg")
+```
+
+### Sound Effects on Interaction
+
+```python
+# Play NPC voice when interacting
+audio_manager.play_sfx("martin.mp3")
+
+# Play UI feedback
+audio_manager.play_sfx("click.wav", volume=0.3)
+```
+
+### Scripted Audio Sequence
+
+```json
+{
+    "dramatic_entrance": {
+        "scene": "castle",
+        "trigger": {
+            "event": "portal_entered",
+            "portal": "throne_room"
+        },
+        "actions": [
+            {"type": "play_music", "file": "throne_room.ogg"},
+            {"type": "play_sfx", "file": "door_open.wav"},
+            {"type": "dialog", "speaker": "King", "text": ["Welcome to my court!"]},
+            {"type": "wait_for_dialog_close"}
+        ]
+    }
+}
+```
+
+### Pausing Audio During Menus
+
+```python
+# When opening pause menu
+audio_manager.pause_music()
+
+# When closing pause menu
+audio_manager.resume_music()
+```
+
+### Saving and Restoring Audio Settings
+
+```python
+# Save
+save_data = {"audio": audio_manager.get_save_state()}
+
+# Restore
+audio_manager.restore_save_state(save_data["audio"])
+```
+
+## See Also
+
+- [DialogManager](dialog.md) - Conversation system
+- [ScriptManager](script.md) - Event-driven scripting
+- [SaveManager](save.md) - Save/load system
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)
