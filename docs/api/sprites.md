@@ -4,7 +4,7 @@ Animated sprite classes for player and NPC characters.
 
 ## Location
 
-[src/pedre/sprites/](../../src/pedre/sprites/)
+[src/pedre/sprites/](https://github.com/msaizar/pedre/blob/main/src/pedre/sprites/)
 
 ## AnimatedPlayer
 
@@ -92,7 +92,7 @@ The player sprite sheet should follow this structure:
 
 ### Example Sprite Sheet
 
-```
+```text
 Row 0: Idle Up     [frame 0] [frame 1] [frame 2] [frame 3]
 Row 1: Idle Down   [frame 0] [frame 1] [frame 2] [frame 3]
 Row 2: Idle Left   [frame 0] [frame 1] [frame 2] [frame 3]

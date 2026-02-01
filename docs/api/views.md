@@ -4,7 +4,7 @@ Game views represent different screens and game states in the Pedre framework.
 
 ## Location
 
-[src/pedre/views/](../../src/pedre/views/)
+[src/pedre/views/](https://github.com/msaizar/pedre/blob/main/src/pedre/views/)
 
 ## GameView
 

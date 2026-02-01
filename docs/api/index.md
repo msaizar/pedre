@@ -8,7 +8,7 @@ The Pedre framework is built on several core architectural components that work 
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                     ViewManager                         │
 │  (Orchestrates view transitions & game lifecycle)       │
@@ -45,11 +45,13 @@ The Pedre framework is built on several core architectural components that work 
 Central controller for view transitions and game lifecycle.
 
 **Responsibilities:**
+
 - Switch between menu, gameplay, and save/load views
 - Manage game state (new game, continue, load, exit)
 - Trigger map transitions
 
 **Key Methods:**
+
 - `show_menu()`, `show_game()`, `show_load_game()`, `show_save_game()`
 - `continue_game()`, `load_game()`, `exit_game()`
 - `load_map()`
@@ -59,6 +61,7 @@ Central controller for view transitions and game lifecycle.
 Different game screens and states.
 
 **Available Views:**
+
 - `GameView` - Main gameplay with all systems active
 - `MenuView` - Main menu with asset preloading
 - `LoadGameView` - Load game screen
@@ -69,11 +72,13 @@ Different game screens and states.
 Central registry providing systems with access to the event bus and other systems.
 
 **Responsibilities:**
+
 - System registration and retrieval
 - Event bus access
 - Dependency injection
 
 **Key Methods:**
+
 - `get_system(name: str) -> BaseSystem | None`
 
 ### [EventBus](event-bus.md)
@@ -81,11 +86,13 @@ Central registry providing systems with access to the event bus and other system
 Publish-subscribe event system for decoupled communication.
 
 **Responsibilities:**
+
 - Event subscription and publishing
 - System-to-system communication
 - Script trigger handling
 
 **Key Methods:**
+
 - `subscribe(event_type, callback)`
 - `publish(event)`
 - `unsubscribe(event_type, callback)`
@@ -95,6 +102,7 @@ Publish-subscribe event system for decoupled communication.
 Animated character sprites for player and NPCs.
 
 **Available Sprites:**
+
 - `AnimatedPlayer` - Player character with 4-directional animation
 - `AnimatedNPC` - NPC characters with special animations
 
@@ -103,6 +111,7 @@ Animated character sprites for player and NPCs.
 Pedre uses a manager-based architecture where each system handles specific functionality. All systems are documented in the [Systems Reference](../systems/index.md).
 
 **Core Systems:**
+
 - [DialogManager](../systems/dialog.md) - Conversations and text display
 - [NPCManager](../systems/npc.md) - NPC behavior and interactions
 - [PlayerManager](../systems/player.md) - Player character management
@@ -120,6 +129,7 @@ Pedre uses a manager-based architecture where each system handles specific funct
 Pedre supports adding custom functionality without modifying framework code. See [Extending Pedre](../extending/index.md) for details.
 
 **Extension Points:**
+
 - Custom Actions - Script commands
 - Custom Events - Trigger types
 - Custom Conditions - Conditional logic
@@ -183,6 +193,7 @@ view_manager.load_map("forest.tmx", spawn_waypoint="entrance")
 Game behavior is configured through `settings.py`. See [Configuration Guide](../guides/configuration.md) for all available settings.
 
 **Common Settings:**
+
 - Window size and title
 - Player movement speed
 - System-specific configuration
@@ -215,6 +226,7 @@ if __name__ == "__main__":
 ### 2. System Loading
 
 The framework automatically:
+
 1. Loads configuration from `settings.py`
 2. Creates ViewManager and window
 3. Initializes GameContext and EventBus
@@ -225,6 +237,7 @@ The framework automatically:
 ### 3. Game Loop
 
 Each frame:
+
 1. Process input
 2. Update systems (`update(delta_time)`)
 3. Render views (`on_draw()`)

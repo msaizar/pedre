@@ -4,7 +4,7 @@ Central controller for all game views and screen transitions.
 
 ## Location
 
-[src/pedre/view_manager.py](../../src/pedre/view_manager.py)
+[src/pedre/view_manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/view_manager.py)
 
 ## Overview
 
