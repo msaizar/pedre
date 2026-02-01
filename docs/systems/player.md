@@ -30,7 +30,9 @@ TILE_SIZE = 32
 
 ### Player Access
 
-#### `get_player_sprite() -> AnimatedPlayer | None`
+#### get_player_sprite
+
+`get_player_sprite() -> AnimatedPlayer | None`
 
 Get the player sprite instance.
 
@@ -54,7 +56,9 @@ if player_sprite:
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the player system with game context.
 
@@ -68,7 +72,9 @@ Initialize the player system with game context.
 - Stores reference to game context
 - Must be called before loading player from Tiled
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update player movement and animation.
 
@@ -91,7 +97,9 @@ def on_update(self, delta_time):
 - Updates player position and animation state
 - Handles direction changes based on movement
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load player from Tiled map object layer.
 
@@ -108,7 +116,9 @@ Load player from Tiled map object layer.
 - Creates AnimatedPlayer sprite from object data
 - Supports portal-based spawning via waypoints
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset player manager state for new game.
 
@@ -119,7 +129,9 @@ Reset player manager state for new game.
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -141,7 +153,9 @@ save_data = {
 - Saves player_x and player_y coordinates
 - Returns empty dict if no player sprite exists
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Phase 1: No metadata to restore for player (sprites don't exist yet).
 
@@ -154,7 +168,9 @@ Phase 1: No metadata to restore for player (sprites don't exist yet).
 - Player sprite doesn't exist during this phase
 - Actual restoration happens in `apply_entity_state()`
 
-#### `apply_entity_state(state: dict[str, Any]) -> None`
+#### apply_entity_state
+
+`apply_entity_state(state: dict[str, Any]) -> None`
 
 Phase 2: Apply saved player position after sprite exists.
 
@@ -176,7 +192,9 @@ player_manager.apply_entity_state(save_data["player"])
 
 ### State Serialization
 
-#### `to_dict() -> dict[str, float]`
+#### to_dict
+
+`to_dict() -> dict[str, float]`
 
 Serialize player position to dictionary.
 
@@ -191,7 +209,9 @@ position_data = player_manager.to_dict()
 print(f"Player at ({position_data['player_x']}, {position_data['player_y']})")
 ```
 
-#### `from_dict(data: dict[str, float]) -> None`
+#### from_dict
+
+`from_dict(data: dict[str, float]) -> None`
 
 Restore player position from dictionary.
 
