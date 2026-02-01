@@ -352,6 +352,26 @@ context.scene_manager.request_transition(
 - Spawn waypoint is cleared after use (one-time)
 - Default position from Tiled is used as fallback
 
+## Player State
+
+The PlayerManager maintains the player sprite and its state throughout the game session.
+
+### Player Sprite Lifecycle
+
+1. **Creation** - Player sprite is created during `load_from_tiled()`
+2. **Updates** - Position and animation updated every frame in `update()`
+3. **Persistence** - Position saved/restored during save/load operations
+4. **Reset** - Cleared when starting a new game
+
+### State Tracking
+
+The player state includes:
+
+- **Position** - `center_x` and `center_y` coordinates in pixels
+- **Direction** - Current facing direction (up, down, left, right)
+- **Animation State** - Walking or idle
+- **Velocity** - Movement vector from input system
+
 ## Movement System
 
 The PlayerManager handles movement processing each frame:
@@ -441,6 +461,137 @@ The player spawns at waypoints during scene transitions. This is typically handl
     "spawn_waypoint": "main_entrance"
 }
 ```
+
+## Integration with Other Systems
+
+### InputManager Integration
+
+The InputManager provides movement vectors:
+
+```python
+# In update loop
+dx, dy = context.input_manager.get_movement_vector()
+
+# PlayerManager processes this input
+# Updates player sprite velocity and direction
+```
+
+**Notes:**
+
+- Input is automatically processed during `update()`
+- Movement is blocked when dialogs are showing
+- Direction changes are based on movement vector
+
+### CameraManager Integration
+
+The CameraManager can follow the player:
+
+```python
+# Enable player following
+context.camera_manager.set_follow_player(smooth=True)
+
+# Camera automatically tracks player position
+```
+
+**Notes:**
+
+- Player sprite must exist before camera can follow
+- Camera uses player position for centering
+- Smooth following interpolates camera movement
+
+### DialogManager Integration
+
+Dialog blocks player movement:
+
+```python
+# During update
+if context.dialog_manager.is_showing():
+    # Player movement is blocked
+    return
+```
+
+**Notes:**
+
+- Player cannot move while dialog is visible
+- Input is still processed but not applied
+- Movement resumes when dialog closes
+
+### SceneManager Integration
+
+Scene transitions handle player spawning:
+
+```python
+# SceneManager provides spawn waypoint
+spawn_waypoint = context.scene_manager.get_next_spawn_waypoint()
+
+# PlayerManager spawns at waypoint location
+if spawn_waypoint:
+    waypoint_pos = context.waypoint_manager.get_waypoint(spawn_waypoint)
+    player.center_x = waypoint_pos.x
+    player.center_y = waypoint_pos.y
+```
+
+**Notes:**
+
+- Waypoint-based spawning is optional (`spawn_at_portal` property)
+- Falls back to Tiled map position if waypoint not found
+- Spawn waypoint is cleared after use
+
+### PhysicsManager Integration
+
+Physics engine prevents wall collisions:
+
+```python
+# Physics engine uses player sprite
+physics_engine = arcade.PhysicsEngineSimple(player_sprite, walls)
+
+# Movement is constrained by physics
+physics_engine.update()
+```
+
+**Notes:**
+
+- Physics must be invalidated when player sprite changes
+- Collision response is handled by physics system
+- Player velocity is set by PlayerManager, constrained by PhysicsManager
+
+## Troubleshooting
+
+### Player Not Appearing
+
+If the player doesn't appear on the map:
+
+1. **Check Player layer** - Ensure Tiled map has "Player" object layer
+2. **Verify sprite sheet** - Check `sprite_sheet` property points to valid file
+3. **Check spawn position** - Verify player object has valid x/y coordinates
+4. **Review logs** - Look for errors during `load_from_tiled()`
+
+### Player Not Moving
+
+If the player sprite exists but doesn't move:
+
+1. **Check InputManager** - Ensure input system is working (`get_movement_vector()`)
+2. **Verify update loop** - Confirm `player_manager.update(delta_time)` is called every frame
+3. **Check dialog state** - Ensure dialog isn't blocking movement
+4. **Test physics** - Verify physics engine allows movement (not stuck in walls)
+
+### Animation Not Playing
+
+If animations aren't working:
+
+1. **Check sprite sheet** - Ensure animation frames exist in sprite sheet
+2. **Verify properties** - Check `idle_*` and `walk_*` frame/row properties
+3. **Test movement** - Animations require actual movement to trigger walk states
+4. **Review AnimatedSprite** - Check base animation system is functioning
+
+### Spawn Waypoint Issues
+
+If portal-based spawning doesn't work:
+
+1. **Check waypoint exists** - Verify target waypoint is in destination scene
+2. **Verify spawn_at_portal** - Ensure property is set to `true`
+3. **Check scene transition** - Confirm `spawn_waypoint` is passed to scene change
+4. **Review logs** - Look for waypoint resolution warnings
 
 ## Custom Player Implementation
 
