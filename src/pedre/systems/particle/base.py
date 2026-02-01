@@ -83,6 +83,7 @@ class ParticleBaseManager(BaseSystem, ABC):
         """Emit burst particles for dramatic events and reveals."""
         ...
 
+    @abstractmethod
     def emit_trail(
         self,
         x: float,
