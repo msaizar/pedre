@@ -241,4 +241,4 @@ INSTALLED_SYSTEMS = [
 
 - [NPCManager](npc.md) - NPC movement uses pathfinding
 - [SceneManager](scene.md) - Provides wall list for collision
-- [Configuration Guide](../configuration.md) - Tile size settings
+- [Configuration Guide](../guides/configuration.md)

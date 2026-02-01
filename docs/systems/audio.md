@@ -750,5 +750,5 @@ audio_manager.restore_save_state(save_data["audio"])
 - [DialogManager](dialog.md) - Conversation system
 - [ScriptManager](script.md) - Event-driven scripting
 - [SaveManager](save.md) - Save/load system
-- [Configuration Guide](../configuration.md) - Audio system settings
-- [Scripting Actions](../scripting/actions.md) - Audio actions
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)

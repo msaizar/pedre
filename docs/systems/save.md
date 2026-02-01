@@ -976,6 +976,6 @@ INSTALLED_SYSTEMS = [
 
 ## See Also
 
-- [Configuration Guide](../configuration.md) - Save system settings
-- [GameView](../api-reference.md#gameview) - Main gameplay view
 - [SceneManager](scene.md) - Scene transitions and loading
+- [Configuration Guide](../guides/configuration.md)
+- [Views](../api/views.md)

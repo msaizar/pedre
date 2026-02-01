@@ -404,5 +404,5 @@ INSTALLED_SYSTEMS = [
 - [NPCManager](npc.md) - Uses waypoints for NPC movement
 - [PortalManager](portal.md) - Uses waypoints for player spawning
 - [ScriptManager](script.md) - Uses waypoints in scripted actions
-- [Tiled Integration](../tiled-integration.md) - How to create waypoints in Tiled
-- [Configuration Guide](../configuration.md) - Waypoint system settings
+- [Configuration Guide](../guides/configuration.md)
+- [Tiled Integration](../guides/tiled-integration.md)

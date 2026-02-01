@@ -734,4 +734,4 @@ dialog_manager.show_dialog(
 - [AudioManager](audio.md) - Background music and sound effects
 - [ScriptManager](script.md) - Event-driven scripting
 - [NPCManager](npc.md) - NPC state and interactions
-- [Configuration Guide](../configuration.md) - Dialog system settings
+- [Configuration Guide](../guides/configuration.md)

@@ -1492,7 +1492,7 @@ INSTALLED_SYSTEMS = [
 - [DialogManager](dialog.md) - Conversation system
 - [ScriptManager](script.md) - Event-driven scripting
 - [PathfindingManager](pathfinding.md) - A* pathfinding system
-- [Configuration Guide](../configuration.md) - NPC system settings
-- [Scripting Actions](../scripting/actions.md) - NPC actions
-- [Scripting Conditions](../scripting/conditions.md) - NPC conditions
-- [Scripting Events](../scripting/events.md) - NPC events
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)
+- [Scripting Conditions](../scripting/conditions.md)
+- [Scripting Events](../scripting/events.md)

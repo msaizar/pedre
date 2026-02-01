@@ -420,4 +420,4 @@ INSTALLED_SYSTEMS = [
 
 - [PlayerManager](player.md) - Player sprite and movement
 - [DialogManager](dialog.md) - Conversation system
-- [Configuration Guide](../configuration.md) - Input system settings
+- [Configuration Guide](../guides/configuration.md)

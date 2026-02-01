@@ -724,9 +724,8 @@ INSTALLED_SYSTEMS = [
 
 - [SceneManager](scene.md) - Map loading and transitions
 - [ScriptManager](script.md) - Event-driven scripting
-- [Configuration Guide](../configuration.md) - Portal system settings
-- [Events Reference](../scripting/events.md) - `portal_entered` event
-- [Actions Reference](../scripting/actions.md) - `change_scene` action
-- [Conditions Reference](../scripting/conditions.md) - Conditional portal access
-- [Tiled Integration](../tiled-integration.md) - Portal setup in Tiled
-- [API Reference](../api-reference.md) - PortalManager API
+- [Configuration Guide](../guides/configuration.md)
+- [Events Reference](../scripting/events.md)
+- [Actions Reference](../scripting/actions.md)
+- [Conditions Reference](../scripting/conditions.md)
+- [Tiled Integration](../guides/tiled-integration.md)

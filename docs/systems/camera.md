@@ -617,4 +617,4 @@ camera_manager.set_bounds(
 - [PlayerManager](player.md) - Player sprite tracking
 - [SceneManager](scene.md) - Scene transitions and map loading
 - [ScriptManager](script.md) - Event-driven scripting
-- [Configuration Guide](../configuration.md) - Camera system settings
+- [Configuration Guide](../guides/configuration.md)

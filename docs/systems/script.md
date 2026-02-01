@@ -652,10 +652,10 @@ INSTALLED_SYSTEMS = [
 
 ## See Also
 
+- [NPCManager](npc.md) - NPC interactions and dialog
+- [DialogManager](dialog.md) - Conversation system
 - [Scripting Guide](../scripting/index.md) - Event-driven scripting documentation
 - [Scripting Basics](../scripting/basics.md) - Script structure and organization
 - [Event Types](../scripting/events.md) - Available event triggers
 - [Conditions](../scripting/conditions.md) - Script condition system
 - [Actions](../scripting/actions.md) - Available script actions
-- [NPCManager](npc.md) - NPC interactions and dialog
-- [DialogManager](dialog.md) - Conversation system

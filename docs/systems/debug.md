@@ -214,4 +214,4 @@ The system also accesses:
 
 - [NPCManager](npc.md) - NPC system providing position data
 - [PlayerManager](player.md) - Player system providing player position
-- [Configuration Guide](../configuration.md) - TILE_SIZE setting
+- [Configuration Guide](../guides/configuration.md)

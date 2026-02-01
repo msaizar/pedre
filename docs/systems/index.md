@@ -7,6 +7,7 @@ This documentation provides detailed information about each manager/system in th
 The Pedre framework follows a manager-based architecture where each system encapsulates specific functionality. Systems communicate through an event bus for loose coupling and maintainability.
 
 For framework architecture and extension points, see:
+
 - [API Reference](../api/index.md) - Core framework components
 - [Extending Pedre](../extending/index.md) - Custom actions, events, conditions, and systems
 

@@ -659,6 +659,6 @@ INSTALLED_SYSTEMS = [
 
 ## See Also
 
-- [EmitParticlesAction](../scripting/actions.md#emit_particles) - Script action for particle effects
-- [Configuration Guide](../configuration.md) - Particle system settings
 - [ScriptManager](script.md) - Event-driven scripting
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)

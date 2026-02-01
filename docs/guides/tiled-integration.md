@@ -912,5 +912,5 @@ You can add any custom properties you need to objects. These properties are stor
 **Next Steps:**
 
 - [Scripting Guide](scripting/index.md) - Learn about event-driven actions
-- [Systems Reference](systems/index.md) - Deep dive into managers
-- [API Reference](api-reference.md) - Complete API documentation
+- [Systems Reference](../systems/index.md) - Individual system documentation
+- [API Reference](../api/index.md) - API reference

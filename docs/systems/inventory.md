@@ -996,7 +996,7 @@ INSTALLED_SYSTEMS = [
 
 - [DialogManager](dialog.md) - Conversation system
 - [ScriptManager](script.md) - Event-driven scripting
-- [Configuration Guide](../configuration.md) - Inventory system settings
-- [Scripting Actions](../scripting/actions.md) - Inventory actions
-- [Scripting Conditions](../scripting/conditions.md) - Inventory conditions
-- [Scripting Events](../scripting/events.md) - Inventory events
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)
+- [Scripting Conditions](../scripting/conditions.md)
+- [Scripting Events](../scripting/events.md)

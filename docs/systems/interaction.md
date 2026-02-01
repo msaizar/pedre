@@ -595,6 +595,6 @@ INSTALLED_SYSTEMS = [
 - [ScriptManager](script.md) - Event-driven scripting for handling interactions
 - [NPCManager](npc.md) - NPC interaction system
 - [DialogManager](dialog.md) - Conversation system
-- [Configuration Guide](../configuration.md) - Interaction system settings
-- [Scripting Conditions](../scripting/conditions.md) - Interaction conditions
-- [Scripting Events](../scripting/events.md) - Interaction events
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Conditions](../scripting/conditions.md)
+- [Scripting Events](../scripting/events.md)

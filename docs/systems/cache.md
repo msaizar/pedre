@@ -550,4 +550,4 @@ Cache should NOT be cleared when:
 - [SceneManager](scene.md) - Uses cache during scene transitions
 - [SaveManager](save.md) - Persists cache to disk
 - [NPCManager](npc.md) - Example system that uses caching
-- [Configuration Guide](../configuration.md) - System settings
+- [Configuration Guide](../guides/configuration.md)

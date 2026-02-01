@@ -1203,6 +1203,6 @@ INSTALLED_SYSTEMS = [
 - [NPCManager](npc.md) - NPC loading and management
 - [PlayerManager](player.md) - Player spawning and control
 - [PhysicsManager](physics.md) - Collision detection
-- [Configuration Guide](../configuration.md) - Scene system settings
-- [Scripting Actions](../scripting/actions.md) - Scene actions
-- [Scripting Events](../scripting/events.md) - Scene events
+- [Configuration Guide](../guides/configuration.md)
+- [Scripting Actions](../scripting/actions.md)
+- [Scripting Events](../scripting/events.md)

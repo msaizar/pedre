@@ -691,5 +691,5 @@ INSTALLED_SYSTEMS = [
 - [CameraManager](camera.md) - Camera following
 - [SceneManager](scene.md) - Scene transitions and spawning
 - [WaypointManager](waypoint.md) - Waypoint system
-- [Configuration Guide](../configuration.md) - Player system settings
-- [AnimatedSprite](../sprites/animated-sprite.md) - Base animation system
+- [Configuration Guide](../guides/configuration.md)
+- [AnimatedSprite](../api/sprites.md)
