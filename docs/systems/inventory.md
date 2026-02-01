@@ -56,7 +56,9 @@ INVENTORY_ITEMS_FILE = "data/items.json"
 
 ### Item Management
 
-#### `acquire_item(item_id: str) -> bool`
+#### acquire_item
+
+`acquire_item(item_id: str) -> bool`
 
 Mark an item as acquired by the player.
 
@@ -87,7 +89,9 @@ else:
 - Publishes `ItemAcquisitionFailedEvent` if acquisition fails
 - Returns `False` if item doesn't exist in the registry
 
-#### `consume_item(item_id: str) -> bool`
+#### consume_item
+
+`consume_item(item_id: str) -> bool`
 
 Mark an item as consumed by the player.
 
@@ -117,7 +121,9 @@ else:
 - Consumed items no longer appear in the inventory display
 - Publishes `ItemConsumedEvent` when successful
 
-#### `add_item(item: InventoryItem) -> bool`
+#### add_item
+
+`add_item(item: InventoryItem) -> bool`
 
 Add a new item to the inventory system and optionally acquire it.
 
@@ -156,7 +162,9 @@ if inventory_manager.add_item(potion):
 - If `acquired=True`, publishes `ItemAcquiredEvent`
 - Checks inventory capacity before adding
 
-#### `has_item(item_id: str) -> bool`
+#### has_item
+
+`has_item(item_id: str) -> bool`
 
 Check if the player has acquired a specific item.
 
@@ -187,7 +195,9 @@ else:
 
 ### State Queries
 
-#### `has_been_accessed() -> bool`
+#### has_been_accessed
+
+`has_been_accessed() -> bool`
 
 Check if inventory has been accessed by the player.
 
@@ -211,7 +221,9 @@ if inventory_manager.has_been_accessed():
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -229,7 +241,9 @@ save_data = {
 }
 ```
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore state from save data.
 
@@ -250,7 +264,9 @@ inventory_manager.restore_save_state(save_data["inventory"])
 
 ## System Lifecycle
 
-### `setup(context: GameContext) -> None`
+### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the inventory system with game context.
 
@@ -263,7 +279,9 @@ Initialize the inventory system with game context.
 - Called automatically by the SystemLoader
 - Loads items from `INVENTORY_ITEMS_FILE`
 
-### `cleanup() -> None`
+### cleanup
+
+`cleanup() -> None`
 
 Clean up inventory resources when the scene unloads.
 
@@ -272,7 +290,9 @@ Clean up inventory resources when the scene unloads.
 - Clears all items and resets accessed flag
 - Called automatically by the SystemLoader
 
-### `reset() -> None`
+### reset
+
+`reset() -> None`
 
 Reset inventory state for new game.
 
@@ -281,7 +301,9 @@ Reset inventory state for new game.
 - Clears items, accessed flag, and overlay state
 - Reloads default items from JSON
 
-### `on_key_press(symbol: int, modifiers: int) -> bool`
+### on_key_press
+
+`on_key_press(symbol: int, modifiers: int) -> bool`
 
 Handle key presses for inventory overlay.
 
@@ -303,7 +325,9 @@ Handle key presses for inventory overlay.
 - `INVENTORY_KEY_CONSUME` (default: `C`) consumes selected item
 - `ESC` closes overlay
 
-### `on_draw_ui() -> None`
+### on_draw_ui
+
+`on_draw_ui() -> None`
 
 Draw the inventory overlay in screen coordinates.
 
