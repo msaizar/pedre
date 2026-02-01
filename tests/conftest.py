@@ -85,7 +85,7 @@ def configure_test_settings() -> Generator[None]:
         MENU_OPTION_SIZE=24,
         MENU_SPACING=50,
         MENU_BACKGROUND_IMAGE="",
-        MENU_MUSIC_FILES=[],
+        MENU_PRELOAD_MUSIC_FILES=[],
         MENU_TEXT_CONTINUE="Continue",
         MENU_TEXT_NEW_GAME="New Game",
         MENU_TEXT_SAVE_GAME="Save Game",

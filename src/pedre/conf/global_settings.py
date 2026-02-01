@@ -42,8 +42,8 @@ MENU_SPACING = 50
 MENU_BACKGROUND_IMAGE = ""
 """Path to background image for menu screen (empty string for no image)."""
 
-MENU_MUSIC_FILES = []
-"""List of music file paths to play in the menu."""
+MENU_PRELOAD_MUSIC_FILES = []
+"""List of music file paths to preload in the menu."""
 
 MENU_TEXT_CONTINUE = "Continue"
 """Text for the Continue menu option."""

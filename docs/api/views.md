@@ -76,7 +76,7 @@ Menu appearance is controlled through settings:
 - `MENU_OPTION_SIZE` - Font size for options
 - `MENU_SPACING` - Vertical spacing between options
 - `MENU_BACKGROUND_IMAGE` - Path to background image
-- `MENU_MUSIC_FILES` - Music files to preload
+- `MENU_PRELOAD_MUSIC_FILES` - Music files to preload
 
 See [Configuration Guide](../guides/configuration.md#menu-settings) for details.
 
