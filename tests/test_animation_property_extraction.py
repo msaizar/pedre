@@ -3,18 +3,18 @@
 import unittest
 from unittest.mock import MagicMock
 
+from pedre.plugins.npc import NPCPlugin
+from pedre.plugins.npc.constants import ALL_ANIMATION_PROPERTIES, NPC_SPECIAL_ANIMATION_PROPERTIES
+from pedre.plugins.player import PlayerPlugin
 from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
-from pedre.systems.npc.constants import ALL_ANIMATION_PROPERTIES, NPC_SPECIAL_ANIMATION_PROPERTIES
-from pedre.systems.npc.manager import NPCManager
-from pedre.systems.player.manager import PlayerManager
 
 
 class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
-    """Test PlayerManager._get_animation_properties() method."""
+    """Test PlayerPlugin._get_animation_properties() method."""
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        self.manager = PlayerManager()
+        self.plugin = PlayerPlugin()
 
     def test_extracts_base_animation_properties(self) -> None:
         """Test that all base animation properties are extracted."""
@@ -29,7 +29,7 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
             "walk_down_row": 3,
         }
 
-        result = self.manager._get_animation_properties(properties)
+        result = self.plugin._get_animation_properties(properties)
 
         assert len(result) == 8
         assert result["idle_up_frames"] == 4
@@ -62,7 +62,7 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
             "walk_right_row": 16,
         }
 
-        result = self.manager._get_animation_properties(properties)
+        result = self.plugin._get_animation_properties(properties)
 
         assert len(result) == 16
         for key, value in properties.items():
@@ -79,7 +79,7 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
             "spawn_at_portal": True,
         }
 
-        result = self.manager._get_animation_properties(properties)
+        result = self.plugin._get_animation_properties(properties)
 
         assert len(result) == 2
         assert result["idle_up_frames"] == 4
@@ -97,7 +97,7 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
             "idle_down_frames": 4.5,  # Float instead of int
             "idle_down_row": 1,
         }
-        result = self.manager._get_animation_properties(properties)
+        result = self.plugin._get_animation_properties(properties)
         assert "idle_up_frames" not in result
         assert "idle_down_frames" not in result
         assert "idle_up_row" in result
@@ -105,7 +105,7 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
 
     def test_handles_empty_properties(self) -> None:
         """Test that empty properties dict returns empty result."""
-        result = self.manager._get_animation_properties({})
+        result = self.plugin._get_animation_properties({})
 
         assert result == {}
         assert len(result) == 0
@@ -117,7 +117,7 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
             "idle_down_row": 1,
         }
 
-        result = self.manager._get_animation_properties(properties)
+        result = self.plugin._get_animation_properties(properties)
 
         assert len(result) == 2
         assert result["idle_down_frames"] == 4
@@ -125,11 +125,11 @@ class TestPlayerAnimationPropertyExtraction(unittest.TestCase):
 
 
 class TestNPCAnimationPropertyExtraction(unittest.TestCase):
-    """Test NPCManager animation property extraction from Tiled objects."""
+    """Test NPCPlugin animation property extraction from Tiled objects."""
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        self.manager = NPCManager()
+        self.plugin = NPCPlugin()
         self.mock_context = MagicMock()
         self.mock_event_bus = MagicMock()
         self.mock_context.event_bus = self.mock_event_bus
@@ -143,7 +143,7 @@ class TestNPCAnimationPropertyExtraction(unittest.TestCase):
         return mock_obj
 
     def _extract_anim_props(self, npc_properties: dict) -> dict[str, int]:
-        """Simulate the animation property extraction logic from NPCManager."""
+        """Simulate the animation property extraction logic from NPCPlugin."""
         return {
             key: val for key, val in npc_properties.items() if key in ALL_ANIMATION_PROPERTIES and isinstance(val, int)
         }

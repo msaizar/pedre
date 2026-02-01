@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from pedre.systems.camera.actions import (
+from pedre.plugins.camera.actions import (
     FollowNPCAction,
     FollowPlayerAction,
     StopCameraFollowAction,
@@ -18,33 +18,33 @@ class TestFollowPlayerAction(unittest.TestCase):
         # Setup
         action = FollowPlayerAction(smooth=True)
         context = MagicMock()
-        camera_manager = MagicMock()
-        context.camera_manager = camera_manager
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
 
         # Execute
         result = action.execute(context)
 
         # Assert
         assert result is True
-        camera_manager.set_follow_player.assert_called_once_with(smooth=True)
+        camera_plugin.set_follow_player.assert_called_once_with(smooth=True)
 
     def test_execute_instant_follow(self) -> None:
         """Test instant follow mode."""
         action = FollowPlayerAction(smooth=False)
         context = MagicMock()
-        camera_manager = MagicMock()
-        context.camera_manager = camera_manager
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
 
         result = action.execute(context)
 
         assert result is True
-        camera_manager.set_follow_player.assert_called_once_with(smooth=False)
+        camera_plugin.set_follow_player.assert_called_once_with(smooth=False)
 
-    def test_execute_no_camera_manager(self) -> None:
-        """Test graceful handling when camera manager not available."""
+    def test_execute_no_camera_plugin(self) -> None:
+        """Test graceful handling when camera plugin not available."""
         action = FollowPlayerAction()
         context = MagicMock()
-        context.camera_manager = None
+        context.camera_plugin = None
 
         result = action.execute(context)
 
@@ -66,8 +66,8 @@ class TestFollowPlayerAction(unittest.TestCase):
         """Test reset clears executed flag."""
         action = FollowPlayerAction()
         context = MagicMock()
-        camera_manager = MagicMock()
-        context.camera_manager = camera_manager
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
 
         action.execute(context)
         assert action.executed is True
@@ -83,56 +83,56 @@ class TestFollowNPCAction(unittest.TestCase):
         """Test that action sets camera to follow NPC."""
         action = FollowNPCAction("martin", smooth=True)
         context = MagicMock()
-        camera_manager = MagicMock()
-        npc_manager = MagicMock()
+        camera_plugin = MagicMock()
+        npc_plugin = MagicMock()
         npc_state = MagicMock()
 
-        context.camera_manager = camera_manager
-        context.npc_manager = npc_manager
+        context.camera_plugin = camera_plugin
+        context.npc_plugin = npc_plugin
 
-        npc_manager.get_npc_by_name.return_value = npc_state
+        npc_plugin.get_npc_by_name.return_value = npc_state
 
         result = action.execute(context)
 
         assert result is True
-        camera_manager.set_follow_npc.assert_called_once_with("martin", smooth=True)
+        camera_plugin.set_follow_npc.assert_called_once_with("martin", smooth=True)
 
     def test_execute_npc_not_found(self) -> None:
         """Test warning when NPC doesn't exist."""
         action = FollowNPCAction("nonexistent")
         context = MagicMock()
-        camera_manager = MagicMock()
-        npc_manager = MagicMock()
+        camera_plugin = MagicMock()
+        npc_plugin = MagicMock()
 
-        context.camera_manager = camera_manager
-        context.npc_manager = npc_manager
-        npc_manager.get_npc_by_name.return_value = None
+        context.camera_plugin = camera_plugin
+        context.npc_plugin = npc_plugin
+        npc_plugin.get_npc_by_name.return_value = None
 
         result = action.execute(context)
 
         assert result is True  # Still completes
-        camera_manager.set_follow_npc.assert_called_once()
+        camera_plugin.set_follow_npc.assert_called_once()
 
     def test_execute_instant_follow(self) -> None:
         """Test instant follow mode for NPC."""
         action = FollowNPCAction("yema", smooth=False)
         context = MagicMock()
-        camera_manager = MagicMock()
-        npc_manager = MagicMock()
+        camera_plugin = MagicMock()
+        npc_plugin = MagicMock()
 
-        context.camera_manager = camera_manager
-        context.npc_manager = npc_manager
+        context.camera_plugin = camera_plugin
+        context.npc_plugin = npc_plugin
 
         result = action.execute(context)
 
         assert result is True
-        camera_manager.set_follow_npc.assert_called_once_with("yema", smooth=False)
+        camera_plugin.set_follow_npc.assert_called_once_with("yema", smooth=False)
 
-    def test_execute_no_camera_manager(self) -> None:
-        """Test graceful handling when camera manager not available."""
+    def test_execute_no_camera_plugin(self) -> None:
+        """Test graceful handling when camera plugin not available."""
         action = FollowNPCAction("martin")
         context = MagicMock()
-        context.camera_manager = None
+        context.camera_plugin = None
 
         result = action.execute(context)
 
@@ -155,8 +155,8 @@ class TestFollowNPCAction(unittest.TestCase):
         """Test reset clears executed flag."""
         action = FollowNPCAction("martin")
         context = MagicMock()
-        camera_manager = MagicMock()
-        context.camera_manager = camera_manager
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
 
         action.execute(context)
         assert action.executed is True
@@ -172,19 +172,19 @@ class TestStopCameraFollowAction(unittest.TestCase):
         """Test that action stops camera following."""
         action = StopCameraFollowAction()
         context = MagicMock()
-        camera_manager = MagicMock()
-        context.camera_manager = camera_manager
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
 
         result = action.execute(context)
 
         assert result is True
-        camera_manager.stop_follow.assert_called_once()
+        camera_plugin.stop_follow.assert_called_once()
 
-    def test_execute_no_camera_manager(self) -> None:
-        """Test graceful handling when camera manager not available."""
+    def test_execute_no_camera_plugin(self) -> None:
+        """Test graceful handling when camera plugin not available."""
         action = StopCameraFollowAction()
         context = MagicMock()
-        context.camera_manager = None
+        context.camera_plugin = None
 
         result = action.execute(context)
 
@@ -199,8 +199,8 @@ class TestStopCameraFollowAction(unittest.TestCase):
         """Test reset clears executed flag."""
         action = StopCameraFollowAction()
         context = MagicMock()
-        camera_manager = MagicMock()
-        context.camera_manager = camera_manager
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
 
         action.execute(context)
         assert action.executed is True

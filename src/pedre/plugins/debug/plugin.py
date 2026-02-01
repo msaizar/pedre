@@ -1,0 +1,135 @@
+"""Debug plugin for rendering debug overlays."""
+
+import logging
+from typing import TYPE_CHECKING, ClassVar
+
+import arcade
+
+from pedre.conf import settings
+from pedre.plugins.base import BasePlugin
+from pedre.plugins.registry import PluginRegistry
+
+if TYPE_CHECKING:
+    from pedre.plugins.game_context import GameContext
+
+logger = logging.getLogger(__name__)
+
+
+@PluginRegistry.register
+class DebugPlugin(BasePlugin):
+    """Plugin for rendering debug information.
+
+    Handles the debug overlay showing player and NPC positions in tile coordinates.
+    Toggled with Shift+D.
+    """
+
+    name: ClassVar[str] = "debug"
+    dependencies: ClassVar[list[str]] = ["npc"]
+
+    def __init__(self) -> None:
+        """Initialize the debug plugin with default state."""
+        self.debug_mode = False
+        self.debug_text_objects: list[arcade.Text] = []
+
+    def setup(self, context: GameContext) -> None:
+        """Initialize the debug plugin.
+
+        Args:
+            context: Game context.
+        """
+        self.context = context
+        self.debug_text_objects = []
+
+    def on_key_press(self, symbol: int, modifiers: int) -> bool:
+        """Handle debug toggle input.
+
+        Args:
+            symbol: Key symbol.
+            modifiers: Key modifiers.
+
+        Returns:
+            True if handled.
+        """
+        if symbol == arcade.key.D and (modifiers & arcade.key.MOD_SHIFT):
+            self.debug_mode = not self.debug_mode
+            logger.info("Debug mode toggled: %s", self.debug_mode)
+            # Clear text objects when toggling off
+            if not self.debug_mode:
+                self.debug_text_objects.clear()
+            return True
+        return False
+
+    def on_draw_ui(self) -> None:
+        """Draw debug information overlay in screen coordinates."""
+        if not self.debug_mode:
+            return
+
+        # Build debug text content
+        debug_lines = []
+        y_offset = 30
+        tile_size = settings.TILE_SIZE
+
+        # Collect player position (from context)
+        player_sprite = self.context.player_plugin.get_player_sprite()
+        if player_sprite:
+            player_tile_x = int(player_sprite.center_x / tile_size)
+            player_tile_y = int(player_sprite.center_y / tile_size)
+            debug_lines.append((f"Player: tile ({player_tile_x}, {player_tile_y})", arcade.color.GREEN))
+            player_x = int(player_sprite.center_x)
+            player_y = int(player_sprite.center_y)
+            debug_lines.append((f"Player: coords ({player_x}, {player_y})", arcade.color.GREEN))
+        # Collect NPC positions
+        npc_plugin = self.context.npc_plugin
+        if npc_plugin:
+            for npc_name, npc_state in npc_plugin.get_npcs().items():
+                if npc_state.sprite and npc_state.sprite.visible:
+                    npc_tile_x = int(npc_state.sprite.center_x / tile_size)
+                    npc_tile_y = int(npc_state.sprite.center_y / tile_size)
+                    npc_x = int(npc_state.sprite.center_x)
+                    npc_y = int(npc_state.sprite.center_y)
+                    debug_lines.append(
+                        (
+                            f"{npc_name}: tile ({npc_tile_x}, {npc_tile_y}) level {npc_state.dialog_level}",
+                            arcade.color.YELLOW,
+                        )
+                    )
+                    debug_lines.append(
+                        (f"{npc_name}: coords ({npc_x}, {npc_y}) level {npc_state.dialog_level}", arcade.color.YELLOW)
+                    )
+
+        # Create or update text objects
+        num_needed = len(debug_lines)
+        num_existing = len(self.debug_text_objects)
+
+        # Remove extra text objects if we have too many
+        if num_existing > num_needed:
+            self.debug_text_objects = self.debug_text_objects[:num_needed]
+
+        # Update or create text objects
+        for i, (text, color) in enumerate(debug_lines):
+            if i < len(self.debug_text_objects):
+                # Update existing text object
+                self.debug_text_objects[i].text = text
+                self.debug_text_objects[i].color = color
+                self.debug_text_objects[i].y = y_offset
+            else:
+                # Create new text object
+                text_obj = arcade.Text(
+                    text,
+                    10,
+                    y_offset,
+                    color,
+                    font_size=12,
+                )
+                self.debug_text_objects.append(text_obj)
+
+            y_offset += 20
+
+        # Draw all text objects
+        for text_obj in self.debug_text_objects:
+            text_obj.draw()
+
+    def cleanup(self) -> None:
+        """Clean up debug resources."""
+        self.debug_text_objects.clear()
+        self.debug_mode = False

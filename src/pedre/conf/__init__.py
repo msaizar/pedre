@@ -1,4 +1,4 @@
-"""Django-like settings system for Pedre.
+"""Django-like settings plugin for Pedre.
 
 Usage:
     # In your game project's settings.py

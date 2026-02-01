@@ -1,6 +1,6 @@
 # Conditions & Registry
 
-Pedre uses an extensible condition system where all script conditions are managed by a central registry. This allows you to create custom conditions that integrate seamlessly with the event-driven scripting system.
+Pedre uses an extensible condition system where all script conditions are managed by a central registry. This allows you to create custom conditions that integrate seamlessly with the event-driven scripting plugin.
 
 ## How Conditions Are Loaded
 
@@ -14,10 +14,10 @@ Conditions are configured through the `INSTALLED_CONDITIONS` setting, which is a
 
 ```python
 INSTALLED_CONDITIONS = [
-    "pedre.systems.interaction.conditions",
-    "pedre.systems.inventory.conditions",
-    "pedre.systems.npc.conditions",
-    "pedre.systems.script.conditions",
+    "pedre.plugins.interaction.conditions",
+    "pedre.plugins.inventory.conditions",
+    "pedre.plugins.npc.conditions",
+    "pedre.plugins.script.conditions",
 ]
 ```
 
@@ -31,7 +31,7 @@ from pedre.conf import global_settings
 INSTALLED_CONDITIONS = [
     *global_settings.INSTALLED_CONDITIONS,  # Include built-in conditions
     "myproject.custom_conditions",           # Your custom conditions module
-    "myproject.systems.weather.conditions",  # System-specific conditions
+    "myproject.plugins.weather.conditions",  # Plugin-specific conditions
 ]
 ```
 
@@ -39,7 +39,7 @@ You can also replace built-in conditions with your own implementations by omitti
 
 ## ConditionRegistry
 
-The `ConditionRegistry` maintains a mapping of condition names (like `"inventory_accessed"`, `"script_completed"`) to checker functions. This enables the scripting system to evaluate conditions defined in JSON without importing the actual Python functions.
+The `ConditionRegistry` maintains a mapping of condition names (like `"inventory_accessed"`, `"script_completed"`) to checker functions. This enables the scripting plugin to evaluate conditions defined in JSON without importing the actual Python functions.
 
 ### Location
 
@@ -53,7 +53,7 @@ To create a new condition checker, define a function and decorate it with `@Cond
 
 ```python
 from typing import Any
-from pedre.systems.game_context import GameContext
+from pedre.plugins.game_context import GameContext
 from pedre.conditions.registry import ConditionRegistry
 
 @ConditionRegistry.register("is_weather")
@@ -62,18 +62,18 @@ def check_weather(data: dict[str, Any], context: GameContext) -> bool:
 
     Args:
         data: Condition parameters from JSON (e.g., {"weather": "rain"})
-        context: Game context for accessing systems
+        context: Game context for accessing plugins
 
     Returns:
         True if the condition is met, False otherwise
     """
     required_weather = data.get("weather")
 
-    weather_system = context.get_system("weather")
-    if not weather_system:
+    weather_plugin = context.get_plugin("weather")
+    if not weather_plugin:
         return False
 
-    return weather_system.current_weather == required_weather
+    return weather_plugin.current_weather == required_weather
 ```
 
 ### 2. Use in Scripts
@@ -112,7 +112,7 @@ Once registered, your condition can be used in any JSON script:
 @ConditionRegistry.register("player_health")
 def check_player_health(data: dict[str, Any], context: GameContext) -> bool:
     """Check if player health meets a condition."""
-    player = context.get_system("player")
+    player = context.get_plugin("player")
     if not player:
         return False
 
@@ -152,14 +152,14 @@ Usage:
 @ConditionRegistry.register("quest_progress")
 def check_quest_progress(data: dict[str, Any], context: GameContext) -> bool:
     """Check if a quest has reached a specific stage."""
-    quest_system = context.get_system("quest")
-    if not quest_system:
+    quest_plugin = context.get_plugin("quest")
+    if not quest_plugin:
         return False
 
     quest_id = data.get("quest_id")
     required_stage = data.get("stage")
 
-    quest = quest_system.get_quest(quest_id)
+    quest = quest_plugin.get_quest(quest_id)
     if not quest:
         return False
 
@@ -170,10 +170,10 @@ def check_quest_progress(data: dict[str, Any], context: GameContext) -> bool:
 
 - **Naming**: Use lowercase, underscore_separated names for condition keys (e.g., `is_weather`, `player_health`).
 - **Return Type**: Always return a boolean value (`True` or `False`).
-- **Error Handling**: Return `False` if required systems or data are unavailable, rather than raising exceptions.
+- **Error Handling**: Return `False` if required plugins or data are unavailable, rather than raising exceptions.
 - **Documentation**: Include docstrings explaining what the condition checks and what parameters it accepts.
 - **Parameters**: Use clear, descriptive parameter names in your condition data dictionary.
-- **System Access**: Use `context.get_system()` to access game systems and check if they exist before using them.
+- **Plugin Access**: Use `context.get_plugin()` to access game plugins and check if they exist before using them.
 
 ## For Script Writers
 

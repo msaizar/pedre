@@ -2,12 +2,12 @@
 
 This package provides a complete framework for building 2D RPG games with features like:
 - Tiled map integration
-- NPC system with dialogs
+- NPC plugin with dialogs
 - Event-driven scripting
 - Inventory management
-- Save/load system
+- Save/load plugin
 - Audio management
-- Camera system
+- Camera plugin
 
 Quick start:
     # Create a settings.py file in your project root:

@@ -104,14 +104,14 @@ For checking game state beyond event matching, use the `conditions` array. These
 
 ### Available Condition Checks
 
-| Check Type | Fields | Description | Example |
-| ---------- | ------ | ----------- | ------- |
-| `npc_interacted` | `npc`, `scene`, `equals` | Check if NPC was interacted with in a scene | `{"check": "npc_interacted", "npc": "guard", "equals": true}` |
-| `npc_dialog_level` | `npc`, `equals`/`gte`/`gt`/`lte`/`lt` | Match NPC conversation level | `{"check": "npc_dialog_level", "npc": "merchant", "gte": 2}` |
-| `inventory_accessed` | `equals` | Check if inventory was ever opened | `{"check": "inventory_accessed", "equals": true}` |
-| `object_interacted` | `object`, `equals` | Check if object was ever interacted with (state check) | `{"check": "object_interacted", "object": "sink", "equals": true}` |
-| `script_completed` | `script` | Check if a run_once script has completed | `{"check": "script_completed", "script": "intro_cutscene"}` |
-| `item_acquired` | `item_id` | Check if an item was acquired | `{"check": "item_acquired", "item_id": "golden_key"}` |
+| Check Type           | Fields                                | Description                                            | Example                                                            |
+| -------------------- | ------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------ |
+| `npc_interacted`     | `npc`, `scene`, `equals`              | Check if NPC was interacted with in a scene            | `{"check": "npc_interacted", "npc": "guard", "equals": true}`      |
+| `npc_dialog_level`   | `npc`, `equals`/`gte`/`gt`/`lte`/`lt` | Match NPC conversation level                           | `{"check": "npc_dialog_level", "npc": "merchant", "gte": 2}`       |
+| `inventory_accessed` | `equals`                              | Check if inventory was ever opened                     | `{"check": "inventory_accessed", "equals": true}`                  |
+| `object_interacted`  | `object`, `equals`                    | Check if object was ever interacted with (state check) | `{"check": "object_interacted", "object": "sink", "equals": true}` |
+| `script_completed`   | `script`                              | Check if a run_once script has completed               | `{"check": "script_completed", "script": "intro_cutscene"}`        |
+| `item_acquired`      | `item_id`                             | Check if an item was acquired                          | `{"check": "item_acquired", "item_id": "golden_key"}`              |
 
 ### npc_interacted (state check)
 
@@ -627,18 +627,18 @@ Look for condition check messages in console output.
 
  ```python
  from typing import Any
- from pedre.systems.game_context import GameContext
+ from pedre.plugins.game_context import GameContext
  from pedre.conditions.registry import ConditionRegistry
 
  @ConditionRegistry.register("is_weather")
  def check_weather(data: dict[str, Any], context: GameContext) -> bool:
      required_weather = data.get("weather")
 
-     weather_system = context.get_system("weather")
-     if not weather_system:
+     weather_plugin = context.get_plugin("weather")
+     if not weather_plugin:
          return False
 
-     return weather_system.current_weather == required_weather
+     return weather_plugin.current_weather == required_weather
  ```
 
 ### 2. Use in Scripts

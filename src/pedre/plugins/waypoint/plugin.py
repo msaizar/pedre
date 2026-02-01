@@ -1,0 +1,108 @@
+"""Waypoint management plugin."""
+
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING, ClassVar
+
+from pedre.conf import settings
+from pedre.plugins.registry import PluginRegistry
+from pedre.plugins.waypoint.base import WaypointBasePlugin
+
+if TYPE_CHECKING:
+    import arcade
+
+    from pedre.plugins.game_context import GameContext
+
+logger = logging.getLogger(__name__)
+
+
+@PluginRegistry.register
+class WaypointPlugin(WaypointBasePlugin):
+    """Manages waypoints loaded from Tiled maps.
+
+    Waypoints are named positions in the map used for:
+    - Player spawn points
+    - NPC spawn points
+    - Script-triggered teleportation
+    """
+
+    name: ClassVar[str] = "waypoint"
+    dependencies: ClassVar[list[str]] = []
+
+    def __init__(self) -> None:
+        """Initialize waypoint plugin."""
+        self.waypoints: dict[str, tuple[float, float]] = {}
+
+    def setup(self, context: GameContext) -> None:
+        """Initialize waypoint plugin."""
+        self.context = context
+
+    def reset(self) -> None:
+        """Reset waypoint plugin."""
+        self.waypoints.clear()
+
+    def get_waypoints(self) -> dict[str, tuple[float, float]]:
+        """Get waypoints."""
+        return self.waypoints
+
+    def load_from_tiled(
+        self,
+        tile_map: arcade.TileMap,
+        arcade_scene: arcade.Scene,
+    ) -> None:
+        """Load waypoints from Tiled map object layer."""
+        self.waypoints = {}
+
+        waypoint_layer = tile_map.object_lists.get("Waypoints")
+        if not waypoint_layer:
+            logger.debug("No Waypoints layer found in map")
+            return
+
+        for waypoint in waypoint_layer:
+            if not waypoint.name:
+                logger.warning("Waypoint object missing 'name', skipping")
+                continue
+
+            # Ensure shape is a list/tuple of coordinates with at least 2 elements
+            if not waypoint.shape or not isinstance(waypoint.shape, (list, tuple)) or len(waypoint.shape) < 2:
+                logger.warning("Waypoint '%s' has invalid shape, skipping", waypoint.name)
+                continue
+
+            # For waypoints, shape should be [x, y] coordinates
+            shape_x = waypoint.shape[0]
+            shape_y = waypoint.shape[1]
+
+            # Extract numeric values
+            if isinstance(shape_x, (int, float)) and isinstance(shape_y, (int, float)):
+                x = float(shape_x)
+                y = float(shape_y)
+                tile_x = int(x // settings.TILE_SIZE)
+                tile_y = int(y // settings.TILE_SIZE)
+                self.waypoints[waypoint.name] = (tile_x, tile_y)
+                logger.debug(
+                    "Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
+                    waypoint.name,
+                    x,
+                    y,
+                    tile_x,
+                    tile_y,
+                )
+            else:
+                logger.warning(
+                    "Waypoint '%s' has non-numeric coordinates, skipping",
+                    waypoint.name,
+                )
+
+        logger.info("Loaded %d waypoints", len(self.waypoints))
+
+    def get_waypoint(self, name: str) -> tuple[float, float] | None:
+        """Get waypoint position by name.
+
+        Args:
+            name: Waypoint name.
+
+        Returns:
+            Tuple of (tile_x, tile_y) or None if not found.
+        """
+        return self.waypoints.get(name)

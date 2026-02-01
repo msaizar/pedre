@@ -1,14 +1,14 @@
 """Registry for pluggable script actions.
 
 This module provides the ActionRegistry class which tracks all available action types
-for the scripting system. Actions register themselves using the @ActionRegistry.register
+for the scripting plugin. Actions register themselves using the @ActionRegistry.register
 decorator, enabling users to create custom actions that work in JSON scripts.
 
 Example:
     Registering a custom action::
 
-        from pedre.systems.actions import Action
-        from pedre.systems.action_registry import ActionRegistry
+        from pedre.plugins.actions import Action
+        from pedre.plugins.action_registry import ActionRegistry
 
         @ActionRegistry.register("set_weather")
         class SetWeatherAction(Action):
@@ -26,7 +26,7 @@ Example:
 
             def execute(self, context):
                 if not self._executed:
-                    context.get_system("weather").set_weather(self.weather, self.intensity)
+                    context.get_plugin("weather").set_weather(self.weather, self.intensity)
                     self._executed = True
                 return True
 
@@ -63,11 +63,11 @@ class ActionRegistry:
 
     The ActionRegistry maintains a mapping of action type names to their classes
     and parser functions. Actions register themselves using the @ActionRegistry.register
-    decorator, which allows the ScriptManager to parse JSON action definitions
+    decorator, which allows the ScriptPlugin to parse JSON action definitions
     into Action instances without hardcoding every action type.
 
     This enables users to create custom actions that integrate seamlessly with
-    the scripting system.
+    the scripting plugin.
 
     Class Attributes:
         _actions: Dictionary mapping action type names to their classes.
@@ -83,7 +83,7 @@ class ActionRegistry:
                     return cls(color=data.get("color", "white"))
                 ...
 
-            # ScriptManager uses the registry to parse:
+            # ScriptPlugin uses the registry to parse:
             action = ActionRegistry.parse({"type": "flash_screen", "color": "red"})
     """
 
@@ -115,7 +115,7 @@ class ActionRegistry:
                         return cls(sfx_file=data["file"])
 
                     def execute(self, context):
-                        context.audio_manager.play_sfx(self.sfx_file)
+                        context.audio_plugin.play_sfx(self.sfx_file)
                         return True
 
                     def reset(self):

@@ -49,7 +49,7 @@ def _setup_arcade_resources() -> Generator[None]:
 
 @pytest.fixture(autouse=True)
 def configure_test_settings() -> Generator[None]:
-    """Configure settings for each test using the new settings system.
+    """Configure settings for each test using the new settings plugin.
 
     This fixture runs automatically before each test to configure settings
     and resets them after the test completes.
@@ -66,7 +66,7 @@ def configure_test_settings() -> Generator[None]:
         WINDOW_TITLE="Test",
         MENU_TITLE="Test Menu",
         PLAYER_MOVEMENT_SPEED=3,
-        INTERACTION_MANAGER_DISTANCE=50,
+        INTERACTION_PLUGIN_DISTANCE=50,
         NPC_INTERACTION_DISTANCE=50,
         PORTAL_INTERACTION_DISTANCE=50,
         WAYPOINT_THRESHOLD=2,

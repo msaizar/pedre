@@ -13,7 +13,7 @@ SCREEN_HEIGHT=720
 WINDOW_TITLE="My RPG Game"
 PLAYER_MOVEMENT_SPEED=180.0
 TILE_SIZE=32
-INTERACTION_MANAGER_DISTANCE=50
+INTERACTION_PLUGIN_DISTANCE=50
 NPC_INTERACTION_DISTANCE=50
 PORTAL_INTERACTION_DISTANCE=50
 WAYPOINT_THRESHOLD=2
@@ -49,47 +49,47 @@ INITIAL_MAP="start.tmx"
 
 Control window and display properties.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `SCREEN_WIDTH` | int | 1280 | Window width in pixels |
-| `SCREEN_HEIGHT` | int | 720 | Window height in pixels |
-| `WINDOW_TITLE` | string | "Pedre Game" | Window title text |
+| Setting         | Type   | Default      | Description             |
+| --------------- | ------ | ------------ | ----------------------- |
+| `SCREEN_WIDTH`  | int    | 1280         | Window width in pixels  |
+| `SCREEN_HEIGHT` | int    | 720          | Window height in pixels |
+| `WINDOW_TITLE`  | string | "Pedre Game" | Window title text       |
 
 ### Input Settings
 
 Input handling and player movement configuration.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `PLAYER_MOVEMENT_SPEED` | float | 180.0 | Base movement speed in pixels per second |
+| Setting                 | Type  | Default | Description                              |
+| ----------------------- | ----- | ------- | ---------------------------------------- |
+| `PLAYER_MOVEMENT_SPEED` | float | 180.0   | Base movement speed in pixels per second |
 
 **Notes:**
 
 - `PLAYER_MOVEMENT_SPEED` controls how fast the player moves per second when movement keys are pressed
-- Applied to the normalized movement vector returned by `InputManager.get_movement_vector(delta_time)`
+- Applied to the normalized movement vector returned by `InputPlugin.get_movement_vector(delta_time)`
 - Movement is frame-rate independent, ensuring consistent speed across different devices
 - Typical values range from 100.0 (slow) to 300.0 (fast)
-- For more details, see the [InputManager documentation](systems/input.md)
+- For more details, see the [InputPlugin documentation](plugins/input.md)
 
 ### Player Settings
 
 Player character interaction settings.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `TILE_SIZE` | int | 32 | Base tile size for grid-based movement |
-| `INTERACTION_MANAGER_DISTANCE` | int | 50 | Maximum distance for player to interact with objects |
-| `INTERACTION_KEY` | string | "SPACE" | Key for interacting with objects (use arcade.key constants) |
-| `NPC_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to interact with NPCs |
-| `PORTAL_INTERACTION_DISTANCE` | int | 50 | Maximum distance for player to activate portals |
-| `WAYPOINT_THRESHOLD` | int | 2 | Distance threshold to consider waypoint reached |
+| Setting                        | Type   | Default | Description                                                 |
+| ------------------------------ | ------ | ------- | ----------------------------------------------------------- |
+| `TILE_SIZE`                    | int    | 32      | Base tile size for grid-based movement                      |
+| `INTERACTION_PLUGIN_DISTANCE` | int    | 50      | Maximum distance for player to interact with objects        |
+| `INTERACTION_KEY`              | string | "SPACE" | Key for interacting with objects (use arcade.key constants) |
+| `NPC_INTERACTION_DISTANCE`     | int    | 50      | Maximum distance for player to interact with NPCs           |
+| `PORTAL_INTERACTION_DISTANCE`  | int    | 50      | Maximum distance for player to activate portals             |
+| `WAYPOINT_THRESHOLD`           | int    | 2       | Distance threshold to consider waypoint reached             |
 
 **Notes:**
 
-- `INTERACTION_MANAGER_DISTANCE` determines how close the player must be to interact with objects
+- `INTERACTION_PLUGIN_DISTANCE` determines how close the player must be to interact with objects
   - Common values: 32 (1 tile), 50 (default, ~1.5 tiles), 64 (2 tiles), 96 (3 tiles)
   - Uses Euclidean distance from player center to object center
-  - For more details, see the [InteractionManager documentation](systems/interaction.md)
+  - For more details, see the [InteractionPlugin documentation](plugins/interaction.md)
 - `INTERACTION_KEY` can be set to any arcade key constant (e.g., "E", "SPACE", "RETURN"). Keys are matched using the `matches_key()` helper function
 - `NPC_INTERACTION_DISTANCE` determines how close the player must be to interact with NPCs
 - `PORTAL_INTERACTION_DISTANCE` determines how close the player must be to activate portals
@@ -97,19 +97,19 @@ Player character interaction settings.
   - Uses Euclidean distance from player center to portal center
   - Creates a circular activation zone around each portal
   - Events only fire when player enters the zone (not while standing in it)
-  - For more details, see the [PortalManager documentation](systems/portal.md)
+  - For more details, see the [PortalPlugin documentation](plugins/portal.md)
 - `WAYPOINT_THRESHOLD` controls pathfinding precision (lower = more precise)
 
 ### NPC Settings
 
 NPC behavior and interaction settings.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `NPC_INTERACTION_DISTANCE` | int | 50 | Maximum distance in pixels for player to interact with NPCs |
-| `NPC_MOVEMENT_SPEED` | float | 80.0 | NPC movement speed in pixels per second |
-| `NPC_WAYPOINT_THRESHOLD` | int | 2 | Distance in pixels to consider an NPC has reached a waypoint |
-| `NPC_INTERACTION_KEY` | str | "SPACE" | Key to interact with NPCs (use arcade.key constants) |
+| Setting                    | Type  | Default | Description                                                  |
+| -------------------------- | ----- | ------- | ------------------------------------------------------------ |
+| `NPC_INTERACTION_DISTANCE` | int   | 50      | Maximum distance in pixels for player to interact with NPCs  |
+| `NPC_MOVEMENT_SPEED`       | float | 80.0    | NPC movement speed in pixels per second                      |
+| `NPC_WAYPOINT_THRESHOLD`   | int   | 2       | Distance in pixels to consider an NPC has reached a waypoint |
+| `NPC_INTERACTION_KEY`      | str   | "SPACE" | Key to interact with NPCs (use arcade.key constants)         |
 
 **Notes:**
 
@@ -122,19 +122,19 @@ NPC behavior and interaction settings.
 
 Main menu appearance and behavior.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `MENU_TITLE` | string | "Pedre Game" | Menu title text |
-| `MENU_TITLE_SIZE` | int | 48 | Font size for the title |
-| `MENU_OPTION_SIZE` | int | 24 | Font size for menu options |
-| `MENU_SPACING` | int | 50 | Vertical spacing between menu options |
-| `MENU_BACKGROUND_IMAGE` | string | "" | Path to background image (relative to assets handle) |
-| `MENU_MUSIC_FILES` | list[string] | [] | Music files to preload before game start |
-| `MENU_TEXT_CONTINUE` | string | "Continue" | Text for Continue option |
-| `MENU_TEXT_NEW_GAME` | string | "New Game" | Text for New Game option |
-| `MENU_TEXT_SAVE_GAME` | string | "Save Game" | Text for Save Game option |
-| `MENU_TEXT_LOAD_GAME` | string | "Load Game" | Text for Load Game option |
-| `MENU_TEXT_EXIT` | string | "Exit" | Text for Exit option |
+| Setting                 | Type         | Default      | Description                                          |
+| ----------------------- | ------------ | ------------ | ---------------------------------------------------- |
+| `MENU_TITLE`            | string       | "Pedre Game" | Menu title text                                      |
+| `MENU_TITLE_SIZE`       | int          | 48           | Font size for the title                              |
+| `MENU_OPTION_SIZE`      | int          | 24           | Font size for menu options                           |
+| `MENU_SPACING`          | int          | 50           | Vertical spacing between menu options                |
+| `MENU_BACKGROUND_IMAGE` | string       | ""           | Path to background image (relative to assets handle) |
+| `MENU_MUSIC_FILES`      | list[string] | []           | Music files to preload before game start             |
+| `MENU_TEXT_CONTINUE`    | string       | "Continue"   | Text for Continue option                             |
+| `MENU_TEXT_NEW_GAME`    | string       | "New Game"   | Text for New Game option                             |
+| `MENU_TEXT_SAVE_GAME`   | string       | "Save Game"  | Text for Save Game option                            |
+| `MENU_TEXT_LOAD_GAME`   | string       | "Load Game"  | Text for Load Game option                            |
+| `MENU_TEXT_EXIT`        | string       | "Exit"       | Text for Exit option                                 |
 
 **Notes:**
 
@@ -147,38 +147,38 @@ Inventory grid layout, capacity, and appearance.
 
 #### Grid Layout Settings
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `INVENTORY_GRID_COLS` | int | 4 | Number of columns in inventory grid |
-| `INVENTORY_GRID_ROWS` | int | 3 | Number of rows in inventory grid |
-| `INVENTORY_BOX_SIZE` | int | 100 | Size of each inventory slot in pixels |
-| `INVENTORY_BOX_SPACING` | int | 15 | Spacing between inventory slots in pixels |
-| `INVENTORY_BOX_BORDER_WIDTH` | int | 3 | Border width for inventory slots in pixels |
+| Setting                      | Type | Default | Description                                |
+| ---------------------------- | ---- | ------- | ------------------------------------------ |
+| `INVENTORY_GRID_COLS`        | int  | 4       | Number of columns in inventory grid        |
+| `INVENTORY_GRID_ROWS`        | int  | 3       | Number of rows in inventory grid           |
+| `INVENTORY_BOX_SIZE`         | int  | 100     | Size of each inventory slot in pixels      |
+| `INVENTORY_BOX_SPACING`      | int  | 15      | Spacing between inventory slots in pixels  |
+| `INVENTORY_BOX_BORDER_WIDTH` | int  | 3       | Border width for inventory slots in pixels |
 
 #### Capacity and Display Settings
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `INVENTORY_MAX_SPACE` | int | 12 | Maximum number of items the inventory can hold |
-| `INVENTORY_CAPACITY_FONT_SIZE` | int | 14 | Font size for capacity counter (e.g., "8/12") |
-| `INVENTORY_BACKGROUND_IMAGE` | string | "" | Path to background image (optional) |
+| Setting                        | Type   | Default | Description                                    |
+| ------------------------------ | ------ | ------- | ---------------------------------------------- |
+| `INVENTORY_MAX_SPACE`          | int    | 12      | Maximum number of items the inventory can hold |
+| `INVENTORY_CAPACITY_FONT_SIZE` | int    | 14      | Font size for capacity counter (e.g., "8/12")  |
+| `INVENTORY_BACKGROUND_IMAGE`   | string | ""      | Path to background image (optional)            |
 
 #### Data and Input Settings
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `INVENTORY_ITEMS_FILE` | string | "data/inventory_items.json" | Path to JSON file with item definitions |
-| `INVENTORY_KEY_TOGGLE` | string | "I" | Key to open/close the inventory overlay |
-| `INVENTORY_KEY_VIEW` | string | "V" | Key to view selected item in detail |
-| `INVENTORY_KEY_CONSUME` | string | "C" | Key to consume selected item |
+| Setting                 | Type   | Default                     | Description                             |
+| ----------------------- | ------ | --------------------------- | --------------------------------------- |
+| `INVENTORY_ITEMS_FILE`  | string | "data/inventory_items.json" | Path to JSON file with item definitions |
+| `INVENTORY_KEY_TOGGLE`  | string | "I"                         | Key to open/close the inventory overlay |
+| `INVENTORY_KEY_VIEW`    | string | "V"                         | Key to view selected item in detail     |
+| `INVENTORY_KEY_CONSUME` | string | "C"                         | Key to consume selected item            |
 
 #### Hint Text Settings
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `INVENTORY_HINT_VIEW` | string | "[V] View" | Hint text for viewing items |
-| `INVENTORY_HINT_CONSUME` | string | "[C] Consume" | Hint text for consuming items |
-| `INVENTORY_HINT_FONT_SIZE` | int | 12 | Font size for hint text |
+| Setting                    | Type   | Default       | Description                   |
+| -------------------------- | ------ | ------------- | ----------------------------- |
+| `INVENTORY_HINT_VIEW`      | string | "[V] View"    | Hint text for viewing items   |
+| `INVENTORY_HINT_CONSUME`   | string | "[C] Consume" | Hint text for consuming items |
+| `INVENTORY_HINT_FONT_SIZE` | int    | 12            | Font size for hint text       |
 
 **Notes:**
 
@@ -188,57 +188,57 @@ Inventory grid layout, capacity, and appearance.
 - `INVENTORY_BACKGROUND_IMAGE` is optional; leave empty for semi-transparent default background
 - Item definitions in `INVENTORY_ITEMS_FILE` are loaded on setup
 - Key bindings can use single characters (e.g., "V") or arcade key constants
-- For more details, see the [InventoryManager documentation](systems/inventory.md)
+- For more details, see the [InventoryPlugin documentation](plugins/inventory.md)
 
 ### Dialog Settings
 
-Dialog system behavior, timing, and appearance.
+Dialog plugin behavior, timing, and appearance.
 
 #### Behavior Settings
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `DIALOG_AUTO_CLOSE_DEFAULT` | bool | False | Default auto-close behavior for dialogs when not explicitly specified |
-| `DIALOG_AUTO_CLOSE_DURATION` | float | 0.5 | Seconds to wait after text is fully revealed before auto-closing |
-| `DIALOG_CHAR_REVEAL_SPEED` | int | 20 | Characters per second for text reveal animation |
-| `DIALOG_INSTANT_TEXT_DEFAULT` | bool | False | Whether text appears instantly by default (skips reveal animation) |
-| `DIALOG_SHOW_HELP` | bool | True | Whether to show instruction text at the bottom of the dialog |
-| `DIALOG_SHOW_PAGINATION` | bool | True | Whether to show page indicators (e.g., "Page 1/3") |
-| `DIALOG_KEY_ADVANCE` | string | "SPACE" | Key for advancing dialog pages and closing dialogs |
+| Setting                       | Type   | Default | Description                                                           |
+| ----------------------------- | ------ | ------- | --------------------------------------------------------------------- |
+| `DIALOG_AUTO_CLOSE_DEFAULT`   | bool   | False   | Default auto-close behavior for dialogs when not explicitly specified |
+| `DIALOG_AUTO_CLOSE_DURATION`  | float  | 0.5     | Seconds to wait after text is fully revealed before auto-closing      |
+| `DIALOG_CHAR_REVEAL_SPEED`    | int    | 20      | Characters per second for text reveal animation                       |
+| `DIALOG_INSTANT_TEXT_DEFAULT` | bool   | False   | Whether text appears instantly by default (skips reveal animation)    |
+| `DIALOG_SHOW_HELP`            | bool   | True    | Whether to show instruction text at the bottom of the dialog          |
+| `DIALOG_SHOW_PAGINATION`      | bool   | True    | Whether to show page indicators (e.g., "Page 1/3")                    |
+| `DIALOG_KEY_ADVANCE`          | string | "SPACE" | Key for advancing dialog pages and closing dialogs                    |
 
 #### Layout Settings
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `DIALOG_BOX_WIDTH_PERCENT` | float | 0.75 | Dialog box width as fraction of window width (0.0-1.0) |
-| `DIALOG_BOX_MAX_WIDTH` | int | 800 | Maximum dialog box width in pixels |
-| `DIALOG_BOX_MIN_WIDTH` | int | 400 | Minimum dialog box width in pixels |
-| `DIALOG_BOX_HEIGHT_PERCENT` | float | 0.25 | Dialog box height as fraction of window height (0.0-1.0) |
-| `DIALOG_BOX_MIN_HEIGHT` | int | 150 | Minimum dialog box height in pixels |
-| `DIALOG_VERTICAL_POSITION` | float | 0.25 | Vertical position from bottom as fraction of window height (0.0-1.0) |
-| `DIALOG_OVERLAY_ALPHA` | int | 128 | Transparency of background overlay (0-255, where 0 is transparent and 255 is opaque) |
-| `DIALOG_BORDER_WIDTH` | int | 3 | Width of dialog box border in pixels |
-| `DIALOG_PADDING_HORIZONTAL` | int | 20 | Horizontal padding inside dialog box in pixels |
-| `DIALOG_PADDING_VERTICAL` | int | 20 | Vertical padding inside dialog box in pixels |
-| `DIALOG_NPC_NAME_OFFSET` | int | 30 | Vertical offset of NPC name from top of dialog box in pixels |
-| `DIALOG_FOOTER_OFFSET` | int | 20 | Vertical offset of footer elements from bottom of dialog box in pixels |
+| Setting                     | Type  | Default | Description                                                                          |
+| --------------------------- | ----- | ------- | ------------------------------------------------------------------------------------ |
+| `DIALOG_BOX_WIDTH_PERCENT`  | float | 0.75    | Dialog box width as fraction of window width (0.0-1.0)                               |
+| `DIALOG_BOX_MAX_WIDTH`      | int   | 800     | Maximum dialog box width in pixels                                                   |
+| `DIALOG_BOX_MIN_WIDTH`      | int   | 400     | Minimum dialog box width in pixels                                                   |
+| `DIALOG_BOX_HEIGHT_PERCENT` | float | 0.25    | Dialog box height as fraction of window height (0.0-1.0)                             |
+| `DIALOG_BOX_MIN_HEIGHT`     | int   | 150     | Minimum dialog box height in pixels                                                  |
+| `DIALOG_VERTICAL_POSITION`  | float | 0.25    | Vertical position from bottom as fraction of window height (0.0-1.0)                 |
+| `DIALOG_OVERLAY_ALPHA`      | int   | 128     | Transparency of background overlay (0-255, where 0 is transparent and 255 is opaque) |
+| `DIALOG_BORDER_WIDTH`       | int   | 3       | Width of dialog box border in pixels                                                 |
+| `DIALOG_PADDING_HORIZONTAL` | int   | 20      | Horizontal padding inside dialog box in pixels                                       |
+| `DIALOG_PADDING_VERTICAL`   | int   | 20      | Vertical padding inside dialog box in pixels                                         |
+| `DIALOG_NPC_NAME_OFFSET`    | int   | 30      | Vertical offset of NPC name from top of dialog box in pixels                         |
+| `DIALOG_FOOTER_OFFSET`      | int   | 20      | Vertical offset of footer elements from bottom of dialog box in pixels               |
 
 #### Font Settings
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `DIALOG_NPC_NAME_FONT_SIZE` | int | 20 | Font size for NPC name text |
-| `DIALOG_TEXT_FONT_SIZE` | int | 16 | Font size for dialog message text |
-| `DIALOG_INSTRUCTION_FONT_SIZE` | int | 12 | Font size for instruction text (e.g., "Press SPACE") |
-| `DIALOG_PAGE_INDICATOR_FONT_SIZE` | int | 10 | Font size for page indicator text (e.g., "Page 1/3") |
+| Setting                           | Type | Default | Description                                          |
+| --------------------------------- | ---- | ------- | ---------------------------------------------------- |
+| `DIALOG_NPC_NAME_FONT_SIZE`       | int  | 20      | Font size for NPC name text                          |
+| `DIALOG_TEXT_FONT_SIZE`           | int  | 16      | Font size for dialog message text                    |
+| `DIALOG_INSTRUCTION_FONT_SIZE`    | int  | 12      | Font size for instruction text (e.g., "Press SPACE") |
+| `DIALOG_PAGE_INDICATOR_FONT_SIZE` | int  | 10      | Font size for page indicator text (e.g., "Page 1/3") |
 
 #### Text Labels
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
+| Setting                 | Type   | Default                     | Description                                      |
+| ----------------------- | ------ | --------------------------- | ------------------------------------------------ |
 | `DIALOG_TEXT_NEXT_PAGE` | string | "Press SPACE for next page" | Instruction text shown when there are more pages |
-| `DIALOG_TEXT_CLOSE` | string | "Press SPACE to close" | Instruction text shown on the last page |
-| `DIALOG_TEXT_PAGE` | string | "Page" | Label for page indicator (e.g., "Page 1/3") |
+| `DIALOG_TEXT_CLOSE`     | string | "Press SPACE to close"      | Instruction text shown on the last page          |
+| `DIALOG_TEXT_PAGE`      | string | "Page"                      | Label for page indicator (e.g., "Page 1/3")      |
 
 **Notes:**
 
@@ -255,30 +255,30 @@ Dialog system behavior, timing, and appearance.
 
 ### Audio Settings
 
-Audio system default values for music and sound effects.
+Audio plugin default values for music and sound effects.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `AUDIO_MUSIC_VOLUME` | float | 0.5 | Default music volume (0.0 = silent, 1.0 = full volume) |
-| `AUDIO_MUSIC_ENABLED` | bool | True | Whether music is enabled by default |
-| `AUDIO_SFX_VOLUME` | float | 0.7 | Default sound effects volume (0.0 = silent, 1.0 = full volume) |
-| `AUDIO_SFX_ENABLED` | bool | True | Whether sound effects are enabled by default |
+| Setting               | Type  | Default | Description                                                    |
+| --------------------- | ----- | ------- | -------------------------------------------------------------- |
+| `AUDIO_MUSIC_VOLUME`  | float | 0.5     | Default music volume (0.0 = silent, 1.0 = full volume)         |
+| `AUDIO_MUSIC_ENABLED` | bool  | True    | Whether music is enabled by default                            |
+| `AUDIO_SFX_VOLUME`    | float | 0.7     | Default sound effects volume (0.0 = silent, 1.0 = full volume) |
+| `AUDIO_SFX_ENABLED`   | bool  | True    | Whether sound effects are enabled by default                   |
 
 **Notes:**
 
-- These settings control the initial state of the AudioManager when it's initialized
+- These settings control the initial state of the AudioPlugin when it's initialized
 - Volume values are clamped to the range 0.0 to 1.0
-- Players can change these values at runtime using the AudioManager methods
+- Players can change these values at runtime using the AudioPlugin methods
 - Changes made at runtime are not persisted unless explicitly saved
-- For more details, see the [AudioManager documentation](systems/audio.md)
+- For more details, see the [AudioPlugin documentation](plugins/audio.md)
 
 ### Camera Settings
 
-Camera system behavior and movement configuration.
+Camera plugin behavior and movement configuration.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `CAMERA_LERP_SPEED` | float | 0.1 | Camera interpolation speed for smooth following (0.0 to 1.0) |
+| Setting             | Type  | Default | Description                                                  |
+| ------------------- | ----- | ------- | ------------------------------------------------------------ |
+| `CAMERA_LERP_SPEED` | float | 0.1     | Camera interpolation speed for smooth following (0.0 to 1.0) |
 
 **Notes:**
 
@@ -288,24 +288,24 @@ Camera system behavior and movement configuration.
   - Higher values (e.g., 0.2): More responsive, tighter camera
   - 1.0: Instant following with no smoothing
 - The lerp speed determines what fraction of the remaining distance the camera moves each frame
-- For more details, see the [CameraManager documentation](systems/camera.md)
+- For more details, see the [CameraPlugin documentation](plugins/camera.md)
 
 ### Particle Settings
 
-Particle system configuration for visual effects.
+Particle plugin configuration for visual effects.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `PARTICLE_ENABLED` | bool | True | Whether particle effects are enabled by default |
-| `PARTICLE_COLOR_HEARTS` | tuple[int, int, int] | (255, 105, 180) | Default RGB color for heart particles (hot pink) |
-| `PARTICLE_COLOR_SPARKLES` | tuple[int, int, int] | (255, 255, 100) | Default RGB color for sparkle particles (yellow) |
-| `PARTICLE_COLOR_TRAIL` | tuple[int, int, int] | (200, 200, 255) | Default RGB color for trail particles (light blue) |
-| `PARTICLE_COLOR_BURST` | tuple[int, int, int] | (255, 200, 0) | Default RGB color for burst particles (orange) |
+| Setting                   | Type                 | Default         | Description                                        |
+| ------------------------- | -------------------- | --------------- | -------------------------------------------------- |
+| `PARTICLE_ENABLED`        | bool                 | True            | Whether particle effects are enabled by default    |
+| `PARTICLE_COLOR_HEARTS`   | tuple[int, int, int] | (255, 105, 180) | Default RGB color for heart particles (hot pink)   |
+| `PARTICLE_COLOR_SPARKLES` | tuple[int, int, int] | (255, 255, 100) | Default RGB color for sparkle particles (yellow)   |
+| `PARTICLE_COLOR_TRAIL`    | tuple[int, int, int] | (200, 200, 255) | Default RGB color for trail particles (light blue) |
+| `PARTICLE_COLOR_BURST`    | tuple[int, int, int] | (255, 200, 0)   | Default RGB color for burst particles (orange)     |
 
 **Notes:**
 
 - `PARTICLE_ENABLED` controls whether particles are active on game start
-  - Can be toggled at runtime using `particle_manager.toggle()`
+  - Can be toggled at runtime using `particle_plugin.toggle()`
   - Useful for performance optimization on low-end devices
 - Color settings define default colors for each particle type
   - Colors can be overridden per-action using the `color` parameter in scripts
@@ -315,19 +315,19 @@ Particle system configuration for visual effects.
     - Gold sparkles: `PARTICLE_COLOR_SPARKLES = (255, 215, 0)`
     - Green trail: `PARTICLE_COLOR_TRAIL = (0, 255, 100)`
     - Red burst: `PARTICLE_COLOR_BURST = (255, 0, 0)`
-- For more details, see the [ParticleManager documentation](systems/particle.md)
+- For more details, see the [ParticlePlugin documentation](plugins/particle.md)
 
 ### Scene Settings
 
 Scene transition and map loading configuration.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `SCENE_TRANSITION_ALPHA` | float | 0.0 | Starting alpha value for scene transitions (0.0 = transparent, 1.0 = opaque) |
-| `SCENE_TRANSITION_SPEED` | float | 3.0 | Speed of fade in/out transitions (higher = faster) |
-| `SCENE_MAPS_FOLDER` | string | "maps" | Folder containing Tiled .tmx map files (relative to assets) |
-| `SCENE_TILEMAP_SCALING` | float | 1.0 | Scaling factor applied to loaded tile maps |
-| `SCENE_COLLISION_LAYER_NAMES` | list[string] | ["Walls", "Collision", "Objects", "Buildings"] | Names of Tiled layers used for collision detection |
+| Setting                       | Type         | Default                                        | Description                                                                  |
+| ----------------------------- | ------------ | ---------------------------------------------- | ---------------------------------------------------------------------------- |
+| `SCENE_TRANSITION_ALPHA`      | float        | 0.0                                            | Starting alpha value for scene transitions (0.0 = transparent, 1.0 = opaque) |
+| `SCENE_TRANSITION_SPEED`      | float        | 3.0                                            | Speed of fade in/out transitions (higher = faster)                           |
+| `SCENE_MAPS_FOLDER`           | string       | "maps"                                         | Folder containing Tiled .tmx map files (relative to assets)                  |
+| `SCENE_TILEMAP_SCALING`       | float        | 1.0                                            | Scaling factor applied to loaded tile maps                                   |
+| `SCENE_COLLISION_LAYER_NAMES` | list[string] | ["Walls", "Collision", "Objects", "Buildings"] | Names of Tiled layers used for collision detection                           |
 
 **Notes:**
 
@@ -339,7 +339,7 @@ Scene transition and map loading configuration.
 - **Transition alpha**: `SCENE_TRANSITION_ALPHA` controls the starting transparency for transitions
   - 0.0 (default): Starts fully transparent, fades to black
   - Higher values create different effects (not recommended to change)
-- **Map folder**: `SCENE_MAPS_FOLDER` is where the SceneManager looks for .tmx files
+- **Map folder**: `SCENE_MAPS_FOLDER` is where the ScenePlugin looks for .tmx files
   - Path is relative to the assets directory
   - Example: If `ASSETS_HANDLE` points to "assets/", then "maps" resolves to "assets/maps/"
 - **Tilemap scaling**: `SCENE_TILEMAP_SCALING` scales the entire loaded map
@@ -356,33 +356,33 @@ Scene transition and map loading configuration.
     SCENE_COLLISION_LAYER_NAMES = ["Walls"]  # Only use Walls layer
     ```
 
-- For more details, see the [SceneManager documentation](systems/scene.md)
+- For more details, see the [ScenePlugin documentation](plugins/scene.md)
 
 ### Debug Settings
 
-Debug system configuration for development overlays.
+Debug plugin configuration for development overlays.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `TILE_SIZE` | int | 32 | Size of tiles in pixels (used for tile coordinate calculation) |
+| Setting     | Type | Default | Description                                                    |
+| ----------- | ---- | ------- | -------------------------------------------------------------- |
+| `TILE_SIZE` | int  | 32      | Size of tiles in pixels (used for tile coordinate calculation) |
 
 **Notes:**
 
-- `TILE_SIZE` is used by the debug system to convert pixel coordinates to tile coordinates
+- `TILE_SIZE` is used by the debug plugin to convert pixel coordinates to tile coordinates
   - Debug overlay displays both pixel coordinates and tile coordinates
   - Tile coordinates are calculated as: `tile_x = int(pixel_x / TILE_SIZE)`
 - Debug mode is toggled with Shift+D keyboard shortcut
   - Shows player position in tile and pixel coordinates
   - Shows visible NPC positions in tile and pixel coordinates
   - Shows NPC dialog levels
-- For more details, see the [DebugManager documentation](systems/debug.md)
+- For more details, see the [DebugPlugin documentation](plugins/debug.md)
 
 ### Asset Settings
 
 Asset management configuration.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
+| Setting         | Type   | Default       | Description                                      |
+| --------------- | ------ | ------------- | ------------------------------------------------ |
 | `ASSETS_HANDLE` | string | "game_assets" | Arcade resource handle name for assets directory |
 
 **Notes:**
@@ -391,16 +391,16 @@ Asset management configuration.
 - Used to load assets with `arcade.resources.resolve()`
 - Should match the handle used when registering your assets directory
 
-### Save System Settings
+### Save Plugin Settings
 
-Save system configuration for game persistence.
+Save plugin configuration for game persistence.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `SAVE_FOLDER` | string | "saves" | Directory where save files are stored |
-| `SAVE_QUICK_SAVE_KEY` | string | "F5" | Keybind for quick save action |
-| `SAVE_QUICK_LOAD_KEY` | string | "F9" | Keybind for quick load action |
-| `SAVE_SFX_FILE` | string | "save.wav" | Sound effect played when saving/loading |
+| Setting               | Type   | Default    | Description                             |
+| --------------------- | ------ | ---------- | --------------------------------------- |
+| `SAVE_FOLDER`         | string | "saves"    | Directory where save files are stored   |
+| `SAVE_QUICK_SAVE_KEY` | string | "F5"       | Keybind for quick save action           |
+| `SAVE_QUICK_LOAD_KEY` | string | "F9"       | Keybind for quick load action           |
+| `SAVE_SFX_FILE`       | string | "save.wav" | Sound effect played when saving/loading |
 
 **Notes:**
 
@@ -414,17 +414,17 @@ Save system configuration for game persistence.
   - Quick load loads from the auto-save slot
 - `SAVE_SFX_FILE` is played on successful save/load operations
   - Path is relative to the assets directory
-  - Only plays if AudioManager is enabled
-- For more details, see the [SaveManager documentation](systems/save.md)
+  - Only plays if AudioPlugin is enabled
+- For more details, see the [SavePlugin documentation](plugins/save.md)
 
 ### Game Settings
 
 Core game settings.
 
-| Setting | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| `INITIAL_MAP` | string | "map.tmx" | Initial Tiled map file to load |
-| `INSTALLED_SYSTEMS` | list[string] | None | List of system modules to load (defaults to all core systems) |
+| Setting             | Type         | Default   | Description                                                   |
+| ------------------- | ------------ | --------- | ------------------------------------------------------------- |
+| `INITIAL_MAP`       | string       | "map.tmx" | Initial Tiled map file to load                                |
+| `INSTALLED_PLUGINS` | list[string] | None      | List of plugin modules to load (defaults to all core plugins) |
 
 ## Accessing Configuration in Code
 
@@ -455,7 +455,7 @@ PLAYER_MOVEMENT_SPEED=200.0
 
 # Player settings
 TILE_SIZE=32
-INTERACTION_MANAGER_DISTANCE=60
+INTERACTION_PLUGIN_DISTANCE=60
 INTERACTION_KEY="E"
 NPC_INTERACTION_DISTANCE=60
 PORTAL_INTERACTION_DISTANCE=60
@@ -529,7 +529,7 @@ MENU_TEXT_EXIT: str = "Exit"
 # Player settings
 PLAYER_MOVEMENT_SPEED: float = 180.0
 TILE_SIZE: int = 32
-INTERACTION_MANAGER_DISTANCE: int = 50
+INTERACTION_PLUGIN_DISTANCE: int = 50
 INTERACTION_KEY: str = "SPACE"
 NPC_INTERACTION_DISTANCE: int = 50
 PORTAL_INTERACTION_DISTANCE: int = 50
@@ -614,7 +614,7 @@ PARTICLE_COLOR_SPARKLES: tuple[int, int, int] = (255, 255, 100)
 PARTICLE_COLOR_TRAIL: tuple[int, int, int] = (200, 200, 255)
 PARTICLE_COLOR_BURST: tuple[int, int, int] = (255, 200, 0)
 
-# Save system settings
+# Save plugin settings
 SAVE_FOLDER: str = "saves"
 SAVE_QUICK_SAVE_KEY: str = "F5"
 SAVE_QUICK_LOAD_KEY: str = "F9"

@@ -140,10 +140,10 @@ Use conventional commit format:
 Examples:
 
 ```text
-feat: add particle effect system for interactions
+feat: add particle effect plugin for interactions
 fix: correct NPC pathfinding edge case
 docs: update Tiled integration guide
-refactor: simplify dialog manager state handling
+refactor: simplify dialog plugin state handling
 ```
 
 ## Reporting Issues
@@ -171,30 +171,6 @@ For feature requests, please describe:
 - How this benefits other users
 
 ## Development Tips
-
-### Project Structure
-
-```text
-pedre/
-├── src/pedre/          # Source code
-│   ├── sprites/        # Player and NPC sprite classes
-│   ├── systems/        # Game system managers
-│   └── views/          # Game views (screens)
-├── tests/              # Test suite
-└── docs/               # Documentation
-```
-
-### Adding New Systems
-
-When adding a new game system (manager):
-
-1. Create the manager class in `src/pedre/systems/`
-2. Add initialization in `GameView.setup()`
-3. Add cleanup in `GameView.cleanup()` if needed
-4. Export the class in `src/pedre/systems/__init__.py`
-5. Add it to the main `src/pedre/__init__.py` exports
-6. Write tests in `tests/systems/`
-7. Document it in `docs/SYSTEMS.md`
 
 ### Debugging
 

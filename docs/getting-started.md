@@ -145,7 +145,7 @@ The `run_game()` function automatically:
 
 - Creates the game window with your configured settings
 - Loads the initial map from `assets/maps/`
-- Sets up all game systems (NPCs, dialogs, scripts, etc.)
+- Sets up all game plugins (NPCs, dialogs, scripts, etc.)
 - Starts the game loop
 
 ## Step 4: Add an NPC
@@ -353,7 +353,7 @@ The framework automatically:
 
 ## Step 7: Add Inventory Items
 
-The inventory system allows you to define collectible items and track their acquisition. Items are defined in a JSON file and can be collected through interactive objects or scripts.
+The inventory plugin allows you to define collectible items and track their acquisition. Items are defined in a JSON file and can be collected through interactive objects or scripts.
 
 ### Define Inventory Items
 
@@ -393,7 +393,7 @@ Create `assets/data/inventory_items.json` to define all collectible items:
 - `category` (optional): Category for organization (default: "general")
 - `acquired` (optional): Whether item starts collected (default: false)
 
-The inventory system automatically loads this file on startup. Items with `image_path` can be clicked in the inventory to view the full image.
+The inventory plugin automatically loads this file on startup. Items with `image_path` can be clicked in the inventory to view the full image.
 
 ### Add Interactive Object in Tiled
 
@@ -529,7 +529,7 @@ Congratulations! You've created your first RPG with:
 
 ### Learn More
 
-- [Systems Reference](systems/index.md) - Deep dive into each manager
+- [Plugins Reference](plugins/index.md) - Deep dive into each plugin
 - [Tiled Integration](guides/tiled-integration.md) - Advanced Tiled features
 - [Scripting Guide](scripting/index.md) - All available actions and events
 - [API Reference](api/index.md) - Complete API documentation

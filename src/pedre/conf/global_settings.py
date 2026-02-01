@@ -67,7 +67,7 @@ PLAYER_MOVEMENT_SPEED = 180.0
 TILE_SIZE = 32
 """Size of tiles in pixels (for grid-based movement and positioning)."""
 
-INTERACTION_MANAGER_DISTANCE = 50
+INTERACTION_PLUGIN_DISTANCE = 50
 """Maximum distance in pixels for general interactions."""
 
 INTERACTION_KEY = "SPACE"
@@ -284,7 +284,7 @@ PARTICLE_COLOR_TRAIL = (200, 200, 255)
 PARTICLE_COLOR_BURST = (255, 200, 0)
 """Default color for burst particles (orange)."""
 
-# Save system settings
+# Save plugin settings
 SAVE_FOLDER = "saves"
 """Directory where save files are stored."""
 
@@ -297,48 +297,48 @@ SAVE_QUICK_LOAD_KEY = "F9"
 SAVE_SFX_FILE = "save.wav"
 """Sound effect played when saving/loading."""
 
-# Installed systems (like Django's INSTALLED_APPS)
-INSTALLED_SYSTEMS = [
-    "pedre.systems.audio",
-    "pedre.systems.cache",
-    "pedre.systems.camera",
-    "pedre.systems.debug",
-    "pedre.systems.dialog",
-    "pedre.systems.input",
-    "pedre.systems.interaction",
-    "pedre.systems.inventory",
-    "pedre.systems.npc",
-    "pedre.systems.particle",
-    "pedre.systems.pathfinding",
-    "pedre.systems.portal",
-    "pedre.systems.save",
-    "pedre.systems.script",
-    "pedre.systems.waypoint",
-    "pedre.systems.player",
-    "pedre.systems.physics",
-    "pedre.systems.scene",
+# Installed plugins (like Django's INSTALLED_APPS)
+INSTALLED_PLUGINS = [
+    "pedre.plugins.audio",
+    "pedre.plugins.cache",
+    "pedre.plugins.camera",
+    "pedre.plugins.debug",
+    "pedre.plugins.dialog",
+    "pedre.plugins.input",
+    "pedre.plugins.interaction",
+    "pedre.plugins.inventory",
+    "pedre.plugins.npc",
+    "pedre.plugins.particle",
+    "pedre.plugins.pathfinding",
+    "pedre.plugins.portal",
+    "pedre.plugins.save",
+    "pedre.plugins.script",
+    "pedre.plugins.waypoint",
+    "pedre.plugins.player",
+    "pedre.plugins.physics",
+    "pedre.plugins.scene",
 ]
-"""List of module paths to import for system registration.
+"""List of module paths to import for plugin registration.
 
-Users can add custom systems by extending this list in their settings.py:
+Users can add custom plugins by extending this list in their settings.py:
 
 Example:
-    INSTALLED_SYSTEMS = [
-        *global_settings.INSTALLED_SYSTEMS,
-        "myproject.systems.weather",
-        "myproject.systems.combat",
+    INSTALLED_PLUGINS = [
+        *global_settings.INSTALLED_PLUGINS,
+        "myproject.plugins.weather",
+        "myproject.plugins.combat",
     ]
 """
 
 # Installed actions (modules containing @ActionRegistry.register decorators)
 INSTALLED_ACTIONS = [
-    "pedre.systems.audio.actions",
-    "pedre.systems.camera.actions",
-    "pedre.systems.dialog.actions",
-    "pedre.systems.inventory.actions",
-    "pedre.systems.particle.actions",
-    "pedre.systems.scene.actions",
-    "pedre.systems.npc.actions",
+    "pedre.plugins.audio.actions",
+    "pedre.plugins.camera.actions",
+    "pedre.plugins.dialog.actions",
+    "pedre.plugins.inventory.actions",
+    "pedre.plugins.particle.actions",
+    "pedre.plugins.scene.actions",
+    "pedre.plugins.npc.actions",
 ]
 """List of module paths to import for action registration.
 
@@ -348,29 +348,29 @@ Example:
     INSTALLED_ACTIONS = [
         *global_settings.INSTALLED_ACTIONS,
         "myproject.custom_actions",
-        "myproject.systems.weather.actions",
+        "myproject.plugins.weather.actions",
     ]
 
-Or replace system actions with custom implementations:
+Or replace plugin actions with custom implementations:
     INSTALLED_ACTIONS = [
-        "pedre.systems.audio.actions",
-        "pedre.systems.camera.actions",
+        "pedre.plugins.audio.actions",
+        "pedre.plugins.camera.actions",
         # Replace dialog actions with custom version
         "myproject.custom_dialog_actions",
-        "pedre.systems.inventory.actions",
+        "pedre.plugins.inventory.actions",
         # ... rest of actions
     ]
 """
 
 # Installed events (modules containing @EventRegistry.register decorators)
 INSTALLED_EVENTS = [
-    "pedre.systems.interaction.events",
-    "pedre.systems.inventory.events",
-    "pedre.systems.npc.events",
-    "pedre.systems.portal.events",
-    "pedre.systems.scene.events",
-    "pedre.systems.script.events",
-    "pedre.systems.dialog.events",
+    "pedre.plugins.interaction.events",
+    "pedre.plugins.inventory.events",
+    "pedre.plugins.npc.events",
+    "pedre.plugins.portal.events",
+    "pedre.plugins.scene.events",
+    "pedre.plugins.script.events",
+    "pedre.plugins.dialog.events",
 ]
 """List of module paths to import for event registration.
 
@@ -380,13 +380,13 @@ Example:
     INSTALLED_EVENTS = [
         *global_settings.INSTALLED_EVENTS,
         "myproject.custom_events",
-        "myproject.systems.weather.events",
+        "myproject.plugins.weather.events",
     ]
 
-Or replace system events with custom implementations:
+Or replace plugin events with custom implementations:
     INSTALLED_EVENTS = [
-        "pedre.systems.interaction.events",
-        "pedre.systems.inventory.events",
+        "pedre.plugins.interaction.events",
+        "pedre.plugins.inventory.events",
         # Replace dialog events with custom version
         "myproject.custom_dialog_events",
         # ... rest of events
@@ -395,10 +395,10 @@ Or replace system events with custom implementations:
 
 # Installed conditions (modules containing @ConditionRegistry.register decorators)
 INSTALLED_CONDITIONS = [
-    "pedre.systems.interaction.conditions",
-    "pedre.systems.inventory.conditions",
-    "pedre.systems.npc.conditions",
-    "pedre.systems.script.conditions",
+    "pedre.plugins.interaction.conditions",
+    "pedre.plugins.inventory.conditions",
+    "pedre.plugins.npc.conditions",
+    "pedre.plugins.script.conditions",
 ]
 """List of module paths to import for condition registration.
 
@@ -408,15 +408,15 @@ Example:
     INSTALLED_CONDITIONS = [
         *global_settings.INSTALLED_CONDITIONS,
         "myproject.custom_conditions",
-        "myproject.systems.weather.conditions",
+        "myproject.plugins.weather.conditions",
     ]
 
-Or replace system conditions with custom implementations:
+Or replace plugin conditions with custom implementations:
     INSTALLED_CONDITIONS = [
-        "pedre.systems.interaction.conditions",
+        "pedre.plugins.interaction.conditions",
         # Replace inventory conditions with custom version
         "myproject.custom_inventory_conditions",
-        "pedre.systems.npc.conditions",
-        "pedre.systems.script.conditions",
+        "pedre.plugins.npc.conditions",
+        "pedre.plugins.script.conditions",
     ]
 """

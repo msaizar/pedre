@@ -20,8 +20,8 @@ The Pedre framework is built on several core architectural components that work 
  ┌─────────┐ ┌─────────┐ ┌──────────┐
  │MenuView │ │GameView │ │SaveViews │
  └─────────┘ └────┬────┘ └──────────┘
-                   │
-                   ▼
+                  │
+                  ▼
            ┌───────────────┐
            │ GameContext   │
            │  ┌─────────┐  │
@@ -33,8 +33,8 @@ The Pedre framework is built on several core architectural components that work 
       │            │            │
       ▼            ▼            ▼
 ┌──────────┐ ┌──────────┐ ┌──────────┐
-│ Systems  │ │ Actions  │ │  Events  │
-│(Managers)│ │(Scripts) │ │(EventBus)│
+│ Plugins  │ │ Actions  │ │  Events  │
+│          │ │(Scripts) │ │(EventBus)│
 └──────────┘ └──────────┘ └──────────┘
 ```
 
@@ -62,24 +62,24 @@ Different game screens and states.
 
 **Available Views:**
 
-- `GameView` - Main gameplay with all systems active
+- `GameView` - Main gameplay with all plugins active
 - `MenuView` - Main menu with asset preloading
 - `LoadGameView` - Load game screen
 - `SaveGameView` - Save game screen
 
 ### [GameContext](game-context.md)
 
-Central registry providing systems with access to the event bus and other systems.
+Central registry providing plugins with access to the event bus and other plugins.
 
 **Responsibilities:**
 
-- System registration and retrieval
+- Plugin registration and retrieval
 - Event bus access
 - Dependency injection
 
 **Key Methods:**
 
-- `get_system(name: str) -> BaseSystem | None`
+- `get_plugin(name: str) -> BasePlugin | None`
 
 ### [EventBus](event-bus.md)
 
@@ -88,7 +88,7 @@ Publish-subscribe event system for decoupled communication.
 **Responsibilities:**
 
 - Event subscription and publishing
-- System-to-system communication
+- Plugin-to-plugin communication
 - Script trigger handling
 
 **Key Methods:**
@@ -106,23 +106,23 @@ Animated character sprites for player and NPCs.
 - `AnimatedPlayer` - Player character with 4-directional animation
 - `AnimatedNPC` - NPC characters with special animations
 
-## Game Systems
+## Game Plugins
 
-Pedre uses a manager-based architecture where each system handles specific functionality. All systems are documented in the [Systems Reference](../systems/index.md).
+Pedre uses a plugin-based architecture where each plugin handles specific functionality. All plugins are documented in the [Plugins Reference](../plugins/index.md).
 
-**Core Systems:**
+**Core Plugins:**
 
-- [DialogManager](../systems/dialog.md) - Conversations and text display
-- [NPCManager](../systems/npc.md) - NPC behavior and interactions
-- [PlayerManager](../systems/player.md) - Player character management
-- [ScriptManager](../systems/script.md) - Event-driven scripting
-- [InventoryManager](../systems/inventory.md) - Item management
-- [AudioManager](../systems/audio.md) - Music and sound effects
-- [CameraManager](../systems/camera.md) - Camera control
-- [SceneManager](../systems/scene.md) - Map loading and transitions
-- [SaveManager](../systems/save.md) - Game persistence
+- [DialogPlugin](../plugins/dialog.md) - Conversations and text display
+- [NPCPlugin](../plugins/npc.md) - NPC behavior and interactions
+- [PlayerPlugin](../plugins/player.md) - Player character management
+- [ScriptPlugin](../plugins/script.md) - Event-driven scripting
+- [InventoryPlugin](../plugins/inventory.md) - Item management
+- [AudioPlugin](../plugins/audio.md) - Music and sound effects
+- [CameraPlugin](../plugins/camera.md) - Camera control
+- [ScenePlugin](../plugins/scene.md) - Map loading and transitions
+- [SavePlugin](../plugins/save.md) - Game persistence
 
-[See all systems →](../systems/index.md)
+[See all plugins →](../plugins/index.md)
 
 ## Extension System
 
@@ -133,19 +133,19 @@ Pedre supports adding custom functionality without modifying framework code. See
 - Custom Actions - Script commands
 - Custom Events - Trigger types
 - Custom Conditions - Conditional logic
-- Custom Systems - Complete game features
+- Custom Plugins - Complete game features
 
 ## Usage Patterns
 
-### Accessing Systems
+### Accessing Plugins
 
-Systems are accessed through the GameContext:
+Plugins are accessed through the GameContext:
 
 ```python
-# In a system or action
-dialog_manager = context.get_system("dialog")
-npc_manager = context.get_system("npc")
-audio_manager = context.get_system("audio")
+# In a plugin or action
+dialog_plugin = context.get_plugin("dialog")
+npc_plugin = context.get_plugin("npc")
+audio_plugin = context.get_plugin("audio")
 ```
 
 ### Publishing Events
@@ -164,7 +164,7 @@ context.event_bus.publish(DialogClosedEvent(
 
 ### Subscribing to Events
 
-Systems can react to events:
+Plugins can react to events:
 
 ```python
 def on_dialog_closed(event: DialogClosedEvent):
@@ -179,13 +179,13 @@ Control game flow through the ViewManager:
 
 ```python
 # Show menu
-view_manager.show_menu()
+view_plugin.show_menu()
 
 # Start game
-view_manager.show_game()
+view_plugin.show_game()
 
 # Load a different map
-view_manager.load_map("forest.tmx", spawn_waypoint="entrance")
+view_plugin.load_map("forest.tmx", spawn_waypoint="entrance")
 ```
 
 ## Configuration
@@ -196,7 +196,7 @@ Game behavior is configured through `settings.py`. See [Configuration Guide](../
 
 - Window size and title
 - Player movement speed
-- System-specific configuration
+- Plugin-specific configuration
 - Asset paths
 
 ## Type System
@@ -207,9 +207,9 @@ Pedre uses Python type hints throughout. Key types:
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pedre.systems.game_context import GameContext
+    from pedre.plugins.game_context import GameContext
     from pedre.events.base import EventBus
-    from pedre.systems.base import BaseSystem
+    from pedre.plugins.base import BasePlugin
 ```
 
 ## Initialization Flow
@@ -223,14 +223,14 @@ if __name__ == "__main__":
     run_game()
 ```
 
-### 2. System Loading
+### 2. Plugin Loading
 
 The framework automatically:
 
 1. Loads configuration from `settings.py`
 2. Creates ViewManager and window
 3. Initializes GameContext and EventBus
-4. Loads all systems via SystemLoader
+4. Loads all plugins via PluginLoader
 5. Sets up event subscriptions
 6. Shows initial view (menu or game)
 
@@ -239,7 +239,7 @@ The framework automatically:
 Each frame:
 
 1. Process input
-2. Update systems (`update(delta_time)`)
+2. Update plugins (`update(delta_time)`)
 3. Render views (`on_draw()`)
 4. Handle events
 
@@ -247,50 +247,50 @@ Each frame:
 
 ### Event-Driven Design
 
-Prefer events over direct system calls:
+Prefer events over direct plugin calls:
 
 ```python
 # Good: Event-driven
 context.event_bus.publish(NPCInteractedEvent(npc_name="merchant"))
 
 # Avoid: Direct coupling
-npc_manager.interact("merchant")
-dialog_manager.show_dialog("merchant", ["Hello!"])
+npc_plugin.interact("merchant")
+dialog_plugin.show_dialog("merchant", ["Hello!"])
 ```
 
-### System Dependencies
+### Plugin Dependencies
 
-Access systems through GameContext, not global imports:
+Access plugins through GameContext, not global imports:
 
 ```python
 # Good: Via context
 def execute(self, context):
-    audio = context.get_system("audio")
+    audio = context.get_plugin("audio")
     if audio:
         audio.play_sfx("sound.wav")
 
 # Avoid: Direct import
-from pedre.systems.audio import AudioManager
-audio = AudioManager()  # Creates duplicate instance
+from pedre.plugins.audio import AudioPlugin
+audio = AudioPlugin()  # Creates duplicate instance
 ```
 
 ### Error Handling
 
-Check for system availability:
+Check for plugin availability:
 
 ```python
-weather = context.get_system("weather")
+weather = context.get_plugin("weather")
 if weather:
     weather.set_weather("rain")
 else:
-    # Weather system not installed
+    # Weather plugin not installed
     pass
 ```
 
 ## Next Steps
 
 - [Getting Started](../getting-started.md) - Build your first game
-- [Systems Reference](../systems/index.md) - Individual system documentation
+- [Plugins Reference](../plugins/index.md) - Individual plugin documentation
 - [Scripting Guide](../scripting/index.md) - Event-driven scripting
 - [Extending Pedre](../extending/index.md) - Add custom functionality
 - [Tiled Integration](../guides/tiled-integration.md) - Level design workflow

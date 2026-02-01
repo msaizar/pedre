@@ -49,7 +49,7 @@ class SaveGameView(arcade.View):
     with their metadata (map name, save date/time). Players can navigate through
     slots and save the current game or return to the pause menu.
 
-    The view queries the save manager to get information about each slot to
+    The view queries the save plugin to get information about each slot to
     show whether it's empty or contains an existing save.
 
     Attributes:
@@ -62,7 +62,7 @@ class SaveGameView(arcade.View):
         """Initialize the save game view.
 
         Creates the view with a view manager reference and initializes the save
-        manager for querying and saving data.
+        plugin for querying and saving data.
 
         Args:
             view_manager: ViewManager for handling transitions back to menu.
@@ -94,7 +94,7 @@ class SaveGameView(arcade.View):
         # Load save slot information for manual slots only
         self.save_info = {}
         for slot in range(1, 4):  # Slots 1-3
-            self.save_info[slot] = self.view_manager.game_context.save_manager.get_save_info(slot)
+            self.save_info[slot] = self.view_manager.game_context.save_plugin.get_save_info(slot)
 
     def on_draw(self) -> None:
         """Render the save game menu (arcade lifecycle callback).
@@ -288,12 +288,12 @@ class SaveGameView(arcade.View):
         - Slot 1-3: Save current game to selected slot
 
         When saving, retrieves the current game state from the game view and calls
-        save_manager.save_game() with all necessary state (player position, NPCs,
+        save_plugin.save_game() with all necessary state (player position, NPCs,
         inventory, audio settings, script state).
 
         Side effects:
             - May call view_manager.show_menu() to return to pause menu
-            - May call save_manager.save_game() to write save file to disk
+            - May call save_plugin.save_game() to write save file to disk
             - Returns to pause menu after successful save
         """
         # Back to menu
@@ -308,7 +308,7 @@ class SaveGameView(arcade.View):
         context = self.view_manager.game_context
 
         # Save the game to the selected slot (uses pluggable save providers)
-        success = context.save_manager.save_game(slot=self.selected_slot)
+        success = context.save_plugin.save_game(slot=self.selected_slot)
 
         if success:
             # Return to pause menu after successful save

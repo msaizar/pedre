@@ -1,8 +1,8 @@
 """Registry for pluggable script conditions.
 
 This module provides the ConditionRegistry class which tracks all available
-condition checkers for the scripting system. Systems register their own
-condition logic, enabling the script system to remain decoupled.
+condition checkers for the scripting plugin. Plugins register their own
+condition logic, enabling the script plugin to remain decoupled.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from pedre.systems.game_context import GameContext
+    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class ConditionRegistry:
     """Central registry for all available script conditions.
 
     The ConditionRegistry maintains a mapping of condition names (e.g., "npc_interacted")
-    to checker functions. This allows any system to provide its own logic for
+    to checker functions. This allows any plugin to provide its own logic for
     evaluating script conditions.
     """
 
@@ -61,7 +61,7 @@ class ConditionRegistry:
         Args:
             name: Name of the condition to check.
             condition_data: Dictionary of parameters from the script.
-            context: Game context for system access.
+            context: Game context for plugin access.
 
         Returns:
             True if the condition is met, False otherwise.

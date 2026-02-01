@@ -48,7 +48,7 @@ class LoadGameView(arcade.View):
     with their metadata (map name, save date/time). Players can navigate through
     slots and load a saved game or return to the main menu.
 
-    The view queries the save manager to get information about each slot without
+    The view queries the save plugin to get information about each slot without
     fully loading the save data until a selection is confirmed.
 
     Attributes:
@@ -61,7 +61,7 @@ class LoadGameView(arcade.View):
         """Initialize the load game view.
 
         Creates the view with a view manager reference and initializes the save
-        manager for querying save data.
+        plugin for querying save data.
 
         Args:
             view_manager: ViewManager for handling transitions to game or menu.
@@ -98,10 +98,10 @@ class LoadGameView(arcade.View):
         # Load save slot information
         self.save_info = {}
         for slot in range(1, 4):  # Slots 1-3
-            self.save_info[slot] = self.view_manager.game_context.save_manager.get_save_info(slot)
+            self.save_info[slot] = self.view_manager.game_context.save_plugin.get_save_info(slot)
 
         # Check auto-save
-        self.save_info[0] = self.view_manager.game_context.save_manager.get_save_info(0)
+        self.save_info[0] = self.view_manager.game_context.save_plugin.get_save_info(0)
 
     def on_draw(self) -> None:
         """Render the load game menu (arcade lifecycle callback).
@@ -317,7 +317,7 @@ class LoadGameView(arcade.View):
             return
 
         # Try to load the selected save
-        save_data = self.view_manager.game_context.save_manager.load_game(self.selected_slot)
+        save_data = self.view_manager.game_context.save_plugin.load_game(self.selected_slot)
 
         if save_data is None:
             # No save in this slot, do nothing (or could show error message)

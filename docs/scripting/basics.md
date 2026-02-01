@@ -101,14 +101,14 @@ assets/scripts/
 
 ## Loading Scripts
 
-All scripts are automatically loaded globally when the ScriptManager initializes during system setup. The manager scans the `assets/scripts/` directory for all files matching the pattern `*_scripts.json` and loads them into a single registry.
+All scripts are automatically loaded globally when the ScriptPlugin initializes during plugin setup. The plugin scans the `assets/scripts/` directory for all files matching the pattern `*_scripts.json` and loads them into a single registry.
 
 **Global Loading:**
 
 ```python
 # Scripts are loaded during setup
-script_manager = ScriptManager()
-script_manager.setup(context)  # Loads all scripts from scripts directory
+script_plugin = ScriptPlugin()
+script_plugin.setup(context)  # Loads all scripts from scripts directory
 ```
 
 **Key Points:**
@@ -118,13 +118,13 @@ script_manager.setup(context)  # Loads all scripts from scripts directory
 - The `scene` field in each script controls when it can execute
 - Scripts are reloaded on reset (new game or load game)
 
-You don't need to manually load scripts - the system handles this automatically.
+You don't need to manually load scripts - the plugin handles this automatically.
 
 ## How Scripts Execute
 
 1. **Event Occurs:** Player interacts with NPC, closes dialog, etc.
 2. **Event Handling:** EventBus publishes event to all subscribers
-3. **Matching:** Script manager finds all scripts with matching event type in trigger
+3. **Matching:** Script plugin finds all scripts with matching event type in trigger
 4. **Filtering:** Checks if trigger fields match, scene matches, and conditions are met
 5. **Execution:** Runs the actions array sequentially
 6. **Completion:** Emits `script_complete` event when finished

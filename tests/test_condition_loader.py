@@ -14,7 +14,7 @@ def test_condition_loader_imports_modules(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(
         "pedre.conf.settings.INSTALLED_CONDITIONS",
         [
-            "pedre.systems.inventory.conditions",
+            "pedre.plugins.inventory.conditions",
         ],
     )
 
@@ -58,7 +58,7 @@ def test_condition_loader_loads_multiple_modules(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(
         "pedre.conf.settings.INSTALLED_CONDITIONS",
         [
-            "pedre.systems.script.conditions",
+            "pedre.plugins.script.conditions",
         ],
     )
 

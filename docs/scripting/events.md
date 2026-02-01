@@ -590,7 +590,7 @@ Triggered when the player enters a portal zone.
 - Events only fire when player enters the portal zone (not while standing in it)
 - Won't re-fire until player leaves and re-enters
 - Uses `PORTAL_INTERACTION_DISTANCE` setting
-- For more details, see the [Portal System Documentation](../systems/portal.md)
+- For more details, see the [Portal Plugin Documentation](../plugins/portal.md)
 
 **Use Cases:**
 
@@ -681,10 +681,10 @@ Triggered when a new scene/map finishes loading.
 
 **Notes:**
 
-- Fires after all systems are loaded and initialized
+- Fires after all plugins are loaded and initialized
 - Fires on every map transition and when starting new game
 - Useful for scene-specific initialization like music, cutscenes, or tutorial messages
-- For more details, see the [Scene System Documentation](../systems/scene.md)
+- For more details, see the [Scene Plugin Documentation](../plugins/scene.md)
 
 **Use Cases:**
 
@@ -759,7 +759,7 @@ Triggered when another script finishes executing.
 
 ## Event Matching
 
-When an event occurs, the script manager:
+When an event occurs, the script plugin:
 
 1. Finds all scripts with matching `event` type
 2. Checks if additional trigger fields match (e.g., `npc`, `dialog_level`)

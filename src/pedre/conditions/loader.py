@@ -11,7 +11,7 @@ Example:
 
         # Configure settings in your settings.py:
         # INSTALLED_CONDITIONS = [
-        #     "pedre.systems.inventory.conditions",
+        #     "pedre.plugins.inventory.conditions",
         #     "myapp.custom_conditions",  # Custom conditions
         # ]
 

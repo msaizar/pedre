@@ -24,20 +24,20 @@ game_view = GameView(view_manager, map_file="level1.tmx", scene_name="forest")
 - `map_file: str` - Path to Tiled .tmx map file (optional)
 - `scene_name: str` - Unique identifier for this scene (optional)
 
-### Key Managers
+### Key Plugins
 
-The GameView provides access to all game systems through its context:
+The GameView provides access to all game plugins through its context:
 
-- `npc_manager: NPCManager` - NPC state and interactions
-- `dialog_manager: DialogManager` - Dialog display
-- `inventory_manager: InventoryManager` - Item management
-- `script_manager: ScriptManager` - Event-driven scripts
-- `audio_manager: AudioManager` - Sound and music
-- `save_manager: SaveManager` - Game persistence
-- `camera_manager: CameraManager` - Camera control
-- `portal_manager: PortalManager` - Map transitions
-- `interaction_manager: InteractionManager` - Object interactions
-- `particle_manager: ParticleManager` - Visual effects
+- `npc_plugin: NPCPlugin` - NPC state and interactions
+- `dialog_plugin: DialogPlugin` - Dialog display
+- `inventory_plugin: InventoryPlugin` - Item management
+- `script_plugin: ScriptPlugin` - Event-driven scripts
+- `audio_plugin: AudioPlugin` - Sound and music
+- `save_plugin: SavePlugin` - Game persistence
+- `camera_plugin: CameraPlugin` - Camera control
+- `portal_plugin: PortalPlugin` - Map transitions
+- `interaction_plugin: InteractionPlugin` - Object interactions
+- `particle_plugin: ParticlePlugin` - Visual effects
 
 ### Example
 
@@ -45,10 +45,10 @@ The GameView provides access to all game systems through its context:
 # Access via view manager
 game_view = view_manager.game_view
 
-# Access systems through context
+# Access plugins through context
 context = game_view.context
-npc_manager = context.get_system("npc")
-dialog_manager = context.get_system("dialog")
+npc_plugin = context.get_plugin("npc")
+dialog_plugin = context.get_plugin("dialog")
 ```
 
 ## MenuView
@@ -137,4 +137,4 @@ view_manager.show_save_game()
 
 - [ViewManager](view-manager.md) - View controller and transitions
 - [GameContext](game-context.md) - Shared state container
-- [Systems Reference](../systems/index.md) - Individual system documentation
+- [Plugins Reference](../plugins/index.md) - Individual plugin documentation

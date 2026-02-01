@@ -21,7 +21,7 @@ Preloading strategy:
 - Common sound effects loaded in parallel (avi.mp3, martin.mp3, etc.)
 - Uses ThreadPoolExecutor with 4 workers for concurrent loading
 - Runs in background daemon thread, won't block menu interaction
-- Audio manager tracks loading state to prevent duplicate loads
+- Audio plugin tracks loading state to prevent duplicate loads
 
 User interface flow:
 1. Game launches and shows menu with background image
@@ -120,7 +120,7 @@ class MenuView(arcade.View):
         - Menu still functions without background
 
         Auto-save check:
-        - Checks if auto-save file exists via save_manager
+        - Checks if auto-save file exists via save_plugin
         - Enables Continue option if auto-save found
         - Disables Continue and selects New Game if no auto-save
 
@@ -353,8 +353,8 @@ class MenuView(arcade.View):
         has_autosave = False
         if has_game_view:
             # If game view exists, check for auto-save through it
-            save_manager = self.view_manager.game_context.save_manager
-            has_autosave = save_manager.save_exists(slot=0)
+            save_plugin = self.view_manager.game_context.save_plugin
+            has_autosave = save_plugin.save_exists(slot=0)
 
         # Enable Continue if either condition is met
         can_continue = has_game_view or has_autosave
@@ -415,18 +415,18 @@ class MenuView(arcade.View):
             load tasks to a thread pool executor. Handles errors gracefully and
             logs all operations.
 
-            The worker accesses the game view's audio manager to cache loaded sounds.
+            The worker accesses the game view's audio plugin to cache loaded sounds.
             Files are only loaded if not already in cache, preventing duplicate loads.
 
             Side effects:
-                - Loads audio files into audio_manager.music_cache
-                - Loads audio files into audio_manager.sfx_cache
+                - Loads audio files into audio_plugin.music_cache
+                - Loads audio files into audio_plugin.sfx_cache
                 - Marks files as loading during load operation
                 - Logs loading progress and errors
             """
             try:
-                audio_manager = self.view_manager.game_context.audio_manager
-                if not audio_manager:
+                audio_plugin = self.view_manager.game_context.audio_plugin
+                if not audio_plugin:
                     return
 
                 def load_music_file(music_file: str) -> None:
@@ -442,25 +442,25 @@ class MenuView(arcade.View):
                         music_file: Filename of music file (e.g., "background.ogg").
 
                     Side effects:
-                        - Marks file as loading in audio_manager
+                        - Marks file as loading in audio_plugin
                         - Loads sound from disk using arcade.load_sound
-                        - Caches loaded sound in audio_manager.music_cache
+                        - Caches loaded sound in audio_plugin.music_cache
                         - Removes loading marker when complete
                         - Logs loading status
                     """
-                    if music_file not in audio_manager.get_music_cache():
+                    if music_file not in audio_plugin.get_music_cache():
                         logger.debug("Starting to load music: %s", music_file)
                         # Mark as loading
-                        audio_manager.mark_music_loading(music_file)
+                        audio_plugin.mark_music_loading(music_file)
                         try:
                             # Load music file using asset_path
                             music_path = asset_path(f"audio/music/{music_file}", settings.ASSETS_HANDLE)
                             sound = arcade.load_sound(music_path, streaming=False)
-                            audio_manager.set_music_cache(music_file, sound)
+                            audio_plugin.set_music_cache(music_file, sound)
                             logger.info("Preloaded music in background: %s", music_file)
                         finally:
                             # Remove from loading set
-                            audio_manager.unmark_music_loading(music_file)
+                            audio_plugin.unmark_music_loading(music_file)
 
                 # Load all music files in parallel using thread pool
                 # Only preload looping music (streaming music like turntable.mp3 loads instantly)

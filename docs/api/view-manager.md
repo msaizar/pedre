@@ -109,9 +109,9 @@ Load game from save data.
 **Example:**
 
 ```python
-from pedre.systems.save.base import GameSaveData
+from pedre.plugins.save.base import GameSaveData
 
-save_data = save_manager.load_game(slot=1)
+save_data = save_plugin.load_game(slot=1)
 if save_data:
     view_manager.load_game(save_data)
 ```
@@ -134,7 +134,7 @@ view_manager.exit_game()
 
 `load_map(map_name: str, spawn_waypoint: str | None = None) -> None`
 
-Request map load via SceneManager.
+Request map load via ScenePlugin.
 
 **Parameters:**
 
