@@ -513,6 +513,130 @@ The SaveManager also handles scene caching for smooth transitions.
 - Cache is preserved across save/load operations
 - Each scene's cache includes all system entity states
 
+## Save System Behavior
+
+### Two-Phase Loading
+
+The save system uses a two-phase approach to handle sprite dependencies:
+
+**Phase 1: Metadata Restoration (`restore_save_state`)**
+
+1. Save file loaded from disk
+2. System metadata restored (flags, settings, which map to load)
+3. Scene begins loading
+4. Sprites created via `load_from_tiled()`
+
+**Phase 2: Entity State Application (`apply_entity_state`)**
+
+1. All sprites now exist
+2. Entity-specific state applied (positions, visibility, dialog levels)
+3. Game resumes with full state restored
+
+**Why Two Phases?**
+
+- Some state (player position, NPC visibility) requires sprites to exist
+- Other state (which map to load, inventory flags) doesn't require sprites
+- Two-phase approach cleanly separates these concerns
+
+### Save State Gathering
+
+When saving, the SaveManager collects state from all systems:
+
+```python
+save_states = {}
+for system in registered_systems:
+    if hasattr(system, 'get_save_state'):
+        save_states[system.name] = system.get_save_state()
+```
+
+**Automatic Collection:**
+
+- No manual registration required
+- Systems opt-in by implementing `get_save_state()`
+- State automatically namespaced by system name
+- JSON serialization handled automatically
+
+### File Operations
+
+Save files are managed using Python's standard library:
+
+```python
+# Save file path
+save_path = Path(SAVE_FOLDER) / f"save_slot_{slot}.json"
+
+# Write save
+with open(save_path, "w") as f:
+    json.dump(save_data.to_dict(), f, indent=2)
+
+# Read save
+with open(save_path, "r") as f:
+    data = json.load(f)
+```
+
+**Error Handling:**
+
+- File I/O errors caught and logged
+- Returns `False` or `None` on failure
+- Safe to call even if save folder doesn't exist
+- Creates save folder automatically on first save
+
+## Implementation Details
+
+### Save Slot System
+
+The SaveManager uses a simple slot-based system:
+
+**Slot 0 (Auto-save):**
+
+- Used for quick save/load
+- Overwritten automatically
+- Crash recovery
+- File: `autosave.json`
+
+**Slots 1-3 (Manual saves):**
+
+- User-controlled saves
+- Never overwritten automatically
+- Persists between game sessions
+- Files: `save_slot_1.json`, `save_slot_2.json`, `save_slot_3.json`
+
+### Current Slot Tracking
+
+The manager tracks which slot was last saved/loaded:
+
+```python
+self.current_slot: int | None = None
+```
+
+**Usage:**
+
+- Updated on every save/load operation
+- Used for "Continue" functionality
+- Available via `get_current_slot()`
+- `None` if no save/load has occurred
+
+### Quick Save/Load Implementation
+
+Quick save and load are implemented via keyboard handlers:
+
+```python
+def on_key_press(self, symbol: int, modifiers: int) -> bool:
+    if matches_key(symbol, settings.SAVE_QUICK_SAVE_KEY):
+        # Quick save to slot 0
+        if self.auto_save():
+            self.context.audio_manager.play_sfx(settings.SAVE_SFX_FILE)
+        return True
+
+    if matches_key(symbol, settings.SAVE_QUICK_LOAD_KEY):
+        # Quick load from slot 0
+        save_data = self.load_auto_save()
+        if save_data:
+            self.restore_game_data(save_data)
+        return True
+
+    return False
+```
+
 ## Usage Examples
 
 ### Basic Save/Load
@@ -577,6 +701,169 @@ def on_key_press(self, symbol: int, modifiers: int) -> bool:
 
     return False
 ```
+
+## Integration with Other Systems
+
+### SceneManager Integration
+
+The SceneManager coordinates scene loading during game restoration:
+
+```python
+# SaveManager triggers scene load
+scene_name = save_data.save_states["scene"]["current_map"]
+context.scene_manager.request_transition(
+    map_file=scene_name,
+    spawn_waypoint=None  # Position restored via entity state
+)
+
+# After scene loads, SceneManager calls apply_entity_states()
+context.save_manager.apply_entity_states()
+```
+
+**Notes:**
+
+- SceneManager loads the map specified in save data
+- Player position restored after map loads
+- Scene caching preserved across save/load
+- Spawn waypoints cleared during save restoration
+
+### PlayerManager Integration
+
+The PlayerManager saves and restores player position:
+
+```python
+# Saving player state
+def get_save_state(self) -> dict[str, Any]:
+    player = self.get_player_sprite()
+    return {
+        "player_x": player.center_x,
+        "player_y": player.center_y
+    }
+
+# Restoring player position (Phase 2)
+def apply_entity_state(self, state: dict[str, Any]) -> None:
+    player = self.get_player_sprite()
+    player.center_x = state["player_x"]
+    player.center_y = state["player_y"]
+```
+
+**Notes:**
+
+- Position only restored in Phase 2 (after sprite exists)
+- Player sprite must exist before state can be applied
+- Coordinates stored as floats for precision
+
+### NPCManager Integration
+
+The NPCManager saves NPC states and interaction history:
+
+```python
+# NPC state includes positions, dialog levels, visibility
+{
+  "npcs": {
+    "merchant": {
+      "dialog_level": 2,
+      "position": {"x": 400.0, "y": 300.0},
+      "visible": true
+    }
+  },
+  "interactions": {
+    "village": ["merchant", "guard"]
+  }
+}
+```
+
+**Notes:**
+
+- Dialog progression preserved
+- Per-scene interaction tracking saved
+- NPC positions and visibility restored
+- Interaction history available for conditions
+
+### AudioManager Integration
+
+Audio plays feedback for save/load operations:
+
+```python
+# Play save sound
+if save_manager.auto_save():
+    context.audio_manager.play_sfx(settings.SAVE_SFX_FILE)
+```
+
+**Notes:**
+
+- Configurable via `SAVE_SFX_FILE` setting
+- Audio feedback confirms successful operations
+- No sound played on failures
+
+### ScriptManager Integration
+
+Script execution state can be saved:
+
+```python
+# Script system tracks completed scripts
+{
+  "completed_scripts": ["intro_cutscene", "merchant_greeting"],
+  "run_once_scripts": {"boss_defeated": true}
+}
+```
+
+**Notes:**
+
+- `run_once` scripts tracked for save/load
+- Script conditions can check saved state
+- Prevents cutscenes from replaying
+
+## Troubleshooting
+
+### Save Not Working
+
+If saves fail silently:
+
+1. **Check save folder** - Verify `SAVE_FOLDER` directory exists or can be created
+2. **Check permissions** - Ensure write permissions for save directory
+3. **Review logs** - Look for I/O errors or JSON serialization issues
+4. **Test manually** - Try `save_game(1)` and check return value
+5. **Verify systems** - Ensure all systems return JSON-serializable data from `get_save_state()`
+
+### Load Not Restoring State
+
+If load succeeds but state isn't restored:
+
+1. **Check Phase 1** - Verify `restore_save_state()` called for all systems
+2. **Check Phase 2** - Ensure `apply_entity_states()` called after scene loads
+3. **Verify save data** - Check save file contains expected system states
+4. **Review system implementations** - Ensure systems implement both restore methods
+5. **Check sprite existence** - Entity state requires sprites to exist
+
+### Quick Save/Load Not Working
+
+If keyboard shortcuts don't trigger saves:
+
+1. **Check key bindings** - Verify `SAVE_QUICK_SAVE_KEY` and `SAVE_QUICK_LOAD_KEY` settings
+2. **Test key codes** - Use `matches_key` helper to debug key detection
+3. **Check auto-save slot** - Ensure slot 0 is writable
+4. **Review on_key_press** - Ensure SaveManager's key handler is called by SystemLoader
+
+### Save File Corruption
+
+If save files are unreadable:
+
+1. **Check JSON format** - Open save file and verify valid JSON
+2. **Check version** - Ensure `save_version` matches expected version
+3. **Backup saves** - Keep backups before testing new features
+4. **Validate serialization** - Test `get_save_state()` returns JSON-serializable data
+5. **Review custom systems** - Check custom systems don't save unsupported types
+
+### Missing State After Load
+
+If some state is missing after loading:
+
+1. **Check system registration** - Ensure all systems are registered and loaded
+2. **Verify save state** - Check `get_save_state()` returns complete data
+3. **Test both phases** - Ensure both `restore_save_state()` and `apply_entity_state()` implemented
+4. **Check scene caching** - Verify scene cache includes all necessary state
+5. **Review namespacing** - Ensure system names match between save and load
 
 ## Custom SaveManager Implementation
 
