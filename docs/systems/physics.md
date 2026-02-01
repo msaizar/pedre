@@ -15,7 +15,9 @@ The PhysicsManager wraps Arcade's `PhysicsEngineSimple` to provide collision han
 
 ### Physics Engine Control
 
-#### `invalidate() -> None`
+#### invalidate
+
+`invalidate() -> None`
 
 Mark the physics engine for recreation on the next update cycle.
 
@@ -35,7 +37,9 @@ physics_manager.invalidate()
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the physics system with game context and create the physics engine.
 
@@ -49,7 +53,9 @@ Initialize the physics system with game context and create the physics engine.
 - Creates the initial physics engine with current player and walls
 - Stores reference to game context for future engine recreation
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update the physics simulation.
 
