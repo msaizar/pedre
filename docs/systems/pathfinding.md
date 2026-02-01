@@ -4,11 +4,13 @@ A* pathfinding for NPC navigation.
 
 ## Location
 
-`src/pedre/systems/pathfinding/manager.py`
+- Implementation: [src/pedre/systems/pathfinding/manager.py](https://github.com/msaizar/pedre/blob/main/src/pedre/systems/pathfinding/manager.py)
 
 ## Key Methods
 
-### `find_path(start_x: float, start_y: float, end_tile_x: int, end_tile_y: int) -> deque[tuple[float, float]]`
+### find_path
+
+`find_path(start_x: float, start_y: float, end_tile_x: int, end_tile_y: int) -> deque[tuple[float, float]]`
 
 Find a path between a pixel position and a target tile.
 
