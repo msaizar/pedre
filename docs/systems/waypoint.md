@@ -17,6 +17,19 @@ The WaypointManager is a simple but essential system that stores named positions
 
 Waypoints are defined as Point objects in Tiled's "Waypoints" object layer and automatically loaded when a map is loaded.
 
+## Configuration
+
+The WaypointManager uses the following setting from `pedre.conf.settings`:
+
+- `TILE_SIZE` - Size of each tile in pixels, used to convert waypoint pixel coordinates to tile coordinates (default: 32)
+
+This can be overridden in your project's `settings.py`:
+
+```python
+# Custom tile size
+TILE_SIZE = 16  # For smaller tiles
+```
+
 ## Public API
 
 ### Waypoint Retrieval
