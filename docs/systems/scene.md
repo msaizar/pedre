@@ -35,7 +35,9 @@ SCENE_COLLISION_LAYER_NAMES = ["Walls", "Collision"]  # Only specific layers
 
 ### Scene Information
 
-#### `get_current_scene() -> str`
+#### get_current_scene
+
+`get_current_scene() -> str`
 
 Get the name of the current scene.
 
@@ -56,7 +58,9 @@ print(f"Player is in: {current_scene}")  # e.g., "village"
 - Automatically converted to lowercase
 - Used for scene-specific script triggers and dialog
 
-#### `get_current_map() -> str`
+#### get_current_map
+
+`get_current_map() -> str`
 
 Get the filename of the currently loaded map.
 
@@ -71,7 +75,9 @@ current_map = context.scene_manager.get_current_map()
 print(f"Loaded map: {current_map}")  # e.g., "village.tmx"
 ```
 
-#### `get_transition_state() -> TransitionState`
+#### get_transition_state
+
+`get_transition_state() -> TransitionState`
 
 Get the current transition state.
 
@@ -100,7 +106,9 @@ elif state == TransitionState.FADING_OUT:
 
 ### Scene Loading and Transitions
 
-#### `load_level(map_file: str, *, initial: bool = False) -> None`
+#### load_level
+
+`load_level(map_file: str, *, initial: bool = False) -> None`
 
 Load a new map level immediately without visual transition.
 
@@ -134,7 +142,9 @@ scene_manager.load_level("forest.tmx")
   7. Restore cached scene state
   8. Publish SceneStartEvent
 
-#### `request_transition(map_file: str, spawn_waypoint: str | None = None) -> None`
+#### request_transition
+
+`request_transition(map_file: str, spawn_waypoint: str | None = None) -> None`
 
 Request a smooth visual transition to a new map (fade out → load → fade in).
 
@@ -163,7 +173,9 @@ scene_manager.request_transition("castle.tmx", "main_gate")
 
 ### Collision Management
 
-#### `get_wall_list() -> arcade.SpriteList | None`
+#### get_wall_list
+
+`get_wall_list() -> arcade.SpriteList | None`
 
 Get the collision wall sprite list.
 
@@ -185,7 +197,9 @@ if wall_list:
 - Used by PhysicsManager for collision detection
 - Includes static map tiles and dynamic entities (NPCs, objects)
 
-#### `add_to_wall_list(sprite: arcade.Sprite) -> None`
+#### add_to_wall_list
+
+`add_to_wall_list(sprite: arcade.Sprite) -> None`
 
 Add a sprite to the collision wall list.
 
@@ -205,7 +219,9 @@ scene_manager.add_to_wall_list(npc_sprite)
 - Used when revealing NPCs or spawning dynamic obstacles
 - Sprite will block player movement after being added
 
-#### `remove_from_wall_list(sprite: arcade.Sprite) -> None`
+#### remove_from_wall_list
+
+`remove_from_wall_list(sprite: arcade.Sprite) -> None`
 
 Remove a sprite from the collision wall list.
 
@@ -227,7 +243,9 @@ scene_manager.remove_from_wall_list(npc_sprite)
 
 ### Spawn Waypoints
 
-#### `get_next_spawn_waypoint() -> str`
+#### get_next_spawn_waypoint
+
+`get_next_spawn_waypoint() -> str`
 
 Get the waypoint name where the player should spawn.
 
@@ -251,7 +269,9 @@ else:
 - Cleared after player is spawned
 - PlayerManager checks this during scene load
 
-#### `clear_next_spawn_waypoint() -> None`
+#### clear_next_spawn_waypoint
+
+`clear_next_spawn_waypoint() -> None`
 
 Clear the next spawn waypoint.
 
@@ -269,7 +289,9 @@ scene_manager.clear_next_spawn_waypoint()
 
 ### Rendering
 
-#### `on_draw() -> None`
+#### on_draw
+
+`on_draw() -> None`
 
 Draw the map scene and transition overlay.
 
@@ -279,7 +301,9 @@ Draw the map scene and transition overlay.
 - Draws the arcade.Scene containing all map layers
 - Draws transition overlay if transition in progress
 
-#### `draw_overlay() -> None`
+#### draw_overlay
+
+`draw_overlay() -> None`
 
 Draw the transition overlay (black fade) on top of the screen.
 
@@ -291,7 +315,9 @@ Draw the transition overlay (black fade) on top of the screen.
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the scene system with game context.
 
@@ -304,7 +330,9 @@ Initialize the scene system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset scene manager state for new game.
 
@@ -315,7 +343,9 @@ Reset scene manager state for new game.
 - Clears wall list
 - Called when starting a new game
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update transition state machine.
 
@@ -332,7 +362,9 @@ Update transition state machine.
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -355,7 +387,9 @@ save_data = {
 - Only saves current_map filename
 - Other scene state (entities, positions) saved by individual systems
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore saved scene state.
 
@@ -387,6 +421,7 @@ cache_manager.cache_scene(current_scene, context)
 ```
 
 This preserves:
+
 - NPC positions, visibility, and dialog levels
 - Interactive object states
 - Portal states
@@ -433,6 +468,7 @@ save_manager.apply_entity_states()
 ```
 
 This restores:
+
 - NPC positions and visibility
 - Player position and state
 - Interactive object states
@@ -456,6 +492,7 @@ cache_manager.restore_scene(current_scene, context)
 ```
 
 This overrides entity states with the cached version, preserving:
+
 - NPC movements since last visit
 - Dialog progression
 - Object interaction states
@@ -484,7 +521,7 @@ event_bus.publish(SceneStartEvent(current_scene))
 
 The SceneManager implements a state machine for smooth scene transitions:
 
-```
+```text
 NONE (idle)
   ↓ request_transition()
 FADING_OUT (alpha increasing 0.0 → 1.0)
@@ -504,6 +541,7 @@ NONE (idle)
 - **Total duration:** `2.0 / SCENE_TRANSITION_SPEED` seconds
 
 Example with default settings (SCENE_TRANSITION_SPEED = 3.0):
+
 - Fade out: ~0.33 seconds
 - Loading: instant
 - Fade in: ~0.33 seconds
@@ -515,7 +553,7 @@ Example with default settings (SCENE_TRANSITION_SPEED = 3.0):
 
 Scene maps are .tmx files created in Tiled Map Editor:
 
-```
+```text
 assets/
   maps/
     village.tmx
@@ -526,10 +564,12 @@ assets/
 ### Required Layers
 
 **Tile Layers:**
+
 - Background/ground layers (visual only)
 - At least one collision layer matching `SCENE_COLLISION_LAYER_NAMES`
 
 **Object Layers:**
+
 - "Waypoints" - Spawn points and path targets
 - "Portals" - Scene transition triggers
 - "Interactions" - Interactive objects
@@ -545,6 +585,7 @@ SCENE_COLLISION_LAYER_NAMES = ["Walls", "Collision", "Objects", "Buildings"]
 ```
 
 In Tiled:
+
 1. Create a tile layer named "Walls" or "Collision"
 2. Paint tiles where player should not pass
 3. Tiles are automatically added to collision detection
@@ -566,6 +607,7 @@ The SceneManager works with CacheManager to preserve scene state across transiti
 ### What Gets Cached
 
 When leaving a scene:
+
 - NPC positions, visibility, dialog levels
 - Interactive object states
 - Portal states
@@ -591,6 +633,7 @@ cache_manager.restore_scene(current_scene, context)
 - **Save:** Persistent state for game saves (serialized to disk)
 
 When loading a saved game:
+
 1. Save state is restored first (provides base state)
 2. If returning to a cached scene, cache overrides save state
 
@@ -633,6 +676,7 @@ Published when a new scene/map finishes loading.
 **Timing:**
 
 SceneStartEvent fires at the end of `load_level()`, after:
+
 1. Map loaded
 2. Systems initialized from Tiled
 3. Entity states applied
