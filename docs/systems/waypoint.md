@@ -21,7 +21,9 @@ Waypoints are defined as Point objects in Tiled's "Waypoints" object layer and a
 
 ### Waypoint Retrieval
 
-#### `get_waypoint(name: str) -> tuple[float, float] | None`
+#### get_waypoint
+
+`get_waypoint(name: str) -> tuple[float, float] | None`
 
 Get waypoint position by name.
 
@@ -49,7 +51,9 @@ if waypoint:
 - Waypoint names are case-sensitive
 - Returns `None` for non-existent waypoints
 
-#### `get_waypoints() -> dict[str, tuple[float, float]]`
+#### get_waypoints
+
+`get_waypoints() -> dict[str, tuple[float, float]]`
 
 Get all waypoints in the current map.
 
@@ -73,7 +77,9 @@ for name, (x, y) in waypoint_manager.get_waypoints().items():
 
 ### Tiled Integration
 
-#### `load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+#### load_from_tiled
+
+`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
 
 Load waypoints from Tiled map object layer.
 
@@ -92,7 +98,9 @@ Load waypoints from Tiled map object layer.
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the waypoint system with game context.
 
@@ -105,7 +113,9 @@ Initialize the waypoint system with game context.
 - Called automatically by SystemLoader
 - Stores reference to game context
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset waypoint manager for new game.
 
