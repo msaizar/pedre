@@ -51,7 +51,9 @@ assets/scripts/
 
 ### Script Execution
 
-#### `update(delta_time: float) -> None`
+#### update
+
+`update(delta_time: float) -> None`
 
 Update active action sequences (called every frame).
 
@@ -74,7 +76,9 @@ def on_update(self, delta_time):
 
 ### State Queries
 
-#### `get_scripts() -> dict[str, Script]`
+#### get_scripts
+
+`get_scripts() -> dict[str, Script]`
 
 Get all loaded scripts.
 
@@ -92,7 +96,9 @@ for name, script in all_scripts.items():
 
 ### Save/Load Support
 
-#### `get_save_state() -> dict[str, Any]`
+#### get_save_state
+
+`get_save_state() -> dict[str, Any]`
 
 Return serializable state for saving.
 
@@ -115,7 +121,9 @@ save_data = {
 - Saves lists of completed scripts and run-once scripts that have executed
 - Active running scripts are NOT saved and will restart on load
 
-#### `restore_save_state(state: dict[str, Any]) -> None`
+#### restore_save_state
+
+`restore_save_state(state: dict[str, Any]) -> None`
 
 Restore script system state from save file.
 
@@ -136,7 +144,9 @@ script_manager.restore_save_state(save_data["script"])
 
 ### System Lifecycle
 
-#### `setup(context: GameContext) -> None`
+#### setup
+
+`setup(context: GameContext) -> None`
 
 Initialize the script system with game context.
 
@@ -150,7 +160,9 @@ Initialize the script system with game context.
 - Loads all scripts globally from scripts directory
 - Registers event handlers for all script triggers
 
-#### `cleanup() -> None`
+#### cleanup
+
+`cleanup() -> None`
 
 Clean up script system resources.
 
@@ -160,7 +172,9 @@ Clean up script system resources.
 - Clears scripts and active sequences
 - Called automatically by SystemLoader
 
-#### `reset() -> None`
+#### reset
+
+`reset() -> None`
 
 Reset script system for new game.
 
