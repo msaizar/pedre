@@ -513,17 +513,6 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
                 bold=(i == self.selected_option),
             )
 
-        # Instructions at bottom
-        instruction_y = box_bottom + 15
-        arcade.draw_text(
-            "ESC: Back | ENTER: Select",
-            center_x,
-            instruction_y,
-            arcade.color.GRAY,
-            settings.PAUSE_MENU_SLOT_FONT_SIZE - 2,
-            anchor_x="center",
-        )
-
     def _draw_save_slots(
         self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
     ) -> None:
@@ -607,14 +596,3 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
                 anchor_x="left",
                 bold=(i == self.selected_option),
             )
-
-        # Instructions at bottom
-        instruction_y = box_bottom + 15
-        arcade.draw_text(
-            "ESC: Back | ENTER: Select",
-            center_x,
-            instruction_y,
-            arcade.color.GRAY,
-            settings.PAUSE_MENU_SLOT_FONT_SIZE - 2,
-            anchor_x="center",
-        )
