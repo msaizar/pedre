@@ -310,7 +310,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             center_x + box_width // 2,
             center_y - box_height // 2,
             center_y + box_height // 2,
-            arcade.color.DARK_GRAY,
+            arcade.color.DARK_BLUE_GRAY,
         )
 
         # Menu box border
@@ -440,7 +440,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         # Draw subtitle
         subtitle_y = box_top - 60
         arcade.draw_text(
-            "LOAD GAME",
+            settings.PAUSE_MENU_TEXT_LOAD_GAME,
             center_x,
             subtitle_y,
             arcade.color.WHITE,
@@ -529,7 +529,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         # Draw subtitle
         subtitle_y = box_top - 60
         arcade.draw_text(
-            "SAVE GAME",
+            settings.PAUSE_MENU_TEXT_SAVE_GAME,
             center_x,
             subtitle_y,
             arcade.color.WHITE,
