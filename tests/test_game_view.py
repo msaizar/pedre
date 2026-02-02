@@ -64,6 +64,3 @@ def test_on_key_press_other_keys_do_nothing(
     for key in [arcade.key.SPACE, arcade.key.ENTER, arcade.key.A, arcade.key.UP]:
         result = game_view.on_key_press(key, 0)
         assert result is None
-
-    # show_menu should not have been called
-    mock_view_manager.show_menu.assert_not_called()

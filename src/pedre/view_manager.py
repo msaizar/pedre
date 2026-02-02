@@ -24,24 +24,17 @@ View transition flow:
 5. Arcade calls target view's on_show_view() for initialization
 
 Available views:
-- MenuView: Main menu with asset preloading
 - GameView: Primary gameplay view
-- LoadGameView: Save slot selection menu for loading
-- SaveGameView: Save slot selection menu for saving
 
 Example usage:
     # Create view manager with game window
     view_manager = ViewManager(window)
 
-    # Start at main menu
-    view_manager.show_menu()
+    # Start game directly (autoload or new game)
+    view_manager.start_game_or_load()
 
-    # User selects "New Game"
-    view_manager.show_game()
-
-    # User presses ESC to pause and selects "Save Game"
-    view_manager.show_menu(from_game_pause=True)
-    view_manager.show_save_game()
+    # Or start a fresh new game
+    view_manager.start_new_game()
 """
 
 import logging
@@ -51,19 +44,11 @@ import arcade
 
 from pedre.actions.loader import ActionLoader
 from pedre.conditions.loader import ConditionLoader
-from pedre.events import (
-    EventBus,
-    ShowLoadGameEvent,
-    ShowMenuEvent,
-    ShowSaveGameEvent,
-)
+from pedre.events import EventBus
 from pedre.events.loader import EventLoader
 from pedre.plugins.game_context import GameContext
 from pedre.plugins.loader import PluginLoader
 from pedre.views.game_view import GameView
-from pedre.views.load_game_view import LoadGameView
-from pedre.views.menu_view import MenuView
-from pedre.views.save_game_view import SaveGameView
 
 if TYPE_CHECKING:
     from pedre.plugins.save.base import GameSaveData
@@ -88,11 +73,7 @@ class ViewManager:
 
     Attributes:
         window: The arcade Window instance for displaying views.
-        _menu_view: Cached MenuView instance, or None if not yet created.
         _game_view: Cached GameView instance, or None if not yet created.
-        _load_game_view: Cached LoadGameView instance, or None if not yet created.
-        _save_game_view: Cached SaveGameView instance, or None if not yet created.
-        _inventory_view: Cached InventoryView instance, or None if not yet created.
     """
 
     def __init__(self, window: arcade.Window) -> None:
@@ -140,34 +121,8 @@ class ViewManager:
         # Setup all plugins
         self.plugin_loader.setup_all(self.game_context)
 
-        # Subscribe to view transition events
-        self.event_bus.subscribe(ShowMenuEvent, self._on_show_menu_event)
-        self.event_bus.subscribe(ShowSaveGameEvent, self._on_show_save_game_event)
-        self.event_bus.subscribe(ShowLoadGameEvent, self._on_show_load_game_event)
-
         # Lazy-loaded views
-        self._menu_view: MenuView | None = None
         self._game_view: GameView | None = None
-        self._load_game_view: LoadGameView | None = None
-        self._save_game_view: SaveGameView | None = None
-
-    @property
-    def menu_view(self) -> MenuView:
-        """Get or create the menu view (lazy initialization).
-
-        Returns the cached MenuView instance, or creates a new one if this is the
-        first access. The menu view handles main menu display, navigation, and
-        background asset preloading.
-
-        Returns:
-            MenuView instance (cached or newly created).
-
-        Side effects:
-            - May create and cache MenuView instance on first access
-        """
-        if self._menu_view is None:
-            self._menu_view = MenuView(self)
-        return self._menu_view
 
     @property
     def game_view(self) -> GameView:
@@ -190,71 +145,10 @@ class ViewManager:
     def has_game_view(self) -> bool:
         """Check if a game view exists without creating one.
 
-        Used by the menu to determine if Continue should enable quick resume
-        (game view exists) vs load from auto-save (no game view).
-
         Returns:
             True if game view has been created, False otherwise.
         """
         return self._game_view is not None
-
-    @property
-    def load_game_view(self) -> LoadGameView:
-        """Get or create the load game view (lazy initialization).
-
-        Returns the cached LoadGameView instance, or creates a new one if this is
-        the first access. The load game view displays save slots and handles
-        loading saved games.
-
-        Returns:
-            LoadGameView instance (cached or newly created).
-
-        Side effects:
-            - May create and cache LoadGameView instance on first access
-        """
-        if self._load_game_view is None:
-            self._load_game_view = LoadGameView(self)
-        return self._load_game_view
-
-    @property
-    def save_game_view(self) -> SaveGameView:
-        """Get or create the save game view (lazy initialization).
-
-        Returns the cached SaveGameView instance, or creates a new one if this is
-        the first access. The save game view displays manual save slots and handles
-        saving the current game state.
-
-        Returns:
-            SaveGameView instance (cached or newly created).
-
-        Side effects:
-            - May create and cache SaveGameView instance on first access
-        """
-        if self._save_game_view is None:
-            self._save_game_view = SaveGameView(self)
-        return self._save_game_view
-
-    def show_menu(self, *, from_game_pause: bool = False) -> None:
-        """Switch to the menu view.
-
-        Transitions to the main menu view. Optionally preserves the game view state
-        when pausing from active gameplay (ESC key), allowing quick resume without
-        reload. When not pausing, cleans up the game view and auto-saves.
-
-        Args:
-            from_game_pause: If True, preserve game view for quick resume (pause menu).
-                           If False, cleanup game view and auto-save (quit to menu).
-
-        Side effects:
-            - Calls cleanup() on game view if not pausing
-            - Shows menu view via window.show_view()
-            - Triggers menu view's on_show_view() callback
-        """
-        # Only clean up game view if not pausing (e.g., from new game)
-        if not from_game_pause and self._game_view is not None:
-            self._game_view.cleanup()
-
-        self.window.show_view(self.menu_view)
 
     def show_game(self) -> None:
         """Switch to the game view.
@@ -287,29 +181,30 @@ class ViewManager:
         # Show fresh game view (will create new instance via property)
         self.show_game()
 
-    def show_load_game(self) -> None:
-        """Switch to the load game view.
+    def start_game_or_load(self) -> None:
+        """Start game directly, loading autosave if exists, otherwise new game.
 
-        Transitions to the save slot selection menu where players can load
-        previously saved games.
-
-        Side effects:
-            - Shows load game view via window.show_view()
-            - Triggers load game view's on_show_view() callback
-        """
-        self.window.show_view(self.load_game_view)
-
-    def show_save_game(self) -> None:
-        """Switch to the save game view.
-
-        Transitions to the save slot selection menu where players can save
-        the current game to manual save slots (1-3).
+        This provides a streamlined startup experience that bypasses the main menu:
+        - If autosave (slot 0) exists: Load it automatically
+        - Otherwise: Start a fresh new game
 
         Side effects:
-            - Shows save game view via window.show_view()
-            - Triggers save game view's on_show_view() callback
+            - May load autosave via load_game()
+            - Or start new game via start_new_game()
         """
-        self.window.show_view(self.save_game_view)
+        save_plugin = self.game_context.save_plugin
+
+        # Check if autosave exists
+        if save_plugin and save_plugin.save_exists(slot=0):
+            save_data = save_plugin.load_auto_save()
+            if save_data:
+                logger.info("Autoloading game from autosave")
+                self.load_game(save_data)
+                return
+
+        # No autosave, start new game
+        logger.info("No autosave found, starting new game")
+        self.start_new_game()
 
     def continue_game(self) -> None:
         """Continue/resume the game.
@@ -419,36 +314,3 @@ class ViewManager:
             self._game_view.cleanup()
 
         arcade.close_window()
-
-    def _on_show_menu_event(self, event: ShowMenuEvent) -> None:
-        """Handle ShowMenuEvent by transitioning to menu view.
-
-        Event handler that responds to ShowMenuEvent published by game plugins.
-        Delegates to show_menu() with the appropriate parameters.
-
-        Args:
-            event: ShowMenuEvent containing transition parameters.
-        """
-        self.show_menu(from_game_pause=event.from_game_pause)
-
-    def _on_show_save_game_event(self, event: ShowSaveGameEvent) -> None:
-        """Handle ShowSaveGameEvent by transitioning to save game view.
-
-        Event handler that responds to ShowSaveGameEvent published by game plugins.
-        Delegates to show_save_game().
-
-        Args:
-            event: ShowSaveGameEvent (no parameters needed).
-        """
-        self.show_save_game()
-
-    def _on_show_load_game_event(self, event: ShowLoadGameEvent) -> None:
-        """Handle ShowLoadGameEvent by transitioning to load game view.
-
-        Event handler that responds to ShowLoadGameEvent published by game plugins.
-        Delegates to show_load_game().
-
-        Args:
-            event: ShowLoadGameEvent (no parameters needed).
-        """
-        self.show_load_game()

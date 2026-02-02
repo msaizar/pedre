@@ -149,5 +149,5 @@ def run_game() -> None:
         ...     run_game()
     """
     window = create_game()
-    window.view_manager.show_menu()
+    window.view_manager.start_game_or_load()
     arcade.run()
