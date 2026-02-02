@@ -187,3 +187,43 @@ class GameContext:
     def clear_pending_save_data(self) -> None:
         """Clear pending save data after restoration is complete."""
         self._pending_save_data = None
+
+    def start_new_game(self) -> None:
+        """Start a new game with fresh state.
+
+        Facade method that delegates to the game coordinator. This provides
+        a cleaner API for plugins to start new games without accessing the
+        window directly.
+
+        Side effects:
+            - Calls game.start_new_game() via window
+        """
+        if hasattr(self.window, "game"):
+            self.window.game.start_new_game()
+
+    def load_game(self, save_data: GameSaveData) -> None:
+        """Load a game from save data.
+
+        Facade method that delegates to the game coordinator. This provides
+        a cleaner API for plugins to load games without accessing the window
+        directly.
+
+        Args:
+            save_data: GameSaveData instance containing all saved game state.
+
+        Side effects:
+            - Calls game.load_game() via window
+        """
+        if hasattr(self.window, "game"):
+            self.window.game.load_game(save_data)
+
+    def continue_game(self) -> None:
+        """Continue/resume the current game.
+
+        Facade method that delegates to the game coordinator.
+
+        Side effects:
+            - Calls game.continue_game() via window
+        """
+        if hasattr(self.window, "game"):
+            self.window.game.continue_game()

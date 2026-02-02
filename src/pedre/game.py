@@ -1,40 +1,30 @@
-"""View manager for coordinating view transitions and lifecycle.
+"""Game coordinator for managing game lifecycle and plugin initialization.
 
-This module provides the ViewManager class, which serves as the central controller
-for all game views (screens). It handles view creation, caching, transitions, and
-cleanup throughout the game's lifecycle.
+This module provides the Game class, which serves as the central coordinator
+for the game's lifecycle. It handles plugin initialization, game context management,
+and core game operations like starting new games, loading saves, and managing the
+GameView lifecycle.
 
-Key features:
-- Lazy view initialization (views created on first access)
-- View caching for performance (reuse instances across transitions)
-- Centralized view transition logic
-- Cleanup coordination during transitions
-- Save game loading and state restoration
+Key responsibilities:
+- Owns long-lived objects: EventBus, GameContext, PluginLoader
+- Initializes plugins in correct order: Actions → Events → Conditions → Plugins
+- Manages GameView lifecycle: new game, continue, load, exit
+- Coordinates save/load operations
 
-View lifecycle management:
-The ViewManager uses lazy loading to defer view creation until needed, reducing
-startup time and memory usage. Views are cached after creation and reused when
-the player navigates back to them.
-
-View transition flow:
-1. User triggers transition (e.g., selects "New Game" from menu)
-2. ViewManager cleans up current view if needed (e.g., auto-save game state)
-3. ViewManager gets or creates target view (cached or new instance)
-4. ViewManager tells window to show the target view
-5. Arcade calls target view's on_show_view() for initialization
-
-Available views:
-- GameView: Primary gameplay view
+Architecture notes:
+- Only ONE view exists: GameView (the "pause menu" is a plugin overlay, not a view)
+- No view transitions - this coordinates game state, not multiple screens
+- Plugins access via context.window.game (or preferably via context facade methods)
 
 Example usage:
-    # Create view manager with game window
-    view_manager = ViewManager(window)
+    # Create game coordinator with game window
+    game = Game(window)
 
     # Start game directly (autoload or new game)
-    view_manager.start_game_or_load()
+    game.start_game_or_load()
 
     # Or start a fresh new game
-    view_manager.start_new_game()
+    game.start_new_game()
 """
 
 import logging
@@ -56,32 +46,37 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ViewManager:
-    """Manages all game views and transitions between them.
+class Game:
+    """Coordinates game lifecycle, plugin initialization, and game state management.
 
-    The ViewManager acts as the central coordinator for all game screens (views),
-    handling their creation, caching, and transitions. It provides a clean API for
-    switching between views and ensures proper cleanup during transitions.
+    The Game class acts as the central coordinator for the game, handling plugin
+    initialization, the GameView lifecycle, and core game operations. It owns
+    long-lived objects like EventBus, GameContext, and PluginLoader that persist
+    throughout the game's lifetime.
 
-    View caching strategy:
-    Views are created lazily on first access and cached for reuse. This improves
-    performance by avoiding redundant initialization and preserves view state
-    across transitions (useful for game view state when showing inventory).
+    Responsibilities:
+    - Initialize plugins in the correct order (Actions → Events → Conditions → Plugins)
+    - Manage GameView lifecycle (creation, cleanup, recreation for new games)
+    - Coordinate save/load operations
+    - Provide access to game context and plugin loader
 
     Attributes:
-        window: The arcade Window instance for displaying views.
+        window: The arcade Window instance for displaying the game.
+        event_bus: Central event bus for publish/subscribe communication.
+        game_context: Game context providing access to all plugins.
+        plugin_loader: Plugin loader for managing plugin lifecycle.
         _game_view: Cached GameView instance, or None if not yet created.
     """
 
     def __init__(self, window: arcade.Window) -> None:
-        """Initialize the view manager.
+        """Initialize the game coordinator.
 
-        Creates the view manager with a reference to the game window, along with
-        the centralized event bus and game context that outlive individual views.
-        All view instances start as None and are created lazily when first accessed.
+        Creates the game coordinator with a reference to the game window, along with
+        the centralized event bus and game context that outlive the GameView.
+        Initializes all plugins in the correct order.
 
         Args:
-            window: Arcade Window instance for showing views.
+            window: Arcade Window instance for showing the game.
         """
         self.window = window
 
@@ -148,9 +143,9 @@ class ViewManager:
         return self._game_view is not None
 
     def show_game(self) -> None:
-        """Switch to the game view.
+        """Show the game view.
 
-        Transitions to the gameplay view.
+        Displays the gameplay view in the window.
 
         Side effects:
             - Shows game view via window.show_view()

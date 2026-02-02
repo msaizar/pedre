@@ -174,10 +174,9 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         # Hide pause menu
         self.hide()
 
-        # Load the game via view_manager
-        if self.context.window and hasattr(self.context.window, "view_manager"):
-            self.context.window.view_manager.load_game(save_data)
-            logger.info("Loaded game from slot %d", slot)
+        # Load the game via context facade
+        self.context.load_game(save_data)
+        logger.info("Loaded game from slot %d", slot)
 
     def _execute_save_slot(self) -> None:
         """Save the game to the selected slot."""
@@ -219,7 +218,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             self.menu_state = PauseMenuState.SAVE_SLOTS
             self.selected_option = 0
         elif option == PauseMenuOption.EXIT:
-            # Exit the game via view_manager
+            # Exit the game
             if self.context and hasattr(self.context, "window"):
                 arcade.close_window()
             logger.debug("Exit game")
@@ -265,9 +264,9 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         # Reset confirmation flag
         self._awaiting_new_game_confirmation = False
 
-        # Start new game
-        if self.context and self.context.window and hasattr(self.context.window, "view_manager"):
-            self.context.window.view_manager.start_new_game()
+        # Start new game via context facade
+        if self.context:
+            self.context.start_new_game()
             logger.info("Starting new game after confirmation")
 
     def on_draw_ui(self) -> None:

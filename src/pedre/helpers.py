@@ -12,7 +12,7 @@ import arcade
 from rich.logging import RichHandler
 
 from pedre.conf import settings
-from pedre.view_manager import ViewManager
+from pedre.game import Game
 
 
 def setup_logging(log_level: str = "DEBUG") -> None:
@@ -54,26 +54,26 @@ def create_game() -> arcade.Window:
 
     Creates an arcade.Window using the settings from your project's settings.py
     (or the module specified by PEDRE_SETTINGS_MODULE), sets up logging
-    and resource handles, and attaches a ViewManager to the window.
+    and resource handles, and attaches a Game coordinator to the window.
 
     This is the recommended way to initialize a Pedre game when you need
     access to the window instance for customization.
 
     Returns:
-        Configured arcade.Window with view_manager attribute attached.
+        Configured arcade.Window with game attribute attached.
 
     Side effects:
         - Configures logging via setup_logging()
         - Registers resource handles via setup_resources()
         - Creates arcade.Window instance
-        - Attaches ViewManager to window
+        - Attaches Game coordinator to window
 
     Example:
         >>> # Create settings.py in your project with settings
         >>> # WINDOW_TITLE = "My RPG"
         >>> from pedre import create_game
         >>> window = create_game()
-        >>> window.view_manager.show_menu()
+        >>> window.game.start_game_or_load()
         >>> arcade.run()
     """
     setup_logging()
@@ -84,7 +84,7 @@ def create_game() -> arcade.Window:
         settings.SCREEN_HEIGHT,
         settings.WINDOW_TITLE,
     )
-    window.view_manager = ViewManager(window)
+    window.game = Game(window)
     return window
 
 
@@ -129,14 +129,14 @@ def run_game() -> None:
 
     This is the simplest way to start a Pedre game. It creates the window
     using settings from your project's settings.py (or the module specified
-    by PEDRE_SETTINGS_MODULE), sets up all resources, shows the main menu,
+    by PEDRE_SETTINGS_MODULE), sets up all resources, starts the game,
     and starts the game loop.
 
     Side effects:
         - Configures logging via setup_logging()
         - Registers resource handles via setup_resources()
-        - Creates arcade.Window and ViewManager
-        - Shows the menu view
+        - Creates arcade.Window and Game coordinator
+        - Starts the game (new game or loads autosave)
         - Starts arcade.run() game loop (blocks until window closes)
 
     Example:
@@ -149,5 +149,5 @@ def run_game() -> None:
         ...     run_game()
     """
     window = create_game()
-    window.view_manager.start_game_or_load()
+    window.game.start_game_or_load()
     arcade.run()

@@ -9,9 +9,9 @@ Key responsibilities:
 
 Example usage:
     # Create and show game view
-    view_manager = ViewManager(window)
-    game_view = GameView(view_manager)
-    view_manager.show_view(game_view)
+    game = Game(window)
+    game_view = GameView(game)
+    window.show_view(game_view)
 
     # Game loop happens automatically via arcade.View callbacks:
     # - on_update() called each frame
@@ -28,7 +28,7 @@ from pedre.conf import settings
 from pedre.plugins.scene import TransitionState
 
 if TYPE_CHECKING:
-    from pedre.view_manager import ViewManager
+    from pedre.game import Game
 
 
 logger = logging.getLogger(__name__)
@@ -52,13 +52,13 @@ class GameView(arcade.View):
     - Lazy initialization: setup() is called on first show, not in __init__
 
     Instance attributes:
-        view_manager: Reference to ViewManager for view transitions.
+        game: Reference to Game coordinator for managing game lifecycle.
 
         State tracking:
         initialized: Whether setup() has been called.
     """
 
-    def __init__(self, view_manager: ViewManager) -> None:
+    def __init__(self, game: Game) -> None:
         """Initialize the game view.
 
         Initializes state, but does NOT load the map yet. Actual setup happens in setup() when the view is first shown.
@@ -67,10 +67,10 @@ class GameView(arcade.View):
         loading heavy assets, and enables the map to be changed before setup() runs.
 
         Args:
-            view_manager: ViewManager instance for handling view transitions (menu, inventory, etc.).
+            game: Game coordinator instance for managing game lifecycle.
         """
         super().__init__()
-        self.view_manager = view_manager
+        self.game = game
 
         # Track if game has been initialized
         self.initialized: bool = False
@@ -81,7 +81,7 @@ class GameView(arcade.View):
         For new games, loads the initial map from settings. For loaded games,
         loads the map that was stored in current_map by save game restoration.
         """
-        scene_plugin = self.view_manager.game_context.scene_plugin
+        scene_plugin = self.game.game_context.scene_plugin
 
         # Get the map to load (either from saved state or initial map)
         current_map = scene_plugin.get_current_map()
@@ -118,18 +118,18 @@ class GameView(arcade.View):
 
         Called automatically by arcade each frame. Updates all game plugins in order.
         """
-        if not self.view_manager.game_context:
+        if not self.game.game_context:
             return
 
         # Handle scene transitions
-        scene_plugin = self.view_manager.game_context.scene_plugin
+        scene_plugin = self.game.game_context.scene_plugin
         if scene_plugin and scene_plugin.get_transition_state() != TransitionState.NONE:
             scene_plugin.update(delta_time)
             # During transition, skip other game logic
             return
 
         # Update ALL plugins generically via plugin_loader
-        self.view_manager.plugin_loader.update_all(delta_time)
+        self.game.plugin_loader.update_all(delta_time)
 
     def on_draw(self) -> None:
         """Render the game world (arcade lifecycle callback).
@@ -138,22 +138,22 @@ class GameView(arcade.View):
         """
         self.clear()
 
-        if not self.view_manager.game_context:
+        if not self.game.game_context:
             return
 
         # Activate game camera for world rendering
-        camera_plugin = self.view_manager.game_context.camera_plugin
+        camera_plugin = self.game.game_context.camera_plugin
         if camera_plugin:
             camera_plugin.use()
 
         # Draw ALL plugins (world coordinates) via plugin_loader
-        self.view_manager.plugin_loader.draw_all()
+        self.game.plugin_loader.draw_all()
 
         # Draw UI in screen coordinates
         arcade.camera.Camera2D().use()
 
         # Draw ALL plugins (screen coordinates) via plugin_loader
-        self.view_manager.plugin_loader.draw_ui_all()
+        self.game.plugin_loader.draw_ui_all()
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key presses (arcade lifecycle callback).
@@ -161,19 +161,19 @@ class GameView(arcade.View):
         Processes keyboard input. Most input handling is delegated to specific plugins
         via the PluginLoader. This view handles global hotkeys (like menus).
         """
-        if not self.view_manager.plugin_loader:
+        if not self.game.plugin_loader:
             return None
 
         # Delegate to plugins first (e.g., Dialog might consume input)
-        if self.view_manager.plugin_loader.on_key_press_all(symbol, modifiers):
+        if self.game.plugin_loader.on_key_press_all(symbol, modifiers):
             return True
 
         return None
 
     def on_key_release(self, symbol: int, modifiers: int) -> bool | None:
         """Handle key releases (arcade lifecycle callback)."""
-        if self.view_manager.plugin_loader:
-            self.view_manager.plugin_loader.on_key_release_all(symbol, modifiers)
+        if self.game.plugin_loader:
+            self.game.plugin_loader.on_key_release_all(symbol, modifiers)
         return None
 
     def cleanup(self) -> None:
@@ -192,15 +192,15 @@ class GameView(arcade.View):
             - Sets initialized = False
         """
         # Cache state for this scene before clearing (for scene transitions)
-        scene_plugin = self.view_manager.game_context.scene_plugin
+        scene_plugin = self.game.game_context.scene_plugin
         current_map = scene_plugin.get_current_map()
 
         if current_map:
-            cache_plugin = self.view_manager.game_context.cache_plugin
+            cache_plugin = self.game.game_context.cache_plugin
             cache_plugin.cache_scene(current_map)
 
         # Reset ALL pluggable plugins generically (clears session state but keeps wiring)
-        self.view_manager.plugin_loader.reset_all()
+        self.game.plugin_loader.reset_all()
 
         # Reset initialization flag so game will be set up again on next show
         self.initialized = False

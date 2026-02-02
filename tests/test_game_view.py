@@ -5,62 +5,62 @@ from unittest.mock import Mock
 import arcade
 import pytest
 
-from pedre.view_manager import ViewManager
+from pedre.game import Game
 from pedre.views.game_view import GameView
 
 
 @pytest.fixture
-def mock_view_manager(headless_window: arcade.Window) -> Mock:
-    """Create a mock ViewManager.
+def mock_game(headless_window: arcade.Window) -> Mock:
+    """Create a mock Game coordinator.
 
     Args:
         headless_window: Headless window fixture.
 
     Returns:
-        Mock ViewManager.
+        Mock Game coordinator.
     """
-    manager = Mock(spec=ViewManager)
-    manager.window = headless_window
-    manager.plugin_loader = Mock()
-    manager.game_context = Mock()
-    return manager
+    game = Mock(spec=Game)
+    game.window = headless_window
+    game.plugin_loader = Mock()
+    game.game_context = Mock()
+    return game
 
 
 @pytest.fixture
-def game_view(mock_view_manager: Mock) -> GameView:
+def game_view(mock_game: Mock) -> GameView:
     """Create a GameView instance.
 
     Args:
-        mock_view_manager: Mock ViewManager fixture.
+        mock_game: Mock Game coordinator fixture.
 
     Returns:
         GameView instance.
     """
-    return GameView(mock_view_manager)
+    return GameView(mock_game)
 
 
-def test_game_view_initialization(game_view: GameView, mock_view_manager: Mock) -> None:
+def test_game_view_initialization(game_view: GameView, mock_game: Mock) -> None:
     """Test that GameView initializes correctly.
 
     Args:
         game_view: GameView fixture.
-        mock_view_manager: Mock ViewManager fixture.
+        mock_game: Mock Game coordinator fixture.
     """
-    assert game_view.view_manager == mock_view_manager
+    assert game_view.game == mock_game
 
 
 def test_on_key_press_other_keys_do_nothing(
     game_view: GameView,
-    mock_view_manager: Mock,
+    mock_game: Mock,
 ) -> None:
     """Test that other keys don't trigger menu return.
 
     Args:
         game_view: GameView fixture.
-        mock_view_manager: Mock ViewManager fixture.
+        mock_game: Mock Game coordinator fixture.
     """
     # Test various keys
-    mock_view_manager.plugin_loader.on_key_press_all.return_value = False
+    mock_game.plugin_loader.on_key_press_all.return_value = False
     for key in [arcade.key.SPACE, arcade.key.ENTER, arcade.key.A, arcade.key.UP]:
         result = game_view.on_key_press(key, 0)
         assert result is None
