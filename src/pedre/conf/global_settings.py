@@ -321,7 +321,7 @@ PAUSE_MENU_TEXT_BACK = "Back"
 PAUSE_MENU_TEXT_EMPTY_SLOT = "(Empty)"
 """Text displayed for empty save slots."""
 
-PAUSE_MENU_CONFIRM_NEW_GAME = "Start a new game? Current progress will be lost. Press SPACE to confirm, ESC to cancel."
+PAUSE_MENU_CONFIRM_NEW_GAME = "Start a new game? Current progress will be lost."
 """Confirmation message for starting a new game."""
 
 # Installed plugins (like Django's INSTALLED_APPS)

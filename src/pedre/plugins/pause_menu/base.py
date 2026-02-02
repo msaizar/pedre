@@ -12,6 +12,7 @@ class PauseMenuState(Enum):
     MAIN_MENU = "main_menu"
     LOAD_SLOTS = "load_slots"
     SAVE_SLOTS = "save_slots"
+    CONFIRMATION = "confirmation"
 
 
 class PauseMenuOption(Enum):
