@@ -292,9 +292,15 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             (*arcade.color.BLACK[:3], settings.PAUSE_MENU_OVERLAY_ALPHA),
         )
 
-        # Draw centered menu box
-        box_width = settings.PAUSE_MENU_BOX_WIDTH
-        box_height = settings.PAUSE_MENU_BOX_HEIGHT
+        # Calculate responsive menu box dimensions
+        box_width = min(
+            settings.PAUSE_MENU_BOX_MAX_WIDTH,
+            max(settings.PAUSE_MENU_BOX_MIN_WIDTH, int(window.width * settings.PAUSE_MENU_BOX_WIDTH_PERCENT)),
+        )
+        box_height = max(
+            settings.PAUSE_MENU_BOX_MIN_HEIGHT,
+            int(window.height * settings.PAUSE_MENU_BOX_HEIGHT_PERCENT),
+        )
         center_x = window.width // 2
         center_y = window.height // 2
 
@@ -317,24 +323,31 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             border_width=2,
         )
 
-        # Title
+        # Calculate box bounds for positioning
+        box_top = center_y + box_height // 2
+        box_bottom = center_y - box_height // 2
+
+        # Title positioning (with padding from top)
+        title_padding = 20
+        title_y = box_top - title_padding - settings.PAUSE_MENU_TITLE_FONT_SIZE // 2
+
         arcade.draw_text(
             settings.PAUSE_MENU_TITLE,
             center_x,
-            center_y + box_height // 2 - 40,
+            title_y,
             arcade.color.WHITE,
             settings.PAUSE_MENU_TITLE_FONT_SIZE,
             anchor_x="center",
             bold=True,
         )
 
-        # Render appropriate menu based on state
+        # Render appropriate menu based on state (pass box dimensions)
         if self.menu_state == PauseMenuState.MAIN_MENU:
-            self._draw_main_menu(center_x, center_y)
+            self._draw_main_menu(center_x, center_y, box_width, box_height, box_top, box_bottom)
         elif self.menu_state == PauseMenuState.LOAD_SLOTS:
-            self._draw_load_slots(center_x, center_y)
+            self._draw_load_slots(center_x, center_y, box_width, box_height, box_top, box_bottom)
         elif self.menu_state == PauseMenuState.SAVE_SLOTS:
-            self._draw_save_slots(center_x, center_y)
+            self._draw_save_slots(center_x, center_y, box_width, box_height, box_top, box_bottom)
 
         # Draw save feedback message if present
         if self.save_feedback_message:
@@ -348,12 +361,18 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
                 bold=True,
             )
 
-    def _draw_main_menu(self, center_x: int, center_y: int) -> None:
+    def _draw_main_menu(
+        self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
+    ) -> None:
         """Draw the main menu options.
 
         Args:
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
+            box_width: Width of the menu box.
+            box_height: Height of the menu box.
+            box_top: Top Y coordinate of the menu box.
+            box_bottom: Bottom Y coordinate of the menu box.
         """
         menu_options = [
             settings.PAUSE_MENU_TEXT_RESUME,
@@ -363,10 +382,18 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             settings.PAUSE_MENU_TEXT_EXIT,
         ]
 
-        # Starting Y position for menu options (centered vertically)
+        # Calculate content area (excluding title at top)
+        title_area_height = 60  # Space reserved for title
+        content_top = box_top - title_area_height
+        content_height = content_top - box_bottom
+
+        # Starting Y position for menu options (centered in content area)
         num_options = len(menu_options)
-        total_height = num_options * settings.PAUSE_MENU_SPACING
-        start_y = center_y + total_height // 2
+        total_height = (num_options - 1) * settings.PAUSE_MENU_SPACING
+        start_y = box_bottom + content_height // 2 + total_height // 2
+
+        # Calculate selector position based on box width
+        selector_offset = min(box_width // 3, 100)  # Max 100px or 1/3 of box width
 
         for i, option_text in enumerate(menu_options):
             y_pos = start_y - (i * settings.PAUSE_MENU_SPACING)
@@ -374,11 +401,11 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             # Selected option in yellow, others in white
             color = arcade.color.YELLOW if i == self.selected_option else arcade.color.WHITE
 
-            # Draw selection indicator
+            # Draw selection indicator (inside the box)
             if i == self.selected_option:
                 arcade.draw_text(
                     ">",
-                    center_x - 120,
+                    center_x - selector_offset,
                     y_pos,
                     color,
                     settings.PAUSE_MENU_OPTION_FONT_SIZE,
@@ -397,18 +424,25 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
                 bold=(i == self.selected_option),
             )
 
-    def _draw_load_slots(self, center_x: int, center_y: int) -> None:
+    def _draw_load_slots(
+        self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
+    ) -> None:
         """Draw the load game slot selection menu.
 
         Args:
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
+            box_width: Width of the menu box.
+            box_height: Height of the menu box.
+            box_top: Top Y coordinate of the menu box.
+            box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Draw title
+        # Draw subtitle
+        subtitle_y = box_top - 60
         arcade.draw_text(
             "LOAD GAME",
             center_x,
-            center_y + 120,
+            subtitle_y,
             arcade.color.WHITE,
             settings.PAUSE_MENU_OPTION_FONT_SIZE + 4,
             anchor_x="center",
@@ -417,7 +451,20 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
         # Draw slots 0-3
         slots = [0, 1, 2, 3]
-        start_y = center_y + 60
+
+        # Calculate content area and positioning
+        content_top = subtitle_y - 40
+        content_bottom = box_bottom + 40  # Leave room for instructions
+        content_height = content_top - content_bottom
+
+        # Starting Y position for slots (centered in content area)
+        num_slots = len(slots)
+        total_height = (num_slots - 1) * settings.PAUSE_MENU_SPACING
+        start_y = content_bottom + content_height // 2 + total_height // 2
+
+        # Calculate text positioning based on box width
+        text_offset = min(box_width // 2 - 20, 200)  # Stay inside box with padding
+        selector_offset = text_offset + 20
 
         for i, slot in enumerate(slots):
             y_pos = start_y - (i * settings.PAUSE_MENU_SPACING)
@@ -443,11 +490,11 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             else:
                 color = arcade.color.GRAY
 
-            # Draw selection indicator
+            # Draw selection indicator (inside the box)
             if i == self.selected_option:
                 arcade.draw_text(
                     ">",
-                    center_x - 220,
+                    center_x - selector_offset,
                     y_pos,
                     color,
                     settings.PAUSE_MENU_SLOT_FONT_SIZE,
@@ -458,7 +505,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             # Draw slot text
             arcade.draw_text(
                 slot_text,
-                center_x - 200,
+                center_x - text_offset,
                 y_pos,
                 color,
                 settings.PAUSE_MENU_SLOT_FONT_SIZE,
@@ -466,28 +513,36 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
                 bold=(i == self.selected_option),
             )
 
-        # Instructions
+        # Instructions at bottom
+        instruction_y = box_bottom + 15
         arcade.draw_text(
             "ESC: Back | ENTER: Select",
             center_x,
-            center_y - 140,
+            instruction_y,
             arcade.color.GRAY,
             settings.PAUSE_MENU_SLOT_FONT_SIZE - 2,
             anchor_x="center",
         )
 
-    def _draw_save_slots(self, center_x: int, center_y: int) -> None:
+    def _draw_save_slots(
+        self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
+    ) -> None:
         """Draw the save game slot selection menu.
 
         Args:
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
+            box_width: Width of the menu box.
+            box_height: Height of the menu box.
+            box_top: Top Y coordinate of the menu box.
+            box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Draw title
+        # Draw subtitle
+        subtitle_y = box_top - 60
         arcade.draw_text(
             "SAVE GAME",
             center_x,
-            center_y + 120,
+            subtitle_y,
             arcade.color.WHITE,
             settings.PAUSE_MENU_OPTION_FONT_SIZE + 4,
             anchor_x="center",
@@ -496,7 +551,20 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
         # Draw slots 1-3 (manual saves only)
         slots = [1, 2, 3]
-        start_y = center_y + 60
+
+        # Calculate content area and positioning
+        content_top = subtitle_y - 40
+        content_bottom = box_bottom + 40  # Leave room for instructions
+        content_height = content_top - content_bottom
+
+        # Starting Y position for slots (centered in content area)
+        num_slots = len(slots)
+        total_height = (num_slots - 1) * settings.PAUSE_MENU_SPACING
+        start_y = content_bottom + content_height // 2 + total_height // 2
+
+        # Calculate text positioning based on box width
+        text_offset = min(box_width // 2 - 20, 200)  # Stay inside box with padding
+        selector_offset = text_offset + 20
 
         for i, slot in enumerate(slots):
             y_pos = start_y - (i * settings.PAUSE_MENU_SPACING)
@@ -517,11 +585,11 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             # Color based on selection
             color = arcade.color.YELLOW if i == self.selected_option else arcade.color.WHITE
 
-            # Draw selection indicator
+            # Draw selection indicator (inside the box)
             if i == self.selected_option:
                 arcade.draw_text(
                     ">",
-                    center_x - 220,
+                    center_x - selector_offset,
                     y_pos,
                     color,
                     settings.PAUSE_MENU_SLOT_FONT_SIZE,
@@ -532,7 +600,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             # Draw slot text
             arcade.draw_text(
                 slot_text,
-                center_x - 200,
+                center_x - text_offset,
                 y_pos,
                 color,
                 settings.PAUSE_MENU_SLOT_FONT_SIZE,
@@ -540,11 +608,12 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
                 bold=(i == self.selected_option),
             )
 
-        # Instructions
+        # Instructions at bottom
+        instruction_y = box_bottom + 15
         arcade.draw_text(
             "ESC: Back | ENTER: Select",
             center_x,
-            center_y - 140,
+            instruction_y,
             arcade.color.GRAY,
             settings.PAUSE_MENU_SLOT_FONT_SIZE - 2,
             anchor_x="center",

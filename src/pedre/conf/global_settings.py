@@ -270,25 +270,34 @@ SAVE_SFX_FILE = "save.wav"
 PAUSE_MENU_OVERLAY_ALPHA = 180
 """Semi-transparent background overlay alpha value (0-255)."""
 
-PAUSE_MENU_BOX_WIDTH = 500
-"""Width of the pause menu box in pixels."""
+PAUSE_MENU_BOX_WIDTH_PERCENT = 0.4
+"""Pause menu box width as fraction of window width (0.0-1.0). Default: 40% of window width."""
 
-PAUSE_MENU_BOX_HEIGHT = 400
-"""Height of the pause menu box in pixels."""
+PAUSE_MENU_BOX_MAX_WIDTH = 600
+"""Maximum pause menu box width in pixels."""
 
-PAUSE_MENU_TITLE = "PAUSED"
+PAUSE_MENU_BOX_MIN_WIDTH = 200
+"""Minimum pause menu box width in pixels."""
+
+PAUSE_MENU_BOX_HEIGHT_PERCENT = 0.55
+"""Pause menu box height as fraction of window height (0.0-1.0). Default: 55% of window height."""
+
+PAUSE_MENU_BOX_MIN_HEIGHT = 150
+"""Minimum pause menu box height in pixels."""
+
+PAUSE_MENU_TITLE = "Pedre Game"
 """Title text displayed at the top of the pause menu."""
 
-PAUSE_MENU_OPTION_FONT_SIZE = 20
+PAUSE_MENU_OPTION_FONT_SIZE = 10
 """Font size for menu options in pixels."""
 
-PAUSE_MENU_TITLE_FONT_SIZE = 32
+PAUSE_MENU_TITLE_FONT_SIZE = 16
 """Font size for the menu title in pixels."""
 
-PAUSE_MENU_SPACING = 40
+PAUSE_MENU_SPACING = 20
 """Vertical spacing between menu options in pixels."""
 
-PAUSE_MENU_SLOT_FONT_SIZE = 18
+PAUSE_MENU_SLOT_FONT_SIZE = 9
 """Font size for save/load slot text in pixels."""
 
 PAUSE_MENU_TEXT_RESUME = "Resume"
