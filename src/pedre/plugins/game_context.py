@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from pedre.plugins.npc import NPCBasePlugin
     from pedre.plugins.particle import ParticleBasePlugin
     from pedre.plugins.pathfinding import PathfindingBasePlugin
-    from pedre.plugins.pause_menu import PauseMenuPluginBase
+    from pedre.plugins.pause_menu import PauseMenuBasePlugin
     from pedre.plugins.physics import PhysicsBasePlugin
     from pedre.plugins.player import PlayerBasePlugin
     from pedre.plugins.save import GameSaveData, SaveBasePlugin
@@ -88,7 +88,7 @@ class GameContext:
     scene_plugin: SceneBasePlugin
     camera_plugin: CameraBasePlugin
     dialog_plugin: DialogBasePlugin
-    pause_menu_plugin: PauseMenuPluginBase
+    pause_menu_plugin: PauseMenuBasePlugin
     inventory_plugin: InventoryBasePlugin
     interaction_plugin: InteractionBasePlugin
     pathfinding_plugin: PathfindingBasePlugin

@@ -26,39 +26,6 @@ SCREEN_HEIGHT = 720
 WINDOW_TITLE = "Pedre Game"
 """Title displayed in the window title bar."""
 
-# Menu settings
-MENU_TITLE = "Pedre Game"
-"""Title displayed on the main menu screen."""
-
-MENU_TITLE_SIZE = 48
-"""Font size for the menu title."""
-
-MENU_OPTION_SIZE = 24
-"""Font size for menu options."""
-
-MENU_SPACING = 50
-"""Vertical spacing between menu items in pixels."""
-
-MENU_BACKGROUND_IMAGE = ""
-"""Path to background image for menu screen (empty string for no image)."""
-
-MENU_PRELOAD_MUSIC_FILES = []
-"""List of music file paths to preload in the menu."""
-
-MENU_TEXT_CONTINUE = "Continue"
-"""Text for the Continue menu option."""
-
-MENU_TEXT_NEW_GAME = "New Game"
-"""Text for the New Game menu option."""
-
-MENU_TEXT_SAVE_GAME = "Save Game"
-"""Text for the Save Game menu option."""
-
-MENU_TEXT_LOAD_GAME = "Load Game"
-"""Text for the Load Game menu option."""
-
-MENU_TEXT_EXIT = "Exit"
-"""Text for the Exit menu option."""
 
 # Player settings
 PLAYER_MOVEMENT_SPEED = 180.0
