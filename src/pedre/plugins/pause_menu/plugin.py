@@ -1,14 +1,13 @@
 """Pause menu plugin implementation with inline save/load slot selection."""
 
 import logging
-from enum import Enum
 from typing import TYPE_CHECKING, ClassVar
 
 import arcade
 
 from pedre.conf import settings
 from pedre.plugins.dialog.events import DialogClosedEvent
-from pedre.plugins.pause_menu.base import PauseMenuPluginBase
+from pedre.plugins.pause_menu.base import PauseMenuBasePlugin, PauseMenuOption, PauseMenuState
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
@@ -18,26 +17,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class PauseMenuState(Enum):
-    """States for the pause menu."""
-
-    MAIN_MENU = "main_menu"
-    LOAD_SLOTS = "load_slots"
-    SAVE_SLOTS = "save_slots"
-
-
-class PauseMenuOption(Enum):
-    """Main menu options."""
-
-    RESUME = 0
-    NEW_GAME = 1
-    LOAD_GAME = 2
-    SAVE_GAME = 3
-    EXIT = 4
-
-
 @PluginRegistry.register
-class PauseMenuPlugin(PauseMenuPluginBase):
+class PauseMenuPlugin(PauseMenuBasePlugin):
     """Provides an in-game pause menu overlay.
 
     This plugin creates a centered overlay menu that appears when ESC is pressed,

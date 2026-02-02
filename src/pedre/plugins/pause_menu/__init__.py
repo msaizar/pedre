@@ -4,7 +4,7 @@ This plugin provides an in-game pause menu overlay that appears when ESC is pres
 replacing the traditional menu view transition with a seamless overlay experience.
 """
 
-from pedre.plugins.pause_menu.base import PauseMenuPluginBase
+from pedre.plugins.pause_menu.base import PauseMenuBasePlugin
 from pedre.plugins.pause_menu.plugin import PauseMenuPlugin
 
-__all__ = ["PauseMenuPlugin", "PauseMenuPluginBase"]
+__all__ = ["PauseMenuBasePlugin", "PauseMenuPlugin"]
