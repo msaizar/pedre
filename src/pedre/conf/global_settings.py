@@ -4,7 +4,6 @@ Users can override these in their project's settings.py file.
 
 Example:
     # In your project's settings.py:
-    from pedre.conf import global_settings
 
     # Override framework defaults
     SCREEN_WIDTH = 1920
