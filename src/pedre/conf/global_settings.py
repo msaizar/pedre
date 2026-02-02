@@ -129,6 +129,9 @@ INVENTORY_HINT_CONSUME = "[C] Consume"
 INVENTORY_HINT_FONT_SIZE = 12
 """Font size for inventory hint text."""
 
+INVENTORY_TITLE_FONT_SIZE = 20
+"""Font size for inventory title text."""
+
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT = False
 """Default auto-close behavior for dialogs."""

@@ -12,54 +12,23 @@ SCREEN_HEIGHT: int
 WINDOW_TITLE: str
 
 # Pause Menu settings
-PAUSE_MENU_OVERLAY_ALPHA = 180
-"""Semi-transparent background overlay alpha value (0-255)."""
+PAUSE_MENU_OVERLAY_ALPHA: int
+PAUSE_MENU_BOX_WIDTH: int
+PAUSE_MENU_BOX_HEIGHT: int
+PAUSE_MENU_TITLE: str
+PAUSE_MENU_OPTION_FONT_SIZE: int
+PAUSE_MENU_TITLE_FONT_SIZE: int
+PAUSE_MENU_SPACING: int
+PAUSE_MENU_SLOT_FONT_SIZE: int
+PAUSE_MENU_TEXT_RESUME: str
+PAUSE_MENU_TEXT_NEW_GAME: str
+PAUSE_MENU_TEXT_LOAD_GAME: str
+PAUSE_MENU_TEXT_SAVE_GAME: str
+PAUSE_MENU_TEXT_EXIT: str
+PAUSE_MENU_TEXT_BACK: str
+PAUSE_MENU_TEXT_EMPTY_SLOT: str
+PAUSE_MENU_CONFIRM_NEW_GAME: str
 
-PAUSE_MENU_BOX_WIDTH = 500
-"""Width of the pause menu box in pixels."""
-
-PAUSE_MENU_BOX_HEIGHT = 400
-"""Height of the pause menu box in pixels."""
-
-PAUSE_MENU_TITLE = "PAUSED"
-"""Title text displayed at the top of the pause menu."""
-
-PAUSE_MENU_OPTION_FONT_SIZE = 20
-"""Font size for menu options in pixels."""
-
-PAUSE_MENU_TITLE_FONT_SIZE = 32
-"""Font size for the menu title in pixels."""
-
-PAUSE_MENU_SPACING = 40
-"""Vertical spacing between menu options in pixels."""
-
-PAUSE_MENU_SLOT_FONT_SIZE = 18
-"""Font size for save/load slot text in pixels."""
-
-PAUSE_MENU_TEXT_RESUME = "Resume"
-"""Text for the Resume menu option."""
-
-PAUSE_MENU_TEXT_NEW_GAME = "New Game"
-"""Text for the New Game menu option."""
-
-PAUSE_MENU_TEXT_LOAD_GAME = "Load Game"
-"""Text for the Load Game menu option."""
-
-PAUSE_MENU_TEXT_SAVE_GAME = "Save Game"
-"""Text for the Save Game menu option."""
-
-PAUSE_MENU_TEXT_EXIT = "Exit Game"
-"""Text for the Exit menu option."""
-
-PAUSE_MENU_TEXT_BACK = "Back"
-"""Text for the Back option in submenus."""
-
-PAUSE_MENU_TEXT_EMPTY_SLOT = "(Empty)"
-"""Text displayed for empty save slots."""
-
-PAUSE_MENU_CONFIRM_NEW_GAME = "Start a new game? Current progress will be lost. Press SPACE to confirm, ESC to cancel."
-"""Confirmation message for starting a new game."""
-# Input settings
 PLAYER_MOVEMENT_SPEED: float
 
 # Player settings
@@ -104,6 +73,7 @@ INVENTORY_KEY_CONSUME: str
 INVENTORY_HINT_VIEW: str
 INVENTORY_HINT_CONSUME: str
 INVENTORY_HINT_FONT_SIZE: int
+INVENTORY_TITLE_FONT_SIZE: int
 
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT: bool
