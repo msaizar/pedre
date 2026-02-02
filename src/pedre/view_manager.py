@@ -68,9 +68,6 @@ class ViewManager:
     performance by avoiding redundant initialization and preserves view state
     across transitions (useful for game view state when showing inventory).
 
-    The inventory view is special - it requires the game view's inventory_plugin,
-    so it's only created after the game view exists.
-
     Attributes:
         window: The arcade Window instance for displaying views.
         _game_view: Cached GameView instance, or None if not yet created.
