@@ -594,7 +594,7 @@ class InventoryPlugin(InventoryBasePlugin):
                     window.width / 2,
                     90,
                     arcade.color.WHITE,
-                    font_size=settings.MENU_TITLE_SIZE,
+                    font_size=settings.INVENTORY_TITLE_FONT_SIZE,
                     anchor_x="center",
                 )
             else:

@@ -4,7 +4,6 @@ Users can override these in their project's settings.py file.
 
 Example:
     # In your project's settings.py:
-    from pedre.conf import global_settings
 
     # Override framework defaults
     SCREEN_WIDTH = 1920
@@ -26,39 +25,6 @@ SCREEN_HEIGHT = 720
 WINDOW_TITLE = "Pedre Game"
 """Title displayed in the window title bar."""
 
-# Menu settings
-MENU_TITLE = "Pedre Game"
-"""Title displayed on the main menu screen."""
-
-MENU_TITLE_SIZE = 48
-"""Font size for the menu title."""
-
-MENU_OPTION_SIZE = 24
-"""Font size for menu options."""
-
-MENU_SPACING = 50
-"""Vertical spacing between menu items in pixels."""
-
-MENU_BACKGROUND_IMAGE = ""
-"""Path to background image for menu screen (empty string for no image)."""
-
-MENU_PRELOAD_MUSIC_FILES = []
-"""List of music file paths to preload in the menu."""
-
-MENU_TEXT_CONTINUE = "Continue"
-"""Text for the Continue menu option."""
-
-MENU_TEXT_NEW_GAME = "New Game"
-"""Text for the New Game menu option."""
-
-MENU_TEXT_SAVE_GAME = "Save Game"
-"""Text for the Save Game menu option."""
-
-MENU_TEXT_LOAD_GAME = "Load Game"
-"""Text for the Load Game menu option."""
-
-MENU_TEXT_EXIT = "Exit"
-"""Text for the Exit menu option."""
 
 # Player settings
 PLAYER_MOVEMENT_SPEED = 180.0
@@ -161,6 +127,9 @@ INVENTORY_HINT_CONSUME = "[C] Consume"
 
 INVENTORY_HINT_FONT_SIZE = 12
 """Font size for inventory hint text."""
+
+INVENTORY_TITLE_FONT_SIZE = 20
+"""Font size for inventory title text."""
 
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT = False
@@ -268,6 +237,22 @@ Higher values make the camera catch up faster to the target.
 - 1.0: Instant following (no smoothing)
 """
 
+# UI Font Scale
+# Framework-wide font tiers as (small_screen, reference, large_screen) tuples.
+# The actual font size is interpolated based on ui_scale:
+#   - At ui_scale <= min_scale (e.g. 0.5): uses the small_screen value
+#   - At ui_scale == 1.0: uses the reference value
+#   - At ui_scale >= max_scale (e.g. 2.0): uses the large_screen value
+#   - In between: linear interpolation
+UI_FONT_SMALL = (8, 12, 16)
+"""Small font tier (small_screen, reference, large_screen). Used for slot text, fine print."""
+
+UI_FONT_NORMAL = (12, 16, 22)
+"""Normal font tier (small_screen, reference, large_screen). Used for menu options, body text."""
+
+UI_FONT_LARGE = (16, 22, 30)
+"""Large font tier (small_screen, reference, large_screen). Used for titles, headings."""
+
 # Particle settings
 PARTICLE_ENABLED = True
 """Whether particle effects are enabled by default."""
@@ -297,6 +282,99 @@ SAVE_QUICK_LOAD_KEY = "F9"
 SAVE_SFX_FILE = "save.wav"
 """Sound effect played when saving/loading."""
 
+# Pause Menu settings
+PAUSE_MENU_OVERLAY_ALPHA = 180
+"""Semi-transparent background overlay alpha value (0-255)."""
+
+PAUSE_MENU_TITLE = "Pedre Game"
+"""Title text displayed at the top of the pause menu."""
+
+# Pause Menu Design Units
+# All spatial values are in "design units" -- pixels at the reference resolution
+# (SCREEN_WIDTH x SCREEN_HEIGHT, default 1280x720). At runtime, they are multiplied
+# by a ui_scale factor derived from the actual window size.
+# Font sizes come from UI_FONT_SMALL/NORMAL/LARGE, not from this dictionary.
+
+PAUSE_MENU_DESIGN = {
+    # Box dimensions
+    "box_width": 512,
+    "box_height": 396,
+    # Title area
+    "title_padding": 20,
+    "title_area_height": 59,
+    # Content layout
+    "spacing": 28,
+    "horizontal_padding": 25,
+    "content_bottom_padding": 40,
+    # Feedback
+    "feedback_offset": 40,
+    # Confirmation
+    "confirmation_message_offset": 40,
+    "confirmation_options_offset": 20,
+    # Border
+    "border_width": 2,
+}
+"""Design-unit values for the pause menu UI layout.
+
+All values are in pixels at the reference resolution (SCREEN_WIDTH x SCREEN_HEIGHT).
+They are scaled proportionally to the actual window size at runtime.
+Override individual values by merging with the default dictionary.
+"""
+
+PAUSE_MENU_UI_SCALE_MIN = 0.5
+"""Minimum UI scale factor for the pause menu. Prevents the menu from shrinking too small."""
+
+PAUSE_MENU_UI_SCALE_MAX = 2.0
+"""Maximum UI scale factor for the pause menu. Prevents the menu from growing too large."""
+
+PAUSE_MENU_TEXT_RESUME = "Resume"
+"""Text for the Resume menu option."""
+
+PAUSE_MENU_TEXT_NEW_GAME = "New Game"
+"""Text for the New Game menu option."""
+
+PAUSE_MENU_TEXT_LOAD_GAME = "Load Game"
+"""Text for the Load Game menu option."""
+
+PAUSE_MENU_TEXT_SAVE_GAME = "Save Game"
+"""Text for the Save Game menu option."""
+
+PAUSE_MENU_TEXT_EXIT = "Exit Game"
+"""Text for the Exit menu option."""
+
+PAUSE_MENU_TEXT_BACK = "Back"
+"""Text for the Back option in submenus."""
+
+PAUSE_MENU_TEXT_EMPTY_SLOT = "(Empty)"
+"""Text displayed for empty save slots."""
+
+PAUSE_MENU_CONFIRM_NEW_GAME = "Start a new game? Current progress will be lost."
+"""Confirmation message for starting a new game."""
+
+PAUSE_MENU_COLOR_OVERLAY = (0, 0, 0)
+"""RGB color for the full-screen overlay background behind the menu."""
+
+PAUSE_MENU_COLOR_BOX_BACKGROUND = (102, 102, 153)
+"""RGB color for the menu box background (dark blue-gray)."""
+
+PAUSE_MENU_COLOR_BOX_BORDER = (255, 255, 255)
+"""RGB color for the menu box border."""
+
+PAUSE_MENU_COLOR_TITLE = (255, 255, 255)
+"""RGB color for the menu title text."""
+
+PAUSE_MENU_COLOR_OPTION = (255, 255, 255)
+"""RGB color for unselected menu options and text."""
+
+PAUSE_MENU_COLOR_SELECTED = (255, 255, 0)
+"""RGB color for the currently selected menu option."""
+
+PAUSE_MENU_COLOR_DISABLED = (128, 128, 128)
+"""RGB color for disabled/empty slot text."""
+
+PAUSE_MENU_COLOR_FEEDBACK = (0, 255, 0)
+"""RGB color for feedback messages (e.g. 'Game Saved!')."""
+
 # Installed plugins (like Django's INSTALLED_APPS)
 INSTALLED_PLUGINS = [
     "pedre.plugins.audio",
@@ -304,6 +382,7 @@ INSTALLED_PLUGINS = [
     "pedre.plugins.camera",
     "pedre.plugins.debug",
     "pedre.plugins.dialog",
+    "pedre.plugins.pause_menu",
     "pedre.plugins.input",
     "pedre.plugins.interaction",
     "pedre.plugins.inventory",

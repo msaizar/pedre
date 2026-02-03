@@ -50,7 +50,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.events import ShowMenuEvent
 from pedre.plugins.input.base import InputBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
@@ -145,9 +144,11 @@ class InputPlugin(InputBasePlugin):
         """
         self.keys_pressed.add(symbol)
 
-        # Handle Pause Menu - publish event instead of calling view_manager directly
+        # Handle Pause Menu - show pause menu overlay
         if symbol == arcade.key.ESCAPE:
-            self.context.event_bus.publish(ShowMenuEvent(from_game_pause=True))
+            pause_menu_plugin = self.context.pause_menu_plugin
+            if pause_menu_plugin and not pause_menu_plugin.showing:
+                pause_menu_plugin.show()
             return True
 
         return False

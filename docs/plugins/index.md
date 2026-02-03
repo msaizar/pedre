@@ -201,6 +201,20 @@ Named position management for navigation and spawning. Stores map locations used
 - NPC movement targets
 - Tiled map integration
 
+## UI & Menus
+
+### [PauseMenuPlugin](pause-menu.md)
+
+Provides an in-game pause menu overlay with save/load functionality. Appears when ESC is pressed.
+
+**Key Features:**
+
+- In-game overlay menu
+- Save/load slot selection
+- New game confirmation
+- Responsive UI scaling
+- Customizable appearance
+
 ## Interaction & Input
 
 ### [InteractionPlugin](interaction.md)

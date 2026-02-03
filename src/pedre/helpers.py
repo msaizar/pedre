@@ -12,7 +12,7 @@ import arcade
 from rich.logging import RichHandler
 
 from pedre.conf import settings
-from pedre.view_manager import ViewManager
+from pedre.game import Game
 
 
 def setup_logging(log_level: str = "DEBUG") -> None:
@@ -54,26 +54,26 @@ def create_game() -> arcade.Window:
 
     Creates an arcade.Window using the settings from your project's settings.py
     (or the module specified by PEDRE_SETTINGS_MODULE), sets up logging
-    and resource handles, and attaches a ViewManager to the window.
+    and resource handles, and attaches a Game coordinator to the window.
 
     This is the recommended way to initialize a Pedre game when you need
     access to the window instance for customization.
 
     Returns:
-        Configured arcade.Window with view_manager attribute attached.
+        Configured arcade.Window with game attribute attached.
 
     Side effects:
         - Configures logging via setup_logging()
         - Registers resource handles via setup_resources()
         - Creates arcade.Window instance
-        - Attaches ViewManager to window
+        - Attaches Game coordinator to window
 
     Example:
         >>> # Create settings.py in your project with settings
         >>> # WINDOW_TITLE = "My RPG"
         >>> from pedre import create_game
         >>> window = create_game()
-        >>> window.view_manager.show_menu()
+        >>> window.game.start_game_or_load()
         >>> arcade.run()
     """
     setup_logging()
@@ -84,7 +84,7 @@ def create_game() -> arcade.Window:
         settings.SCREEN_HEIGHT,
         settings.WINDOW_TITLE,
     )
-    window.view_manager = ViewManager(window)
+    window.game = Game(window)
     return window
 
 
@@ -124,19 +124,137 @@ def matches_key(symbol: int, key_name: str) -> bool:
     return False
 
 
+def calculate_responsive_value(
+    dimension: int,
+    percent: float,
+    min_val: int,
+    max_val: int,
+) -> int:
+    """Calculate responsive UI value using min/max/percent pattern.
+
+    This helper is used throughout Pedre's UI plugins to scale spacing,
+    padding, borders, and font sizes proportionally to screen dimensions
+    while respecting minimum and maximum bounds.
+
+    Args:
+        dimension: Base dimension to calculate from (typically window.height or box_width)
+        percent: Percentage of dimension as decimal (0.0-1.0)
+        min_val: Minimum allowed value in pixels
+        max_val: Maximum allowed value in pixels
+
+    Returns:
+        Calculated responsive value clamped to min/max range
+
+    Example:
+        >>> # Calculate title font size: 2.2% of 720px height = 16px
+        >>> calculate_responsive_value(720, 0.022, 12, 32)
+        16
+        >>> # At 4K (2160px), it hits the maximum
+        >>> calculate_responsive_value(2160, 0.022, 12, 32)
+        32
+    """
+    return min(max_val, max(min_val, int(dimension * percent)))
+
+
+def compute_ui_scale(
+    window_width: int,
+    window_height: int,
+    ref_width: int | None = None,
+    ref_height: int | None = None,
+    min_scale: float = 0.5,
+    max_scale: float = 2.0,
+) -> float:
+    """Compute a uniform UI scale factor relative to a reference resolution.
+
+    Uses the smaller of the width and height ratios to ensure the UI always
+    fits on screen. All UI elements can multiply their design-unit values
+    (pixel dimensions at reference resolution) by this factor.
+
+    Args:
+        window_width: Current window width in pixels.
+        window_height: Current window height in pixels.
+        ref_width: Reference design width. Defaults to settings.SCREEN_WIDTH.
+        ref_height: Reference design height. Defaults to settings.SCREEN_HEIGHT.
+        min_scale: Minimum scale factor (prevents UI from becoming too small).
+        max_scale: Maximum scale factor (prevents UI from becoming too large).
+
+    Returns:
+        Scale factor clamped to [min_scale, max_scale].
+
+    Example:
+        >>> compute_ui_scale(1920, 1080, 1280, 720)
+        1.5
+        >>> compute_ui_scale(640, 360, 1280, 720)
+        0.5
+        >>> compute_ui_scale(1280, 720, 1280, 720)
+        1.0
+    """
+    if ref_width is None:
+        ref_width = settings.SCREEN_WIDTH
+    if ref_height is None:
+        ref_height = settings.SCREEN_HEIGHT
+    raw_scale = min(window_width / ref_width, window_height / ref_height)
+    return max(min_scale, min(max_scale, raw_scale))
+
+
+def scale_font(
+    font_tier: tuple[int, int, int],
+    ui_scale: float,
+    min_scale: float = 0.5,
+    max_scale: float = 2.0,
+) -> int:
+    """Interpolate a font size from a (small, reference, large) tier based on ui_scale.
+
+    Linearly interpolates between the three anchor values:
+      - ui_scale <= min_scale: returns small
+      - ui_scale == 1.0: returns reference
+      - ui_scale >= max_scale: returns large
+      - in between: linear interpolation
+
+    Args:
+        font_tier: Tuple of (small_screen, reference, large_screen) font sizes.
+        ui_scale: Current UI scale factor from compute_ui_scale().
+        min_scale: The ui_scale value that maps to the small_screen font size.
+        max_scale: The ui_scale value that maps to the large_screen font size.
+
+    Returns:
+        Interpolated font size as an integer, at least 1.
+
+    Example:
+        >>> scale_font((8, 12, 16), 1.0)
+        12
+        >>> scale_font((8, 12, 16), 0.5)
+        8
+        >>> scale_font((8, 12, 16), 2.0)
+        16
+        >>> scale_font((8, 12, 16), 0.75)
+        10
+    """
+    small, ref, large = font_tier
+    if ui_scale <= min_scale:
+        return max(1, small)
+    if ui_scale >= max_scale:
+        return max(1, large)
+    if ui_scale <= 1.0:
+        t = (ui_scale - min_scale) / (1.0 - min_scale)
+        return max(1, int(small + (ref - small) * t))
+    t = (ui_scale - 1.0) / (max_scale - 1.0)
+    return max(1, int(ref + (large - ref) * t))
+
+
 def run_game() -> None:
     """Create and run a Pedre game.
 
     This is the simplest way to start a Pedre game. It creates the window
     using settings from your project's settings.py (or the module specified
-    by PEDRE_SETTINGS_MODULE), sets up all resources, shows the main menu,
+    by PEDRE_SETTINGS_MODULE), sets up all resources, starts the game,
     and starts the game loop.
 
     Side effects:
         - Configures logging via setup_logging()
         - Registers resource handles via setup_resources()
-        - Creates arcade.Window and ViewManager
-        - Shows the menu view
+        - Creates arcade.Window and Game coordinator
+        - Starts the game (new game or loads autosave)
         - Starts arcade.run() game loop (blocks until window closes)
 
     Example:
@@ -149,5 +267,5 @@ def run_game() -> None:
         ...     run_game()
     """
     window = create_game()
-    window.view_manager.show_menu()
+    window.game.start_game_or_load()
     arcade.run()

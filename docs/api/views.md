@@ -1,6 +1,6 @@
 # Views
 
-Game views represent different screens and game states in the Pedre framework.
+The GameView is the primary gameplay screen in the Pedre framework. Unlike traditional multi-view architectures, Pedre uses only one view with plugin overlays for different UI states (like pause menus).
 
 ## Location
 
@@ -13,16 +13,16 @@ Primary gameplay view with player control, NPCs, and interactions.
 ### Constructor
 
 ```python
-from pedre import GameView
+from pedre.views.game_view import GameView
 
-game_view = GameView(view_manager, map_file="level1.tmx", scene_name="forest")
+game_view = GameView(game)
 ```
 
 **Parameters:**
 
-- `view_manager: ViewManager` - ViewManager instance
-- `map_file: str` - Path to Tiled .tmx map file (optional)
-- `scene_name: str` - Unique identifier for this scene (optional)
+- `game: Game` - Game coordinator instance
+
+**Note:** The GameView is typically created and managed by the Game coordinator. You rarely need to instantiate it directly.
 
 ### Key Plugins
 
@@ -42,99 +42,23 @@ The GameView provides access to all game plugins through its context:
 ### Example
 
 ```python
-# Access via view manager
-game_view = view_manager.game_view
+# Access via game coordinator
+game_view = game.game_view
 
 # Access plugins through context
-context = game_view.context
+context = game.game_context
 npc_plugin = context.get_plugin("npc")
 dialog_plugin = context.get_plugin("dialog")
 ```
 
-## MenuView
+## Architecture Notes
 
-Main menu with navigation and asset preloading.
-
-### Constructor
-
-```python
-from pedre import MenuView
-
-menu_view = MenuView(view_manager)
-```
-
-**Parameters:**
-
-- `view_manager: ViewManager` - ViewManager instance
-
-### Configuration
-
-Menu appearance is controlled through settings:
-
-- `MENU_TITLE` - Menu title text
-- `MENU_TITLE_SIZE` - Font size for title
-- `MENU_OPTION_SIZE` - Font size for options
-- `MENU_SPACING` - Vertical spacing between options
-- `MENU_BACKGROUND_IMAGE` - Path to background image
-- `MENU_PRELOAD_MUSIC_FILES` - Music files to preload
-
-See [Configuration Guide](../guides/configuration.md#menu-settings) for details.
-
-### Example
-
-```python
-menu_view = view_manager.menu_view
-view_manager.show_menu()
-```
-
-## LoadGameView
-
-Load game screen for selecting save slots.
-
-### Constructor
-
-```python
-from pedre.views import LoadGameView
-
-load_view = LoadGameView(view_manager)
-```
-
-**Parameters:**
-
-- `view_manager: ViewManager` - ViewManager instance
-
-### Example
-
-```python
-load_view = view_manager.load_game_view
-view_manager.show_load_game()
-```
-
-## SaveGameView
-
-Save game screen for selecting save slots.
-
-### Constructor
-
-```python
-from pedre.views import SaveGameView
-
-save_view = SaveGameView(view_manager)
-```
-
-**Parameters:**
-
-- `view_manager: ViewManager` - ViewManager instance
-
-### Example
-
-```python
-save_view = view_manager.save_game_view
-view_manager.show_save_game()
-```
+- **Single View Design**: Pedre uses only the GameView. There are no separate MenuView, LoadGameView, or SaveGameView classes.
+- **Plugin Overlays**: UI states like pause menus are implemented as plugin overlays on top of the GameView, not as separate views.
+- **Managed Lifecycle**: The Game coordinator manages the GameView lifecycle, creating and destroying it as needed for new games or loaded games.
 
 ## See Also
 
-- [ViewManager](view-manager.md) - View controller and transitions
+- [Game](game.md) - Game coordinator and lifecycle management
 - [GameContext](game-context.md) - Shared state container
 - [Plugins Reference](../plugins/index.md) - Individual plugin documentation

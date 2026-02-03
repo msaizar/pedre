@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from pedre.plugins.npc import NPCBasePlugin
     from pedre.plugins.particle import ParticleBasePlugin
     from pedre.plugins.pathfinding import PathfindingBasePlugin
+    from pedre.plugins.pause_menu import PauseMenuBasePlugin
     from pedre.plugins.physics import PhysicsBasePlugin
     from pedre.plugins.player import PlayerBasePlugin
     from pedre.plugins.save import GameSaveData, SaveBasePlugin
@@ -87,6 +88,7 @@ class GameContext:
     scene_plugin: SceneBasePlugin
     camera_plugin: CameraBasePlugin
     dialog_plugin: DialogBasePlugin
+    pause_menu_plugin: PauseMenuBasePlugin
     inventory_plugin: InventoryBasePlugin
     interaction_plugin: InteractionBasePlugin
     pathfinding_plugin: PathfindingBasePlugin
@@ -185,3 +187,43 @@ class GameContext:
     def clear_pending_save_data(self) -> None:
         """Clear pending save data after restoration is complete."""
         self._pending_save_data = None
+
+    def start_new_game(self) -> None:
+        """Start a new game with fresh state.
+
+        Facade method that delegates to the game coordinator. This provides
+        a cleaner API for plugins to start new games without accessing the
+        window directly.
+
+        Side effects:
+            - Calls game.start_new_game() via window
+        """
+        if hasattr(self.window, "game"):
+            self.window.game.start_new_game()
+
+    def load_game(self, save_data: GameSaveData) -> None:
+        """Load a game from save data.
+
+        Facade method that delegates to the game coordinator. This provides
+        a cleaner API for plugins to load games without accessing the window
+        directly.
+
+        Args:
+            save_data: GameSaveData instance containing all saved game state.
+
+        Side effects:
+            - Calls game.load_game() via window
+        """
+        if hasattr(self.window, "game"):
+            self.window.game.load_game(save_data)
+
+    def continue_game(self) -> None:
+        """Continue/resume the current game.
+
+        Facade method that delegates to the game coordinator.
+
+        Side effects:
+            - Calls game.continue_game() via window
+        """
+        if hasattr(self.window, "game"):
+            self.window.game.continue_game()
