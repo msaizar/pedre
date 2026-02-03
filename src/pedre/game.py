@@ -276,11 +276,11 @@ class Game:
         # Restore all plugin states using the centralized method
         context = self.game_context
         if not context:
-            logger.error("ViewManager: No GameContext after showing GameView")
+            logger.error("Game: No GameContext after showing GameView")
             return
 
         if not context.save_plugin:
-            logger.error("ViewManager: Save plugin not found in context")
+            logger.error("Game: Save plugin not found in context")
             return
 
         # Restore all state from save data
@@ -294,15 +294,24 @@ class Game:
     def exit_game(self) -> None:
         """Close the game window and exit the application.
 
-        Performs cleanup of all views (especially game view for auto-save) before
-        closing the window. This ensures game state is saved before exit.
+        Performs auto-save and cleanup of all views before closing the window.
+        This ensures game state is saved before exit.
 
         Side effects:
+            - Auto-saves game to slot 0 if game view exists
             - Calls cleanup() on game view if it exists
             - Closes arcade window (exits application)
         """
-        # Clean up all views before exiting
+        # Auto-save before exiting if game is active
         if self._game_view is not None:
+            save_plugin = self.game_context.save_plugin
+            success = save_plugin.auto_save()
+            if success:
+                logger.info("Auto-saved game before exit")
+            else:
+                logger.warning("Auto-save failed before exit")
+
+            # Clean up all views after saving
             self._game_view.cleanup()
 
         arcade.close_window()

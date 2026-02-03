@@ -252,6 +252,14 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             self.menu_state = PauseMenuState.SAVE_SLOTS
             self.selected_option = 0
         elif option == PauseMenuOption.EXIT:
+            # Auto-save before exit
+            if self.context:
+                success = self.context.save_plugin.auto_save()
+                if success:
+                    logger.info("Auto-saved game before exit")
+                else:
+                    logger.warning("Auto-save failed before exit")
+
             # Exit the game
             if self.context and hasattr(self.context, "window"):
                 arcade.close_window()

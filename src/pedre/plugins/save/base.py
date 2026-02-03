@@ -97,3 +97,8 @@ class SaveBasePlugin(BasePlugin, ABC):
     def apply_entity_states(self) -> None:
         """Phase 2: Apply entity-specific state after sprites exist."""
         ...
+
+    @abstractmethod
+    def auto_save(self) -> bool:
+        """Auto save to slot 0."""
+        ...
