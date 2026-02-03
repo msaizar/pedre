@@ -295,35 +295,6 @@ audio_plugin.clear_all_caches()
 
 ### Advanced Methods
 
-#### mark_music_loading
-
-`mark_music_loading(filename: str) -> None`
-
-Mark a music file as currently being loaded in the background.
-
-**Parameters:**
-
-- `filename` - Name of the music file being loaded
-
-**Notes:**
-
-- Used for background preloading coordination
-- `play_music()` will wait briefly if a file is being preloaded
-
-#### unmark_music_loading
-
-`unmark_music_loading(filename: str) -> None`
-
-Unmark a music file as being loaded.
-
-**Parameters:**
-
-- `filename` - Name of the music file that finished loading
-
-**Notes:**
-
-- Should be called after `mark_music_loading()` once the file is loaded
-
 #### get_music_cache
 
 `get_music_cache() -> dict[str, arcade.Sound]`
