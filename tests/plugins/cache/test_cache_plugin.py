@@ -1,13 +1,9 @@
 """Unit tests for CachePlugin."""
 
 import unittest
-from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 from pedre.plugins.cache.plugin import CachePlugin
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 
 class TestCachePlugin(unittest.TestCase):
