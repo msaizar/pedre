@@ -59,7 +59,7 @@ import arcade
 
 from pedre.conf import settings
 from pedre.constants import asset_path
-from pedre.helpers import matches_key
+from pedre.helpers import compute_ui_scale, matches_key, scale_font
 from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
 from pedre.plugins.inventory.events import (
     InventoryClosedEvent,
@@ -230,6 +230,20 @@ class InventoryPlugin(InventoryBasePlugin):
 
         return False
 
+    @staticmethod
+    def _scaled(value: int | float, scale: float, floor: int = 1) -> int:
+        """Scale a design-unit value by ui_scale with a minimum floor.
+
+        Args:
+            value: Design-unit value (pixels at reference resolution).
+            scale: UI scale factor from compute_ui_scale().
+            floor: Minimum result value. Defaults to 1.
+
+        Returns:
+            Scaled integer value, at least floor.
+        """
+        return max(floor, int(value * scale))
+
     def _show_inventory(self) -> None:
         """Show the inventory overlay."""
         self.showing = True
@@ -356,29 +370,63 @@ class InventoryPlugin(InventoryBasePlugin):
 
     def _draw_inventory_grid(self, window: arcade.Window) -> None:
         """Draw the inventory grid overlay."""
-        # Draw semi-transparent overlay
-        arcade.draw_lrbt_rectangle_filled(0, window.width, 0, window.height / 2, (0, 0, 0, 200))
+        design = settings.INVENTORY_DESIGN
 
-        # Draw background image if loaded
+        # Compute scale factor
+        ui_scale = compute_ui_scale(
+            window.width,
+            window.height,
+            min_scale=settings.INVENTORY_UI_SCALE_MIN,
+            max_scale=settings.INVENTORY_UI_SCALE_MAX,
+        )
+
+        # Scale design values
+        box_size = self._scaled(design["box_size"], ui_scale)
+        box_spacing = self._scaled(design["box_spacing"], ui_scale)
+        box_border_width = self._scaled(design["box_border_width"], ui_scale)
+        icon_padding = self._scaled(design["icon_padding"], ui_scale)
+        grid_y_offset = self._scaled(design["grid_y_offset"], ui_scale)
+        item_name_y_offset = self._scaled(design["item_name_y_offset"], ui_scale)
+        hint_y_offset = self._scaled(design["hint_y_offset"], ui_scale)
+        capacity_x_offset = self._scaled(design["capacity_x_offset"], ui_scale)
+        capacity_y_offset = self._scaled(design["capacity_y_offset"], ui_scale)
+
+        # Scale fonts
+        item_name_font_size = scale_font(
+            settings.UI_FONT_NORMAL, ui_scale, settings.INVENTORY_UI_SCALE_MIN, settings.INVENTORY_UI_SCALE_MAX
+        )
+        hint_font_size = scale_font(
+            settings.UI_FONT_SMALL, ui_scale, settings.INVENTORY_UI_SCALE_MIN, settings.INVENTORY_UI_SCALE_MAX
+        )
+        capacity_font_size = scale_font(
+            settings.UI_FONT_SMALL, ui_scale, settings.INVENTORY_UI_SCALE_MIN, settings.INVENTORY_UI_SCALE_MAX
+        )
+
+        # Calculate overlay dimensions
+        overlay_height = int(window.height * design["overlay_height_fraction"])
+
+        # Draw solid background overlay
+        arcade.draw_lrbt_rectangle_filled(
+            0,
+            window.width,
+            0,
+            overlay_height,
+            (*settings.INVENTORY_COLOR_OVERLAY, settings.INVENTORY_OVERLAY_ALPHA),
+        )
+
+        # Draw background image if loaded (optional decorative background)
         if self.background_texture:
             arcade.draw_texture_rect(
                 self.background_texture,
                 arcade.LBWH(0, 0, window.width, window.height),
             )
 
-        # Calculate grid positioning (centered within the overlay area - bottom half of screen)
-        grid_width = (
-            settings.INVENTORY_GRID_COLS * settings.INVENTORY_BOX_SIZE
-            + (settings.INVENTORY_GRID_COLS - 1) * settings.INVENTORY_BOX_SPACING
-        )
-        grid_height = (
-            settings.INVENTORY_GRID_ROWS * settings.INVENTORY_BOX_SIZE
-            + (settings.INVENTORY_GRID_ROWS - 1) * settings.INVENTORY_BOX_SPACING
-        )
+        # Calculate grid positioning (centered within the overlay area)
+        grid_width = settings.INVENTORY_GRID_COLS * box_size + (settings.INVENTORY_GRID_COLS - 1) * box_spacing
+        grid_height = settings.INVENTORY_GRID_ROWS * box_size + (settings.INVENTORY_GRID_ROWS - 1) * box_spacing
 
-        overlay_height = window.height / 2  # Overlay covers bottom half of screen
         start_x = (window.width - grid_width) / 2
-        start_y = (overlay_height - grid_height) / 2 + 20  # Center within overlay, slight offset up
+        start_y = (overlay_height - grid_height) / 2 + grid_y_offset  # Center within overlay with offset
 
         # Draw grid boxes
         for row in range(settings.INVENTORY_GRID_ROWS):
@@ -386,10 +434,8 @@ class InventoryPlugin(InventoryBasePlugin):
                 item_index = row * settings.INVENTORY_GRID_COLS + col
 
                 # Calculate box position (top-left corner)
-                x = start_x + col * (settings.INVENTORY_BOX_SIZE + settings.INVENTORY_BOX_SPACING)
-                y = start_y + (settings.INVENTORY_GRID_ROWS - 1 - row) * (
-                    settings.INVENTORY_BOX_SIZE + settings.INVENTORY_BOX_SPACING
-                )
+                x = start_x + col * (box_size + box_spacing)
+                y = start_y + (settings.INVENTORY_GRID_ROWS - 1 - row) * (box_size + box_spacing)
 
                 # Determine if this slot has an item
                 has_item = item_index < len(self.all_items)
@@ -399,25 +445,23 @@ class InventoryPlugin(InventoryBasePlugin):
                 # Draw box background and border based on slot state
                 if item:
                     # FILLED SLOT: Draw solid background with item icon
-                    bg_color = arcade.color.DARK_SLATE_GRAY
-
                     arcade.draw_lrbt_rectangle_filled(
-                        x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, bg_color
+                        x, x + box_size, y, y + box_size, settings.INVENTORY_COLOR_BOX_FILLED
                     )
 
                     # Draw border (yellow if selected, white otherwise)
                     if is_selected:
-                        border_color = arcade.color.YELLOW
-                        border_width = settings.INVENTORY_BOX_BORDER_WIDTH + 1
+                        border_color = settings.INVENTORY_COLOR_BOX_BORDER_SELECTED
+                        border_width = box_border_width + 1
                     else:
-                        border_color = arcade.color.WHITE
-                        border_width = settings.INVENTORY_BOX_BORDER_WIDTH
+                        border_color = settings.INVENTORY_COLOR_BOX_BORDER
+                        border_width = box_border_width
 
                     arcade.draw_lrbt_rectangle_outline(
                         x,
-                        x + settings.INVENTORY_BOX_SIZE,
+                        x + box_size,
                         y,
-                        y + settings.INVENTORY_BOX_SIZE,
+                        y + box_size,
                         border_color,
                         border_width,
                     )
@@ -426,8 +470,7 @@ class InventoryPlugin(InventoryBasePlugin):
                     icon_texture = self.icon_textures.get(item.id)
                     if icon_texture:
                         # Scale icon to fit box with padding
-                        padding = 4
-                        max_icon_size = settings.INVENTORY_BOX_SIZE - (padding * 2)
+                        max_icon_size = box_size - (icon_padding * 2)
 
                         # Calculate scale to fit
                         scale_x = max_icon_size / icon_texture.width
@@ -437,8 +480,8 @@ class InventoryPlugin(InventoryBasePlugin):
                         # Draw centered icon
                         icon_width = icon_texture.width * scale
                         icon_height = icon_texture.height * scale
-                        icon_center_x = x + settings.INVENTORY_BOX_SIZE / 2
-                        icon_center_y = y + settings.INVENTORY_BOX_SIZE / 2
+                        icon_center_x = x + box_size / 2
+                        icon_center_y = y + box_size / 2
 
                         arcade.draw_texture_rect(
                             icon_texture,
@@ -451,24 +494,27 @@ class InventoryPlugin(InventoryBasePlugin):
                         )
                 else:
                     # EMPTY SLOT: Draw semi-transparent dark background
-                    empty_bg_color = (30, 30, 35, 180)
                     arcade.draw_lrbt_rectangle_filled(
-                        x, x + settings.INVENTORY_BOX_SIZE, y, y + settings.INVENTORY_BOX_SIZE, empty_bg_color
+                        x,
+                        x + box_size,
+                        y,
+                        y + box_size,
+                        (*settings.INVENTORY_COLOR_BOX_EMPTY, settings.INVENTORY_EMPTY_BOX_ALPHA),
                     )
 
                     # Draw subdued border (yellow if selected, dim gray otherwise)
                     if is_selected:
-                        border_color = arcade.color.YELLOW
-                        border_width = settings.INVENTORY_BOX_BORDER_WIDTH + 1
+                        border_color = settings.INVENTORY_COLOR_BOX_BORDER_SELECTED
+                        border_width = box_border_width + 1
                     else:
-                        border_color = arcade.color.DIM_GRAY
-                        border_width = 2
+                        border_color = settings.INVENTORY_COLOR_BOX_BORDER_EMPTY
+                        border_width = max(1, box_border_width - 1)
 
                     arcade.draw_lrbt_rectangle_outline(
                         x,
-                        x + settings.INVENTORY_BOX_SIZE,
+                        x + box_size,
                         y,
-                        y + settings.INVENTORY_BOX_SIZE,
+                        y + box_size,
                         border_color,
                         border_width,
                     )
@@ -483,9 +529,9 @@ class InventoryPlugin(InventoryBasePlugin):
                 self.selected_item_text = arcade.Text(
                     selected_item.name,
                     window.width / 2,
-                    30,
-                    arcade.color.WHITE,
-                    font_size=16,
+                    item_name_y_offset,
+                    settings.INVENTORY_COLOR_TEXT_ITEM_NAME,
+                    font_size=item_name_font_size,
                     anchor_x="center",
                     anchor_y="bottom",
                     bold=True,
@@ -493,6 +539,9 @@ class InventoryPlugin(InventoryBasePlugin):
             else:
                 self.selected_item_text.text = selected_item.name
                 self.selected_item_text.x = window.width / 2
+                self.selected_item_text.y = item_name_y_offset
+                self.selected_item_text.color = settings.INVENTORY_COLOR_TEXT_ITEM_NAME
+                self.selected_item_text.font_size = item_name_font_size
 
             self.selected_item_text.draw()
 
@@ -509,15 +558,18 @@ class InventoryPlugin(InventoryBasePlugin):
                     self.hint_text = arcade.Text(
                         hint_text_str,
                         window.width / 2,
-                        10,
-                        arcade.color.LIGHT_GRAY,
-                        font_size=settings.INVENTORY_HINT_FONT_SIZE,
+                        hint_y_offset,
+                        settings.INVENTORY_COLOR_TEXT_HINT,
+                        font_size=hint_font_size,
                         anchor_x="center",
                         anchor_y="bottom",
                     )
                 else:
                     self.hint_text.text = hint_text_str
                     self.hint_text.x = window.width / 2
+                    self.hint_text.y = hint_y_offset
+                    self.hint_text.color = settings.INVENTORY_COLOR_TEXT_HINT
+                    self.hint_text.font_size = hint_font_size
 
                 self.hint_text.draw()
 
@@ -529,16 +581,19 @@ class InventoryPlugin(InventoryBasePlugin):
         if self.capacity_text is None:
             self.capacity_text = arcade.Text(
                 capacity_label,
-                window.width - 10,
-                10,
-                arcade.color.WHITE,
-                font_size=settings.INVENTORY_CAPACITY_FONT_SIZE,
+                window.width - capacity_x_offset,
+                capacity_y_offset,
+                settings.INVENTORY_COLOR_TEXT_CAPACITY,
+                font_size=capacity_font_size,
                 anchor_x="right",
                 anchor_y="bottom",
             )
         else:
             self.capacity_text.text = capacity_label
-            self.capacity_text.x = window.width - 10
+            self.capacity_text.x = window.width - capacity_x_offset
+            self.capacity_text.y = capacity_y_offset
+            self.capacity_text.color = settings.INVENTORY_COLOR_TEXT_CAPACITY
+            self.capacity_text.font_size = capacity_font_size
 
         self.capacity_text.draw()
 
@@ -547,20 +602,40 @@ class InventoryPlugin(InventoryBasePlugin):
         if not self.current_photo_texture:
             return
 
-        # Draw black background
-        arcade.draw_lrbt_rectangle_filled(0, window.width, 0, window.height, arcade.color.BLACK)
+        design = settings.INVENTORY_DESIGN
+
+        # Compute scale factor
+        ui_scale = compute_ui_scale(
+            window.width,
+            window.height,
+            min_scale=settings.INVENTORY_UI_SCALE_MIN,
+            max_scale=settings.INVENTORY_UI_SCALE_MAX,
+        )
+
+        # Scale design values
+        text_area_height = self._scaled(design["photo_text_area_height"], ui_scale)
+        photo_title_y_offset = self._scaled(design["photo_title_y_offset"], ui_scale)
+        photo_description_y_offset = self._scaled(design["photo_description_y_offset"], ui_scale)
+
+        # Scale fonts
+        photo_title_font_size = scale_font(
+            settings.UI_FONT_LARGE, ui_scale, settings.INVENTORY_UI_SCALE_MIN, settings.INVENTORY_UI_SCALE_MAX
+        )
+        photo_description_font_size = scale_font(
+            settings.UI_FONT_SMALL, ui_scale, settings.INVENTORY_UI_SCALE_MIN, settings.INVENTORY_UI_SCALE_MAX
+        )
+
+        # Draw solid background
+        arcade.draw_lrbt_rectangle_filled(0, window.width, 0, window.height, settings.INVENTORY_COLOR_PHOTO_BACKGROUND)
 
         # Get selected item
         selected_index = self.selected_row * settings.INVENTORY_GRID_COLS + self.selected_col
         if 0 <= selected_index < len(self.all_items):
             item = self.all_items[selected_index]
 
-            # Reserve space for text at bottom
-            text_area_height = 120
-
             # Calculate photo display size
-            max_width = window.width * 0.7
-            max_height = (window.height - text_area_height) * 0.7
+            max_width = window.width * design["photo_max_width_fraction"]
+            max_height = (window.height - text_area_height) * design["photo_max_height_fraction"]
 
             # Calculate scale to fit
             width_scale = max_width / self.current_photo_texture.width
@@ -592,14 +667,17 @@ class InventoryPlugin(InventoryBasePlugin):
                 self.photo_title_text = arcade.Text(
                     item.name,
                     window.width / 2,
-                    90,
-                    arcade.color.WHITE,
-                    font_size=settings.INVENTORY_TITLE_FONT_SIZE,
+                    photo_title_y_offset,
+                    settings.INVENTORY_COLOR_TEXT_PHOTO_TITLE,
+                    font_size=photo_title_font_size,
                     anchor_x="center",
                 )
             else:
                 self.photo_title_text.text = item.name
                 self.photo_title_text.x = window.width / 2
+                self.photo_title_text.y = photo_title_y_offset
+                self.photo_title_text.color = settings.INVENTORY_COLOR_TEXT_PHOTO_TITLE
+                self.photo_title_text.font_size = photo_title_font_size
 
             self.photo_title_text.draw()
 
@@ -608,14 +686,17 @@ class InventoryPlugin(InventoryBasePlugin):
                 self.photo_description_text = arcade.Text(
                     item.description,
                     window.width / 2,
-                    60,
-                    arcade.color.LIGHT_GRAY,
-                    font_size=14,
+                    photo_description_y_offset,
+                    settings.INVENTORY_COLOR_TEXT_PHOTO_DESCRIPTION,
+                    font_size=photo_description_font_size,
                     anchor_x="center",
                 )
             else:
                 self.photo_description_text.text = item.description
                 self.photo_description_text.x = window.width / 2
+                self.photo_description_text.y = photo_description_y_offset
+                self.photo_description_text.color = settings.INVENTORY_COLOR_TEXT_PHOTO_DESCRIPTION
+                self.photo_description_text.font_size = photo_description_font_size
 
             self.photo_description_text.draw()
 
