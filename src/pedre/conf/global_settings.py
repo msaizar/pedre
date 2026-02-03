@@ -237,6 +237,19 @@ Higher values make the camera catch up faster to the target.
 - 1.0: Instant following (no smoothing)
 """
 
+# UI Font Scale (design units at reference resolution)
+# These are framework-wide font tiers that all UI plugins can reference.
+# Values are in pixels at the reference resolution (SCREEN_WIDTH x SCREEN_HEIGHT).
+# At runtime they are multiplied by a ui_scale factor derived from the actual window size.
+UI_FONT_SMALL = 12
+"""Small font size in design units. Used for slot text, fine print."""
+
+UI_FONT_NORMAL = 16
+"""Normal font size in design units. Used for menu options, body text."""
+
+UI_FONT_LARGE = 22
+"""Large font size in design units. Used for titles, headings."""
+
 # Particle settings
 PARTICLE_ENABLED = True
 """Whether particle effects are enabled by default."""
@@ -270,148 +283,49 @@ SAVE_SFX_FILE = "save.wav"
 PAUSE_MENU_OVERLAY_ALPHA = 180
 """Semi-transparent background overlay alpha value (0-255)."""
 
-PAUSE_MENU_BOX_WIDTH_PERCENT = 0.4
-"""Pause menu box width as fraction of window width (0.0-1.0). Default: 40% of window width."""
-
-PAUSE_MENU_BOX_MAX_WIDTH = 600
-"""Maximum pause menu box width in pixels."""
-
-PAUSE_MENU_BOX_MIN_WIDTH = 200
-"""Minimum pause menu box width in pixels."""
-
-PAUSE_MENU_BOX_HEIGHT_PERCENT = 0.55
-"""Pause menu box height as fraction of window height (0.0-1.0). Default: 55% of window height."""
-
-PAUSE_MENU_BOX_MIN_HEIGHT = 150
-"""Minimum pause menu box height in pixels."""
-
 PAUSE_MENU_TITLE = "Pedre Game"
 """Title text displayed at the top of the pause menu."""
 
-# Pause Menu Title Area (Responsive)
-PAUSE_MENU_TITLE_PADDING_PERCENT = 0.028
-"""Space from box top to title as fraction of window height (0.0-1.0). ~20px at 720px height."""
+# Pause Menu Design Units
+# All spatial values are in "design units" -- pixels at the reference resolution
+# (SCREEN_WIDTH x SCREEN_HEIGHT, default 1280x720). At runtime, they are multiplied
+# by a ui_scale factor derived from the actual window size.
+# Font sizes come from UI_FONT_SMALL/NORMAL/LARGE, not from this dictionary.
+#
+# To override in your project's settings.py:
+#   from pedre.conf import global_settings
+#   PAUSE_MENU_DESIGN = {**global_settings.PAUSE_MENU_DESIGN, "spacing": 32}
+PAUSE_MENU_DESIGN = {
+    # Box dimensions
+    "box_width": 512,
+    "box_height": 396,
+    # Title area
+    "title_padding": 20,
+    "title_area_height": 59,
+    # Content layout
+    "spacing": 28,
+    "horizontal_padding": 25,
+    "content_bottom_padding": 40,
+    # Feedback
+    "feedback_offset": 40,
+    # Confirmation
+    "confirmation_message_offset": 40,
+    "confirmation_options_offset": 20,
+    # Border
+    "border_width": 2,
+}
+"""Design-unit values for the pause menu UI layout.
 
-PAUSE_MENU_TITLE_PADDING_MIN = 10
-"""Minimum title padding in pixels."""
+All values are in pixels at the reference resolution (SCREEN_WIDTH x SCREEN_HEIGHT).
+They are scaled proportionally to the actual window size at runtime.
+Override individual values by merging with the default dictionary.
+"""
 
-PAUSE_MENU_TITLE_PADDING_MAX = 40
-"""Maximum title padding in pixels."""
+PAUSE_MENU_UI_SCALE_MIN = 0.5
+"""Minimum UI scale factor for the pause menu. Prevents the menu from shrinking too small."""
 
-PAUSE_MENU_TITLE_AREA_HEIGHT_PERCENT = 0.083
-"""Height of title area as fraction of window height (0.0-1.0). ~60px at 720px height."""
-
-PAUSE_MENU_TITLE_AREA_HEIGHT_MIN = 40
-"""Minimum title area height in pixels."""
-
-PAUSE_MENU_TITLE_AREA_HEIGHT_MAX = 120
-"""Maximum title area height in pixels."""
-
-PAUSE_MENU_TITLE_FONT_PERCENT = 0.022
-"""Title font size as fraction of window height (0.0-1.0). ~16px at 720px height."""
-
-PAUSE_MENU_TITLE_FONT_MIN = 12
-"""Minimum title font size in pixels."""
-
-PAUSE_MENU_TITLE_FONT_MAX = 32
-"""Maximum title font size in pixels."""
-
-# Pause Menu Content Padding (Responsive)
-PAUSE_MENU_CONTENT_BOTTOM_PADDING_PERCENT = 0.056
-"""Bottom padding for slot content as fraction of window height (0.0-1.0). ~40px at 720px height."""
-
-PAUSE_MENU_CONTENT_BOTTOM_PADDING_MIN = 20
-"""Minimum content bottom padding in pixels."""
-
-PAUSE_MENU_CONTENT_BOTTOM_PADDING_MAX = 80
-"""Maximum content bottom padding in pixels."""
-
-PAUSE_MENU_TEXT_HORIZONTAL_PADDING_PERCENT = 0.05
-"""Horizontal text padding as fraction of box width (0.0-1.0). 10% of box width on each side."""
-
-PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MIN = 10
-"""Minimum horizontal padding in pixels (each side)."""
-
-PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MAX = 100
-"""Maximum horizontal padding in pixels (each side)."""
-
-# Pause Menu Options (Responsive)
-PAUSE_MENU_OPTION_FONT_PERCENT = 0.014
-"""Option font size as fraction of window height (0.0-1.0). ~10px at 720px height."""
-
-PAUSE_MENU_OPTION_FONT_MIN = 8
-"""Minimum option font size in pixels."""
-
-PAUSE_MENU_OPTION_FONT_MAX = 20
-"""Maximum option font size in pixels."""
-
-PAUSE_MENU_SPACING_PERCENT = 0.028
-"""Vertical spacing between menu options as fraction of window height (0.0-1.0). ~20px at 720px height."""
-
-PAUSE_MENU_SPACING_MIN = 12
-"""Minimum spacing between menu options in pixels."""
-
-PAUSE_MENU_SPACING_MAX = 40
-"""Maximum spacing between menu options in pixels."""
-
-# Pause Menu Slots (Responsive)
-PAUSE_MENU_SLOT_FONT_PERCENT = 0.0125
-"""Slot text font size as fraction of window height (0.0-1.0). ~9px at 720px height."""
-
-PAUSE_MENU_SLOT_FONT_MIN = 7
-"""Minimum slot font size in pixels."""
-
-PAUSE_MENU_SLOT_FONT_MAX = 18
-"""Maximum slot font size in pixels."""
-
-# Pause Menu Feedback (Responsive)
-PAUSE_MENU_FEEDBACK_FONT_PERCENT = 0.019
-"""Feedback message font size as fraction of window height (0.0-1.0). ~14px at 720px height."""
-
-PAUSE_MENU_FEEDBACK_FONT_MIN = 10
-"""Minimum feedback font size in pixels."""
-
-PAUSE_MENU_FEEDBACK_FONT_MAX = 24
-"""Maximum feedback font size in pixels."""
-
-PAUSE_MENU_FEEDBACK_OFFSET_PERCENT = 0.056
-"""Vertical offset below box for feedback message as fraction of window height (0.0-1.0). ~40px at 720px height."""
-
-PAUSE_MENU_FEEDBACK_OFFSET_MIN = 20
-"""Minimum feedback message offset in pixels."""
-
-PAUSE_MENU_FEEDBACK_OFFSET_MAX = 80
-"""Maximum feedback message offset in pixels."""
-
-# Pause Menu Confirmation (Responsive)
-PAUSE_MENU_CONFIRMATION_MESSAGE_OFFSET_PERCENT = 0.056
-"""Vertical offset for confirmation message above center as fraction of window height (0.0-1.0).
-~40px at 720px height."""
-
-PAUSE_MENU_CONFIRMATION_MESSAGE_OFFSET_MIN = 20
-"""Minimum confirmation message offset in pixels."""
-
-PAUSE_MENU_CONFIRMATION_MESSAGE_OFFSET_MAX = 80
-"""Maximum confirmation message offset in pixels."""
-
-PAUSE_MENU_CONFIRMATION_OPTIONS_OFFSET_PERCENT = 0.028
-"""Vertical offset for Yes/No options below center as fraction of window height (0.0-1.0). ~20px at 720px height."""
-
-PAUSE_MENU_CONFIRMATION_OPTIONS_OFFSET_MIN = 10
-"""Minimum confirmation options offset in pixels."""
-
-PAUSE_MENU_CONFIRMATION_OPTIONS_OFFSET_MAX = 40
-"""Maximum confirmation options offset in pixels."""
-
-# Pause Menu Border (Responsive)
-PAUSE_MENU_BORDER_WIDTH_PERCENT = 0.003
-"""Menu box border thickness as fraction of window height (0.0-1.0). ~2px at 720px height."""
-
-PAUSE_MENU_BORDER_WIDTH_MIN = 1
-"""Minimum border width in pixels."""
-
-PAUSE_MENU_BORDER_WIDTH_MAX = 5
-"""Maximum border width in pixels."""
+PAUSE_MENU_UI_SCALE_MAX = 2.0
+"""Maximum UI scale factor for the pause menu. Prevents the menu from growing too large."""
 
 PAUSE_MENU_TEXT_RESUME = "Resume"
 """Text for the Resume menu option."""

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.helpers import calculate_responsive_value
+from pedre.helpers import compute_ui_scale
 from pedre.plugins.pause_menu.base import PauseMenuBasePlugin, PauseMenuOption, PauseMenuState
 from pedre.plugins.registry import PluginRegistry
 
@@ -275,9 +275,23 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         self.selected_option = 1  # Default to "No" for safety
         logger.debug("Showing new game confirmation overlay")
 
+    @staticmethod
+    def _scaled(value: int, scale: float, floor: int = 1) -> int:
+        """Scale a design-unit value by ui_scale with a minimum floor.
+
+        Args:
+            value: Design-unit value (pixels at reference resolution).
+            scale: UI scale factor from compute_ui_scale().
+            floor: Minimum result value. Defaults to 1.
+
+        Returns:
+            Scaled integer value, at least floor.
+        """
+        return max(floor, int(value * scale))
+
     def _prepare_text_objects(
         self,
-        window_height: int,
+        ui_scale: float,
         center_x: int,
         center_y: int,
         box_width: int,
@@ -288,7 +302,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         """Prepare Text objects for the current menu state.
 
         Args:
-            window_height: Height of the window for responsive calculations.
+            ui_scale: UI scale factor for converting design units to pixels.
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
             box_width: Width of the menu box.
@@ -296,6 +310,8 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
+        design = settings.PAUSE_MENU_DESIGN
+
         # Determine title based on menu state
         if self.menu_state == PauseMenuState.LOAD_SLOTS:
             title = settings.PAUSE_MENU_TEXT_LOAD_GAME
@@ -306,31 +322,11 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         else:
             title = settings.PAUSE_MENU_TITLE
 
-        # Calculate responsive values
-        title_padding = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_TITLE_PADDING_PERCENT,
-            settings.PAUSE_MENU_TITLE_PADDING_MIN,
-            settings.PAUSE_MENU_TITLE_PADDING_MAX,
-        )
-        title_font_size = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_TITLE_FONT_PERCENT,
-            settings.PAUSE_MENU_TITLE_FONT_MIN,
-            settings.PAUSE_MENU_TITLE_FONT_MAX,
-        )
-        feedback_offset = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_FEEDBACK_OFFSET_PERCENT,
-            settings.PAUSE_MENU_FEEDBACK_OFFSET_MIN,
-            settings.PAUSE_MENU_FEEDBACK_OFFSET_MAX,
-        )
-        feedback_font_size = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_FEEDBACK_FONT_PERCENT,
-            settings.PAUSE_MENU_FEEDBACK_FONT_MIN,
-            settings.PAUSE_MENU_FEEDBACK_FONT_MAX,
-        )
+        # Scale design values
+        title_padding = self._scaled(design["title_padding"], ui_scale)
+        title_font_size = self._scaled(settings.UI_FONT_LARGE, ui_scale, floor=6)
+        feedback_offset = self._scaled(design["feedback_offset"], ui_scale)
+        feedback_font_size = self._scaled(settings.UI_FONT_NORMAL, ui_scale, floor=6)
 
         # Create title text
         title_y = box_top - title_padding - title_font_size // 2
@@ -346,19 +342,13 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
         # Prepare state-specific text objects
         if self.menu_state == PauseMenuState.MAIN_MENU:
-            self._prepare_main_menu_texts(window_height, center_x, center_y, box_width, box_height, box_top, box_bottom)
+            self._prepare_main_menu_texts(ui_scale, center_x, center_y, box_width, box_height, box_top, box_bottom)
         elif self.menu_state == PauseMenuState.LOAD_SLOTS:
-            self._prepare_load_slots_texts(
-                window_height, center_x, center_y, box_width, box_height, box_top, box_bottom
-            )
+            self._prepare_load_slots_texts(ui_scale, center_x, center_y, box_width, box_height, box_top, box_bottom)
         elif self.menu_state == PauseMenuState.SAVE_SLOTS:
-            self._prepare_save_slots_texts(
-                window_height, center_x, center_y, box_width, box_height, box_top, box_bottom
-            )
+            self._prepare_save_slots_texts(ui_scale, center_x, center_y, box_width, box_height, box_top, box_bottom)
         elif self.menu_state == PauseMenuState.CONFIRMATION:
-            self._prepare_confirmation_texts(
-                window_height, center_x, center_y, box_width, box_height, box_top, box_bottom
-            )
+            self._prepare_confirmation_texts(ui_scale, center_x, center_y, box_width, box_height, box_top, box_bottom)
 
         # Create feedback text if needed
         if self.save_feedback_message:
@@ -374,7 +364,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
     def _prepare_main_menu_texts(
         self,
-        window_height: int,
+        ui_scale: float,
         center_x: int,
         center_y: int,
         box_width: int,
@@ -385,7 +375,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         """Prepare Text objects for main menu.
 
         Args:
-            window_height: Height of the window for responsive calculations.
+            ui_scale: UI scale factor for converting design units to pixels.
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
             box_width: Width of the menu box.
@@ -393,6 +383,8 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
+        design = settings.PAUSE_MENU_DESIGN
+
         menu_options = [
             settings.PAUSE_MENU_TEXT_RESUME,
             settings.PAUSE_MENU_TEXT_NEW_GAME,
@@ -401,31 +393,11 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             settings.PAUSE_MENU_TEXT_EXIT,
         ]
 
-        # Calculate responsive values
-        title_area_height = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_PERCENT,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_MIN,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_MAX,
-        )
-        horizontal_padding = calculate_responsive_value(
-            box_width,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_PERCENT,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MIN,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MAX,
-        )
-        option_font_size = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_OPTION_FONT_PERCENT,
-            settings.PAUSE_MENU_OPTION_FONT_MIN,
-            settings.PAUSE_MENU_OPTION_FONT_MAX,
-        )
-        spacing = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_SPACING_PERCENT,
-            settings.PAUSE_MENU_SPACING_MIN,
-            settings.PAUSE_MENU_SPACING_MAX,
-        )
+        # Scale design values
+        title_area_height = self._scaled(design["title_area_height"], ui_scale)
+        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        option_font_size = self._scaled(settings.UI_FONT_NORMAL, ui_scale, floor=6)
+        spacing = self._scaled(design["spacing"], ui_scale)
 
         # Calculate positions
         content_top = box_top - title_area_height
@@ -462,7 +434,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
     def _prepare_load_slots_texts(
         self,
-        window_height: int,
+        ui_scale: float,
         center_x: int,
         center_y: int,
         box_width: int,
@@ -473,7 +445,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         """Prepare Text objects for load slots menu.
 
         Args:
-            window_height: Height of the window for responsive calculations.
+            ui_scale: UI scale factor for converting design units to pixels.
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
             box_width: Width of the menu box.
@@ -481,37 +453,14 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Calculate responsive values
-        title_area_height = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_PERCENT,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_MIN,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_MAX,
-        )
-        content_bottom_padding = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_CONTENT_BOTTOM_PADDING_PERCENT,
-            settings.PAUSE_MENU_CONTENT_BOTTOM_PADDING_MIN,
-            settings.PAUSE_MENU_CONTENT_BOTTOM_PADDING_MAX,
-        )
-        horizontal_padding = calculate_responsive_value(
-            box_width,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_PERCENT,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MIN,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MAX,
-        )
-        slot_font_size = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_SLOT_FONT_PERCENT,
-            settings.PAUSE_MENU_SLOT_FONT_MIN,
-            settings.PAUSE_MENU_SLOT_FONT_MAX,
-        )
-        spacing = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_SPACING_PERCENT,
-            settings.PAUSE_MENU_SPACING_MIN,
-            settings.PAUSE_MENU_SPACING_MAX,
-        )
+        design = settings.PAUSE_MENU_DESIGN
+
+        # Scale design values
+        title_area_height = self._scaled(design["title_area_height"], ui_scale)
+        content_bottom_padding = self._scaled(design["content_bottom_padding"], ui_scale)
+        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        slot_font_size = self._scaled(settings.UI_FONT_SMALL, ui_scale, floor=6)
+        spacing = self._scaled(design["spacing"], ui_scale)
 
         # Calculate positions
         slots = [0, 1, 2, 3]
@@ -569,7 +518,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
     def _prepare_save_slots_texts(
         self,
-        window_height: int,
+        ui_scale: float,
         center_x: int,
         center_y: int,
         box_width: int,
@@ -580,7 +529,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         """Prepare Text objects for save slots menu.
 
         Args:
-            window_height: Height of the window for responsive calculations.
+            ui_scale: UI scale factor for converting design units to pixels.
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
             box_width: Width of the menu box.
@@ -588,37 +537,14 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Calculate responsive values
-        title_area_height = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_PERCENT,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_MIN,
-            settings.PAUSE_MENU_TITLE_AREA_HEIGHT_MAX,
-        )
-        content_bottom_padding = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_CONTENT_BOTTOM_PADDING_PERCENT,
-            settings.PAUSE_MENU_CONTENT_BOTTOM_PADDING_MIN,
-            settings.PAUSE_MENU_CONTENT_BOTTOM_PADDING_MAX,
-        )
-        horizontal_padding = calculate_responsive_value(
-            box_width,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_PERCENT,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MIN,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MAX,
-        )
-        slot_font_size = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_SLOT_FONT_PERCENT,
-            settings.PAUSE_MENU_SLOT_FONT_MIN,
-            settings.PAUSE_MENU_SLOT_FONT_MAX,
-        )
-        spacing = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_SPACING_PERCENT,
-            settings.PAUSE_MENU_SPACING_MIN,
-            settings.PAUSE_MENU_SPACING_MAX,
-        )
+        design = settings.PAUSE_MENU_DESIGN
+
+        # Scale design values
+        title_area_height = self._scaled(design["title_area_height"], ui_scale)
+        content_bottom_padding = self._scaled(design["content_bottom_padding"], ui_scale)
+        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        slot_font_size = self._scaled(settings.UI_FONT_SMALL, ui_scale, floor=6)
+        spacing = self._scaled(design["spacing"], ui_scale)
 
         # Calculate positions
         slots = [1, 2, 3]
@@ -671,7 +597,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
     def _prepare_confirmation_texts(
         self,
-        window_height: int,
+        ui_scale: float,
         center_x: int,
         center_y: int,
         box_width: int,
@@ -682,7 +608,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         """Prepare Text objects for confirmation overlay.
 
         Args:
-            window_height: Height of the window for responsive calculations.
+            ui_scale: UI scale factor for converting design units to pixels.
             center_x: Center X coordinate of the menu box.
             center_y: Center Y coordinate of the menu box.
             box_width: Width of the menu box.
@@ -690,37 +616,14 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Calculate responsive values
-        confirmation_message_offset = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_CONFIRMATION_MESSAGE_OFFSET_PERCENT,
-            settings.PAUSE_MENU_CONFIRMATION_MESSAGE_OFFSET_MIN,
-            settings.PAUSE_MENU_CONFIRMATION_MESSAGE_OFFSET_MAX,
-        )
-        confirmation_options_offset = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_CONFIRMATION_OPTIONS_OFFSET_PERCENT,
-            settings.PAUSE_MENU_CONFIRMATION_OPTIONS_OFFSET_MIN,
-            settings.PAUSE_MENU_CONFIRMATION_OPTIONS_OFFSET_MAX,
-        )
-        horizontal_padding = calculate_responsive_value(
-            box_width,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_PERCENT,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MIN,
-            settings.PAUSE_MENU_TEXT_HORIZONTAL_PADDING_MAX,
-        )
-        option_font_size = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_OPTION_FONT_PERCENT,
-            settings.PAUSE_MENU_OPTION_FONT_MIN,
-            settings.PAUSE_MENU_OPTION_FONT_MAX,
-        )
-        spacing = calculate_responsive_value(
-            window_height,
-            settings.PAUSE_MENU_SPACING_PERCENT,
-            settings.PAUSE_MENU_SPACING_MIN,
-            settings.PAUSE_MENU_SPACING_MAX,
-        )
+        design = settings.PAUSE_MENU_DESIGN
+
+        # Scale design values
+        confirmation_message_offset = self._scaled(design["confirmation_message_offset"], ui_scale)
+        confirmation_options_offset = self._scaled(design["confirmation_options_offset"], ui_scale)
+        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        option_font_size = self._scaled(settings.UI_FONT_NORMAL, ui_scale, floor=6)
+        spacing = self._scaled(design["spacing"], ui_scale)
 
         # Create confirmation message with wrapping
         message_y = center_y + confirmation_message_offset
@@ -781,6 +684,15 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             return
 
         window = self.context.window
+        design = settings.PAUSE_MENU_DESIGN
+
+        # Compute scale factor once per frame
+        ui_scale = compute_ui_scale(
+            window.width,
+            window.height,
+            min_scale=settings.PAUSE_MENU_UI_SCALE_MIN,
+            max_scale=settings.PAUSE_MENU_UI_SCALE_MAX,
+        )
 
         # Draw semi-transparent full-screen overlay
         arcade.draw_lrbt_rectangle_filled(
@@ -791,25 +703,13 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             (*arcade.color.BLACK[:3], settings.PAUSE_MENU_OVERLAY_ALPHA),
         )
 
-        # Calculate responsive menu box dimensions
-        box_width = min(
-            settings.PAUSE_MENU_BOX_MAX_WIDTH,
-            max(settings.PAUSE_MENU_BOX_MIN_WIDTH, int(window.width * settings.PAUSE_MENU_BOX_WIDTH_PERCENT)),
-        )
-        box_height = max(
-            settings.PAUSE_MENU_BOX_MIN_HEIGHT,
-            int(window.height * settings.PAUSE_MENU_BOX_HEIGHT_PERCENT),
-        )
+        # Scale box dimensions, clamp to window bounds
+        box_width = min(self._scaled(design["box_width"], ui_scale), int(window.width * 0.9))
+        box_height = min(self._scaled(design["box_height"], ui_scale), int(window.height * 0.9))
         center_x = window.width // 2
         center_y = window.height // 2
 
-        # Calculate responsive border width
-        border_width = calculate_responsive_value(
-            window.height,
-            settings.PAUSE_MENU_BORDER_WIDTH_PERCENT,
-            settings.PAUSE_MENU_BORDER_WIDTH_MIN,
-            settings.PAUSE_MENU_BORDER_WIDTH_MAX,
-        )
+        border_width = self._scaled(design["border_width"], ui_scale)
 
         # Menu box background
         arcade.draw_lrbt_rectangle_filled(
@@ -835,7 +735,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         box_bottom = center_y - box_height // 2
 
         # Prepare all text objects for current state
-        self._prepare_text_objects(window.height, center_x, center_y, box_width, box_height, box_top, box_bottom)
+        self._prepare_text_objects(ui_scale, center_x, center_y, box_width, box_height, box_top, box_bottom)
 
         # Draw title
         if self.title_text:
@@ -843,81 +743,35 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
         # Render appropriate menu based on state
         if self.menu_state == PauseMenuState.MAIN_MENU:
-            self._draw_main_menu(center_x, center_y, box_width, box_height, box_top, box_bottom)
+            self._draw_main_menu()
         elif self.menu_state == PauseMenuState.LOAD_SLOTS:
-            self._draw_load_slots(center_x, center_y, box_width, box_height, box_top, box_bottom)
+            self._draw_load_slots()
         elif self.menu_state == PauseMenuState.SAVE_SLOTS:
-            self._draw_save_slots(center_x, center_y, box_width, box_height, box_top, box_bottom)
+            self._draw_save_slots()
         elif self.menu_state == PauseMenuState.CONFIRMATION:
-            self._draw_confirmation(center_x, center_y, box_width, box_height, box_top, box_bottom)
+            self._draw_confirmation()
 
         # Draw save feedback message if present
         if self.feedback_text:
             self.feedback_text.draw()
 
-    def _draw_main_menu(
-        self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
-    ) -> None:
-        """Draw the main menu options using Text objects.
-
-        Args:
-            center_x: Center X coordinate of the menu box.
-            center_y: Center Y coordinate of the menu box.
-            box_width: Width of the menu box.
-            box_height: Height of the menu box.
-            box_top: Top Y coordinate of the menu box.
-            box_bottom: Bottom Y coordinate of the menu box.
-        """
+    def _draw_main_menu(self) -> None:
+        """Draw the main menu options using Text objects."""
         for text_obj in self.main_menu_texts:
             text_obj.draw()
 
-    def _draw_load_slots(
-        self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
-    ) -> None:
-        """Draw the load game slot selection menu using Text objects.
-
-        Args:
-            center_x: Center X coordinate of the menu box.
-            center_y: Center Y coordinate of the menu box.
-            box_width: Width of the menu box.
-            box_height: Height of the menu box.
-            box_top: Top Y coordinate of the menu box.
-            box_bottom: Bottom Y coordinate of the menu box.
-        """
-        # Draw slot texts
+    def _draw_load_slots(self) -> None:
+        """Draw the load game slot selection menu using Text objects."""
         for text_obj in self.slot_texts:
             text_obj.draw()
 
-    def _draw_save_slots(
-        self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
-    ) -> None:
-        """Draw the save game slot selection menu using Text objects.
-
-        Args:
-            center_x: Center X coordinate of the menu box.
-            center_y: Center Y coordinate of the menu box.
-            box_width: Width of the menu box.
-            box_height: Height of the menu box.
-            box_top: Top Y coordinate of the menu box.
-            box_bottom: Bottom Y coordinate of the menu box.
-        """
-        # Draw slot texts
+    def _draw_save_slots(self) -> None:
+        """Draw the save game slot selection menu using Text objects."""
         for text_obj in self.slot_texts:
             text_obj.draw()
 
-    def _draw_confirmation(
-        self, center_x: int, center_y: int, box_width: int, box_height: int, box_top: int, box_bottom: int
-    ) -> None:
-        """Draw the confirmation overlay with Yes/No options using Text objects.
-
-        Args:
-            center_x: Center X coordinate of the menu box.
-            center_y: Center Y coordinate of the menu box.
-            box_width: Width of the menu box.
-            box_height: Height of the menu box.
-            box_top: Top Y coordinate of the menu box.
-            box_bottom: Bottom Y coordinate of the menu box.
-        """
+    def _draw_confirmation(self) -> None:
+        """Draw the confirmation overlay with Yes/No options using Text objects."""
         # Draw confirmation message
         if self.confirmation_message_text:
             self.confirmation_message_text.draw()

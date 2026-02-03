@@ -156,6 +156,47 @@ def calculate_responsive_value(
     return min(max_val, max(min_val, int(dimension * percent)))
 
 
+def compute_ui_scale(
+    window_width: int,
+    window_height: int,
+    ref_width: int | None = None,
+    ref_height: int | None = None,
+    min_scale: float = 0.5,
+    max_scale: float = 2.0,
+) -> float:
+    """Compute a uniform UI scale factor relative to a reference resolution.
+
+    Uses the smaller of the width and height ratios to ensure the UI always
+    fits on screen. All UI elements can multiply their design-unit values
+    (pixel dimensions at reference resolution) by this factor.
+
+    Args:
+        window_width: Current window width in pixels.
+        window_height: Current window height in pixels.
+        ref_width: Reference design width. Defaults to settings.SCREEN_WIDTH.
+        ref_height: Reference design height. Defaults to settings.SCREEN_HEIGHT.
+        min_scale: Minimum scale factor (prevents UI from becoming too small).
+        max_scale: Maximum scale factor (prevents UI from becoming too large).
+
+    Returns:
+        Scale factor clamped to [min_scale, max_scale].
+
+    Example:
+        >>> compute_ui_scale(1920, 1080, 1280, 720)
+        1.5
+        >>> compute_ui_scale(640, 360, 1280, 720)
+        0.5
+        >>> compute_ui_scale(1280, 720, 1280, 720)
+        1.0
+    """
+    if ref_width is None:
+        ref_width = settings.SCREEN_WIDTH
+    if ref_height is None:
+        ref_height = settings.SCREEN_HEIGHT
+    raw_scale = min(window_width / ref_width, window_height / ref_height)
+    return max(min_scale, min(max_scale, raw_scale))
+
+
 def run_game() -> None:
     """Create and run a Pedre game.
 
