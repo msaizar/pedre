@@ -62,7 +62,7 @@ from typing import TYPE_CHECKING, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.helpers import matches_key
+from pedre.helpers import compute_ui_scale, matches_key, scale_font
 from pedre.plugins.dialog.base import DialogBasePlugin, DialogPage
 from pedre.plugins.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.plugins.registry import PluginRegistry
@@ -394,6 +394,20 @@ class DialogPlugin(DialogBasePlugin):
         total_pages = len(text)
         return [DialogPage(npc_name, page_text, i, total_pages) for i, page_text in enumerate(text)]
 
+    @staticmethod
+    def _scaled(value: int, scale: float, floor: int = 1) -> int:
+        """Scale a design-unit value by ui_scale with a minimum floor.
+
+        Args:
+            value: Design-unit value (pixels at reference resolution).
+            scale: UI scale factor from compute_ui_scale().
+            floor: Minimum result value. Defaults to 1.
+
+        Returns:
+            Scaled integer value, at least floor.
+        """
+        return max(floor, int(value * scale))
+
     def _reset_text_reveal(self) -> None:
         """Reset text reveal animation state for the current page."""
         self.revealed_chars = 0
@@ -469,8 +483,7 @@ class DialogPlugin(DialogBasePlugin):
 
         This method is called automatically by the plugin loader during the UI
         draw phase. It renders the complete dialog UI on top of the game world.
-
-
+        Uses responsive scaling to adapt to different window sizes.
         """
         if not self.showing:
             return
@@ -482,6 +495,16 @@ class DialogPlugin(DialogBasePlugin):
         if not current_page:
             return
 
+        design = settings.DIALOG_DESIGN
+
+        # Compute scale factor once per frame
+        ui_scale = compute_ui_scale(
+            window.width,
+            window.height,
+            min_scale=settings.DIALOG_UI_SCALE_MIN,
+            max_scale=settings.DIALOG_UI_SCALE_MAX,
+        )
+
         # Draw semi-transparent overlay
         arcade.draw_lrbt_rectangle_filled(
             0,
@@ -491,47 +514,63 @@ class DialogPlugin(DialogBasePlugin):
             (0, 0, 0, settings.DIALOG_OVERLAY_ALPHA),
         )
 
-        # Dialog box dimensions (responsive to window size)
-        box_width = min(
-            settings.DIALOG_BOX_MAX_WIDTH,
-            max(settings.DIALOG_BOX_MIN_WIDTH, int(window.width * settings.DIALOG_BOX_WIDTH_PERCENT)),
+        # Scale box dimensions, clamp to window bounds
+        box_width = min(self._scaled(design["box_width"], ui_scale), int(window.width * 0.9))
+        box_height = min(self._scaled(design["box_height"], ui_scale), int(window.height * 0.9))
+        center_x = window.width // 2
+        center_y = int(window.height * design["vertical_position"])
+
+        # Scale other design values
+        border_width = self._scaled(design["border_width"], ui_scale)
+        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        npc_name_offset = self._scaled(design["npc_name_offset"], ui_scale)
+        footer_offset = self._scaled(design["footer_offset"], ui_scale)
+
+        # Scale font sizes
+        npc_name_font_size = scale_font(
+            settings.UI_FONT_LARGE, ui_scale, settings.DIALOG_UI_SCALE_MIN, settings.DIALOG_UI_SCALE_MAX
         )
-        box_height = max(
-            settings.DIALOG_BOX_MIN_HEIGHT,
-            int(window.height * settings.DIALOG_BOX_HEIGHT_PERCENT),
+        dialog_font_size = scale_font(
+            settings.UI_FONT_NORMAL, ui_scale, settings.DIALOG_UI_SCALE_MIN, settings.DIALOG_UI_SCALE_MAX
         )
-        box_x = window.width // 2
-        box_y = int(window.height * settings.DIALOG_VERTICAL_POSITION)
+        instruction_font_size = scale_font(
+            settings.UI_FONT_SMALL, ui_scale, settings.DIALOG_UI_SCALE_MIN, settings.DIALOG_UI_SCALE_MAX
+        )
+        page_indicator_font_size = scale_font(
+            settings.UI_FONT_SMALL, ui_scale, settings.DIALOG_UI_SCALE_MIN, settings.DIALOG_UI_SCALE_MAX
+        )
 
         # Calculate box corners
-        left = box_x - box_width // 2
-        right = box_x + box_width // 2
-        bottom = box_y - box_height // 2
-        top = box_y + box_height // 2
+        left = center_x - box_width // 2
+        right = center_x + box_width // 2
+        bottom = center_y - box_height // 2
+        top = center_y + box_height // 2
 
         # Draw dialog box background
-        arcade.draw_lrbt_rectangle_filled(left, right, bottom, top, arcade.color.DARK_BLUE_GRAY)
+        arcade.draw_lrbt_rectangle_filled(left, right, bottom, top, settings.DIALOG_COLOR_BOX_BACKGROUND)
 
         # Draw dialog box border
         arcade.draw_lrbt_rectangle_outline(
-            left, right, bottom, top, arcade.color.WHITE, border_width=settings.DIALOG_BORDER_WIDTH
+            left, right, bottom, top, settings.DIALOG_COLOR_BOX_BORDER, border_width=border_width
         )
 
         # Create or update NPC name text
         if self.npc_name_text is None:
             self.npc_name_text = arcade.Text(
                 current_page.npc_name,
-                box_x,
-                top - settings.DIALOG_NPC_NAME_OFFSET,
-                arcade.color.YELLOW,
-                font_size=settings.DIALOG_NPC_NAME_FONT_SIZE,
+                center_x,
+                top - npc_name_offset,
+                settings.DIALOG_COLOR_NPC_NAME,
+                font_size=npc_name_font_size,
                 anchor_x="center",
                 bold=True,
             )
         else:
             self.npc_name_text.text = current_page.npc_name
-            self.npc_name_text.x = box_x
-            self.npc_name_text.y = top - settings.DIALOG_NPC_NAME_OFFSET
+            self.npc_name_text.x = center_x
+            self.npc_name_text.y = top - npc_name_offset
+            self.npc_name_text.font_size = npc_name_font_size
+            self.npc_name_text.color = settings.DIALOG_COLOR_NPC_NAME
 
         # Draw NPC name
         self.npc_name_text.draw()
@@ -543,18 +582,20 @@ class DialogPlugin(DialogBasePlugin):
         if self.dialog_text is None:
             self.dialog_text = arcade.Text(
                 text_to_show,
-                left + settings.DIALOG_PADDING_HORIZONTAL,
-                box_y,
-                arcade.color.WHITE,
-                font_size=settings.DIALOG_TEXT_FONT_SIZE,
-                width=box_width - (settings.DIALOG_PADDING_HORIZONTAL * 2),
+                left + horizontal_padding,
+                center_y,
+                settings.DIALOG_COLOR_TEXT,
+                font_size=dialog_font_size,
+                width=box_width - (horizontal_padding * 2),
                 multiline=True,
             )
         else:
             self.dialog_text.text = text_to_show
-            self.dialog_text.x = left + settings.DIALOG_PADDING_HORIZONTAL
-            self.dialog_text.y = box_y
-            self.dialog_text.width = box_width - (settings.DIALOG_PADDING_HORIZONTAL * 2)
+            self.dialog_text.x = left + horizontal_padding
+            self.dialog_text.y = center_y
+            self.dialog_text.width = box_width - (horizontal_padding * 2)
+            self.dialog_text.font_size = dialog_font_size
+            self.dialog_text.color = settings.DIALOG_COLOR_TEXT
 
         # Draw dialog text
         self.dialog_text.draw()
@@ -568,15 +609,17 @@ class DialogPlugin(DialogBasePlugin):
                 self.page_indicator_text = arcade.Text(
                     page_indicator,
                     right - 10,
-                    bottom + settings.DIALOG_FOOTER_OFFSET,
-                    arcade.color.LIGHT_GRAY,
-                    font_size=settings.DIALOG_PAGE_INDICATOR_FONT_SIZE,
+                    bottom + footer_offset,
+                    settings.DIALOG_COLOR_PAGE_INDICATOR,
+                    font_size=page_indicator_font_size,
                     anchor_x="right",
                 )
             else:
                 self.page_indicator_text.text = page_indicator
                 self.page_indicator_text.x = right - 10
-                self.page_indicator_text.y = bottom + settings.DIALOG_FOOTER_OFFSET
+                self.page_indicator_text.y = bottom + footer_offset
+                self.page_indicator_text.font_size = page_indicator_font_size
+                self.page_indicator_text.color = settings.DIALOG_COLOR_PAGE_INDICATOR
 
             # Draw page indicator
             self.page_indicator_text.draw()
@@ -592,16 +635,18 @@ class DialogPlugin(DialogBasePlugin):
             if self.instruction_text is None:
                 self.instruction_text = arcade.Text(
                     instruction,
-                    box_x,
-                    bottom + settings.DIALOG_FOOTER_OFFSET,
-                    arcade.color.LIGHT_GRAY,
-                    font_size=settings.DIALOG_INSTRUCTION_FONT_SIZE,
+                    center_x,
+                    bottom + footer_offset,
+                    settings.DIALOG_COLOR_INSTRUCTION,
+                    font_size=instruction_font_size,
                     anchor_x="center",
                 )
             else:
                 self.instruction_text.text = instruction
-                self.instruction_text.x = box_x
-                self.instruction_text.y = bottom + settings.DIALOG_FOOTER_OFFSET
+                self.instruction_text.x = center_x
+                self.instruction_text.y = bottom + footer_offset
+                self.instruction_text.font_size = instruction_font_size
+                self.instruction_text.color = settings.DIALOG_COLOR_INSTRUCTION
 
             # Draw instruction
             self.instruction_text.draw()

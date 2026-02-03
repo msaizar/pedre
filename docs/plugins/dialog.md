@@ -28,25 +28,31 @@ The DialogPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Layout Settings
 
-- `DIALOG_BOX_WIDTH_PERCENT` - Dialog box width as fraction of window width (default: `0.75`)
-- `DIALOG_BOX_MAX_WIDTH` - Maximum dialog box width in pixels (default: `800`)
-- `DIALOG_BOX_MIN_WIDTH` - Minimum dialog box width in pixels (default: `400`)
-- `DIALOG_BOX_HEIGHT_PERCENT` - Dialog box height as fraction of window height (default: `0.25`)
-- `DIALOG_BOX_MIN_HEIGHT` - Minimum dialog box height in pixels (default: `150`)
-- `DIALOG_VERTICAL_POSITION` - Vertical position from bottom as fraction of window height (default: `0.25`)
+- `DIALOG_DESIGN` - Dictionary containing design specifications:
+  - `box_width` - Width of the dialog box in design units (default: `800`)
+  - `box_height` - Height of the dialog box in design units (default: `200`)
+  - `border_width` - Width of the dialog box border in design units (default: `3`)
+  - `horizontal_padding` - Left/right padding inside the box (default: `20`)
+  - `vertical_padding` - Top/bottom padding inside the box (default: `20`)
+  - `npc_name_offset` - Vertical offset of NPC name from top of dialog box (default: `30`)
+  - `footer_offset` - Vertical offset of footer elements from bottom (default: `20`)
+  - `vertical_position` - Dialog box vertical position from bottom as fraction of window height (default: `0.25`)
+
 - `DIALOG_OVERLAY_ALPHA` - Transparency of background overlay (0-255, default: `128`)
-- `DIALOG_BORDER_WIDTH` - Width of dialog box border in pixels (default: `3`)
-- `DIALOG_PADDING_HORIZONTAL` - Horizontal padding inside dialog box in pixels (default: `20`)
-- `DIALOG_PADDING_VERTICAL` - Vertical padding inside dialog box in pixels (default: `20`)
-- `DIALOG_NPC_NAME_OFFSET` - Vertical offset of NPC name from top of dialog box (default: `30`)
-- `DIALOG_FOOTER_OFFSET` - Vertical offset of footer elements from bottom of dialog box (default: `20`)
 
-### Font Settings
+### Scaling Settings
 
-- `DIALOG_NPC_NAME_FONT_SIZE` - Font size for NPC name text (default: `20`)
-- `DIALOG_TEXT_FONT_SIZE` - Font size for dialog message text (default: `16`)
-- `DIALOG_INSTRUCTION_FONT_SIZE` - Font size for instruction text (default: `12`)
-- `DIALOG_PAGE_INDICATOR_FONT_SIZE` - Font size for page indicator text (default: `10`)
+- `DIALOG_UI_SCALE_MIN` - Minimum UI scale factor (default: `0.5`)
+- `DIALOG_UI_SCALE_MAX` - Maximum UI scale factor (default: `2.0`)
+
+### Visual Settings
+
+- `DIALOG_COLOR_BOX_BACKGROUND` - RGB color of the dialog box background (default: `(45, 52, 54)`)
+- `DIALOG_COLOR_BOX_BORDER` - RGB color of the dialog box border (default: `(255, 255, 255)`)
+- `DIALOG_COLOR_NPC_NAME` - RGB color of the NPC name text (default: `(255, 255, 0)`)
+- `DIALOG_COLOR_TEXT` - RGB color of the dialog text (default: `(255, 255, 255)`)
+- `DIALOG_COLOR_INSTRUCTION` - RGB color of instruction text (default: `(211, 211, 211)`)
+- `DIALOG_COLOR_PAGE_INDICATOR` - RGB color of page indicator text (default: `(211, 211, 211)`)
 
 ### Text Labels
 
@@ -62,8 +68,19 @@ DIALOG_AUTO_CLOSE_DEFAULT = True
 DIALOG_AUTO_CLOSE_DURATION = 1.0
 DIALOG_CHAR_REVEAL_SPEED = 30
 DIALOG_KEY_ADVANCE = "RETURN"
-DIALOG_BOX_WIDTH_PERCENT = 0.8
-DIALOG_TEXT_FONT_SIZE = 18
+
+# Custom colors
+DIALOG_COLOR_BOX_BACKGROUND = (30, 30, 50)
+DIALOG_COLOR_NPC_NAME = (255, 200, 0)
+
+# Custom layout
+DIALOG_DESIGN = {
+    "box_width": 900,
+    "box_height": 250,
+    "border_width": 4,
+    "horizontal_padding": 30,
+    "npc_name_offset": 40,
+}
 ```
 
 ## Public API
@@ -343,7 +360,48 @@ Draw the dialog overlay in screen coordinates.
 
 - Called automatically by the PluginLoader during UI draw phase
 - Renders the complete dialog UI on top of the game world
+- Uses responsive scaling to adapt to different window sizes
 - Uses lazy initialization for text objects
+
+## UI Scaling
+
+The dialog plugin uses responsive UI scaling to adapt to different window sizes:
+
+- Design units are scaled based on window dimensions
+- Scale factor is computed using `compute_ui_scale()`
+- Clamped between `DIALOG_UI_SCALE_MIN` and `DIALOG_UI_SCALE_MAX`
+- Font sizes are scaled using `scale_font()` with `UI_FONT_*` tiers
+- All layout dimensions are scaled proportionally
+
+**Example:**
+
+```python
+# UI scale is computed automatically
+ui_scale = compute_ui_scale(
+    window.width,
+    window.height,
+    min_scale=settings.DIALOG_UI_SCALE_MIN,
+    max_scale=settings.DIALOG_UI_SCALE_MAX,
+)
+
+# Design units are converted to screen pixels
+screen_pixels = design_units * ui_scale
+```
+
+**Font Tiers:**
+
+The dialog uses the following font tiers from `settings`:
+
+- `UI_FONT_LARGE` - NPC name (default: `(16, 22, 30)`)
+- `UI_FONT_NORMAL` - Dialog text (default: `(12, 16, 22)`)
+- `UI_FONT_SMALL` - Instructions and page indicator (default: `(8, 12, 16)`)
+
+Each tier is a tuple `(small_screen, reference, large_screen)` that interpolates based on UI scale:
+
+- At `ui_scale <= 0.5`: uses small_screen value
+- At `ui_scale == 1.0`: uses reference value
+- At `ui_scale >= 2.0`: uses large_screen value
+- In between: linear interpolation
 
 ## Dialog Configuration Files
 

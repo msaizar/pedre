@@ -163,56 +163,56 @@ DIALOG_KEY_ADVANCE = "SPACE"
 """Key for advancing dialog pages and closing dialogs."""
 
 # Dialog UI Layout Settings
-DIALOG_BOX_WIDTH_PERCENT = 0.75
-"""Dialog box width as fraction of window width (0.0-1.0). Default: 75% of window width."""
+DIALOG_DESIGN = {
+    # Box dimensions (design units at reference resolution)
+    "box_width": 800,
+    "box_height": 200,
+    # Border
+    "border_width": 3,
+    # Padding
+    "horizontal_padding": 20,
+    "vertical_padding": 20,
+    # NPC name positioning
+    "npc_name_offset": 30,
+    # Footer positioning (page indicator and instructions)
+    "footer_offset": 20,
+    # Vertical position of dialog box from bottom (as fraction of window height)
+    "vertical_position": 0.25,
+}
+"""Design-unit values for the dialog UI layout.
 
-DIALOG_BOX_MAX_WIDTH = 800
-"""Maximum dialog box width in pixels."""
-
-DIALOG_BOX_MIN_WIDTH = 400
-"""Minimum dialog box width in pixels."""
-
-DIALOG_BOX_HEIGHT_PERCENT = 0.25
-"""Dialog box height as fraction of window height (0.0-1.0). Default: 25% of window height."""
-
-DIALOG_BOX_MIN_HEIGHT = 150
-"""Minimum dialog box height in pixels."""
-
-DIALOG_VERTICAL_POSITION = 0.25
-"""Dialog box vertical position from bottom as fraction of window height (0.0-1.0).
-Maintains current behavior at 25% from bottom.
+All values except 'vertical_position' are in pixels at the reference resolution (SCREEN_WIDTH x SCREEN_HEIGHT).
+They are scaled proportionally to the actual window size at runtime.
+The 'vertical_position' value is a fraction (0.0-1.0) and is not scaled.
+Override individual values by merging with the default dictionary.
 """
+
+DIALOG_UI_SCALE_MIN = 0.5
+"""Minimum UI scale factor for the dialog. Prevents the dialog from shrinking too small."""
+
+DIALOG_UI_SCALE_MAX = 2.0
+"""Maximum UI scale factor for the dialog. Prevents the dialog from growing too large."""
 
 DIALOG_OVERLAY_ALPHA = 128
 """Transparency of the dialog overlay background (0-255)."""
 
-DIALOG_BORDER_WIDTH = 3
-"""Width of dialog box border in pixels."""
+DIALOG_COLOR_BOX_BACKGROUND = (45, 52, 54)
+"""RGB color for the dialog box background (dark blue-gray)."""
 
-DIALOG_PADDING_HORIZONTAL = 20
-"""Horizontal padding inside dialog box in pixels."""
+DIALOG_COLOR_BOX_BORDER = (255, 255, 255)
+"""RGB color for the dialog box border."""
 
-DIALOG_PADDING_VERTICAL = 20
-"""Vertical padding inside dialog box in pixels."""
+DIALOG_COLOR_NPC_NAME = (255, 255, 0)
+"""RGB color for the NPC name text (yellow)."""
 
-DIALOG_NPC_NAME_OFFSET = 30
-"""Vertical offset of NPC name from top of dialog box in pixels."""
+DIALOG_COLOR_TEXT = (255, 255, 255)
+"""RGB color for the dialog text (white)."""
 
-DIALOG_FOOTER_OFFSET = 20
-"""Vertical offset of footer elements from bottom of dialog box in pixels."""
+DIALOG_COLOR_INSTRUCTION = (211, 211, 211)
+"""RGB color for instruction text (light gray)."""
 
-# Dialog Font Sizes
-DIALOG_NPC_NAME_FONT_SIZE = 20
-"""Font size for NPC name text."""
-
-DIALOG_TEXT_FONT_SIZE = 16
-"""Font size for dialog message text."""
-
-DIALOG_INSTRUCTION_FONT_SIZE = 12
-"""Font size for instruction text."""
-
-DIALOG_PAGE_INDICATOR_FONT_SIZE = 10
-"""Font size for page indicator text."""
+DIALOG_COLOR_PAGE_INDICATOR = (211, 211, 211)
+"""RGB color for page indicator text (light gray)."""
 
 # Audio settings
 AUDIO_MUSIC_VOLUME = 0.5

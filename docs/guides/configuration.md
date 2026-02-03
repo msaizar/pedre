@@ -32,8 +32,6 @@ INVENTORY_BOX_BORDER_WIDTH=1
 INVENTORY_BACKGROUND_IMAGE=""
 DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
-DIALOG_BOX_WIDTH_PERCENT=0.75
-DIALOG_BOX_HEIGHT_PERCENT=0.25
 AUDIO_MUSIC_VOLUME=0.5
 AUDIO_MUSIC_ENABLED=True
 AUDIO_SFX_VOLUME=0.7
@@ -286,29 +284,43 @@ Dialog plugin behavior, timing, and appearance.
 
 #### Layout Settings
 
-| Setting                     | Type  | Default | Description                                                                          |
-| --------------------------- | ----- | ------- | ------------------------------------------------------------------------------------ |
-| `DIALOG_BOX_WIDTH_PERCENT`  | float | 0.75    | Dialog box width as fraction of window width (0.0-1.0)                               |
-| `DIALOG_BOX_MAX_WIDTH`      | int   | 800     | Maximum dialog box width in pixels                                                   |
-| `DIALOG_BOX_MIN_WIDTH`      | int   | 400     | Minimum dialog box width in pixels                                                   |
-| `DIALOG_BOX_HEIGHT_PERCENT` | float | 0.25    | Dialog box height as fraction of window height (0.0-1.0)                             |
-| `DIALOG_BOX_MIN_HEIGHT`     | int   | 150     | Minimum dialog box height in pixels                                                  |
-| `DIALOG_VERTICAL_POSITION`  | float | 0.25    | Vertical position from bottom as fraction of window height (0.0-1.0)                 |
-| `DIALOG_OVERLAY_ALPHA`      | int   | 128     | Transparency of background overlay (0-255, where 0 is transparent and 255 is opaque) |
-| `DIALOG_BORDER_WIDTH`       | int   | 3       | Width of dialog box border in pixels                                                 |
-| `DIALOG_PADDING_HORIZONTAL` | int   | 20      | Horizontal padding inside dialog box in pixels                                       |
-| `DIALOG_PADDING_VERTICAL`   | int   | 20      | Vertical padding inside dialog box in pixels                                         |
-| `DIALOG_NPC_NAME_OFFSET`    | int   | 30      | Vertical offset of NPC name from top of dialog box in pixels                         |
-| `DIALOG_FOOTER_OFFSET`      | int   | 20      | Vertical offset of footer elements from bottom of dialog box in pixels               |
+| Setting                | Type | Default     | Description                                                                          |
+| ---------------------- | ---- | ----------- | ------------------------------------------------------------------------------------ |
+| `DIALOG_DESIGN`        | dict | (see below) | Dictionary containing all design specifications (see below)                          |
+| `DIALOG_OVERLAY_ALPHA` | int  | 128         | Transparency of background overlay (0-255, where 0 is transparent and 255 is opaque) |
 
-#### Font Settings
+**DIALOG_DESIGN dictionary:**
 
-| Setting                           | Type | Default | Description                                          |
-| --------------------------------- | ---- | ------- | ---------------------------------------------------- |
-| `DIALOG_NPC_NAME_FONT_SIZE`       | int  | 20      | Font size for NPC name text                          |
-| `DIALOG_TEXT_FONT_SIZE`           | int  | 16      | Font size for dialog message text                    |
-| `DIALOG_INSTRUCTION_FONT_SIZE`    | int  | 12      | Font size for instruction text (e.g., "Press SPACE") |
-| `DIALOG_PAGE_INDICATOR_FONT_SIZE` | int  | 10      | Font size for page indicator text (e.g., "Page 1/3") |
+```python
+DIALOG_DESIGN = {
+    "box_width": 800,           # Width of the dialog box in design units
+    "box_height": 200,          # Height of the dialog box in design units
+    "border_width": 3,          # Width of the dialog box border
+    "horizontal_padding": 20,   # Left/right padding inside the box
+    "vertical_padding": 20,     # Top/bottom padding inside the box
+    "npc_name_offset": 30,      # Vertical offset of NPC name from top
+    "footer_offset": 20,        # Vertical offset of footer elements from bottom
+    "vertical_position": 0.25,  # Dialog box vertical position from bottom (fraction 0.0-1.0)
+}
+```
+
+#### Dialog Scaling Settings
+
+| Setting               | Type  | Default | Description             |
+| --------------------- | ----- | ------- | ----------------------- |
+| `DIALOG_UI_SCALE_MIN` | float | 0.5     | Minimum UI scale factor |
+| `DIALOG_UI_SCALE_MAX` | float | 2.0     | Maximum UI scale factor |
+
+#### Dialog Visual Settings
+
+| Setting                       | Type                 | Default         | Description                                 |
+| ----------------------------- | -------------------- | --------------- | ------------------------------------------- |
+| `DIALOG_COLOR_BOX_BACKGROUND` | tuple[int, int, int] | (45, 52, 54)    | RGB color of the dialog box background      |
+| `DIALOG_COLOR_BOX_BORDER`     | tuple[int, int, int] | (255, 255, 255) | RGB color of the dialog box border          |
+| `DIALOG_COLOR_NPC_NAME`       | tuple[int, int, int] | (255, 255, 0)   | RGB color of the NPC name text              |
+| `DIALOG_COLOR_TEXT`           | tuple[int, int, int] | (255, 255, 255) | RGB color of the dialog text                |
+| `DIALOG_COLOR_INSTRUCTION`    | tuple[int, int, int] | (211, 211, 211) | RGB color of instruction text               |
+| `DIALOG_COLOR_PAGE_INDICATOR` | tuple[int, int, int] | (211, 211, 211) | RGB color of page indicator text            |
 
 #### Text Labels
 
@@ -323,13 +335,20 @@ Dialog plugin behavior, timing, and appearance.
 - **Auto-close behavior**: `DIALOG_AUTO_CLOSE_DEFAULT` controls whether dialogs auto-close by default. The timer starts after the text reveal animation completes. Useful for cutscenes where you want dialogs to automatically advance.
 - **Text reveal animation**: `DIALOG_CHAR_REVEAL_SPEED` controls how fast text appears (characters per second). Set `DIALOG_INSTANT_TEXT_DEFAULT=True` to disable the reveal animation globally, or use the `instant` parameter in `show_dialog()` for specific dialogs.
 - **UI toggles**: Use `DIALOG_SHOW_HELP` and `DIALOG_SHOW_PAGINATION` to control which UI elements are displayed. Hiding these can create a cleaner look for cutscenes.
-- **Responsive sizing**: Dialog box dimensions scale with window size using percentage-based values, constrained by min/max limits for readability
-- **Width calculation**: Actual width = `min(DIALOG_BOX_MAX_WIDTH, max(DIALOG_BOX_MIN_WIDTH, window_width × DIALOG_BOX_WIDTH_PERCENT))`
-- **Height calculation**: Actual height = `max(DIALOG_BOX_MIN_HEIGHT, window_height × DIALOG_BOX_HEIGHT_PERCENT)`
-- **Position**: `DIALOG_VERTICAL_POSITION` of 0.25 means the dialog center is at 25% from the bottom of the screen
+- **Responsive scaling**: The dialog uses responsive UI scaling that adapts to different window sizes
+  - Design units are scaled based on window dimensions using `compute_ui_scale()`
+  - Scale factor is clamped between `DIALOG_UI_SCALE_MIN` and `DIALOG_UI_SCALE_MAX`
+  - Fonts are scaled using `scale_font()` with `UI_FONT_*` tiers for optimal readability
+  - All layout dimensions from `DIALOG_DESIGN` are scaled proportionally
+- **Font tiers**: The dialog uses the following font tiers:
+  - `UI_FONT_LARGE` for NPC name (default: `(16, 22, 30)`)
+  - `UI_FONT_NORMAL` for dialog text (default: `(12, 16, 22)`)
+  - `UI_FONT_SMALL` for instructions and page indicator (default: `(8, 12, 16)`)
+- **Colors**: All color settings use RGB tuples (0-255 for each component)
 - **Overlay**: Semi-transparent overlay covers the entire screen behind the dialog. Alpha value of 128 = 50% transparency
 - **Input**: `DIALOG_KEY_ADVANCE` can be set to any arcade key constant (e.g., "RETURN", "E", "SPACE"). Keys are matched using the `matches_key()` helper function
 - **Localization**: The `DIALOG_TEXT_*` settings allow you to customize instruction text for different languages or game styles
+- For more details, see the [DialogPlugin documentation](../plugins/dialog.md)
 
 ### Audio Settings
 
@@ -564,8 +583,13 @@ INVENTORY_BACKGROUND_IMAGE="images/ui/inventory.png"
 DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
 DIALOG_KEY_ADVANCE="SPACE"
-DIALOG_BOX_WIDTH_PERCENT=0.8
-DIALOG_TEXT_FONT_SIZE=18
+DIALOG_COLOR_BOX_BACKGROUND=(30, 35, 40)
+DIALOG_COLOR_NPC_NAME=(255, 200, 0)
+DIALOG_DESIGN={
+    "box_width": 900,
+    "box_height": 250,
+    "npc_name_offset": 40,
+}
 
 # Audio settings
 AUDIO_MUSIC_VOLUME=0.3
@@ -659,22 +683,25 @@ DIALOG_SHOW_PAGINATION: bool = True
 DIALOG_TEXT_NEXT_PAGE: str = "Press SPACE for next page"
 DIALOG_TEXT_CLOSE: str = "Press SPACE to close"
 DIALOG_TEXT_PAGE: str = "Page"
-DIALOG_BOX_WIDTH_PERCENT: float = 0.75
-DIALOG_BOX_MAX_WIDTH: int = 800
-DIALOG_BOX_MIN_WIDTH: int = 400
-DIALOG_BOX_HEIGHT_PERCENT: float = 0.25
-DIALOG_BOX_MIN_HEIGHT: int = 150
-DIALOG_VERTICAL_POSITION: float = 0.25
+DIALOG_DESIGN: dict = {
+    "box_width": 800,
+    "box_height": 200,
+    "border_width": 3,
+    "horizontal_padding": 20,
+    "vertical_padding": 20,
+    "npc_name_offset": 30,
+    "footer_offset": 20,
+    "vertical_position": 0.25,
+}
+DIALOG_UI_SCALE_MIN: float = 0.5
+DIALOG_UI_SCALE_MAX: float = 2.0
 DIALOG_OVERLAY_ALPHA: int = 128
-DIALOG_BORDER_WIDTH: int = 3
-DIALOG_PADDING_HORIZONTAL: int = 20
-DIALOG_PADDING_VERTICAL: int = 20
-DIALOG_NPC_NAME_OFFSET: int = 30
-DIALOG_FOOTER_OFFSET: int = 20
-DIALOG_NPC_NAME_FONT_SIZE: int = 20
-DIALOG_TEXT_FONT_SIZE: int = 16
-DIALOG_INSTRUCTION_FONT_SIZE: int = 12
-DIALOG_PAGE_INDICATOR_FONT_SIZE: int = 10
+DIALOG_COLOR_BOX_BACKGROUND: tuple[int, int, int] = (45, 52, 54)
+DIALOG_COLOR_BOX_BORDER: tuple[int, int, int] = (255, 255, 255)
+DIALOG_COLOR_NPC_NAME: tuple[int, int, int] = (255, 255, 0)
+DIALOG_COLOR_TEXT: tuple[int, int, int] = (255, 255, 255)
+DIALOG_COLOR_INSTRUCTION: tuple[int, int, int] = (211, 211, 211)
+DIALOG_COLOR_PAGE_INDICATOR: tuple[int, int, int] = (211, 211, 211)
 
 # Audio settings
 AUDIO_MUSIC_VOLUME: float = 0.5
