@@ -10,18 +10,16 @@ The Pedre framework is built on several core architectural components that work 
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│                     ViewManager                         │
-│  (Orchestrates view transitions & game lifecycle)       │
+│                        Game                             │
+│  (Coordinates game lifecycle & plugin initialization)   │
 └─────────────────┬───────────────────────────────────────┘
                   │
-      ┌───────────┼───────────┐
-      │           │           │
-      ▼           ▼           ▼
- ┌─────────┐ ┌─────────┐ ┌──────────┐
- │MenuView │ │GameView │ │SaveViews │
- └─────────┘ └────┬────┘ └──────────┘
-                  │
                   ▼
+           ┌───────────────┐
+           │   GameView    │
+           └───────┬───────┘
+                   │
+                   ▼
            ┌───────────────┐
            │ GameContext   │
            │  ┌─────────┐  │
@@ -40,32 +38,32 @@ The Pedre framework is built on several core architectural components that work 
 
 ## Core Components
 
-### [ViewManager](view-manager.md)
+### [Game](game.md)
 
-Central controller for view transitions and game lifecycle.
+Central coordinator for game lifecycle and plugin initialization.
 
 **Responsibilities:**
 
-- Switch between menu, gameplay, and save/load views
-- Manage game state (new game, continue, load, exit)
-- Trigger map transitions
+- Initialize plugins in correct order (Actions → Events → Conditions → Plugins)
+- Manage GameView lifecycle (new game, continue, load, exit)
+- Coordinate save/load operations
+- Own long-lived objects (EventBus, GameContext, PluginLoader)
 
 **Key Methods:**
 
-- `show_menu()`, `show_game()`, `show_load_game()`, `show_save_game()`
-- `continue_game()`, `load_game()`, `exit_game()`
-- `load_map()`
+- `start_new_game()`, `start_game_or_load()`, `continue_game()`
+- `load_game()`, `exit_game()`
+- `show_game()`
 
 ### [Views](views.md)
 
-Different game screens and states.
+Primary game screen.
 
-**Available Views:**
+**GameView:**
 
 - `GameView` - Main gameplay with all plugins active
-- `MenuView` - Main menu with asset preloading
-- `LoadGameView` - Load game screen
-- `SaveGameView` - Save game screen
+- Only one view exists (the "pause menu" is a plugin overlay, not a view)
+- Managed by the Game coordinator
 
 ### [GameContext](game-context.md)
 
@@ -173,19 +171,22 @@ def on_dialog_closed(event: DialogClosedEvent):
 context.event_bus.subscribe(DialogClosedEvent, on_dialog_closed)
 ```
 
-### View Transitions
+### Game Lifecycle
 
-Control game flow through the ViewManager:
+Control game flow through the Game coordinator:
 
 ```python
-# Show menu
-view_plugin.show_menu()
+# Start a new game
+game.start_new_game()
 
-# Start game
-view_plugin.show_game()
+# Continue existing game or load autosave
+game.continue_game()
 
-# Load a different map
-view_plugin.load_map("forest.tmx", spawn_waypoint="entrance")
+# Show game view
+game.show_game()
+
+# Load game from save data
+game.load_game(save_data)
 ```
 
 ## Configuration
@@ -228,11 +229,13 @@ if __name__ == "__main__":
 The framework automatically:
 
 1. Loads configuration from `settings.py`
-2. Creates ViewManager and window
-3. Initializes GameContext and EventBus
-4. Loads all plugins via PluginLoader
-5. Sets up event subscriptions
-6. Shows initial view (menu or game)
+2. Creates arcade Window
+3. Creates Game coordinator
+4. Game creates EventBus and GameContext (long-lived objects)
+5. Loads Actions, Events, and Conditions
+6. Loads all plugins via PluginLoader
+7. Sets up event subscriptions
+8. Starts game directly (autoload or new game)
 
 ### 3. Game Loop
 
