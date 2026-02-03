@@ -351,6 +351,30 @@ PAUSE_MENU_TEXT_EMPTY_SLOT = "(Empty)"
 PAUSE_MENU_CONFIRM_NEW_GAME = "Start a new game? Current progress will be lost."
 """Confirmation message for starting a new game."""
 
+PAUSE_MENU_COLOR_OVERLAY = (0, 0, 0)
+"""RGB color for the full-screen overlay background behind the menu."""
+
+PAUSE_MENU_COLOR_BOX_BACKGROUND = (102, 102, 153)
+"""RGB color for the menu box background (dark blue-gray)."""
+
+PAUSE_MENU_COLOR_BOX_BORDER = (255, 255, 255)
+"""RGB color for the menu box border."""
+
+PAUSE_MENU_COLOR_TITLE = (255, 255, 255)
+"""RGB color for the menu title text."""
+
+PAUSE_MENU_COLOR_OPTION = (255, 255, 255)
+"""RGB color for unselected menu options and text."""
+
+PAUSE_MENU_COLOR_SELECTED = (255, 255, 0)
+"""RGB color for the currently selected menu option."""
+
+PAUSE_MENU_COLOR_DISABLED = (128, 128, 128)
+"""RGB color for disabled/empty slot text."""
+
+PAUSE_MENU_COLOR_FEEDBACK = (0, 255, 0)
+"""RGB color for feedback messages (e.g. 'Game Saved!')."""
+
 # Installed plugins (like Django's INSTALLED_APPS)
 INSTALLED_PLUGINS = [
     "pedre.plugins.audio",

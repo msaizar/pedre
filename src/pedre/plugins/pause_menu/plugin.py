@@ -338,7 +338,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             title,
             center_x,
             title_y,
-            arcade.color.WHITE,
+            settings.PAUSE_MENU_COLOR_TITLE,
             title_font_size,
             anchor_x="center",
             bold=True,
@@ -360,7 +360,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
                 self.save_feedback_message,
                 center_x,
                 center_y - box_height // 2 - feedback_offset,
-                arcade.color.GREEN,
+                settings.PAUSE_MENU_COLOR_FEEDBACK,
                 feedback_font_size,
                 anchor_x="center",
                 bold=True,
@@ -421,7 +421,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         for i, option_text in enumerate(menu_options):
             y_pos = start_y - (i * spacing)
             is_selected = i == self.selected_option
-            color = arcade.color.YELLOW if is_selected else arcade.color.WHITE
+            color = settings.PAUSE_MENU_COLOR_SELECTED if is_selected else settings.PAUSE_MENU_COLOR_OPTION
 
             # Create option text with wrapping
             text_obj = arcade.Text(
@@ -503,11 +503,11 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             # Determine color
             is_selected = i == self.selected_option
             if is_selected:
-                color = arcade.color.YELLOW
+                color = settings.PAUSE_MENU_COLOR_SELECTED
             elif save_info:
-                color = arcade.color.WHITE
+                color = settings.PAUSE_MENU_COLOR_OPTION
             else:
-                color = arcade.color.GRAY
+                color = settings.PAUSE_MENU_COLOR_DISABLED
 
             # Create slot text with wrapping, centered
             text_obj = arcade.Text(
@@ -588,7 +588,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
             # Determine color
             is_selected = i == self.selected_option
-            color = arcade.color.YELLOW if is_selected else arcade.color.WHITE
+            color = settings.PAUSE_MENU_COLOR_SELECTED if is_selected else settings.PAUSE_MENU_COLOR_OPTION
 
             # Create slot text with wrapping, centered
             text_obj = arcade.Text(
@@ -643,7 +643,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             self.confirmation_message,
             center_x,
             message_y,
-            arcade.color.WHITE,
+            settings.PAUSE_MENU_COLOR_OPTION,
             option_font_size,
             anchor_x="center",
             width=box_width - (horizontal_padding * 2),
@@ -666,7 +666,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         for i, option_text in enumerate(options):
             y_pos = start_y - (i * spacing)
             is_selected = i == self.selected_option
-            color = arcade.color.YELLOW if is_selected else arcade.color.WHITE
+            color = settings.PAUSE_MENU_COLOR_SELECTED if is_selected else settings.PAUSE_MENU_COLOR_OPTION
 
             # Create option text with wrapping
             text_obj = arcade.Text(
@@ -712,7 +712,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             window.width,
             0,
             window.height,
-            (*arcade.color.BLACK[:3], settings.PAUSE_MENU_OVERLAY_ALPHA),
+            (*settings.PAUSE_MENU_COLOR_OVERLAY, settings.PAUSE_MENU_OVERLAY_ALPHA),
         )
 
         # Scale box dimensions, clamp to window bounds
@@ -729,7 +729,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             center_x + box_width // 2,
             center_y - box_height // 2,
             center_y + box_height // 2,
-            arcade.color.DARK_BLUE_GRAY,
+            settings.PAUSE_MENU_COLOR_BOX_BACKGROUND,
         )
 
         # Menu box border
@@ -738,7 +738,7 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             center_x + box_width // 2,
             center_y - box_height // 2,
             center_y + box_height // 2,
-            arcade.color.WHITE,
+            settings.PAUSE_MENU_COLOR_BOX_BORDER,
             border_width=border_width,
         )
 
