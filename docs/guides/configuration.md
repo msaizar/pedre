@@ -141,6 +141,84 @@ Main menu appearance and behavior.
 - `menu_background_image` is optional; leave empty for solid color background
 - All paths are relative to the assets resource handle
 
+### Pause Menu Settings
+
+In-game pause menu overlay appearance and behavior.
+
+#### Visual Settings
+
+| Setting                         | Type                 | Default         | Description                                           |
+| ------------------------------- | -------------------- | --------------- | ----------------------------------------------------- |
+| `PAUSE_MENU_OVERLAY_ALPHA`      | int                  | 180             | Opacity of the semi-transparent overlay (0-255)       |
+| `PAUSE_MENU_COLOR_OVERLAY`      | tuple[int, int, int] | (0, 0, 0)       | RGB color of the overlay                              |
+| `PAUSE_MENU_COLOR_BOX_BACKGROUND` | tuple[int, int, int] | (102, 102, 153) | RGB color of the menu box background                  |
+| `PAUSE_MENU_COLOR_BOX_BORDER`   | tuple[int, int, int] | (255, 255, 255) | RGB color of the menu box border                      |
+| `PAUSE_MENU_COLOR_TITLE`        | tuple[int, int, int] | (255, 255, 255) | RGB color of the title text                           |
+| `PAUSE_MENU_COLOR_OPTION`       | tuple[int, int, int] | (255, 255, 255) | RGB color of unselected options                       |
+| `PAUSE_MENU_COLOR_SELECTED`     | tuple[int, int, int] | (255, 255, 0)   | RGB color of the selected option                      |
+| `PAUSE_MENU_COLOR_DISABLED`     | tuple[int, int, int] | (128, 128, 128) | RGB color of disabled options                         |
+| `PAUSE_MENU_COLOR_FEEDBACK`     | tuple[int, int, int] | (0, 255, 0)     | RGB color of feedback messages (e.g., "Game Saved!") |
+
+#### Text Settings
+
+| Setting                      | Type   | Default                                            | Description                        |
+| ---------------------------- | ------ | -------------------------------------------------- | ---------------------------------- |
+| `PAUSE_MENU_TITLE`           | string | "Pedre Game"                                       | Title shown at the top of the menu |
+| `PAUSE_MENU_TEXT_RESUME`     | string | "Resume"                                           | Text for Resume option             |
+| `PAUSE_MENU_TEXT_NEW_GAME`   | string | "New Game"                                         | Text for New Game option           |
+| `PAUSE_MENU_TEXT_LOAD_GAME`  | string | "Load Game"                                        | Text for Load Game option          |
+| `PAUSE_MENU_TEXT_SAVE_GAME`  | string | "Save Game"                                        | Text for Save Game option          |
+| `PAUSE_MENU_TEXT_EXIT`       | string | "Exit Game"                                        | Text for Exit option               |
+| `PAUSE_MENU_TEXT_BACK`       | string | "Back"                                             | Text for Back option               |
+| `PAUSE_MENU_TEXT_EMPTY_SLOT` | string | "(Empty)"                                          | Text shown for empty save slots    |
+| `PAUSE_MENU_CONFIRM_NEW_GAME` | string | "Start a new game? Current progress will be lost." | Confirmation message for New Game  |
+
+#### Layout Settings
+
+| Setting                | Type | Default | Description                                                   |
+| ---------------------- | ---- | ------- | ------------------------------------------------------------- |
+| `PAUSE_MENU_DESIGN`    | dict | (see below) | Dictionary containing all design specifications (see below) |
+
+**PAUSE_MENU_DESIGN dictionary:**
+
+```python
+PAUSE_MENU_DESIGN = {
+    "box_width": 500,                    # Width of the menu box in design units
+    "box_height": 400,                   # Height of the menu box in design units
+    "border_width": 4,                   # Width of the menu box border
+    "title_padding": 20,                 # Padding above the title
+    "title_area_height": 80,             # Height reserved for the title area
+    "horizontal_padding": 40,            # Left/right padding inside the box
+    "spacing": 50,                       # Vertical spacing between options
+    "content_bottom_padding": 20,        # Bottom padding for slot lists
+    "confirmation_message_offset": 50,   # Vertical offset for confirmation message
+    "confirmation_options_offset": 30,   # Vertical offset for confirmation options
+    "feedback_offset": 50,               # Offset for feedback messages
+}
+```
+
+#### Scaling Settings
+
+| Setting                   | Type  | Default | Description                 |
+| ------------------------- | ----- | ------- | --------------------------- |
+| `PAUSE_MENU_UI_SCALE_MIN` | float | 0.5     | Minimum UI scale factor     |
+| `PAUSE_MENU_UI_SCALE_MAX` | float | 2.0     | Maximum UI scale factor     |
+
+**Notes:**
+
+- **Responsive scaling**: The pause menu uses responsive UI scaling that adapts to different window sizes
+  - Design units are scaled based on window dimensions using `compute_ui_scale()`
+  - Scale factor is clamped between `PAUSE_MENU_UI_SCALE_MIN` and `PAUSE_MENU_UI_SCALE_MAX`
+  - Fonts are scaled using `scale_font()` for optimal readability
+- **Colors**: All color settings use RGB tuples (0-255 for each component)
+- **Overlay alpha**: Value of 180 (default) = ~70% opacity for the background overlay
+- **Menu states**: The pause menu has four states: MAIN_MENU, LOAD_SLOTS, SAVE_SLOTS, and CONFIRMATION
+- **Save slots**:
+  - Load slots: 0-3 (slot 0 is autosave)
+  - Save slots: 1-3 (manual saves only)
+- **Auto-save on exit**: When Exit is selected, the game automatically saves to slot 0 before closing
+- For more details, see the [PauseMenuPlugin documentation](../plugins/pause-menu.md)
+
 ### Inventory Settings
 
 Inventory grid layout, capacity, and appearance.
@@ -619,6 +697,41 @@ SAVE_FOLDER: str = "saves"
 SAVE_QUICK_SAVE_KEY: str = "F5"
 SAVE_QUICK_LOAD_KEY: str = "F9"
 SAVE_SFX_FILE: str = "save.wav"
+
+# Pause menu settings
+PAUSE_MENU_OVERLAY_ALPHA: int = 180
+PAUSE_MENU_TITLE: str = "Pedre Game"
+PAUSE_MENU_DESIGN: dict = {
+    "box_width": 500,
+    "box_height": 400,
+    "border_width": 4,
+    "title_padding": 20,
+    "title_area_height": 80,
+    "horizontal_padding": 40,
+    "spacing": 50,
+    "content_bottom_padding": 20,
+    "confirmation_message_offset": 50,
+    "confirmation_options_offset": 30,
+    "feedback_offset": 50,
+}
+PAUSE_MENU_UI_SCALE_MIN: float = 0.5
+PAUSE_MENU_UI_SCALE_MAX: float = 2.0
+PAUSE_MENU_TEXT_RESUME: str = "Resume"
+PAUSE_MENU_TEXT_NEW_GAME: str = "New Game"
+PAUSE_MENU_TEXT_LOAD_GAME: str = "Load Game"
+PAUSE_MENU_TEXT_SAVE_GAME: str = "Save Game"
+PAUSE_MENU_TEXT_EXIT: str = "Exit Game"
+PAUSE_MENU_TEXT_BACK: str = "Back"
+PAUSE_MENU_TEXT_EMPTY_SLOT: str = "(Empty)"
+PAUSE_MENU_CONFIRM_NEW_GAME: str = "Start a new game? Current progress will be lost."
+PAUSE_MENU_COLOR_OVERLAY: tuple[int, int, int] = (0, 0, 0)
+PAUSE_MENU_COLOR_BOX_BACKGROUND: tuple[int, int, int] = (102, 102, 153)
+PAUSE_MENU_COLOR_BOX_BORDER: tuple[int, int, int] = (255, 255, 255)
+PAUSE_MENU_COLOR_TITLE: tuple[int, int, int] = (255, 255, 255)
+PAUSE_MENU_COLOR_OPTION: tuple[int, int, int] = (255, 255, 255)
+PAUSE_MENU_COLOR_SELECTED: tuple[int, int, int] = (255, 255, 0)
+PAUSE_MENU_COLOR_DISABLED: tuple[int, int, int] = (128, 128, 128)
+PAUSE_MENU_COLOR_FEEDBACK: tuple[int, int, int] = (0, 255, 0)
 ```
 
 ## See Also
