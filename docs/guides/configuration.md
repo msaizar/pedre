@@ -18,11 +18,6 @@ NPC_INTERACTION_DISTANCE=50
 PORTAL_INTERACTION_DISTANCE=50
 WAYPOINT_THRESHOLD=2
 NPC_SPEED=80.0
-MENU_TITLE="My RPG Game"
-MENU_TITLE_SIZE=48
-MENU_OPTION_SIZE=24
-MENU_SPACING=50
-MENU_BACKGROUND_IMAGE="images/backgrounds/menu.png"
 INVENTORY_GRID_COLS=10
 INVENTORY_GRID_ROWS=4
 INVENTORY_BOX_SIZE=30
@@ -114,28 +109,6 @@ NPC behavior and interaction settings.
 - `NPC_MOVEMENT_SPEED` is the default speed for all NPCs using pathfinding
 - `NPC_WAYPOINT_THRESHOLD` controls pathfinding precision (lower = more precise turns)
 - `NPC_INTERACTION_KEY` can be set to any arcade key constant (e.g., "E", "F", "RETURN")
-
-### Menu Settings
-
-Main menu appearance and behavior.
-
-| Setting                 | Type         | Default      | Description                                          |
-| ----------------------- | ------------ | ------------ | ---------------------------------------------------- |
-| `MENU_TITLE`            | string       | "Pedre Game" | Menu title text                                      |
-| `MENU_TITLE_SIZE`       | int          | 48           | Font size for the title                              |
-| `MENU_OPTION_SIZE`      | int          | 24           | Font size for menu options                           |
-| `MENU_SPACING`          | int          | 50           | Vertical spacing between menu options                |
-| `MENU_BACKGROUND_IMAGE` | string       | ""           | Path to background image (relative to assets handle) |
-| `MENU_TEXT_CONTINUE`    | string       | "Continue"   | Text for Continue option                             |
-| `MENU_TEXT_NEW_GAME`    | string       | "New Game"   | Text for New Game option                             |
-| `MENU_TEXT_SAVE_GAME`   | string       | "Save Game"  | Text for Save Game option                            |
-| `MENU_TEXT_LOAD_GAME`   | string       | "Load Game"  | Text for Load Game option                            |
-| `MENU_TEXT_EXIT`        | string       | "Exit"       | Text for Exit option                                 |
-
-**Notes:**
-
-- `menu_background_image` is optional; leave empty for solid color background
-- All paths are relative to the assets resource handle
 
 ### Pause Menu Settings
 
@@ -561,13 +534,6 @@ NPC_MOVEMENT_SPEED=90.0
 NPC_WAYPOINT_THRESHOLD=2
 NPC_INTERACTION_KEY="E"
 
-# Menu settings
-MENU_TITLE="Mystic Quest"
-MENU_TITLE_SIZE=56
-MENU_OPTION_SIZE=28
-MENU_SPACING=55
-MENU_BACKGROUND_IMAGE="images/backgrounds/mystic.png"
-
 # Inventory settings
 INVENTORY_GRID_COLS=12
 INVENTORY_GRID_ROWS=5
@@ -611,18 +577,6 @@ If you don't specify a setting, `pedre.conf.settings` uses these defaults:
 SCREEN_WIDTH: int = 1280
 SCREEN_HEIGHT: int = 720
 WINDOW_TITLE: str = "Pedre Game"
-
-# Menu settings
-MENU_TITLE: str = "Pedre Game"
-MENU_TITLE_SIZE: int = 48
-MENU_OPTION_SIZE: int = 24
-MENU_SPACING: int = 50
-MENU_BACKGROUND_IMAGE: str = ""
-MENU_TEXT_CONTINUE: str = "Continue"
-MENU_TEXT_NEW_GAME: str = "New Game"
-MENU_TEXT_SAVE_GAME: str = "Save Game"
-MENU_TEXT_LOAD_GAME: str = "Load Game"
-MENU_TEXT_EXIT: str = "Exit"
 
 # Player settings
 PLAYER_MOVEMENT_SPEED: float = 180.0
