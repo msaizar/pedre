@@ -506,43 +506,6 @@ class AudioPlugin(AudioBasePlugin):
         self.clear_sfx_cache()
         logger.info("All audio caches cleared")
 
-    def mark_music_loading(self, filename: str) -> None:
-        """Mark a music file as currently being loaded.
-
-        Used for background preloading coordination. When a file is marked as
-        loading, play_music() will wait briefly for the preload to complete
-        before loading it again.
-
-        This is part of the background preloading plugin to optimize scene
-        transitions and prevent redundant loads.
-
-        Args:
-            filename: Name of the music file being loaded in background.
-
-        Example:
-            # In background preload task
-            audio_plugin.mark_music_loading("beach.ogg")
-            # ... load the file ...
-            audio_plugin.unmark_music_loading("beach.ogg")
-        """
-        self._music_loading.add(filename)
-
-    def unmark_music_loading(self, filename: str) -> None:
-        """Unmark a music file as being loaded.
-
-        Signals that a background music preload has completed. Should be called
-        after mark_music_loading() once the file is loaded into the cache.
-
-        Args:
-            filename: Name of the music file that finished loading.
-
-        Example:
-            # After background load completes
-            audio_plugin.music_cache[filename] = loaded_sound
-            audio_plugin.unmark_music_loading(filename)
-        """
-        self._music_loading.discard(filename)
-
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving (BasePlugin interface).
 

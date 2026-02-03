@@ -30,16 +30,6 @@ class AudioBasePlugin(BasePlugin, ABC):
         ...
 
     @abstractmethod
-    def mark_music_loading(self, filename: str) -> None:
-        """Mark a music file as currently being loaded."""
-        ...
-
-    @abstractmethod
-    def unmark_music_loading(self, filename: str) -> None:
-        """Unmark a music file as being loaded."""
-        ...
-
-    @abstractmethod
     def play_music(self, filename: str, *, loop: bool = True, volume: float | None = None) -> bool:
         """Play background music."""
         ...
