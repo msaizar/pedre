@@ -1,6 +1,7 @@
 """Unit tests for NPCPlugin in src/pedre/plugins/npc/plugin.py."""
 
 import unittest
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 from pedre.plugins.npc.base import NPCDialogConfig
@@ -42,7 +43,6 @@ class TestNPCPlugin(unittest.TestCase):
         assert not npc_state.is_moving
         assert len(npc_state.path) == 0
 
-
     def test_get_nearby_npc(self) -> None:
         """Test finding nearby NPCs."""
         # Setup player
@@ -75,7 +75,7 @@ class TestNPCPlugin(unittest.TestCase):
         with patch("pedre.plugins.npc.plugin.arcade.get_distance_between_sprites") as mock_dist:
             # Mock distances: interaction threshold is usually ~64
             # npc1 is dist 10, npc2 is dist 400
-            def get_dist(s1, s2):
+            def get_dist(_s1: MagicMock, s2: MagicMock) -> float:
                 if s2 == npc1_sprite:
                     return 10.0
                 if s2 == npc2_sprite:
@@ -88,7 +88,7 @@ class TestNPCPlugin(unittest.TestCase):
 
             result = self.plugin.get_nearby_npc(player_sprite)
             assert result is not None
-            sprite, name, level = result
+            sprite, name, _level = result
             assert name == "npc1"
             assert sprite == npc1_sprite
 
@@ -204,8 +204,11 @@ class TestNPCPlugin(unittest.TestCase):
         assert npc.sprite.center_y == 600.0
         assert npc.sprite.visible is False
         assert npc.dialog_level == 5
-        assert npc.sprite.appear_complete is True
-        assert npc.sprite.disappear_complete is True
+
+        # Cast to AnimatedNPC (or Mock) to access specific attributes
+        sprite = cast("AnimatedNPC", npc.sprite)
+        assert sprite.appear_complete is True
+        assert sprite.disappear_complete is True
 
     def test_get_save_state_includes_history(self) -> None:
         """Test that get_save_state includes global interaction history."""
