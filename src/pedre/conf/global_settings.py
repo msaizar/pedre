@@ -237,18 +237,21 @@ Higher values make the camera catch up faster to the target.
 - 1.0: Instant following (no smoothing)
 """
 
-# UI Font Scale (design units at reference resolution)
-# These are framework-wide font tiers that all UI plugins can reference.
-# Values are in pixels at the reference resolution (SCREEN_WIDTH x SCREEN_HEIGHT).
-# At runtime they are multiplied by a ui_scale factor derived from the actual window size.
-UI_FONT_SMALL = 12
-"""Small font size in design units. Used for slot text, fine print."""
+# UI Font Scale
+# Framework-wide font tiers as (small_screen, reference, large_screen) tuples.
+# The actual font size is interpolated based on ui_scale:
+#   - At ui_scale <= min_scale (e.g. 0.5): uses the small_screen value
+#   - At ui_scale == 1.0: uses the reference value
+#   - At ui_scale >= max_scale (e.g. 2.0): uses the large_screen value
+#   - In between: linear interpolation
+UI_FONT_SMALL = (8, 12, 16)
+"""Small font tier (small_screen, reference, large_screen). Used for slot text, fine print."""
 
-UI_FONT_NORMAL = 16
-"""Normal font size in design units. Used for menu options, body text."""
+UI_FONT_NORMAL = (12, 16, 22)
+"""Normal font tier (small_screen, reference, large_screen). Used for menu options, body text."""
 
-UI_FONT_LARGE = 22
-"""Large font size in design units. Used for titles, headings."""
+UI_FONT_LARGE = (16, 22, 30)
+"""Large font tier (small_screen, reference, large_screen). Used for titles, headings."""
 
 # Particle settings
 PARTICLE_ENABLED = True
@@ -291,10 +294,7 @@ PAUSE_MENU_TITLE = "Pedre Game"
 # (SCREEN_WIDTH x SCREEN_HEIGHT, default 1280x720). At runtime, they are multiplied
 # by a ui_scale factor derived from the actual window size.
 # Font sizes come from UI_FONT_SMALL/NORMAL/LARGE, not from this dictionary.
-#
-# To override in your project's settings.py:
-#   from pedre.conf import global_settings
-#   PAUSE_MENU_DESIGN = {**global_settings.PAUSE_MENU_DESIGN, "spacing": 32}
+
 PAUSE_MENU_DESIGN = {
     # Box dimensions
     "box_width": 512,

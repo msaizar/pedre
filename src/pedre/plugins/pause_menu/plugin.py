@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.helpers import compute_ui_scale
+from pedre.helpers import compute_ui_scale, scale_font
 from pedre.plugins.pause_menu.base import PauseMenuBasePlugin, PauseMenuOption, PauseMenuState
 from pedre.plugins.registry import PluginRegistry
 
@@ -324,9 +324,13 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
         # Scale design values
         title_padding = self._scaled(design["title_padding"], ui_scale)
-        title_font_size = self._scaled(settings.UI_FONT_LARGE, ui_scale, floor=6)
+        title_font_size = scale_font(
+            settings.UI_FONT_LARGE, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
+        )
         feedback_offset = self._scaled(design["feedback_offset"], ui_scale)
-        feedback_font_size = self._scaled(settings.UI_FONT_NORMAL, ui_scale, floor=6)
+        feedback_font_size = scale_font(
+            settings.UI_FONT_NORMAL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
+        )
 
         # Create title text
         title_y = box_top - title_padding - title_font_size // 2
@@ -396,7 +400,9 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         # Scale design values
         title_area_height = self._scaled(design["title_area_height"], ui_scale)
         horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
-        option_font_size = self._scaled(settings.UI_FONT_NORMAL, ui_scale, floor=6)
+        option_font_size = scale_font(
+            settings.UI_FONT_NORMAL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
+        )
         spacing = self._scaled(design["spacing"], ui_scale)
 
         # Calculate positions
@@ -459,7 +465,9 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         title_area_height = self._scaled(design["title_area_height"], ui_scale)
         content_bottom_padding = self._scaled(design["content_bottom_padding"], ui_scale)
         horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
-        slot_font_size = self._scaled(settings.UI_FONT_SMALL, ui_scale, floor=6)
+        slot_font_size = scale_font(
+            settings.UI_FONT_SMALL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
+        )
         spacing = self._scaled(design["spacing"], ui_scale)
 
         # Calculate positions
@@ -543,7 +551,9 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         title_area_height = self._scaled(design["title_area_height"], ui_scale)
         content_bottom_padding = self._scaled(design["content_bottom_padding"], ui_scale)
         horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
-        slot_font_size = self._scaled(settings.UI_FONT_SMALL, ui_scale, floor=6)
+        slot_font_size = scale_font(
+            settings.UI_FONT_SMALL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
+        )
         spacing = self._scaled(design["spacing"], ui_scale)
 
         # Calculate positions
@@ -622,7 +632,9 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         confirmation_message_offset = self._scaled(design["confirmation_message_offset"], ui_scale)
         confirmation_options_offset = self._scaled(design["confirmation_options_offset"], ui_scale)
         horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
-        option_font_size = self._scaled(settings.UI_FONT_NORMAL, ui_scale, floor=6)
+        option_font_size = scale_font(
+            settings.UI_FONT_NORMAL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
+        )
         spacing = self._scaled(design["spacing"], ui_scale)
 
         # Create confirmation message with wrapping

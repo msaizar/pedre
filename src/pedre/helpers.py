@@ -197,6 +197,51 @@ def compute_ui_scale(
     return max(min_scale, min(max_scale, raw_scale))
 
 
+def scale_font(
+    font_tier: tuple[int, int, int],
+    ui_scale: float,
+    min_scale: float = 0.5,
+    max_scale: float = 2.0,
+) -> int:
+    """Interpolate a font size from a (small, reference, large) tier based on ui_scale.
+
+    Linearly interpolates between the three anchor values:
+      - ui_scale <= min_scale: returns small
+      - ui_scale == 1.0: returns reference
+      - ui_scale >= max_scale: returns large
+      - in between: linear interpolation
+
+    Args:
+        font_tier: Tuple of (small_screen, reference, large_screen) font sizes.
+        ui_scale: Current UI scale factor from compute_ui_scale().
+        min_scale: The ui_scale value that maps to the small_screen font size.
+        max_scale: The ui_scale value that maps to the large_screen font size.
+
+    Returns:
+        Interpolated font size as an integer, at least 1.
+
+    Example:
+        >>> scale_font((8, 12, 16), 1.0)
+        12
+        >>> scale_font((8, 12, 16), 0.5)
+        8
+        >>> scale_font((8, 12, 16), 2.0)
+        16
+        >>> scale_font((8, 12, 16), 0.75)
+        10
+    """
+    small, ref, large = font_tier
+    if ui_scale <= min_scale:
+        return max(1, small)
+    if ui_scale >= max_scale:
+        return max(1, large)
+    if ui_scale <= 1.0:
+        t = (ui_scale - min_scale) / (1.0 - min_scale)
+        return max(1, int(small + (ref - small) * t))
+    t = (ui_scale - 1.0) / (max_scale - 1.0)
+    return max(1, int(ref + (large - ref) * t))
+
+
 def run_game() -> None:
     """Create and run a Pedre game.
 
