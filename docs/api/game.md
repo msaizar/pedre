@@ -47,6 +47,7 @@ game.start_new_game()
 Start game directly, loading autosave if exists, otherwise new game.
 
 Provides a streamlined startup experience that bypasses the main menu:
+
 - If autosave (slot 0) exists: Load it automatically
 - Otherwise: Start a fresh new game
 
