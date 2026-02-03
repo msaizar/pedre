@@ -126,7 +126,6 @@ Main menu appearance and behavior.
 | `MENU_OPTION_SIZE`      | int          | 24           | Font size for menu options                           |
 | `MENU_SPACING`          | int          | 50           | Vertical spacing between menu options                |
 | `MENU_BACKGROUND_IMAGE` | string       | ""           | Path to background image (relative to assets handle) |
-| `MENU_PRELOAD_MUSIC_FILES`      | list[string] | []           | Music files to preload before game start             |
 | `MENU_TEXT_CONTINUE`    | string       | "Continue"   | Text for Continue option                             |
 | `MENU_TEXT_NEW_GAME`    | string       | "New Game"   | Text for New Game option                             |
 | `MENU_TEXT_SAVE_GAME`   | string       | "Save Game"  | Text for Save Game option                            |
@@ -568,7 +567,6 @@ MENU_TITLE_SIZE=56
 MENU_OPTION_SIZE=28
 MENU_SPACING=55
 MENU_BACKGROUND_IMAGE="images/backgrounds/mystic.png"
-MENU_PRELOAD_MUSIC_FILES=["music/menu1.ogg", "music/menu2.ogg"]
 
 # Inventory settings
 INVENTORY_GRID_COLS=12
@@ -620,7 +618,6 @@ MENU_TITLE_SIZE: int = 48
 MENU_OPTION_SIZE: int = 24
 MENU_SPACING: int = 50
 MENU_BACKGROUND_IMAGE: str = ""
-MENU_PRELOAD_MUSIC_FILES: list[str] = []
 MENU_TEXT_CONTINUE: str = "Continue"
 MENU_TEXT_NEW_GAME: str = "New Game"
 MENU_TEXT_SAVE_GAME: str = "Save Game"
