@@ -42,7 +42,6 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
 
         # Text objects for better performance
         self.title_text: arcade.Text | None = None
-        self.subtitle_text: arcade.Text | None = None
         self.main_menu_texts: list[arcade.Text] = []
         self.slot_texts: list[arcade.Text] = []
         self.confirmation_message_text: arcade.Text | None = None
@@ -280,11 +279,21 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
+        # Determine title based on menu state
+        if self.menu_state == PauseMenuState.LOAD_SLOTS:
+            title = settings.PAUSE_MENU_TEXT_LOAD_GAME
+        elif self.menu_state == PauseMenuState.SAVE_SLOTS:
+            title = settings.PAUSE_MENU_TEXT_SAVE_GAME
+        elif self.menu_state == PauseMenuState.CONFIRMATION:
+            title = settings.PAUSE_MENU_TEXT_NEW_GAME
+        else:
+            title = settings.PAUSE_MENU_TITLE
+
         # Create title text
         title_padding = 20
         title_y = box_top - title_padding - settings.PAUSE_MENU_TITLE_FONT_SIZE // 2
         self.title_text = arcade.Text(
-            settings.PAUSE_MENU_TITLE,
+            title,
             center_x,
             title_y,
             arcade.color.WHITE,
@@ -383,24 +392,10 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Create subtitle with wrapping
-        subtitle_y = box_top - 60
-        self.subtitle_text = arcade.Text(
-            settings.PAUSE_MENU_TEXT_LOAD_GAME,
-            center_x,
-            subtitle_y,
-            arcade.color.WHITE,
-            settings.PAUSE_MENU_OPTION_FONT_SIZE + 4,
-            anchor_x="center",
-            bold=True,
-            width=box_width - 40,
-            align="center",
-            multiline=True,
-        )
-
         # Calculate positions
         slots = [0, 1, 2, 3]
-        content_top = subtitle_y - 40
+        title_area_height = 60
+        content_top = box_top - title_area_height
         content_bottom = box_bottom + 40
         content_height = content_top - content_bottom
         num_slots = len(slots)
@@ -465,24 +460,10 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Create subtitle with wrapping
-        subtitle_y = box_top - 60
-        self.subtitle_text = arcade.Text(
-            settings.PAUSE_MENU_TEXT_SAVE_GAME,
-            center_x,
-            subtitle_y,
-            arcade.color.WHITE,
-            settings.PAUSE_MENU_OPTION_FONT_SIZE + 4,
-            anchor_x="center",
-            bold=True,
-            width=box_width - 40,
-            align="center",
-            multiline=True,
-        )
-
         # Calculate positions
         slots = [1, 2, 3]
-        content_top = subtitle_y - 40
+        title_area_height = 60
+        content_top = box_top - title_area_height
         content_bottom = box_bottom + 40
         content_height = content_top - content_bottom
         num_slots = len(slots)
@@ -696,10 +677,6 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Draw subtitle
-        if self.subtitle_text:
-            self.subtitle_text.draw()
-
         # Draw slot texts
         for text_obj in self.slot_texts:
             text_obj.draw()
@@ -717,10 +694,6 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             box_top: Top Y coordinate of the menu box.
             box_bottom: Bottom Y coordinate of the menu box.
         """
-        # Draw subtitle
-        if self.subtitle_text:
-            self.subtitle_text.draw()
-
         # Draw slot texts
         for text_obj in self.slot_texts:
             text_obj.draw()
