@@ -124,6 +124,38 @@ def matches_key(symbol: int, key_name: str) -> bool:
     return False
 
 
+def calculate_responsive_value(
+    dimension: int,
+    percent: float,
+    min_val: int,
+    max_val: int,
+) -> int:
+    """Calculate responsive UI value using min/max/percent pattern.
+
+    This helper is used throughout Pedre's UI plugins to scale spacing,
+    padding, borders, and font sizes proportionally to screen dimensions
+    while respecting minimum and maximum bounds.
+
+    Args:
+        dimension: Base dimension to calculate from (typically window.height or box_width)
+        percent: Percentage of dimension as decimal (0.0-1.0)
+        min_val: Minimum allowed value in pixels
+        max_val: Maximum allowed value in pixels
+
+    Returns:
+        Calculated responsive value clamped to min/max range
+
+    Example:
+        >>> # Calculate title font size: 2.2% of 720px height = 16px
+        >>> calculate_responsive_value(720, 0.022, 12, 32)
+        16
+        >>> # At 4K (2160px), it hits the maximum
+        >>> calculate_responsive_value(2160, 0.022, 12, 32)
+        32
+    """
+    return min(max_val, max(min_val, int(dimension * percent)))
+
+
 def run_game() -> None:
     """Create and run a Pedre game.
 
