@@ -12,5 +12,5 @@ class WaypointBasePlugin(BasePlugin, ABC):
 
     @abstractmethod
     def get_waypoints(self) -> dict[str, tuple[float, float]]:
-        """Get waypoints."""
+        """Get waypoints as a dictionary mapping names to (pixel_x, pixel_y) coordinates."""
         ...

@@ -65,15 +65,15 @@ class MoveNPCAction(Action):
     def execute(self, context: GameContext) -> bool:
         """Start NPC movement."""
         if not self.started:
-            # Resolve waypoint to tile coordinates
+            # Resolve waypoint to pixel coordinates
             waypoints = context.waypoint_plugin.get_waypoints()
             if self.waypoint in context.waypoint_plugin.get_waypoints():
-                tile_x, tile_y = waypoints[self.waypoint]
+                x, y = waypoints[self.waypoint]
                 logger.debug(
-                    "MoveNPCAction: Resolved waypoint '%s' to tile (%d, %d)",
+                    "MoveNPCAction: Resolved waypoint '%s' to position (%.1f, %.1f)",
                     self.waypoint,
-                    tile_x,
-                    tile_y,
+                    x,
+                    y,
                 )
             else:
                 logger.warning("MoveNPCAction: Waypoint '%s' not found", self.waypoint)
@@ -82,8 +82,8 @@ class MoveNPCAction(Action):
             # Move all NPCs to the target
             npc_plugin = context.npc_plugin
             for npc_name in self.npc_names:
-                npc_plugin.move_npc_to_tile(npc_name, tile_x, tile_y)
-                logger.debug("MoveNPCAction: Moving %s to (%d, %d)", npc_name, tile_x, tile_y)
+                npc_plugin.move_npc_to_position(npc_name, x, y)
+                logger.debug("MoveNPCAction: Moving %s to (%.1f, %.1f)", npc_name, x, y)
 
             self.started = True
 

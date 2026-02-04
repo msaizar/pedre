@@ -127,8 +127,8 @@ class NPCBasePlugin(BasePlugin, ABC):
         ...
 
     @abstractmethod
-    def move_npc_to_tile(self, npc_name: str, tile_x: int | float, tile_y: int | float) -> None:
-        """Start moving an NPC to a target tile position."""
+    def move_npc_to_position(self, npc_name: str, x: float, y: float) -> None:
+        """Start moving an NPC to a target position in pixel coordinates."""
         ...
 
     @abstractmethod

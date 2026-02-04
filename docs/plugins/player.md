@@ -330,7 +330,7 @@ When loading a scene, the player can spawn at a waypoint instead of the default 
 
 1. ScenePlugin stores a `next_spawn_waypoint` when transitioning scenes
 2. PlayerPlugin checks for this waypoint during `load_from_tiled()`
-3. If `spawn_at_portal=true` and waypoint exists, player spawns there
+3. If `spawn_at_portal=true` and waypoint exists, player spawns at waypoint's pixel coordinates
 4. If waypoint not found or `spawn_at_portal=false`, uses default position from Tiled
 
 **Example:**
@@ -524,11 +524,13 @@ Scene transitions handle player spawning:
 # ScenePlugin provides spawn waypoint
 spawn_waypoint = context.scene_plugin.get_next_spawn_waypoint()
 
-# PlayerPlugin spawns at waypoint location
+# PlayerPlugin spawns at waypoint location (pixel coordinates)
 if spawn_waypoint:
     waypoint_pos = context.waypoint_plugin.get_waypoint(spawn_waypoint)
-    player.center_x = waypoint_pos.x
-    player.center_y = waypoint_pos.y
+    if waypoint_pos:
+        pixel_x, pixel_y = waypoint_pos
+        player.center_x = pixel_x
+        player.center_y = pixel_y
 ```
 
 **Notes:**

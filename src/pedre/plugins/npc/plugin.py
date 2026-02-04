@@ -601,13 +601,13 @@ class NPCPlugin(NPCBasePlugin):
             return npc.dialog_level
         return 0
 
-    def move_npc_to_tile(self, npc_name: str, tile_x: int | float, tile_y: int | float) -> None:
-        """Start moving an NPC to a target tile position.
+    def move_npc_to_position(self, npc_name: str, x: float, y: float) -> None:
+        """Start moving an NPC to a target position.
 
         Args:
             npc_name: The NPC name.
-            tile_x: Target tile x coordinate.
-            tile_y: Target tile y coordinate.
+            x: Target x coordinate in pixels.
+            y: Target y coordinate in pixels.
         """
         npc = self.npcs.get(npc_name)
         if not npc:
@@ -620,7 +620,7 @@ class NPCPlugin(NPCBasePlugin):
 
         logger.info("Starting pathfinding for %s", npc_name)
         logger.debug("  From: (%.1f, %.1f)", npc.sprite.center_x, npc.sprite.center_y)
-        logger.debug("  To tile: (%d, %d)", tile_x, tile_y)
+        logger.debug("  To position: (%.1f, %.1f)", x, y)
 
         # Collect all moving NPCs to exclude from pathfinding obstacles
         moving_npc_sprites = [other_npc.sprite for other_npc in self.npcs.values() if other_npc.is_moving]
@@ -628,8 +628,8 @@ class NPCPlugin(NPCBasePlugin):
         path = pathfinding.find_path(
             npc.sprite.center_x,
             npc.sprite.center_y,
-            tile_x,
-            tile_y,
+            x,
+            y,
             exclude_sprite=npc.sprite,
             exclude_sprites=moving_npc_sprites,
         )

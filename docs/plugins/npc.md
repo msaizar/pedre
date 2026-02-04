@@ -162,23 +162,23 @@ print(f"Merchant now at dialog level {new_level}")
 
 ### Movement and Pathfinding
 
-#### move_npc_to_tile
+#### move_npc_to_position
 
-`move_npc_to_tile(npc_name: str, tile_x: int | float, tile_y: int | float) -> None`
+`move_npc_to_position(npc_name: str, x: float, y: float) -> None`
 
-Start moving an NPC to a target tile position using A* pathfinding.
+Start moving an NPC to a target position using A* pathfinding.
 
 **Parameters:**
 
 - `npc_name` - Name of the NPC to move
-- `tile_x` - Target tile x coordinate
-- `tile_y` - Target tile y coordinate
+- `x` - Target x coordinate in pixels
+- `y` - Target y coordinate in pixels
 
 **Example:**
 
 ```python
-# Move NPC to specific tile coordinates
-npc_plugin.move_npc_to_tile("merchant", 10, 15)
+# Move NPC to specific pixel coordinates
+npc_plugin.move_npc_to_position("merchant", 320.0, 480.0)
 ```
 
 **Notes:**
@@ -1412,8 +1412,8 @@ class CustomNPCPlugin(NPCBasePlugin):
         """Get NPC state by name."""
         ...
 
-    def move_npc_to_tile(self, npc_name: str, tile_x: int | float, tile_y: int | float) -> None:
-        """Start moving an NPC to a target tile position."""
+    def move_npc_to_position(self, npc_name: str, x: float, y: float) -> None:
+        """Start moving an NPC to a target position in pixel coordinates."""
         ...
 
     def has_npc_been_interacted_with(npc_name: str, scene_name: str | None = None) -> bool:

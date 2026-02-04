@@ -149,7 +149,8 @@ class TestNPCPlugin(unittest.TestCase):
         path = [(132, 100), (164, 100)]
         self.mock_context.pathfinding_plugin.find_path.return_value = path
 
-        self.plugin.move_npc_to_tile("walker", 5, 5)
+        # Now uses pixel coordinates
+        self.plugin.move_npc_to_position("walker", 160.0, 160.0)
 
         assert self.plugin.npcs["walker"].path == path
         assert self.plugin.npcs["walker"].is_moving is True
