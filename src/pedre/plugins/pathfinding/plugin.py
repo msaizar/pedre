@@ -92,31 +92,28 @@ class PathfindingPlugin(PathfindingBasePlugin):
     their direct path is blocked by other NPCs. This prevents permanent deadlocks
     where NPCs block each other's paths.
 
-    Attributes:
-        tile_size: Size of each tile in pixels (default settings.TILE_SIZE).
     """
 
     name: ClassVar[str] = "pathfinding"
     dependencies: ClassVar[list[str]] = []
 
     def __init__(self) -> None:
-        """Initialize the pathfinding plugin with default values.
+        """Initialize the pathfinding plugin.
 
-        Creates a pathfinding plugin with default tile size.
+        Creates a pathfinding plugin instance.
         """
-        self.tile_size: int = settings.TILE_SIZE
 
     def setup(self, context: GameContext) -> None:
         """Initialize the pathfinding plugin with game context and settings.
 
         This method is called by the PluginLoader after all plugins have been
-        instantiated. It configures the plugin with tile size from settings.
+        instantiated.
 
         Args:
             context: Game context providing access to other plugins.
         """
         self.context = context
-        logger.debug("PathfindingPlugin setup complete (tile_size=%d)", self.tile_size)
+        logger.debug("PathfindingPlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up pathfinding resources when the scene unloads.
@@ -166,8 +163,8 @@ class PathfindingPlugin(PathfindingBasePlugin):
             return True
 
         # Convert tile to pixel center
-        pixel_x = tile_x * self.tile_size + self.tile_size / 2
-        pixel_y = tile_y * self.tile_size + self.tile_size / 2
+        pixel_x = tile_x * settings.TILE_SIZE + settings.TILE_SIZE / 2
+        pixel_y = tile_y * settings.TILE_SIZE + settings.TILE_SIZE / 2
 
         # Build set of sprites to exclude for faster lookup
         excluded = set()
@@ -304,10 +301,10 @@ class PathfindingPlugin(PathfindingBasePlugin):
             Deque of (x, y) pixel positions to follow. Empty deque if no path found.
         """
         # Convert pixel positions to tile coordinates
-        start_tile_x = int(start_x / self.tile_size)
-        start_tile_y = int(start_y / self.tile_size)
-        end_tile_x = int(end_x / self.tile_size)
-        end_tile_y = int(end_y / self.tile_size)
+        start_tile_x = int(start_x / settings.TILE_SIZE)
+        start_tile_y = int(start_y / settings.TILE_SIZE)
+        end_tile_x = int(end_x / settings.TILE_SIZE)
+        end_tile_y = int(end_y / settings.TILE_SIZE)
 
         logger.debug("  Starting tile: (%d, %d)", start_tile_x, start_tile_y)
         start_walkable = self.is_tile_walkable(start_tile_x, start_tile_y, exclude_sprite, exclude_sprites)
@@ -360,8 +357,8 @@ class PathfindingPlugin(PathfindingBasePlugin):
                 # Convert tile path to pixel path
                 path: deque[tuple[float, float]] = deque()
                 for tx, ty in tile_path[1:]:  # Skip start tile
-                    pixel_x = tx * self.tile_size + self.tile_size / 2
-                    pixel_y = ty * self.tile_size + self.tile_size / 2
+                    pixel_x = tx * settings.TILE_SIZE + settings.TILE_SIZE / 2
+                    pixel_y = ty * settings.TILE_SIZE + settings.TILE_SIZE / 2
                     path.append((pixel_x, pixel_y))
 
                 return path

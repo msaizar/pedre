@@ -28,7 +28,6 @@ class TestPathfindingPlugin(unittest.TestCase):
     def test_initialization(self) -> None:
         """Test proper initialization of the plugin."""
         assert self.plugin.name == "pathfinding"
-        assert self.plugin.tile_size == settings.TILE_SIZE
         assert self.plugin.context == self.mock_context
 
     def test_is_tile_walkable_no_walls(self) -> None:
