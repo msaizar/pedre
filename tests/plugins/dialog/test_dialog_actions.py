@@ -151,17 +151,6 @@ class TestDialogAction(unittest.TestCase):
 
         dialog_plugin.show_dialog.assert_called_once_with("TestNPC", ["Hello!"], instant=True, auto_close=True)
 
-    def test_execute_without_dialog_plugin(self) -> None:
-        """Test execute handles missing dialog plugin gracefully."""
-        action = DialogAction("TestNPC", ["Hello!"])
-        context = MagicMock()
-        context.dialog_plugin = None
-
-        result = action.execute(context)
-
-        assert result is True
-        assert action.started is True
-
     def test_execute_only_once(self) -> None:
         """Test that dialog is only shown once even if execute called multiple times."""
         action = DialogAction("TestNPC", ["Hello!"])

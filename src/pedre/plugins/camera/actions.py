@@ -54,14 +54,11 @@ class FollowPlayerAction(Action):
         """Set camera to follow player."""
         if not self.executed:
             camera_plugin = context.camera_plugin
-            if camera_plugin:
-                camera_plugin.set_follow_player(smooth=self.smooth)
-                logger.debug(
-                    "FollowPlayerAction: Camera now following player (smooth=%s)",
-                    self.smooth,
-                )
-            else:
-                logger.warning("FollowPlayerAction: No camera plugin available")
+            camera_plugin.set_follow_player(smooth=self.smooth)
+            logger.debug(
+                "FollowPlayerAction: Camera now following player (smooth=%s)",
+                self.smooth,
+            )
             self.executed = True
 
         return True  # Complete immediately
@@ -136,22 +133,18 @@ class FollowNPCAction(Action):
         """Set camera to follow NPC."""
         if not self.executed:
             camera_plugin = context.camera_plugin
-            if camera_plugin:
-                # Validate NPC exists
-                npc_plugin = context.npc_plugin
-                if npc_plugin:
-                    npc_state = npc_plugin.get_npc_by_name(self.npc_name)
-                    if not npc_state:
-                        logger.warning("FollowNPCAction: NPC '%s' not found", self.npc_name)
+            # Validate NPC exists
+            npc_plugin = context.npc_plugin
+            npc_state = npc_plugin.get_npc_by_name(self.npc_name)
+            if not npc_state:
+                logger.warning("FollowNPCAction: NPC '%s' not found", self.npc_name)
 
-                camera_plugin.set_follow_npc(self.npc_name, smooth=self.smooth)
-                logger.debug(
-                    "FollowNPCAction: Camera now following '%s' (smooth=%s)",
-                    self.npc_name,
-                    self.smooth,
-                )
-            else:
-                logger.warning("FollowNPCAction: No camera plugin available")
+            camera_plugin.set_follow_npc(self.npc_name, smooth=self.smooth)
+            logger.debug(
+                "FollowNPCAction: Camera now following '%s' (smooth=%s)",
+                self.npc_name,
+                self.smooth,
+            )
             self.executed = True
 
         return True  # Complete immediately
@@ -203,11 +196,8 @@ class StopCameraFollowAction(Action):
         """Stop camera following."""
         if not self.executed:
             camera_plugin = context.camera_plugin
-            if camera_plugin:
-                camera_plugin.stop_follow()
-                logger.debug("StopCameraFollowAction: Camera following stopped")
-            else:
-                logger.warning("StopCameraFollowAction: No camera plugin available")
+            camera_plugin.stop_follow()
+            logger.debug("StopCameraFollowAction: Camera following stopped")
             self.executed = True
 
         return True

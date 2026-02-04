@@ -40,16 +40,6 @@ class TestFollowPlayerAction(unittest.TestCase):
         assert result is True
         camera_plugin.set_follow_player.assert_called_once_with(smooth=False)
 
-    def test_execute_no_camera_plugin(self) -> None:
-        """Test graceful handling when camera plugin not available."""
-        action = FollowPlayerAction()
-        context = MagicMock()
-        context.camera_plugin = None
-
-        result = action.execute(context)
-
-        assert result is True  # Should still complete
-
     def test_from_dict(self) -> None:
         """Test creating action from dictionary."""
         data = {"smooth": False}
@@ -128,16 +118,6 @@ class TestFollowNPCAction(unittest.TestCase):
         assert result is True
         camera_plugin.set_follow_npc.assert_called_once_with("yema", smooth=False)
 
-    def test_execute_no_camera_plugin(self) -> None:
-        """Test graceful handling when camera plugin not available."""
-        action = FollowNPCAction("martin")
-        context = MagicMock()
-        context.camera_plugin = None
-
-        result = action.execute(context)
-
-        assert result is True  # Should still complete
-
     def test_from_dict(self) -> None:
         """Test creating action from dictionary."""
         data = {"npc": "yema", "smooth": False}
@@ -179,16 +159,6 @@ class TestStopCameraFollowAction(unittest.TestCase):
 
         assert result is True
         camera_plugin.stop_follow.assert_called_once()
-
-    def test_execute_no_camera_plugin(self) -> None:
-        """Test graceful handling when camera plugin not available."""
-        action = StopCameraFollowAction()
-        context = MagicMock()
-        context.camera_plugin = None
-
-        result = action.execute(context)
-
-        assert result is True  # Should still complete
 
     def test_from_dict(self) -> None:
         """Test creating action from dictionary."""
