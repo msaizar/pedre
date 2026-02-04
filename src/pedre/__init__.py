@@ -34,7 +34,7 @@ Alternative usage:
     )
 """
 
-__version__ = "0.0.7"
+__version__ = "0.1.0"
 
 from pedre.helpers import run_game
 
