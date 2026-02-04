@@ -489,15 +489,21 @@ Debug plugin configuration for development overlays.
 
 Asset management configuration.
 
-| Setting         | Type   | Default       | Description                                      |
-| --------------- | ------ | ------------- | ------------------------------------------------ |
-| `ASSETS_HANDLE` | string | "assets" | Arcade resource handle name for assets directory |
+| Setting             | Type   | Default  | Description                                           |
+| ------------------- | ------ | -------- | ----------------------------------------------------- |
+| `ASSETS_HANDLE`     | string | "assets" | Arcade resource handle name for referencing assets    |
+| `ASSETS_DIRECTORY`  | string | "assets" | Directory name where game assets are stored on disk   |
 
 **Notes:**
 
-- This handle is registered with Arcade's resource system
-- Used to load assets with `arcade.resources.resolve()`
-- Should match the handle used when registering your assets directory
+- `ASSETS_HANDLE` is the name used to reference assets in code (e.g., `:assets:/maps/file.tmx`)
+  - This handle is registered with Arcade's resource system
+  - Used with `arcade.resources.resolve()` for asset path resolution
+- `ASSETS_DIRECTORY` is the actual folder name on the filesystem
+  - Can be different from the handle name if desired
+  - Path is relative to the project root directory
+  - In PyInstaller bundles, uses the bundled assets directory
+- Typically both settings use the same value ("assets"), but can differ for flexibility
 
 ### Save Plugin Settings
 
@@ -608,6 +614,7 @@ CAMERA_LERP_SPEED=0.15
 
 # Asset settings
 ASSETS_HANDLE="mystic_quest_assets"
+ASSETS_DIRECTORY="assets"
 
 # Game settings
 INITIAL_MAP="starting_village.tmx"
@@ -639,6 +646,7 @@ NPC_INTERACTION_KEY: str = "SPACE"
 
 # Asset settings
 ASSETS_HANDLE: str = "assets"
+ASSETS_DIRECTORY: str = "assets"
 
 # Game settings
 INITIAL_MAP: str = "map.tmx"

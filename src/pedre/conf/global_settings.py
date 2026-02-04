@@ -62,6 +62,9 @@ NPC_INTERACTION_KEY = "SPACE"
 ASSETS_HANDLE = "assets"
 """Resource handle name for asset loading."""
 
+ASSETS_DIRECTORY = "assets"
+"""Directory name where game assets are stored."""
+
 # Game settings
 INITIAL_MAP = "map.tmx"
 """Path to the initial map file to load."""

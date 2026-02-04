@@ -14,7 +14,17 @@ class TestSavePlugin(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up the SavePlugin and mock context."""
-        with patch("pedre.plugins.save.plugin.Path.mkdir"):
+        with patch("pedre.plugins.save.plugin.get_app_data_dir") as mock_get_dir:
+            mock_path = MagicMock()
+
+            # Configure the mock to support path operations
+            def create_mock_path(filename: str) -> MagicMock:
+                path_mock = MagicMock()
+                path_mock.name = filename
+                return path_mock
+
+            mock_path.__truediv__ = MagicMock(side_effect=create_mock_path)
+            mock_get_dir.return_value = mock_path
             self.plugin = SavePlugin()
         self.mock_context = MagicMock()
 
@@ -47,15 +57,20 @@ class TestSavePlugin(unittest.TestCase):
 
     def test_initialization(self) -> None:
         """Test proper initialization of the plugin."""
-        with patch("pedre.plugins.save.plugin.Path.mkdir") as mock_mkdir:
+        with patch("pedre.plugins.save.plugin.get_app_data_dir") as mock_get_dir:
+            mock_path = MagicMock()
+            mock_get_dir.return_value = mock_path
             plugin = SavePlugin()
             assert plugin.name == "save"
             assert plugin.current_slot is None
-            mock_mkdir.assert_called_once_with(exist_ok=True)
+            mock_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
     def test_setup(self) -> None:
         """Test setup assigns context."""
-        plugin = SavePlugin()
+        with patch("pedre.plugins.save.plugin.get_app_data_dir") as mock_get_dir:
+            mock_path = MagicMock()
+            mock_get_dir.return_value = mock_path
+            plugin = SavePlugin()
         mock_context = MagicMock()
         plugin.setup(mock_context)
         assert plugin.context == mock_context
@@ -152,7 +167,10 @@ class TestSavePlugin(unittest.TestCase):
 
         # Mock file operations
         m_open = mock_open()
-        with patch("pedre.plugins.save.plugin.Path.open", m_open):
+        mock_path = MagicMock()
+        mock_path.open = m_open
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.save_game(slot=1)
 
         assert result is True
@@ -188,10 +206,11 @@ class TestSavePlugin(unittest.TestCase):
         }
 
         m_open = mock_open(read_data=json.dumps(save_data))
-        with (
-            patch("pedre.plugins.save.plugin.Path.exists", return_value=True),
-            patch("pedre.plugins.save.plugin.Path.open", m_open),
-        ):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+        mock_path.open = m_open
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.load_game(slot=1)
 
         assert result is not None
@@ -202,14 +221,20 @@ class TestSavePlugin(unittest.TestCase):
 
     def test_load_game_no_file(self) -> None:
         """Test loading game when file doesn't exist."""
-        with patch("pedre.plugins.save.plugin.Path.exists", return_value=False):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = False
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.load_game(slot=1)
 
         assert result is None
 
     def test_load_game_exception(self) -> None:
         """Test load game handles exceptions."""
-        with patch("pedre.plugins.save.plugin.Path.exists", side_effect=Exception("Test error")):
+        mock_path = MagicMock()
+        mock_path.exists.side_effect = Exception("Test error")
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.load_game(slot=1)
 
         assert result is None
@@ -267,39 +292,47 @@ class TestSavePlugin(unittest.TestCase):
 
     def test_delete_save_success(self) -> None:
         """Test deleting save file successfully."""
-        with (
-            patch("pedre.plugins.save.plugin.Path.exists", return_value=True),
-            patch("pedre.plugins.save.plugin.Path.unlink") as mock_unlink,
-        ):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.delete_save(slot=1)
 
         assert result is True
-        mock_unlink.assert_called_once()
+        mock_path.unlink.assert_called_once()
 
     def test_delete_save_no_file(self) -> None:
         """Test deleting save when file doesn't exist."""
-        with patch("pedre.plugins.save.plugin.Path.exists", return_value=False):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = False
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.delete_save(slot=1)
 
         assert result is False
 
     def test_delete_save_exception(self) -> None:
         """Test delete save handles exceptions."""
-        with (
-            patch("pedre.plugins.save.plugin.Path.exists", return_value=True),
-            patch("pedre.plugins.save.plugin.Path.unlink", side_effect=Exception("Test error")),
-        ):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+        mock_path.unlink.side_effect = Exception("Test error")
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.delete_save(slot=1)
 
         assert result is False
 
     def test_save_exists(self) -> None:
         """Test checking if save exists."""
-        with patch("pedre.plugins.save.plugin.Path.exists", return_value=True):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.save_exists(slot=1)
         assert result is True
 
-        with patch("pedre.plugins.save.plugin.Path.exists", return_value=False):
+        mock_path.exists.return_value = False
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.save_exists(slot=1)
         assert result is False
 
@@ -319,10 +352,11 @@ class TestSavePlugin(unittest.TestCase):
         }
 
         m_open = mock_open(read_data=json.dumps(save_data))
-        with (
-            patch("pedre.plugins.save.plugin.Path.exists", return_value=True),
-            patch("pedre.plugins.save.plugin.Path.open", m_open),
-        ):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+        mock_path.open = m_open
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.get_save_info(slot=1)
 
         assert result is not None
@@ -334,14 +368,20 @@ class TestSavePlugin(unittest.TestCase):
 
     def test_get_save_info_no_file(self) -> None:
         """Test get save info when file doesn't exist."""
-        with patch("pedre.plugins.save.plugin.Path.exists", return_value=False):
+        mock_path = MagicMock()
+        mock_path.exists.return_value = False
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.get_save_info(slot=1)
 
         assert result is None
 
     def test_get_save_info_exception(self) -> None:
         """Test get save info handles exceptions."""
-        with patch("pedre.plugins.save.plugin.Path.exists", side_effect=Exception("Test error")):
+        mock_path = MagicMock()
+        mock_path.exists.side_effect = Exception("Test error")
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
             result = self.plugin.get_save_info(slot=1)
 
         assert result is None

@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import arcade
+from platformdirs import user_data_dir
 from rich.logging import RichHandler
 
 from pedre.conf import settings
@@ -33,6 +34,37 @@ def setup_logging(log_level: str = "DEBUG") -> None:
     )
 
 
+def get_app_data_dir(subdir: str = "") -> Path:
+    """Get application data directory for storing user data.
+
+    When running from PyInstaller bundle, uses platform-specific user data directory.
+    When running normally, uses current working directory.
+
+    Args:
+        subdir: Optional subdirectory within the app data directory.
+
+    Returns:
+        Path to the application data directory (or subdirectory if specified).
+
+    Example:
+        >>> # Normal execution
+        >>> get_app_data_dir("saves")
+        PosixPath('/path/to/project/saves')
+
+        >>> # PyInstaller bundle on macOS
+        >>> get_app_data_dir("saves")
+        PosixPath('/Users/username/Library/Application Support/MyGame/saves')
+    """
+    if getattr(sys, "frozen", False):
+        # Running from PyInstaller bundle - use platform-specific user data dir
+        # Sanitize WINDOW_TITLE for use as directory name
+        app_name = settings.WINDOW_TITLE.replace(" ", "").replace("/", "-")
+        base = Path(user_data_dir(app_name, appauthor=False))
+        return base / subdir if subdir else base
+    # Running normally - use current working directory
+    return Path.cwd() / subdir if subdir else Path.cwd()
+
+
 def setup_resources(assets_handle: str) -> None:
     """Configure Arcade resource handles for game assets.
 
@@ -44,16 +76,16 @@ def setup_resources(assets_handle: str) -> None:
 
     Side effects:
         - Adds resource handle to arcade.resources
-        - Handle points to the assets/ directory in the current working directory
+        - Handle points to the directory specified by settings.ASSETS_DIRECTORY
         - When running from PyInstaller bundle, uses the bundle's assets directory
     """
     # Check if running from PyInstaller bundle
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         # Running from PyInstaller bundle - assets are in the bundle directory
-        assets_dir = Path(sys._MEIPASS) / "assets"
+        assets_dir = Path(sys._MEIPASS) / settings.ASSETS_DIRECTORY  # noqa: SLF001
     else:
         # Running normally - assets are relative to current working directory
-        assets_dir = Path.cwd() / "assets"
+        assets_dir = Path.cwd() / settings.ASSETS_DIRECTORY
 
     arcade.resources.add_resource_handle(assets_handle, assets_dir.resolve())
 
