@@ -6,6 +6,7 @@ more control over the game initialization.
 """
 
 import logging
+import sys
 from pathlib import Path
 
 import arcade
@@ -44,8 +45,16 @@ def setup_resources(assets_handle: str) -> None:
     Side effects:
         - Adds resource handle to arcade.resources
         - Handle points to the assets/ directory in the current working directory
+        - When running from PyInstaller bundle, uses the bundle's assets directory
     """
-    assets_dir = Path.cwd() / "assets"
+    # Check if running from PyInstaller bundle
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        # Running from PyInstaller bundle - assets are in the bundle directory
+        assets_dir = Path(sys._MEIPASS) / "assets"
+    else:
+        # Running normally - assets are relative to current working directory
+        assets_dir = Path.cwd() / "assets"
+
     arcade.resources.add_resource_handle(assets_handle, assets_dir.resolve())
 
 
