@@ -202,9 +202,7 @@ class TestInventoryPlugin(unittest.TestCase):
         assert "i2" in self.plugin.items
         assert self.plugin.items["i1"].acquired is True
         assert self.plugin.items["i2"].acquired is False
-        assert "i1" in self.plugin.dynamic_items  # Should track restored items as dynamic if they weren't deafult?
-        # Actually logic for restoring dynamic items needs to be checked in source code,
-        # usually save/load handles re-creating items.
+        assert "i1" in self.plugin.dynamic_items
 
     def test_reset(self) -> None:
         """Test resetting the plugin."""
