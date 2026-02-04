@@ -52,6 +52,7 @@ NPC_INTERACTION_KEY: str
 
 # Asset settings
 ASSETS_HANDLE: str
+ASSETS_DIRECTORY: str
 
 # Game settings
 INITIAL_MAP: str

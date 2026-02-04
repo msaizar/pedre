@@ -48,18 +48,21 @@ Example usage:
         save_plugin.restore_game_data(save_data, context)
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pedre.conf import settings
-from pedre.helpers import matches_key
+from pedre.helpers import get_app_data_dir, matches_key
 from pedre.plugins.registry import PluginRegistry
 from pedre.plugins.save.base import GameSaveData, SaveBasePlugin
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
@@ -82,8 +85,8 @@ class SavePlugin(SaveBasePlugin):
 
     def __init__(self) -> None:
         """Initialize the save plugin."""
-        self.saves_dir = Path.cwd() / settings.SAVE_FOLDER
-        self.saves_dir.mkdir(exist_ok=True)
+        self.saves_dir = get_app_data_dir(settings.SAVE_FOLDER)
+        self.saves_dir.mkdir(parents=True, exist_ok=True)
 
         self.current_slot: int | None = None
 
