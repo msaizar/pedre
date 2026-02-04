@@ -59,7 +59,7 @@ NPC_INTERACTION_KEY = "SPACE"
 """Key for interacting with NPCs."""
 
 # Asset settings
-ASSETS_HANDLE = "game_assets"
+ASSETS_HANDLE = "assets"
 """Resource handle name for asset loading."""
 
 # Game settings
