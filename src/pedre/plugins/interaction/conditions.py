@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 def check_object_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if an object has been interacted with."""
     interaction = context.interaction_plugin
-    if not interaction:
-        return False
     object_name = condition_data.get("object")
     expected = condition_data.get("equals", True)
     if not object_name:

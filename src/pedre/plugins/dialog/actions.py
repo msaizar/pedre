@@ -79,11 +79,8 @@ class DialogAction(Action):
         """Show dialog if not already showing."""
         if not self.started:
             dialog_plugin = context.dialog_plugin
-            if dialog_plugin:
-                dialog_plugin.show_dialog(self.speaker, self.text, instant=self.instant, auto_close=self.auto_close)
-                logger.debug("DialogAction: Showing dialog from %s", self.speaker)
-            else:
-                logger.warning("DialogAction: No dialog plugin available")
+            dialog_plugin.show_dialog(self.speaker, self.text, instant=self.instant, auto_close=self.auto_close)
+            logger.debug("DialogAction: Showing dialog from %s", self.speaker)
             self.started = True
 
         # Action completes immediately, dialog plugin handles display
