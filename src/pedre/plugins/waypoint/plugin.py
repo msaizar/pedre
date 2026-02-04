@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, ClassVar
 
-from pedre.conf import settings
 from pedre.plugins.registry import PluginRegistry
 from pedre.plugins.waypoint.base import WaypointBasePlugin
 
@@ -77,16 +76,12 @@ class WaypointPlugin(WaypointBasePlugin):
             if isinstance(shape_x, (int, float)) and isinstance(shape_y, (int, float)):
                 x = float(shape_x)
                 y = float(shape_y)
-                tile_x = int(x // settings.TILE_SIZE)
-                tile_y = int(y // settings.TILE_SIZE)
-                self.waypoints[waypoint.name] = (tile_x, tile_y)
+                self.waypoints[waypoint.name] = (x, y)
                 logger.debug(
-                    "Loaded waypoint '%s' at pixel (%.1f, %.1f) -> tile (%d, %d)",
+                    "Loaded waypoint '%s' at pixel (%.1f, %.1f)",
                     waypoint.name,
                     x,
                     y,
-                    tile_x,
-                    tile_y,
                 )
             else:
                 logger.warning(
@@ -103,6 +98,6 @@ class WaypointPlugin(WaypointBasePlugin):
             name: Waypoint name.
 
         Returns:
-            Tuple of (tile_x, tile_y) or None if not found.
+            Tuple of (pixel_x, pixel_y) or None if not found.
         """
         return self.waypoints.get(name)

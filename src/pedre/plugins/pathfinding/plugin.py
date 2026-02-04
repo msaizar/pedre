@@ -34,12 +34,12 @@ Example usage:
     # Get pathfinding plugin from context
     pathfinding = context.get_plugin("pathfinding")
 
-    # Find path from pixel position to tile coordinates
+    # Find path from pixel position to pixel coordinates
     path = pathfinding.find_path(
         start_x=player.center_x,
         start_y=player.center_y,
-        end_tile_x=10,
-        end_tile_y=15,
+        end_x=320.0,
+        end_y=480.0,
         exclude_sprite=npc_sprite
         context=context
     )
@@ -193,14 +193,14 @@ class PathfindingPlugin(PathfindingBasePlugin):
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int | float,
-        end_tile_y: int | float,
+        end_x: float,
+        end_y: float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:
         """Find a path using A* pathfinding with automatic retry logic.
 
-        Calculates the optimal path from a pixel position to a target tile using the
+        Calculates the optimal path from a pixel position to a target pixel position using the
         A* algorithm. If the initial pathfinding fails (typically due to NPC blocking),
         automatically retries with NPC passthrough enabled.
 
@@ -228,8 +228,8 @@ class PathfindingPlugin(PathfindingBasePlugin):
         Args:
             start_x: Starting pixel x position (world coordinates).
             start_y: Starting pixel y position (world coordinates).
-            end_tile_x: Target tile x coordinate (grid space).
-            end_tile_y: Target tile y coordinate (grid space).
+            end_x: Target pixel x position (world coordinates).
+            end_y: Target pixel y position (world coordinates).
             exclude_sprite: The sprite that is moving, excluded from blocking itself.
             exclude_sprites: Additional sprites to exclude from collision detection.
 
@@ -238,7 +238,7 @@ class PathfindingPlugin(PathfindingBasePlugin):
             if no path exists even with NPC passthrough.
         """
         # Try normal pathfinding first
-        path = self._find_path_internal(start_x, start_y, end_tile_x, end_tile_y, exclude_sprite, exclude_sprites)
+        path = self._find_path_internal(start_x, start_y, end_x, end_y, exclude_sprite, exclude_sprites)
 
         # If no path found, retry with NPC passthrough enabled
         scene_plugin = self.context.scene_plugin
@@ -255,7 +255,7 @@ class PathfindingPlugin(PathfindingBasePlugin):
                 if exclude_sprites:
                     all_npcs.extend(exclude_sprites)
 
-                path = self._find_path_internal(start_x, start_y, end_tile_x, end_tile_y, exclude_sprite, all_npcs)
+                path = self._find_path_internal(start_x, start_y, end_x, end_y, exclude_sprite, all_npcs)
                 if path:
                     logger.info("  Path found with NPC passthrough (length: %d)", len(path))
 
@@ -265,8 +265,8 @@ class PathfindingPlugin(PathfindingBasePlugin):
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int | float,
-        end_tile_y: int | float,
+        end_x: float,
+        end_y: float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:
@@ -295,8 +295,8 @@ class PathfindingPlugin(PathfindingBasePlugin):
         Args:
             start_x: Starting pixel x position.
             start_y: Starting pixel y position.
-            end_tile_x: Target tile x coordinate.
-            end_tile_y: Target tile y coordinate.
+            end_x: Target pixel x position.
+            end_y: Target pixel y position.
             exclude_sprite: The sprite that is moving (excluded from collision).
             exclude_sprites: List of sprites to exclude (e.g., all moving NPCs).
 
@@ -306,6 +306,8 @@ class PathfindingPlugin(PathfindingBasePlugin):
         # Convert pixel positions to tile coordinates
         start_tile_x = int(start_x / self.tile_size)
         start_tile_y = int(start_y / self.tile_size)
+        end_tile_x = int(end_x / self.tile_size)
+        end_tile_y = int(end_y / self.tile_size)
 
         logger.debug("  Starting tile: (%d, %d)", start_tile_x, start_tile_y)
         start_walkable = self.is_tile_walkable(start_tile_x, start_tile_y, exclude_sprite, exclude_sprites)
