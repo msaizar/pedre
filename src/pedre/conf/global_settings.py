@@ -89,23 +89,47 @@ INVENTORY_GRID_COLS = 4
 INVENTORY_GRID_ROWS = 3
 """Number of rows in the inventory grid."""
 
-INVENTORY_BOX_SIZE = 100
-"""Size of each inventory box in pixels."""
+INVENTORY_DESIGN = {
+    # Grid item dimensions
+    "box_size": 30,
+    "box_spacing": 15,
+    "box_border_width": 3,
+    # Overlay dimensions
+    "overlay_height_fraction": 0.3,  # Overlay covers bottom half of screen
+    # Text positioning
+    "item_name_y_offset": 30,
+    "hint_y_offset": 10,
+    "capacity_x_offset": 10,
+    "capacity_y_offset": 10,
+    "grid_y_offset": 20,  # Slight upward offset for grid centering
+    # Photo view text positioning
+    "photo_title_y_offset": 90,
+    "photo_description_y_offset": 60,
+    # Photo view sizing
+    "photo_max_width_fraction": 0.7,
+    "photo_max_height_fraction": 0.7,
+    "photo_text_area_height": 120,
+    # Icon padding
+    "icon_padding": 4,
+}
+"""Design-unit values for the inventory UI layout.
 
-INVENTORY_BOX_SPACING = 15
-"""Spacing between inventory boxes in pixels."""
+All values except fractions are in pixels at the reference resolution (SCREEN_WIDTH x SCREEN_HEIGHT).
+They are scaled proportionally to the actual window size at runtime.
+Override individual values by merging with the default dictionary.
+"""
 
-INVENTORY_BOX_BORDER_WIDTH = 3
-"""Border width for inventory boxes in pixels."""
+INVENTORY_UI_SCALE_MIN = 0.5
+"""Minimum UI scale factor for the inventory. Prevents the inventory from shrinking too small."""
+
+INVENTORY_UI_SCALE_MAX = 2.0
+"""Maximum UI scale factor for the inventory. Prevents the inventory from growing too large."""
 
 INVENTORY_BACKGROUND_IMAGE = ""
 """Path to background image for inventory screen (empty string for no image)."""
 
 INVENTORY_MAX_SPACE = 12
 """Maximum number of items that can be held in inventory."""
-
-INVENTORY_CAPACITY_FONT_SIZE = 14
-"""Font size for the inventory capacity counter display."""
 
 INVENTORY_ITEMS_FILE = "data/inventory_items.json"
 """Path to the inventory items JSON data file."""
@@ -124,12 +148,6 @@ INVENTORY_HINT_VIEW = "[V] View"
 
 INVENTORY_HINT_CONSUME = "[C] Consume"
 """Help text shown for consuming an item."""
-
-INVENTORY_HINT_FONT_SIZE = 12
-"""Font size for inventory hint text."""
-
-INVENTORY_TITLE_FONT_SIZE = 20
-"""Font size for inventory title text."""
 
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT = False
@@ -374,6 +392,52 @@ PAUSE_MENU_COLOR_DISABLED = (128, 128, 128)
 
 PAUSE_MENU_COLOR_FEEDBACK = (0, 255, 0)
 """RGB color for feedback messages (e.g. 'Game Saved!')."""
+
+PAUSE_MENU_OVERLAY_ALPHA = 128
+"""Transparency of the pause menu overlay background (0-255)."""
+
+# Inventory colors
+INVENTORY_COLOR_OVERLAY = (45, 52, 54)
+"""RGB color for the full-screen overlay background behind the inventory."""
+
+INVENTORY_OVERLAY_ALPHA = 255
+"""Transparency of the inventory overlay background (0-255)."""
+
+INVENTORY_COLOR_BOX_FILLED = (47, 79, 79)
+"""RGB color for filled inventory slot background (dark slate gray)."""
+
+INVENTORY_COLOR_BOX_EMPTY = (30, 30, 35)
+"""RGBA color for empty inventory slot background."""
+
+INVENTORY_COLOR_BOX_BORDER = (255, 255, 255)
+"""RGB color for inventory box border (white)."""
+
+INVENTORY_COLOR_BOX_BORDER_SELECTED = (255, 255, 0)
+"""RGB color for selected inventory box border (yellow)."""
+
+INVENTORY_COLOR_BOX_BORDER_EMPTY = (105, 105, 105)
+"""RGB color for empty inventory box border (dim gray)."""
+
+INVENTORY_COLOR_TEXT_ITEM_NAME = (255, 255, 255)
+"""RGB color for selected item name text (white)."""
+
+INVENTORY_COLOR_TEXT_HINT = (211, 211, 211)
+"""RGB color for hint text (light gray)."""
+
+INVENTORY_COLOR_TEXT_CAPACITY = (255, 255, 255)
+"""RGB color for capacity counter text (white)."""
+
+INVENTORY_COLOR_TEXT_PHOTO_TITLE = (255, 255, 255)
+"""RGB color for photo title text (white)."""
+
+INVENTORY_COLOR_TEXT_PHOTO_DESCRIPTION = (211, 211, 211)
+"""RGB color for photo description text (light gray)."""
+
+INVENTORY_COLOR_PHOTO_BACKGROUND = (0, 0, 0)
+"""RGB color for photo view background (black)."""
+
+INVENTORY_EMPTY_BOX_ALPHA = 180
+"""Transparency of empty inventory slot backgrounds (0-255)."""
 
 # Installed plugins (like Django's INSTALLED_APPS)
 INSTALLED_PLUGINS = [

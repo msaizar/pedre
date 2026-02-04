@@ -18,12 +18,13 @@ NPC_INTERACTION_DISTANCE=50
 PORTAL_INTERACTION_DISTANCE=50
 WAYPOINT_THRESHOLD=2
 NPC_SPEED=80.0
-INVENTORY_GRID_COLS=10
-INVENTORY_GRID_ROWS=4
-INVENTORY_BOX_SIZE=30
-INVENTORY_BOX_SPACING=5
-INVENTORY_BOX_BORDER_WIDTH=1
-INVENTORY_BACKGROUND_IMAGE=""
+INVENTORY_GRID_COLS=4
+INVENTORY_GRID_ROWS=3
+INVENTORY_MAX_SPACE=12
+INVENTORY_DESIGN={
+    **INVENTORY_DESIGN,
+    "box_size": 80,
+}
 DIALOG_AUTO_CLOSE_DEFAULT=False
 DIALOG_AUTO_CLOSE_DURATION=0.5
 AUDIO_MUSIC_VOLUME=0.5
@@ -190,51 +191,90 @@ PAUSE_MENU_DESIGN = {
 
 ### Inventory Settings
 
-Inventory grid layout, capacity, and appearance.
+Inventory grid layout, capacity, and appearance. The inventory uses responsive design that scales proportionally to screen size.
 
 #### Grid Layout Settings
 
-| Setting                      | Type | Default | Description                                |
-| ---------------------------- | ---- | ------- | ------------------------------------------ |
-| `INVENTORY_GRID_COLS`        | int  | 4       | Number of columns in inventory grid        |
-| `INVENTORY_GRID_ROWS`        | int  | 3       | Number of rows in inventory grid           |
-| `INVENTORY_BOX_SIZE`         | int  | 100     | Size of each inventory slot in pixels      |
-| `INVENTORY_BOX_SPACING`      | int  | 15      | Spacing between inventory slots in pixels  |
-| `INVENTORY_BOX_BORDER_WIDTH` | int  | 3       | Border width for inventory slots in pixels |
+| Setting               | Type | Default | Description                         |
+| --------------------- | ---- | ------- | ----------------------------------- |
+| `INVENTORY_GRID_COLS` | int  | 4       | Number of columns in inventory grid |
+| `INVENTORY_GRID_ROWS` | int  | 3       | Number of rows in inventory grid    |
+| `INVENTORY_MAX_SPACE` | int  | 12      | Maximum number of items to hold     |
 
-#### Capacity and Display Settings
+#### Responsive Design Settings
 
-| Setting                        | Type   | Default | Description                                    |
-| ------------------------------ | ------ | ------- | ---------------------------------------------- |
-| `INVENTORY_MAX_SPACE`          | int    | 12      | Maximum number of items the inventory can hold |
-| `INVENTORY_CAPACITY_FONT_SIZE` | int    | 14      | Font size for capacity counter (e.g., "8/12")  |
-| `INVENTORY_BACKGROUND_IMAGE`   | string | ""      | Path to background image (optional)            |
+The `INVENTORY_DESIGN` dictionary contains design-unit values (pixels at reference resolution) that scale automatically:
+
+| Key                         | Type  | Default | Description                            |
+| --------------------------- | ----- | ------- | -------------------------------------- |
+| `box_size`                  | int   | 100     | Size of each inventory slot            |
+| `box_spacing`               | int   | 15      | Spacing between slots                  |
+| `box_border_width`          | int   | 3       | Border width for slots                 |
+| `overlay_height_fraction`   | float | 0.5     | Fraction of screen for overlay         |
+| `item_name_y_offset`        | int   | 30      | Y position for item name               |
+| `hint_y_offset`             | int   | 10      | Y position for hints                   |
+| `capacity_x_offset`         | int   | 10      | X offset for capacity counter          |
+| `capacity_y_offset`         | int   | 10      | Y offset for capacity counter          |
+| `grid_y_offset`             | int   | 20      | Vertical centering offset              |
+| `photo_title_y_offset`      | int   | 90      | Y position for photo title             |
+| `photo_description_y_offset`| int   | 60      | Y position for photo description       |
+| `photo_max_width_fraction`  | float | 0.7     | Max photo width fraction               |
+| `photo_max_height_fraction` | float | 0.7     | Max photo height fraction              |
+| `photo_text_area_height`    | int   | 120     | Reserved height for photo text         |
+| `icon_padding`              | int   | 4       | Padding inside icon boxes              |
+
+UI scaling bounds:
+
+| Setting                   | Type  | Default | Description           |
+| ------------------------- | ----- | ------- | --------------------- |
+| `INVENTORY_UI_SCALE_MIN`  | float | 0.5     | Minimum UI scale      |
+| `INVENTORY_UI_SCALE_MAX`  | float | 2.0     | Maximum UI scale      |
+
+#### Color Settings
+
+| Setting                                  | Type  | Default         | Description                  |
+| ---------------------------------------- | ----- | --------------- | ---------------------------- |
+| `INVENTORY_COLOR_OVERLAY`                | tuple | (0, 0, 0)       | Overlay background RGB       |
+| `INVENTORY_OVERLAY_ALPHA`                | int   | 200             | Overlay transparency (0-255) |
+| `INVENTORY_COLOR_BOX_FILLED`             | tuple | (47, 79, 79)    | Filled slot background       |
+| `INVENTORY_COLOR_BOX_EMPTY`              | tuple | (30, 30, 35)    | Empty slot background        |
+| `INVENTORY_EMPTY_BOX_ALPHA`              | int   | 180             | Empty slot transparency      |
+| `INVENTORY_COLOR_BOX_BORDER`             | tuple | (255, 255, 255) | Slot border RGB              |
+| `INVENTORY_COLOR_BOX_BORDER_SELECTED`    | tuple | (255, 255, 0)   | Selected border RGB          |
+| `INVENTORY_COLOR_BOX_BORDER_EMPTY`       | tuple | (105, 105, 105) | Empty slot border RGB        |
+| `INVENTORY_COLOR_TEXT_ITEM_NAME`         | tuple | (255, 255, 255) | Item name text RGB           |
+| `INVENTORY_COLOR_TEXT_HINT`              | tuple | (211, 211, 211) | Hint text RGB                |
+| `INVENTORY_COLOR_TEXT_CAPACITY`          | tuple | (255, 255, 255) | Capacity counter RGB         |
+| `INVENTORY_COLOR_TEXT_PHOTO_TITLE`       | tuple | (255, 255, 255) | Photo title RGB              |
+| `INVENTORY_COLOR_TEXT_PHOTO_DESCRIPTION` | tuple | (211, 211, 211) | Photo description RGB        |
+| `INVENTORY_COLOR_PHOTO_BACKGROUND`       | tuple | (0, 0, 0)       | Photo view background        |
 
 #### Data and Input Settings
 
-| Setting                 | Type   | Default                     | Description                             |
-| ----------------------- | ------ | --------------------------- | --------------------------------------- |
-| `INVENTORY_ITEMS_FILE`  | string | "data/inventory_items.json" | Path to JSON file with item definitions |
-| `INVENTORY_KEY_TOGGLE`  | string | "I"                         | Key to open/close the inventory overlay |
-| `INVENTORY_KEY_VIEW`    | string | "V"                         | Key to view selected item in detail     |
-| `INVENTORY_KEY_CONSUME` | string | "C"                         | Key to consume selected item            |
+| Setting                      | Type   | Default                     | Description                         |
+| ---------------------------- | ------ | --------------------------- | ----------------------------------- |
+| `INVENTORY_ITEMS_FILE`       | string | "data/inventory_items.json" | Path to item definitions JSON       |
+| `INVENTORY_BACKGROUND_IMAGE` | string | ""                          | Optional background image path      |
+| `INVENTORY_KEY_TOGGLE`       | string | "I"                         | Key to open/close overlay           |
+| `INVENTORY_KEY_VIEW`         | string | "V"                         | Key to view item in detail          |
+| `INVENTORY_KEY_CONSUME`      | string | "C"                         | Key to consume item                 |
 
 #### Hint Text Settings
 
-| Setting                    | Type   | Default       | Description                   |
-| -------------------------- | ------ | ------------- | ----------------------------- |
-| `INVENTORY_HINT_VIEW`      | string | "[V] View"    | Hint text for viewing items   |
-| `INVENTORY_HINT_CONSUME`   | string | "[C] Consume" | Hint text for consuming items |
-| `INVENTORY_HINT_FONT_SIZE` | int    | 12            | Font size for hint text       |
+| Setting                 | Type   | Default       | Description                   |
+| ----------------------- | ------ | ------------- | ----------------------------- |
+| `INVENTORY_HINT_VIEW`   | string | "[V] View"    | Hint text for viewing items   |
+| `INVENTORY_HINT_CONSUME`| string | "[C] Consume" | Hint text for consuming items |
 
 **Notes:**
 
-- Total inventory capacity is controlled by `INVENTORY_MAX_SPACE`, not grid size
-  - Grid can show fewer items than capacity (e.g., 4×3 grid = 12 slots, but capacity can be higher)
-  - This allows for scrolling or pagination in custom implementations
-- `INVENTORY_BACKGROUND_IMAGE` is optional; leave empty for semi-transparent default background
-- Item definitions in `INVENTORY_ITEMS_FILE` are loaded on setup
-- Key bindings can use single characters (e.g., "V") or arcade key constants
+- Inventory uses responsive scaling - all UI elements scale proportionally to screen size
+- Design values are in pixels at reference resolution (`SCREEN_WIDTH` × `SCREEN_HEIGHT`)
+- Actual rendered sizes are scaled by `compute_ui_scale()` within min/max bounds
+- Font sizes use the global `UI_FONT_SMALL`, `UI_FONT_NORMAL`, and `UI_FONT_LARGE` tiers
+- Total capacity is controlled by `INVENTORY_MAX_SPACE`, independent of grid size
+- `INVENTORY_BACKGROUND_IMAGE` is optional; solid color overlay is used by default
+- Override specific design values by merging with the default `INVENTORY_DESIGN` dict
 - For more details, see the [InventoryPlugin documentation](plugins/inventory.md)
 
 ### Dialog Settings
@@ -537,9 +577,14 @@ NPC_INTERACTION_KEY="E"
 # Inventory settings
 INVENTORY_GRID_COLS=12
 INVENTORY_GRID_ROWS=5
-INVENTORY_BOX_SIZE=35
-INVENTORY_BOX_SPACING=6
-INVENTORY_BOX_BORDER_WIDTH=2
+INVENTORY_MAX_SPACE=60
+INVENTORY_DESIGN={
+    **INVENTORY_DESIGN,  # Keep defaults
+    "box_size": 80,
+    "box_spacing": 12,
+}
+INVENTORY_COLOR_BOX_FILLED=(60, 80, 100)
+INVENTORY_COLOR_BOX_BORDER_SELECTED=(100, 200, 255)
 INVENTORY_BACKGROUND_IMAGE="images/ui/inventory.png"
 
 # Dialog settings
@@ -608,19 +653,47 @@ SCENE_COLLISION_LAYER_NAMES: list[str] = ["Walls", "Collision", "Objects", "Buil
 # Inventory settings
 INVENTORY_GRID_COLS: int = 4
 INVENTORY_GRID_ROWS: int = 3
-INVENTORY_BOX_SIZE: int = 100
-INVENTORY_BOX_SPACING: int = 15
-INVENTORY_BOX_BORDER_WIDTH: int = 3
-INVENTORY_BACKGROUND_IMAGE: str = ""
 INVENTORY_MAX_SPACE: int = 12
-INVENTORY_CAPACITY_FONT_SIZE: int = 14
+INVENTORY_DESIGN: dict[str, int | float] = {
+    "box_size": 100,
+    "box_spacing": 15,
+    "box_border_width": 3,
+    "overlay_height_fraction": 0.5,
+    "item_name_y_offset": 30,
+    "hint_y_offset": 10,
+    "capacity_x_offset": 10,
+    "capacity_y_offset": 10,
+    "grid_y_offset": 20,
+    "photo_title_y_offset": 90,
+    "photo_description_y_offset": 60,
+    "photo_max_width_fraction": 0.7,
+    "photo_max_height_fraction": 0.7,
+    "photo_text_area_height": 120,
+    "icon_padding": 4,
+}
+INVENTORY_UI_SCALE_MIN: float = 0.5
+INVENTORY_UI_SCALE_MAX: float = 2.0
+INVENTORY_BACKGROUND_IMAGE: str = ""
 INVENTORY_ITEMS_FILE: str = "data/inventory_items.json"
 INVENTORY_KEY_TOGGLE: str = "I"
 INVENTORY_KEY_VIEW: str = "V"
 INVENTORY_KEY_CONSUME: str = "C"
 INVENTORY_HINT_VIEW: str = "[V] View"
 INVENTORY_HINT_CONSUME: str = "[C] Consume"
-INVENTORY_HINT_FONT_SIZE: int = 12
+INVENTORY_COLOR_OVERLAY: tuple[int, int, int] = (0, 0, 0)
+INVENTORY_OVERLAY_ALPHA: int = 200
+INVENTORY_COLOR_BOX_FILLED: tuple[int, int, int] = (47, 79, 79)
+INVENTORY_COLOR_BOX_EMPTY: tuple[int, int, int] = (30, 30, 35)
+INVENTORY_EMPTY_BOX_ALPHA: int = 180
+INVENTORY_COLOR_BOX_BORDER: tuple[int, int, int] = (255, 255, 255)
+INVENTORY_COLOR_BOX_BORDER_SELECTED: tuple[int, int, int] = (255, 255, 0)
+INVENTORY_COLOR_BOX_BORDER_EMPTY: tuple[int, int, int] = (105, 105, 105)
+INVENTORY_COLOR_TEXT_ITEM_NAME: tuple[int, int, int] = (255, 255, 255)
+INVENTORY_COLOR_TEXT_HINT: tuple[int, int, int] = (211, 211, 211)
+INVENTORY_COLOR_TEXT_CAPACITY: tuple[int, int, int] = (255, 255, 255)
+INVENTORY_COLOR_TEXT_PHOTO_TITLE: tuple[int, int, int] = (255, 255, 255)
+INVENTORY_COLOR_TEXT_PHOTO_DESCRIPTION: tuple[int, int, int] = (211, 211, 211)
+INVENTORY_COLOR_PHOTO_BACKGROUND: tuple[int, int, int] = (0, 0, 0)
 
 # Dialog settings
 DIALOG_AUTO_CLOSE_DEFAULT: bool = False
