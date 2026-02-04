@@ -195,7 +195,7 @@ wheels = [
 
 [[package]]
 name = "pedre"
-version = "0.0.7"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "arcade" },
