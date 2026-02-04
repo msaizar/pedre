@@ -120,6 +120,10 @@ Then create a script to handle the portal transition:
 
 This event-driven approach allows conditional portals, cutscenes before transitions, and locked doors with custom failure messages.
 
+## Demo Project
+
+Want to see a complete working example? Check out **[msaizar/pedre-demo](https://github.com/msaizar/pedre-demo)** - a fully functional RPG demo showcasing the framework's features including NPCs, dialogs, inventory, portals, and scripted events.
+
 ## Architecture
 
 The framework uses a **plugin-based architecture** with event-driven communication:
