@@ -121,19 +121,19 @@ class TestPlayerPlugin(unittest.TestCase):
         mock_sprite_list = MagicMock()
         mock_sprite_list_cls.return_value = mock_sprite_list
 
-        # Mock waypoint spawn
+        # Mock waypoint spawn - waypoints now return pixel coordinates
         self.mock_scene_plugin.get_next_spawn_waypoint.return_value = "entrance"
         self.mock_waypoint_plugin.get_waypoints.return_value = {
-            "entrance": (5, 10),
+            "entrance": (176.0, 336.0),  # Pixel coordinates (previously tile 5,10)
         }
 
         # Load player
         self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        # Verify spawned at waypoint (tile 5,10 with TILE_SIZE=32 -> 176, 336)
+        # Verify spawned at waypoint (pixel coordinates)
         call_kwargs = mock_player_cls.call_args[1]
-        assert call_kwargs["center_x"] == 5 * 32 + 16  # 176
-        assert call_kwargs["center_y"] == 10 * 32 + 16  # 336
+        assert call_kwargs["center_x"] == 176.0
+        assert call_kwargs["center_y"] == 336.0
 
         # Verify waypoint cleared
         self.mock_scene_plugin.clear_next_spawn_waypoint.assert_called_once()

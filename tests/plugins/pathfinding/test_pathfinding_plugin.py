@@ -80,11 +80,11 @@ class TestPathfindingPlugin(unittest.TestCase):
         start_x = self.tile_size / 2
         start_y = self.tile_size / 2
 
-        # End tile: (2, 0)
-        end_tile_x = 2
-        end_tile_y = 0
+        # End pixel: center of tile (2, 0)
+        end_x = 2 * self.tile_size + self.tile_size / 2
+        end_y = 0 * self.tile_size + self.tile_size / 2
 
-        path = self.plugin.find_path(start_x, start_y, end_tile_x, end_tile_y)
+        path = self.plugin.find_path(start_x, start_y, end_x, end_y)
 
         # Expected path tiles: (1,0), (2,0) -> Converted to pixels
         assert len(path) == 2
@@ -111,7 +111,10 @@ class TestPathfindingPlugin(unittest.TestCase):
         start_x = self.tile_size / 2
         start_y = self.tile_size / 2
 
-        path = self.plugin.find_path(start_x, start_y, 2, 0)
+        # End position in pixels (tile 2,0)
+        end_x = 2 * self.tile_size + self.tile_size / 2
+        end_y = 0 * self.tile_size + self.tile_size / 2
+        path = self.plugin.find_path(start_x, start_y, end_x, end_y)
 
         assert len(path) > 2  # Must go around, so longer than direct path
         # Verify destination reached
@@ -146,11 +149,13 @@ class TestPathfindingPlugin(unittest.TestCase):
         start_x = self.tile_size / 2
         start_y = self.tile_size / 2
 
-        # Target tile is (2,0)
+        # Target tile is (2,0) in pixels
         # Normal pathfinding should fail (all neighbors blocked).
         # Retry with passthrough should allow passing (1,0) NPC.
+        end_x = 2 * self.tile_size + self.tile_size / 2
+        end_y = 0 * self.tile_size + self.tile_size / 2
 
-        path = self.plugin.find_path(start_x, start_y, 2, 0)
+        path = self.plugin.find_path(start_x, start_y, end_x, end_y)
 
         assert len(path) > 0
         p1 = path[0]
@@ -175,7 +180,10 @@ class TestPathfindingPlugin(unittest.TestCase):
         # Verify barriers are actually blocking
         assert self.plugin.is_tile_walkable(0, 1) is False, "Tile (0,1) should be blocked"
 
-        path = self.plugin.find_path(start_x, start_y, 5, 5)
+        # Target position in pixels (tile 5,5)
+        end_x = 5 * self.tile_size + self.tile_size / 2
+        end_y = 5 * self.tile_size + self.tile_size / 2
+        path = self.plugin.find_path(start_x, start_y, end_x, end_y)
 
         assert len(path) == 0
         assert isinstance(path, deque)

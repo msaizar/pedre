@@ -88,9 +88,9 @@ class TestWaypointPlugin(unittest.TestCase):
 
         self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        # With TILE_SIZE = 32, (64, 96) -> tile (2, 3)
+        # Waypoints are now stored as pixel coordinates
         assert "spawn" in self.plugin.waypoints
-        assert self.plugin.waypoints["spawn"] == (2, 3)
+        assert self.plugin.waypoints["spawn"] == (64.0, 96.0)
 
     def test_load_from_tiled_multiple_waypoints(self) -> None:
         """Test load_from_tiled with multiple waypoints."""
@@ -108,12 +108,10 @@ class TestWaypointPlugin(unittest.TestCase):
 
         self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        # With TILE_SIZE = 32:
-        # (32, 32) -> tile (1, 1)
-        # (128, 64) -> tile (4, 2)
+        # Waypoints are now stored as pixel coordinates
         assert len(self.plugin.waypoints) == 2
-        assert self.plugin.waypoints["spawn"] == (1, 1)
-        assert self.plugin.waypoints["exit"] == (4, 2)
+        assert self.plugin.waypoints["spawn"] == (32.0, 32.0)
+        assert self.plugin.waypoints["exit"] == (128.0, 64.0)
 
     def test_load_from_tiled_waypoint_without_name(self) -> None:
         """Test load_from_tiled skips waypoint without name."""
@@ -226,7 +224,7 @@ class TestWaypointPlugin(unittest.TestCase):
         self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         assert "spawn" in self.plugin.waypoints
-        assert self.plugin.waypoints["spawn"] == (2, 3)
+        assert self.plugin.waypoints["spawn"] == (64.0, 96.0)
 
     def test_load_from_tiled_waypoint_at_origin(self) -> None:
         """Test load_from_tiled with waypoint at origin."""
@@ -241,11 +239,11 @@ class TestWaypointPlugin(unittest.TestCase):
         self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         assert "origin" in self.plugin.waypoints
-        assert self.plugin.waypoints["origin"] == (0, 0)
+        assert self.plugin.waypoints["origin"] == (0.0, 0.0)
 
-    def test_load_from_tiled_waypoint_floating_point_conversion(self) -> None:
-        """Test load_from_tiled correctly converts to tile coordinates."""
-        # Test that 63.9 pixels rounds down to tile 1 (floor division)
+    def test_load_from_tiled_waypoint_floating_point_precision(self) -> None:
+        """Test load_from_tiled correctly preserves floating point coordinates."""
+        # Test that floating point pixel coordinates are preserved
         mock_waypoint = MagicMock()
         mock_waypoint.name = "test"
         mock_waypoint.shape = [63.9, 31.9]
@@ -256,8 +254,8 @@ class TestWaypointPlugin(unittest.TestCase):
 
         self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        # 63.9 // 32 = 1, 31.9 // 32 = 0
-        assert self.plugin.waypoints["test"] == (1, 0)
+        # Waypoints are now stored as pixel coordinates (not tiles)
+        assert self.plugin.waypoints["test"] == (63.9, 31.9)
 
     def test_load_from_tiled_clears_previous_waypoints(self) -> None:
         """Test load_from_tiled clears previous waypoints before loading new ones."""
@@ -317,7 +315,7 @@ class TestWaypointPlugin(unittest.TestCase):
 
         # Last waypoint with duplicate name should win
         assert len(self.plugin.waypoints) == 1
-        assert self.plugin.waypoints["spawn"] == (3, 3)  # 96 // 32 = 3
+        assert self.plugin.waypoints["spawn"] == (96.0, 96.0)
 
 
 if __name__ == "__main__":
