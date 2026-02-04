@@ -1,5 +1,8 @@
 """Tests for EventLoader."""
 
+import importlib
+import sys
+
 import pytest
 
 from pedre.events.loader import EventLoader
@@ -55,6 +58,11 @@ def test_event_loader_raises_on_invalid_module(monkeypatch: pytest.MonkeyPatch) 
 def test_event_loader_loads_multiple_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that EventLoader can load multiple event modules."""
     EventRegistry.clear()
+
+    # Force reload of portal events module if already imported
+    if "pedre.plugins.portal.events" in sys.modules:
+        importlib.reload(sys.modules["pedre.plugins.portal.events"])
+
     monkeypatch.setattr(
         "pedre.conf.settings.INSTALLED_EVENTS",
         [
@@ -65,5 +73,5 @@ def test_event_loader_loads_multiple_modules(monkeypatch: pytest.MonkeyPatch) ->
     loader = EventLoader()
     loader.load_modules()
 
-    # Verify portal events were registered (testing a module not imported by other tests)
+    # Verify portal events were registered
     assert EventRegistry.get("portal_entered") is not None
