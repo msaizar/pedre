@@ -1,1 +1,1 @@
-"""Tests for script plugin."""
+"""Script plugin tests."""
