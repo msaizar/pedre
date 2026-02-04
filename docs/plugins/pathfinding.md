@@ -28,16 +28,16 @@ TILE_SIZE = 32
 
 #### find_path
 
-`find_path(start_x: float, start_y: float, end_tile_x: int | float, end_tile_y: int | float, exclude_sprite: arcade.Sprite | None = None, exclude_sprites: list[arcade.Sprite] | None = None) -> deque[tuple[float, float]]`
+`find_path(start_x: float, start_y: float, end_x: float, end_y: float, exclude_sprite: arcade.Sprite | None = None, exclude_sprites: list[arcade.Sprite] | None = None) -> deque[tuple[float, float]]`
 
-Find a path between a pixel position and a target tile using A* with automatic retry logic.
+Find a path between two pixel positions using A* with automatic retry logic.
 
 **Parameters:**
 
 - `start_x` - Starting pixel x position (world coordinates)
 - `start_y` - Starting pixel y position (world coordinates)
-- `end_tile_x` - Target tile x coordinate (grid space)
-- `end_tile_y` - Target tile y coordinate (grid space)
+- `end_x` - Target pixel x position (world coordinates)
+- `end_y` - Target pixel y position (world coordinates)
 - `exclude_sprite` - Single sprite to exclude from collision checks (typically the moving entity itself)
 - `exclude_sprites` - Additional sprites to exclude from collision detection
 
@@ -52,8 +52,8 @@ Find a path between a pixel position and a target tile using A* with automatic r
 path = pathfinding_plugin.find_path(
     start_x=npc.center_x,
     start_y=npc.center_y,
-    end_tile_x=10,
-    end_tile_y=15,
+    end_x=320.0,
+    end_y=480.0,
     exclude_sprite=npc_sprite
 )
 while path:
@@ -142,7 +142,7 @@ The pathfinding plugin operates on a tile-based grid and converts between two co
 
 ### Pathfinding Workflow
 
-1. Convert start position (pixels) to tile coordinates
+1. Convert start and end positions (pixels) to tile coordinates
 2. Use A* to find optimal tile path avoiding walls
 3. Convert tile path back to pixel coordinates (tile centers)
 4. Return path as deque for efficient pop operations during movement
@@ -195,8 +195,8 @@ class CustomPathfindingPlugin(PathfindingBasePlugin):
         self,
         start_x: float,
         start_y: float,
-        end_tile_x: int | float,
-        end_tile_y: int | float,
+        end_x: float,
+        end_y: float,
         exclude_sprite: arcade.Sprite | None = None,
         exclude_sprites: list[arcade.Sprite] | None = None,
     ) -> deque[tuple[float, float]]:

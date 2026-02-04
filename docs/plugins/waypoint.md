@@ -19,16 +19,7 @@ Waypoints are defined as Point objects in Tiled's "Waypoints" object layer and a
 
 ## Configuration
 
-The WaypointPlugin uses the following setting from `pedre.conf.settings`:
-
-- `TILE_SIZE` - Size of each tile in pixels, used to convert waypoint pixel coordinates to tile coordinates (default: 32)
-
-This can be overridden in your project's `settings.py`:
-
-```python
-# Custom tile size
-TILE_SIZE = 16  # For smaller tiles
-```
+The WaypointPlugin does not require any configuration settings. Waypoints are stored as pixel coordinates directly from the Tiled map.
 
 ## Public API
 
@@ -46,7 +37,7 @@ Get waypoint position by name.
 
 **Returns:**
 
-- Tuple of `(tile_x, tile_y)` in tile coordinates, or `None` if not found
+- Tuple of `(pixel_x, pixel_y)` in pixel coordinates, or `None` if not found
 
 **Example:**
 
@@ -54,13 +45,13 @@ Get waypoint position by name.
 # Get waypoint position
 waypoint = waypoint_plugin.get_waypoint("town_center")
 if waypoint:
-    tile_x, tile_y = waypoint
-    print(f"Town center is at tile ({tile_x}, {tile_y})")
+    pixel_x, pixel_y = waypoint
+    print(f"Town center is at ({pixel_x}, {pixel_y})")
 ```
 
 **Notes:**
 
-- Returns tile coordinates, not pixel coordinates
+- Returns pixel coordinates from Tiled map
 - Waypoint names are case-sensitive
 - Returns `None` for non-existent waypoints
 
@@ -72,14 +63,14 @@ Get all waypoints in the current map.
 
 **Returns:**
 
-- Dictionary mapping waypoint names to `(tile_x, tile_y)` tuples
+- Dictionary mapping waypoint names to `(pixel_x, pixel_y)` tuples
 
 **Example:**
 
 ```python
 # List all waypoints
 for name, (x, y) in waypoint_plugin.get_waypoints().items():
-    print(f"{name}: tile ({x}, {y})")
+    print(f"{name}: ({x}, {y})")
 ```
 
 **Notes:**
@@ -105,7 +96,7 @@ Load waypoints from Tiled map object layer.
 
 - Called automatically by PluginLoader during map loading
 - Looks for "Waypoints" object layer in the Tiled map
-- Converts pixel coordinates to tile coordinates using `settings.TILE_SIZE`
+- Stores pixel coordinates directly from Tiled map
 - Only processes Point objects with valid `name` and `shape` properties
 - Logs waypoint loading for debugging
 
@@ -142,13 +133,11 @@ Reset waypoint plugin for new game.
 ### Basic Waypoint Lookup
 
 ```python
-# Get a specific waypoint
+# Get a specific waypoint (returns pixel coordinates)
 spawn_point = waypoint_plugin.get_waypoint("player_spawn")
 if spawn_point:
-    tile_x, tile_y = spawn_point
-    # Convert to pixel coordinates if needed
-    pixel_x = tile_x * settings.TILE_SIZE
-    pixel_y = tile_y * settings.TILE_SIZE
+    pixel_x, pixel_y = spawn_point
+    print(f"Spawn point at ({pixel_x}, {pixel_y})")
 ```
 
 ### Using Waypoints in Scripts
@@ -260,22 +249,21 @@ Points:
 - **Name Required:** Each waypoint must have a `name` property set
 - **No Duplicates:** Waypoint names must be unique within a map
 - **Case Sensitive:** Waypoint names are case-sensitive in lookups
-- **Automatic Conversion:** Pixel coordinates are automatically converted to tile coordinates
+- **Pixel Coordinates:** Waypoints are stored as pixel coordinates directly from Tiled
 
 ## Technical Details
 
 ### Coordinate System
 
-Waypoints are stored in tile coordinates internally:
+Waypoints are stored in pixel coordinates as they appear in Tiled:
 
 ```python
-# Tiled stores waypoints in pixel coordinates (e.g., x=320, y=240)
-# WaypointPlugin converts to tile coordinates during loading:
-tile_x = int(pixel_x // settings.TILE_SIZE)  # e.g., 320 // 32 = 10
-tile_y = int(pixel_y // settings.TILE_SIZE)  # e.g., 240 // 32 = 7
+# Tiled stores waypoints in pixel coordinates (e.g., x=320.0, y=240.0)
+# WaypointPlugin stores them directly as pixel coordinates:
+self.waypoints["player_spawn"] = (320.0, 240.0)
 ```
 
-This makes waypoints independent of tile size and easier to use with grid-based pathfinding.
+This makes waypoints directly usable with sprite positions and pathfinding without manual conversion.
 
 ### Loading Process
 
@@ -286,8 +274,7 @@ When a map is loaded:
 3. For each Point object in the layer:
    - Validates it has a `name` and `shape` property
    - Extracts pixel coordinates from `shape[0]` and `shape[1]`
-   - Converts to tile coordinates using `settings.TILE_SIZE`
-   - Stores in `waypoints` dictionary: `{name: (tile_x, tile_y)}`
+   - Stores in `waypoints` dictionary: `{name: (pixel_x, pixel_y)}`
 4. Logs the number of waypoints loaded
 
 ### Storage
@@ -296,9 +283,9 @@ Waypoints are stored in a simple dictionary:
 
 ```python
 self.waypoints: dict[str, tuple[float, float]] = {
-    "player_spawn": (10.0, 7.0),
-    "merchant_home": (20.0, 15.0),
-    "from_village": (3.0, 3.0),
+    "player_spawn": (320.0, 224.0),
+    "merchant_home": (640.0, 480.0),
+    "from_village": (96.0, 96.0),
 }
 ```
 
