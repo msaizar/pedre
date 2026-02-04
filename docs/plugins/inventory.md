@@ -12,25 +12,59 @@ Manages player's inventory and item collection with a visual grid overlay.
 
 ## Configuration
 
-The InventoryPlugin uses the following settings from `pedre.conf.settings`:
+The InventoryPlugin uses responsive design with settings from `pedre.conf.settings`:
 
 ### Grid Layout Settings
 
 - `INVENTORY_GRID_COLS` - Number of columns in inventory grid (default: 4)
 - `INVENTORY_GRID_ROWS` - Number of rows in inventory grid (default: 3)
-- `INVENTORY_BOX_SIZE` - Size of each inventory slot in pixels (default: 100)
-- `INVENTORY_BOX_SPACING` - Spacing between inventory slots in pixels (default: 15)
-- `INVENTORY_BOX_BORDER_WIDTH` - Border width for inventory slots in pixels (default: 3)
-
-### Capacity and Display Settings
-
 - `INVENTORY_MAX_SPACE` - Maximum number of items the inventory can hold (default: 12)
-- `INVENTORY_CAPACITY_FONT_SIZE` - Font size for capacity counter (default: 14)
-- `INVENTORY_BACKGROUND_IMAGE` - Path to background image (optional, default: "")
+
+### Responsive Design Settings
+
+The inventory UI uses a design dictionary that scales proportionally to screen size:
+
+- `INVENTORY_DESIGN` - Dictionary of design-unit values (pixels at reference resolution)
+  - `box_size` - Size of each inventory slot (default: 100)
+  - `box_spacing` - Spacing between slots (default: 15)
+  - `box_border_width` - Border width for slots (default: 3)
+  - `overlay_height_fraction` - Fraction of screen height for overlay (default: 0.5)
+  - `item_name_y_offset` - Y position for item name text (default: 30)
+  - `hint_y_offset` - Y position for hint text (default: 10)
+  - `capacity_x_offset` - X offset for capacity counter (default: 10)
+  - `capacity_y_offset` - Y offset for capacity counter (default: 10)
+  - `grid_y_offset` - Vertical offset for grid centering (default: 20)
+  - `photo_title_y_offset` - Y position for photo title (default: 90)
+  - `photo_description_y_offset` - Y position for photo description (default: 60)
+  - `photo_max_width_fraction` - Max photo width as fraction of screen (default: 0.7)
+  - `photo_max_height_fraction` - Max photo height as fraction (default: 0.7)
+  - `photo_text_area_height` - Reserved height for photo text (default: 120)
+  - `icon_padding` - Padding inside icon boxes (default: 4)
+
+- `INVENTORY_UI_SCALE_MIN` - Minimum UI scale factor (default: 0.5)
+- `INVENTORY_UI_SCALE_MAX` - Maximum UI scale factor (default: 2.0)
+
+### Color Settings
+
+- `INVENTORY_COLOR_OVERLAY` - RGB for overlay background (default: (0, 0, 0))
+- `INVENTORY_OVERLAY_ALPHA` - Overlay transparency, 0-255 (default: 200)
+- `INVENTORY_COLOR_BOX_FILLED` - RGB for filled slot background (default: (47, 79, 79))
+- `INVENTORY_COLOR_BOX_EMPTY` - RGB for empty slot background (default: (30, 30, 35))
+- `INVENTORY_EMPTY_BOX_ALPHA` - Empty slot transparency, 0-255 (default: 180)
+- `INVENTORY_COLOR_BOX_BORDER` - RGB for slot border (default: (255, 255, 255))
+- `INVENTORY_COLOR_BOX_BORDER_SELECTED` - RGB for selected border (default: (255, 255, 0))
+- `INVENTORY_COLOR_BOX_BORDER_EMPTY` - RGB for empty slot border (default: (105, 105, 105))
+- `INVENTORY_COLOR_TEXT_ITEM_NAME` - RGB for item name text (default: (255, 255, 255))
+- `INVENTORY_COLOR_TEXT_HINT` - RGB for hint text (default: (211, 211, 211))
+- `INVENTORY_COLOR_TEXT_CAPACITY` - RGB for capacity text (default: (255, 255, 255))
+- `INVENTORY_COLOR_TEXT_PHOTO_TITLE` - RGB for photo title (default: (255, 255, 255))
+- `INVENTORY_COLOR_TEXT_PHOTO_DESCRIPTION` - RGB for photo description (default: (211, 211, 211))
+- `INVENTORY_COLOR_PHOTO_BACKGROUND` - RGB for photo view background (default: (0, 0, 0))
 
 ### Data and Input Settings
 
 - `INVENTORY_ITEMS_FILE` - Path to JSON file with item definitions (default: "data/inventory_items.json")
+- `INVENTORY_BACKGROUND_IMAGE` - Path to background image (optional, default: "")
 - `INVENTORY_KEY_TOGGLE` - Key to open/close the inventory overlay (default: "I")
 - `INVENTORY_KEY_VIEW` - Key to view selected item in detail (default: "V")
 - `INVENTORY_KEY_CONSUME` - Key to consume selected item (default: "C")
@@ -39,16 +73,30 @@ The InventoryPlugin uses the following settings from `pedre.conf.settings`:
 
 - `INVENTORY_HINT_VIEW` - Hint text for viewing items (default: "[V] View")
 - `INVENTORY_HINT_CONSUME` - Hint text for consuming items (default: "[C] Consume")
-- `INVENTORY_HINT_FONT_SIZE` - Font size for hint text (default: 12)
 
-These can be overridden in your project's `settings.py`:
+### Customization Examples
+
+Override settings in your project's `settings.py`:
 
 ```python
-# Custom inventory settings
+# Adjust grid size and capacity
 INVENTORY_GRID_COLS = 6
 INVENTORY_GRID_ROWS = 4
-INVENTORY_BOX_SIZE = 80
 INVENTORY_MAX_SPACE = 24
+
+# Customize design values (smaller boxes, more spacing)
+INVENTORY_DESIGN = {
+    **INVENTORY_DESIGN,  # Keep defaults
+    "box_size": 80,
+    "box_spacing": 20,
+}
+
+# Custom color scheme
+INVENTORY_COLOR_OVERLAY = (20, 20, 40)  # Dark blue overlay
+INVENTORY_COLOR_BOX_FILLED = (60, 80, 100)  # Blue-gray slots
+INVENTORY_COLOR_BOX_BORDER_SELECTED = (100, 200, 255)  # Cyan selection
+
+# Use custom items file
 INVENTORY_ITEMS_FILE = "data/items.json"
 ```
 
