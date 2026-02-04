@@ -32,7 +32,7 @@ AUDIO_MUSIC_ENABLED=True
 AUDIO_SFX_VOLUME=0.7
 AUDIO_SFX_ENABLED=True
 CAMERA_LERP_SPEED=0.1
-ASSETS_HANDLE="game_assets"
+ASSETS_HANDLE="assets"
 INITIAL_MAP="start.tmx"
 ```
 
@@ -491,7 +491,7 @@ Asset management configuration.
 
 | Setting         | Type   | Default       | Description                                      |
 | --------------- | ------ | ------------- | ------------------------------------------------ |
-| `ASSETS_HANDLE` | string | "game_assets" | Arcade resource handle name for assets directory |
+| `ASSETS_HANDLE` | string | "assets" | Arcade resource handle name for assets directory |
 
 **Notes:**
 
@@ -638,7 +638,7 @@ NPC_WAYPOINT_THRESHOLD: int = 2
 NPC_INTERACTION_KEY: str = "SPACE"
 
 # Asset settings
-ASSETS_HANDLE: str = "game_assets"
+ASSETS_HANDLE: str = "assets"
 
 # Game settings
 INITIAL_MAP: str = "map.tmx"

@@ -62,7 +62,7 @@ def configure_test_settings() -> Generator[None]:
         SCREEN_WIDTH=1280,
         SCREEN_HEIGHT=720,
         TILE_SIZE=32,
-        ASSETS_HANDLE="game_assets",
+        ASSETS_HANDLE="assets",
         WINDOW_TITLE="Test",
         PLAYER_MOVEMENT_SPEED=3,
         INTERACTION_PLUGIN_DISTANCE=50,
