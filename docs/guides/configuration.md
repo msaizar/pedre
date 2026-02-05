@@ -71,7 +71,7 @@ Player character interaction settings.
 | Setting                        | Type   | Default | Description                                                 |
 | ------------------------------ | ------ | ------- | ----------------------------------------------------------- |
 | `TILE_SIZE`                    | int    | 32      | Base tile size for grid-based movement                      |
-| `INTERACTION_PLUGIN_DISTANCE` | int    | 50      | Maximum distance for player to interact with objects        |
+| `INTERACTION_PLUGIN_DISTANCE`  | int    | 50      | Maximum distance for player to interact with objects        |
 | `INTERACTION_KEY`              | string | "SPACE" | Key for interacting with objects (use arcade.key constants) |
 | `NPC_INTERACTION_DISTANCE`     | int    | 50      | Maximum distance for player to interact with NPCs           |
 | `PORTAL_INTERACTION_DISTANCE`  | int    | 50      | Maximum distance for player to activate portals             |
@@ -117,36 +117,36 @@ In-game pause menu overlay appearance and behavior.
 
 #### Visual Settings
 
-| Setting                         | Type                 | Default         | Description                                           |
-| ------------------------------- | -------------------- | --------------- | ----------------------------------------------------- |
-| `PAUSE_MENU_OVERLAY_ALPHA`      | int                  | 180             | Opacity of the semi-transparent overlay (0-255)       |
-| `PAUSE_MENU_COLOR_OVERLAY`      | tuple[int, int, int] | (0, 0, 0)       | RGB color of the overlay                              |
+| Setting                           | Type                 | Default         | Description                                           |
+| --------------------------------- | -------------------- | --------------- | ----------------------------------------------------- |
+| `PAUSE_MENU_OVERLAY_ALPHA`        | int                  | 180             | Opacity of the semi-transparent overlay (0-255)       |
+| `PAUSE_MENU_COLOR_OVERLAY`        | tuple[int, int, int] | (0, 0, 0)       | RGB color of the overlay                              |
 | `PAUSE_MENU_COLOR_BOX_BACKGROUND` | tuple[int, int, int] | (102, 102, 153) | RGB color of the menu box background                  |
-| `PAUSE_MENU_COLOR_BOX_BORDER`   | tuple[int, int, int] | (255, 255, 255) | RGB color of the menu box border                      |
-| `PAUSE_MENU_COLOR_TITLE`        | tuple[int, int, int] | (255, 255, 255) | RGB color of the title text                           |
-| `PAUSE_MENU_COLOR_OPTION`       | tuple[int, int, int] | (255, 255, 255) | RGB color of unselected options                       |
-| `PAUSE_MENU_COLOR_SELECTED`     | tuple[int, int, int] | (255, 255, 0)   | RGB color of the selected option                      |
-| `PAUSE_MENU_COLOR_DISABLED`     | tuple[int, int, int] | (128, 128, 128) | RGB color of disabled options                         |
-| `PAUSE_MENU_COLOR_FEEDBACK`     | tuple[int, int, int] | (0, 255, 0)     | RGB color of feedback messages (e.g., "Game Saved!") |
+| `PAUSE_MENU_COLOR_BOX_BORDER`     | tuple[int, int, int] | (255, 255, 255) | RGB color of the menu box border                      |
+| `PAUSE_MENU_COLOR_TITLE`          | tuple[int, int, int] | (255, 255, 255) | RGB color of the title text                           |
+| `PAUSE_MENU_COLOR_OPTION`         | tuple[int, int, int] | (255, 255, 255) | RGB color of unselected options                       |
+| `PAUSE_MENU_COLOR_SELECTED`       | tuple[int, int, int] | (255, 255, 0)   | RGB color of the selected option                      |
+| `PAUSE_MENU_COLOR_DISABLED`       | tuple[int, int, int] | (128, 128, 128) | RGB color of disabled options                         |
+| `PAUSE_MENU_COLOR_FEEDBACK`       | tuple[int, int, int] | (0, 255, 0)     | RGB color of feedback messages (e.g., "Game Saved!")  |
 
 #### Text Settings
 
-| Setting                      | Type   | Default                                            | Description                        |
-| ---------------------------- | ------ | -------------------------------------------------- | ---------------------------------- |
-| `PAUSE_MENU_TITLE`           | string | "Pedre Game"                                       | Title shown at the top of the menu |
-| `PAUSE_MENU_TEXT_RESUME`     | string | "Resume"                                           | Text for Resume option             |
-| `PAUSE_MENU_TEXT_NEW_GAME`   | string | "New Game"                                         | Text for New Game option           |
-| `PAUSE_MENU_TEXT_LOAD_GAME`  | string | "Load Game"                                        | Text for Load Game option          |
-| `PAUSE_MENU_TEXT_SAVE_GAME`  | string | "Save Game"                                        | Text for Save Game option          |
-| `PAUSE_MENU_TEXT_EXIT`       | string | "Exit Game"                                        | Text for Exit option               |
-| `PAUSE_MENU_TEXT_BACK`       | string | "Back"                                             | Text for Back option               |
-| `PAUSE_MENU_TEXT_EMPTY_SLOT` | string | "(Empty)"                                          | Text shown for empty save slots    |
+| Setting                       | Type   | Default                                            | Description                        |
+| ----------------------------- | ------ | -------------------------------------------------- | ---------------------------------- |
+| `PAUSE_MENU_TITLE`            | string | "Pedre Game"                                       | Title shown at the top of the menu |
+| `PAUSE_MENU_TEXT_RESUME`      | string | "Resume"                                           | Text for Resume option             |
+| `PAUSE_MENU_TEXT_NEW_GAME`    | string | "New Game"                                         | Text for New Game option           |
+| `PAUSE_MENU_TEXT_LOAD_GAME`   | string | "Load Game"                                        | Text for Load Game option          |
+| `PAUSE_MENU_TEXT_SAVE_GAME`   | string | "Save Game"                                        | Text for Save Game option          |
+| `PAUSE_MENU_TEXT_EXIT`        | string | "Exit Game"                                        | Text for Exit option               |
+| `PAUSE_MENU_TEXT_BACK`        | string | "Back"                                             | Text for Back option               |
+| `PAUSE_MENU_TEXT_EMPTY_SLOT`  | string | "(Empty)"                                          | Text shown for empty save slots    |
 | `PAUSE_MENU_CONFIRM_NEW_GAME` | string | "Start a new game? Current progress will be lost." | Confirmation message for New Game  |
 
 #### Layout Settings
 
-| Setting                | Type | Default | Description                                                   |
-| ---------------------- | ---- | ------- | ------------------------------------------------------------- |
+| Setting                | Type | Default     | Description                                                 |
+| ---------------------- | ---- | ----------- | ----------------------------------------------------------- |
 | `PAUSE_MENU_DESIGN`    | dict | (see below) | Dictionary containing all design specifications (see below) |
 
 **PAUSE_MENU_DESIGN dictionary:**
