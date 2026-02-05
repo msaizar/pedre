@@ -15,6 +15,11 @@ A Python RPG framework built on [Arcade](https://api.arcade.academy/) with seaml
 - **Camera Plugin** - Smooth camera following with optional bounds
 - **Particle Effects** - Visual feedback plugin for interactions
 
+## Requirements
+
+- Python 3.14 or higher
+- [Tiled Map Editor](https://www.mapeditor.org/) for creating game maps
+
 ## Installation
 
 Install from PyPI:
@@ -41,15 +46,15 @@ if __name__ == "__main__":
 This will start your game with the default configuration. Configure your game using `settings.py` in your project root:
 
 ```python
-SCREEN_WIDTH=1280
-SCREEN_HEIGHT=720,
-WINDOW_TITLE="My RPG",
-INITIAL_MAP="my_map.tmx"
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+WINDOW_TITLE = "My RPG"
+INITIAL_MAP = "my_map.tmx"
 ```
 
 ### Adding NPCs with Dialogs
 
-Create a dialog file `assets/dialogs/village_dialogs.json`:
+Create a dialog file `assets/dialogs/village_dialogs.json` (where "village" matches your map name):
 
 ```json
 {
@@ -65,10 +70,14 @@ Create a dialog file `assets/dialogs/village_dialogs.json`:
 }
 ```
 
-Place the NPC in your Tiled map's "NPCs" layer with custom properties:
+Place the NPC in your Tiled map's "NPCs" object layer as a point with these custom properties:
 
-- `name`: "merchant"
-- NPC sprite will be automatically loaded and animated
+- `name` (string): "merchant" - unique identifier
+- `sprite_sheet` (string): "images/characters/merchant.png" - path to sprite sheet
+- `tile_size` (int): 32 - size of each tile in the sprite sheet
+- Animation properties like `idle_down_frames`, `idle_down_row`, `walk_right_frames`, `walk_right_row`, etc.
+
+See the [Getting Started Guide](https://msaizar.github.io/pedre/getting-started/) for complete NPC setup instructions.
 
 ### Creating Interactive Scripts
 
@@ -99,13 +108,16 @@ Create a script file `assets/scripts/village_scripts.json`:
 
 ### Adding Portals Between Maps
 
-In Tiled, create a "Portals" object layer and add a rectangle with a `name` property:
+Portals use an event-driven system that gives you full control over transitions.
 
-- `name`: "to_forest"
+**In Tiled:**
 
-Create a matching waypoint in the target map's "Waypoints" layer (Point object named "from_village") where the player should spawn.
+1. Create a "Portals" object layer
+2. Add a rectangle where you want the portal
+3. Set the `name` property: "to_forest"
+4. In the target map, create a "Waypoints" object layer with a point named "from_village"
 
-Then create a script to handle the portal transition:
+**In your scripts file** (`assets/scripts/village_scripts.json`):
 
 ```json
 {
@@ -118,7 +130,7 @@ Then create a script to handle the portal transition:
 }
 ```
 
-This event-driven approach allows conditional portals, cutscenes before transitions, and locked doors with custom failure messages.
+This event-driven approach allows conditional portals, cutscenes before transitions, and locked doors with custom failure messages. See the [Portal Plugin](https://msaizar.github.io/pedre/plugins/portal/) and [Scripting Guide](https://msaizar.github.io/pedre/scripting/) for more details.
 
 ## Demo Project
 
@@ -172,6 +184,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 ## Documentation
 
 Full documentation is available at **[msaizar.github.io/pedre](https://msaizar.github.io/pedre/)**
+
+Key guides:
+
+- [Getting Started](https://msaizar.github.io/pedre/getting-started/) - Step-by-step tutorial
+- [Configuration](https://msaizar.github.io/pedre/guides/configuration/) - Settings and customization
+- [Tiled Integration](https://msaizar.github.io/pedre/guides/tiled-integration/) - Creating maps in Tiled
+- [Scripting System](https://msaizar.github.io/pedre/scripting/) - Event-driven gameplay
+- [Plugin Reference](https://msaizar.github.io/pedre/plugins/) - Complete plugin documentation
+- [API Reference](https://msaizar.github.io/pedre/api/) - Python API docs
 
 ## License
 
