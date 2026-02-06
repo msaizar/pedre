@@ -1,21 +1,33 @@
 # Run all QA checks
-qa: format check ty
+qa:
+    just lint format-check ty
 
-# Run linting checks
-check:
-    uv run ruff check --fix .
+qa-fix:
+    just lint-fix format ty
 
-# Format code
-format:
-    uv run ruff format .
+# Lint (no autofix, CI-safe)
+lint:
+    uv run ruff check .
 
-# Run type checking
+# Format check only (no changes)
+format-check:
+    uv run ruff format --check .
+
+# Type checking
 ty:
     uv run ty check
 
-# Run tests
+# Tests
 test:
     uv run pytest
+
+# Auto-fix lint issues
+lint-fix:
+    uv run ruff check --fix .
+
+# Auto-format code
+format:
+    uv run ruff format .
 
 # Run tests with coverage report
 coverage:
