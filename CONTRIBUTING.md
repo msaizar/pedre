@@ -4,7 +4,11 @@ Thank you for your interest in contributing to Pedre! This document provides gui
 
 ## Code of Conduct
 
-Be respectful and constructive in all interactions. We aim to maintain a welcoming and inclusive community.
+This project follows the Code of Conduct defined in
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+By participating in this project, you agree to uphold these standards in all
+interactions.
 
 ## Getting Started
 
