@@ -60,7 +60,7 @@ from typing import ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.helpers import compute_ui_scale, matches_key, scale_font
+from pedre.helpers import compute_ui_scale, matches_key, scale, scale_font
 from pedre.plugins.dialog.base import DialogBasePlugin, DialogPage
 from pedre.plugins.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.plugins.registry import PluginRegistry
@@ -377,20 +377,6 @@ class DialogPlugin(DialogBasePlugin):
         total_pages = len(text)
         return [DialogPage(npc_name, page_text, i, total_pages) for i, page_text in enumerate(text)]
 
-    @staticmethod
-    def _scaled(value: int, scale: float, floor: int = 1) -> int:
-        """Scale a design-unit value by ui_scale with a minimum floor.
-
-        Args:
-            value: Design-unit value (pixels at reference resolution).
-            scale: UI scale factor from compute_ui_scale().
-            floor: Minimum result value. Defaults to 1.
-
-        Returns:
-            Scaled integer value, at least floor.
-        """
-        return max(floor, int(value * scale))
-
     def _reset_text_reveal(self) -> None:
         """Reset text reveal animation state for the current page."""
         self.revealed_chars = 0
@@ -498,16 +484,16 @@ class DialogPlugin(DialogBasePlugin):
         )
 
         # Scale box dimensions, clamp to window bounds
-        box_width = min(self._scaled(design["box_width"], ui_scale), int(window.width * 0.9))
-        box_height = min(self._scaled(design["box_height"], ui_scale), int(window.height * 0.9))
+        box_width = min(scale(design["box_width"], ui_scale), int(window.width * 0.9))
+        box_height = min(scale(design["box_height"], ui_scale), int(window.height * 0.9))
         center_x = window.width // 2
         center_y = int(window.height * design["vertical_position"])
 
         # Scale other design values
-        border_width = self._scaled(design["border_width"], ui_scale)
-        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
-        npc_name_offset = self._scaled(design["npc_name_offset"], ui_scale)
-        footer_offset = self._scaled(design["footer_offset"], ui_scale)
+        border_width = scale(design["border_width"], ui_scale)
+        horizontal_padding = scale(design["horizontal_padding"], ui_scale)
+        npc_name_offset = scale(design["npc_name_offset"], ui_scale)
+        footer_offset = scale(design["footer_offset"], ui_scale)
 
         # Scale font sizes
         npc_name_font_size = scale_font(

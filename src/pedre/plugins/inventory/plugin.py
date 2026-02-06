@@ -57,7 +57,7 @@ import arcade
 
 from pedre.conf import settings
 from pedre.constants import asset_path
-from pedre.helpers import compute_ui_scale, matches_key, scale_font
+from pedre.helpers import compute_ui_scale, matches_key, scale, scale_font
 from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
 from pedre.plugins.inventory.events import (
     InventoryClosedEvent,
@@ -226,20 +226,6 @@ class InventoryPlugin(InventoryBasePlugin):
 
         return False
 
-    @staticmethod
-    def _scaled(value: int | float, scale: float, floor: int = 1) -> int:
-        """Scale a design-unit value by ui_scale with a minimum floor.
-
-        Args:
-            value: Design-unit value (pixels at reference resolution).
-            scale: UI scale factor from compute_ui_scale().
-            floor: Minimum result value. Defaults to 1.
-
-        Returns:
-            Scaled integer value, at least floor.
-        """
-        return max(floor, int(value * scale))
-
     def _show_inventory(self) -> None:
         """Show the inventory overlay."""
         self.showing = True
@@ -377,15 +363,15 @@ class InventoryPlugin(InventoryBasePlugin):
         )
 
         # Scale design values
-        box_size = self._scaled(design["box_size"], ui_scale)
-        box_spacing = self._scaled(design["box_spacing"], ui_scale)
-        box_border_width = self._scaled(design["box_border_width"], ui_scale)
-        icon_padding = self._scaled(design["icon_padding"], ui_scale)
-        grid_y_offset = self._scaled(design["grid_y_offset"], ui_scale)
-        item_name_y_offset = self._scaled(design["item_name_y_offset"], ui_scale)
-        hint_y_offset = self._scaled(design["hint_y_offset"], ui_scale)
-        capacity_x_offset = self._scaled(design["capacity_x_offset"], ui_scale)
-        capacity_y_offset = self._scaled(design["capacity_y_offset"], ui_scale)
+        box_size = scale(design["box_size"], ui_scale)
+        box_spacing = scale(design["box_spacing"], ui_scale)
+        box_border_width = scale(design["box_border_width"], ui_scale)
+        icon_padding = scale(design["icon_padding"], ui_scale)
+        grid_y_offset = scale(design["grid_y_offset"], ui_scale)
+        item_name_y_offset = scale(design["item_name_y_offset"], ui_scale)
+        hint_y_offset = scale(design["hint_y_offset"], ui_scale)
+        capacity_x_offset = scale(design["capacity_x_offset"], ui_scale)
+        capacity_y_offset = scale(design["capacity_y_offset"], ui_scale)
 
         # Scale fonts
         item_name_font_size = scale_font(
@@ -471,11 +457,11 @@ class InventoryPlugin(InventoryBasePlugin):
                         # Calculate scale to fit
                         scale_x = max_icon_size / icon_texture.width
                         scale_y = max_icon_size / icon_texture.height
-                        scale = min(scale_x, scale_y)
+                        icon_scale = min(scale_x, scale_y)
 
                         # Draw centered icon
-                        icon_width = icon_texture.width * scale
-                        icon_height = icon_texture.height * scale
+                        icon_width = icon_texture.width * icon_scale
+                        icon_height = icon_texture.height * icon_scale
                         icon_center_x = x + box_size / 2
                         icon_center_y = y + box_size / 2
 
@@ -609,9 +595,9 @@ class InventoryPlugin(InventoryBasePlugin):
         )
 
         # Scale design values
-        text_area_height = self._scaled(design["photo_text_area_height"], ui_scale)
-        photo_title_y_offset = self._scaled(design["photo_title_y_offset"], ui_scale)
-        photo_description_y_offset = self._scaled(design["photo_description_y_offset"], ui_scale)
+        text_area_height = scale(design["photo_text_area_height"], ui_scale)
+        photo_title_y_offset = scale(design["photo_title_y_offset"], ui_scale)
+        photo_description_y_offset = scale(design["photo_description_y_offset"], ui_scale)
 
         # Scale fonts
         photo_title_font_size = scale_font(
@@ -636,11 +622,11 @@ class InventoryPlugin(InventoryBasePlugin):
             # Calculate scale to fit
             width_scale = max_width / self.current_photo_texture.width
             height_scale = max_height / self.current_photo_texture.height
-            scale = min(width_scale, height_scale)
+            photo_scale = min(width_scale, height_scale)
 
             # Calculate final dimensions
-            final_width = self.current_photo_texture.width * scale
-            final_height = self.current_photo_texture.height * scale
+            final_width = self.current_photo_texture.width * photo_scale
+            final_height = self.current_photo_texture.height * photo_scale
 
             # Center the photo vertically in the space above the text area
             available_vertical_space = window.height - text_area_height
