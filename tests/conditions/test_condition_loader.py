@@ -1,5 +1,7 @@
 """Tests for ConditionLoader."""
 
+import sys
+
 import pytest
 
 from pedre.conditions.loader import ConditionLoader
@@ -55,15 +57,22 @@ def test_condition_loader_raises_on_invalid_module(monkeypatch: pytest.MonkeyPat
 def test_condition_loader_loads_multiple_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that ConditionLoader can load multiple condition modules."""
     ConditionRegistry.clear()
+
+    # Remove the module from sys.modules to force re-import and re-registration
+    # This is necessary because Python caches imports and won't re-execute decorators
+    module_name = "pedre.plugins.script.conditions"
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+
     monkeypatch.setattr(
         "pedre.conf.settings.INSTALLED_CONDITIONS",
         [
-            "pedre.plugins.script.conditions",
+            module_name,
         ],
     )
 
     loader = ConditionLoader()
     loader.load_modules()
 
-    # Verify script conditions were registered (testing a module not imported by other tests)
+    # Verify script conditions were registered
     assert "script_completed" in ConditionRegistry._checkers
