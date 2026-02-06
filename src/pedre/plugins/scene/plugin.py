@@ -24,7 +24,6 @@ from pedre.plugins.scene.events import SceneStartEvent
 if TYPE_CHECKING:
     from typing import Any
 
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -87,10 +86,6 @@ class ScenePlugin(SceneBasePlugin):
         self.current_map: str = ""
         self.wall_list: arcade.SpriteList = arcade.SpriteList()
         self.next_spawn_waypoint: str = ""
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize with context."""
-        self.context = context
 
     def reset(self) -> None:
         """Reset scene plugin state for new game."""

@@ -78,7 +78,6 @@ from pedre.plugins.portal.events import PortalEnteredEvent
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
     from pedre.plugins.player.sprites import AnimatedPlayer
 
 logger = logging.getLogger(__name__)
@@ -129,18 +128,6 @@ class PortalPlugin(BasePlugin):
         self.portals: list[Portal] = []
         self.interaction_distance: float = settings.PORTAL_INTERACTION_DISTANCE
         self._portals_player_inside: set[str] = set()
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the portal plugin with game context and settings.
-
-        This method is called by the PluginLoader after all plugins have been
-        instantiated. It configures the plugin with the event bus and settings.
-
-        Args:
-            context: Game context providing access to event bus.
-        """
-        self.context = context
-        logger.debug("PortalPlugin setup complete (interaction_distance=%.1f)", self.interaction_distance)
 
     def load_from_tiled(
         self,

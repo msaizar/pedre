@@ -38,16 +38,13 @@ from __future__ import annotations
 import logging
 import math
 from random import Random
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import arcade
 
 from pedre.conf import settings
 from pedre.plugins.particle.base import Particle, ParticleBasePlugin
 from pedre.plugins.registry import PluginRegistry
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -96,15 +93,6 @@ class ParticlePlugin(ParticleBasePlugin):
         self.particles: list[Particle] = []
         self.enabled = settings.PARTICLE_ENABLED
         self._rng = Random()  # noqa: S311 - Non-cryptographic RNG for particle effects
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the particle plugin with game context and settings.
-
-        Args:
-            context: Game context (not used by particle plugin).
-        """
-        self.context = context
-        logger.debug("ParticlePlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up particle resources when the scene unloads."""

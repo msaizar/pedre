@@ -47,7 +47,7 @@ Example usage in a map:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import arcade
 
@@ -56,9 +56,6 @@ from pedre.helpers import matches_key
 from pedre.plugins.interaction.base import InteractionBasePlugin, InteractiveObject
 from pedre.plugins.interaction.events import ObjectInteractedEvent
 from pedre.plugins.registry import PluginRegistry
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -116,15 +113,6 @@ class InteractionPlugin(InteractionBasePlugin):
         self.interaction_distance = settings.INTERACTION_PLUGIN_DISTANCE
         self.interactive_objects: dict[str, InteractiveObject] = {}
         self.interacted_objects: set[str] = set()
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the interaction plugin with game context and settings.
-
-        Args:
-            context: Game context providing access to other plugins.
-        """
-        self.context = context
-        logger.debug("InteractionPlugin setup complete with distance=%s", self.interaction_distance)
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load interactive objects from Tiled scene layer."""

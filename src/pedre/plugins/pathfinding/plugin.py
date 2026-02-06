@@ -62,7 +62,6 @@ from pedre.plugins.registry import PluginRegistry
 if TYPE_CHECKING:
     import arcade
 
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -102,18 +101,6 @@ class PathfindingPlugin(PathfindingBasePlugin):
 
         Creates a pathfinding plugin instance.
         """
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the pathfinding plugin with game context and settings.
-
-        This method is called by the PluginLoader after all plugins have been
-        instantiated.
-
-        Args:
-            context: Game context providing access to other plugins.
-        """
-        self.context = context
-        logger.debug("PathfindingPlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up pathfinding resources when the scene unloads.

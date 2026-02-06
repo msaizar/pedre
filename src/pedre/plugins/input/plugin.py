@@ -45,16 +45,13 @@ Example usage:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import arcade
 
 from pedre.conf import settings
 from pedre.plugins.input.base import InputBasePlugin
 from pedre.plugins.registry import PluginRegistry
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -103,15 +100,6 @@ class InputPlugin(InputBasePlugin):
         """
         self.movement_speed = settings.PLAYER_MOVEMENT_SPEED
         self.keys_pressed: set[int] = set()
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the input plugin with game context and settings.
-
-        Args:
-            context: Game context providing access to other plugins.
-        """
-        self.context = context
-        logger.debug("InputPlugin setup complete with speed=%s", self.movement_speed)
 
     def cleanup(self) -> None:
         """Clean up input resources when the scene unloads."""

@@ -1,15 +1,12 @@
 """Debug plugin for rendering debug overlays."""
 
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 import arcade
 
 from pedre.plugins.base import BasePlugin
 from pedre.plugins.registry import PluginRegistry
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +26,6 @@ class DebugPlugin(BasePlugin):
         """Initialize the debug plugin with default state."""
         self.debug_mode = False
         self.debug_text_objects: list[arcade.Text] = []
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the debug plugin.
-
-        Args:
-            context: Game context.
-        """
-        self.context = context
-        self.debug_text_objects = []
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle debug toggle input.

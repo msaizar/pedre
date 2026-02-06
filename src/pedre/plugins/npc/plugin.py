@@ -78,7 +78,6 @@ from pedre.plugins.npc.sprites import AnimatedNPC
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
     from pedre.plugins.npc.types import NPCInitKwargs
 
 logger = logging.getLogger(__name__)
@@ -143,20 +142,6 @@ class NPCPlugin(NPCBasePlugin):
         self.waypoint_threshold = settings.NPC_WAYPOINT_THRESHOLD
         self.movement_speed = settings.NPC_MOVEMENT_SPEED
         self.interacted_npcs: dict[str, set[str]] = {}
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the NPC plugin with game context and settings.
-
-        This method is called by the PluginLoader after all plugins have been
-        instantiated. It configures the plugin with references to required
-        plugins and settings.
-
-        Args:
-            context: Game context providing access to other plugins.
-            settings: Game configuration containing NPC-related settings.
-        """
-        self.context = context
-        logger.debug("NPCPlugin setup complete")
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load NPCs from Tiled object layer."""

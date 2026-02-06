@@ -57,7 +57,7 @@ Example usage from code:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 import arcade
 
@@ -66,9 +66,6 @@ from pedre.helpers import compute_ui_scale, matches_key, scale_font
 from pedre.plugins.dialog.base import DialogBasePlugin, DialogPage
 from pedre.plugins.dialog.events import DialogClosedEvent, DialogOpenedEvent
 from pedre.plugins.registry import PluginRegistry
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -161,18 +158,6 @@ class DialogPlugin(DialogBasePlugin):
     def set_current_npc_name(self, npc_name: str) -> None:
         """Set current dialog level."""
         self.current_npc_name = npc_name
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the dialog plugin with game settings.
-
-        This method is called by the PluginLoader after all plugins have been
-        instantiated. Stores the game context for event publishing.
-
-        Args:
-            context: Game context for accessing the event bus.
-        """
-        self.context = context
-        logger.debug("DialogPlugin setup complete")
 
     def on_key_press(self, symbol: int, modifiers: int) -> bool:
         """Handle input for dialog advancement.

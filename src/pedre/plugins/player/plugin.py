@@ -20,7 +20,6 @@ from pedre.plugins.registry import PluginRegistry
 from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
 
 if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
     from pedre.plugins.player.types import PlayerInitKwargs
 
 
@@ -45,10 +44,6 @@ class PlayerPlugin(PlayerBasePlugin):
         """Initialize the player plugin."""
         self.player_sprite: AnimatedPlayer | None = None
         self.player_list: arcade.SpriteList | None = None
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize player plugin for the current scene."""
-        self.context = context
 
     def get_player_sprite(self) -> AnimatedPlayer | None:
         """Get the player sprite."""
