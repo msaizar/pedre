@@ -21,6 +21,10 @@ ty:
 test:
     uv run pytest
 
+# Run tests as CI does (skip windowed tests)
+test-ci:
+    PYTEST_ADDOPTS="-m 'not window'" uv run pytest
+
 # Auto-fix lint issues
 lint-fix:
     uv run ruff check --fix .
