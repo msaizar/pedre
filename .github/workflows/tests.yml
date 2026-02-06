@@ -33,6 +33,4 @@ jobs:
               run: uv sync
 
             - name: Run tests (skip windowed tests)
-              run: just test
-              env:
-                  PYTEST_ADDOPTS: "-m 'not window'"
+              run: just test-ci
