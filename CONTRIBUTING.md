@@ -52,13 +52,13 @@ This project uses modern Python tooling for code quality:
 Run all quality checks at once:
 
 ```bash
-just qa
+just qa-fix
 ```
 
 Or run individual checks:
 
 ```bash
-just check    # Lint with ruff
+just lint-fix    # Lint with ruff
 just format   # Format code with ruff
 just ty       # Type check with ty
 ```
@@ -101,7 +101,7 @@ just coverage
 1. Ensure all tests pass and quality checks succeed:
 
    ```bash
-   just qa
+   just qa-fix
    just test
    ```
 

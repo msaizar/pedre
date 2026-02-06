@@ -101,6 +101,9 @@ uv sync
 # Run quality checks
 just qa
 
+# Run quality checks with fixes
+just qa-fix
+
 # Run tests
 just test
 ```
