@@ -310,3 +310,17 @@ def run_game() -> None:
     window = create_game()
     window.game.start_game_or_load()
     arcade.run()
+
+
+def scale(value: int, scale: float, floor: int = 1) -> int:
+    """Scale a design-unit value by ui_scale with a minimum floor.
+
+    Args:
+        value: Design-unit value (pixels at reference resolution).
+        scale: UI scale factor from compute_ui_scale().
+        floor: Minimum result value. Defaults to 1.
+
+    Returns:
+        Scaled integer value, at least floor.
+    """
+    return max(floor, int(value * scale))
