@@ -1,5 +1,7 @@
 """Tests for ActionLoader."""
 
+import sys
+
 import pytest
 
 from pedre.actions.loader import ActionLoader
@@ -55,17 +57,24 @@ def test_action_loader_raises_on_invalid_module(monkeypatch: pytest.MonkeyPatch)
 def test_action_loader_loads_multiple_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that ActionLoader can load multiple action modules."""
     ActionRegistry.clear()
+
+    # Remove the module from sys.modules to force re-import and re-registration
+    # This is necessary because Python caches imports and won't re-execute decorators
+    module_name = "pedre.plugins.npc.actions"
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+
     monkeypatch.setattr(
         "pedre.conf.settings.INSTALLED_ACTIONS",
         [
-            "pedre.plugins.npc.actions",
+            module_name,
         ],
     )
 
     loader = ActionLoader()
     loader.load_modules()
 
-    # Verify NPC actions were registered (testing a module not imported by other tests)
+    # Verify NPC actions were registered
     assert ActionRegistry.is_registered("move_npc")
     assert ActionRegistry.is_registered("advance_dialog")
     assert ActionRegistry.is_registered("set_dialog_level")
