@@ -25,7 +25,7 @@ Example:
                     context.get_plugin("particle").emit("rain")
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
@@ -76,7 +76,6 @@ class BasePlugin(ABC):
     # Plugins are initialized in dependency order
     dependencies: ClassVar[list[str]] = []
 
-    @abstractmethod
     def setup(self, context: GameContext) -> None:
         """Initialize the plugin when a scene loads.
 
@@ -95,6 +94,7 @@ class BasePlugin(ABC):
                 self.volume = settings.MUSIC_VOLUME
                 self.event_bus.subscribe(SceneStartEvent, self._on_scene_start)
         """
+        self.context = context
 
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load plugin-specific data from Tiled map (optional hook).

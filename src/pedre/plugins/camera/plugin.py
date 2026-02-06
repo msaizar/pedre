@@ -51,16 +51,13 @@ Integration:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import arcade
 
 from pedre.conf import settings
 from pedre.plugins.camera.base import CameraBasePlugin
 from pedre.plugins.registry import PluginRegistry
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -130,15 +127,6 @@ class CameraPlugin(CameraBasePlugin):
         self.follow_smooth: bool = True
         # Tiled configuration (applied after camera is set)
         self._follow_config: dict[str, Any] | None = None
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the camera plugin with game context and settings.
-
-        Args:
-            context: Game context providing access to other plugins.
-        """
-        self.context = context
-        logger.debug("CameraPlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up camera resources when the scene unloads."""

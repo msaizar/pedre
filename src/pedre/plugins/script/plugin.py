@@ -142,7 +142,6 @@ class ScriptPlugin(ScriptBasePlugin):
             context: Game context containing all plugins.
         """
         super().setup(context)
-        self.context = context
 
         # Load all scripts globally at initialization
         self._load_all_scripts()

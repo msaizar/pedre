@@ -49,15 +49,6 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         self.confirmation_option_texts: list[arcade.Text] = []
         self.feedback_text: arcade.Text | None = None
 
-    def setup(self, context: GameContext) -> None:
-        """Setup the pause menu plugin.
-
-        Args:
-            context: Game context providing access to other plugins.
-        """
-        self.context = context
-        logger.debug("PauseMenuPlugin: setup() called")
-
     def cleanup(self) -> None:
         """Clean up the pause menu plugin."""
         logger.debug("PauseMenuPlugin: cleanup() called")

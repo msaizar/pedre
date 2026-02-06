@@ -52,14 +52,6 @@ class CachePlugin(CacheBasePlugin):
         self._cache: dict[str, dict[str, Any]] = {}
         self.context: GameContext
 
-    def setup(self, context: GameContext) -> None:
-        """Initialize with context.
-
-        Args:
-            context: Game context providing access to all plugins.
-        """
-        self.context = context
-
     def reset(self) -> None:
         """Reset cache for new game."""
         self.clear()

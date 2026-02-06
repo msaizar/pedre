@@ -40,7 +40,7 @@ class PhysicsPlugin(PhysicsBasePlugin):
 
     def setup(self, context: GameContext) -> None:
         """Initialize physics engine."""
-        self.context = context
+        super().setup(context)
         self._create_engine()
 
     def invalidate(self) -> None:

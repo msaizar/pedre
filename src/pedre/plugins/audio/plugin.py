@@ -52,7 +52,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import arcade
 
@@ -60,9 +60,6 @@ from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.plugins.audio.base import AudioBasePlugin
 from pedre.plugins.registry import PluginRegistry
-
-if TYPE_CHECKING:
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -125,18 +122,6 @@ class AudioPlugin(AudioBasePlugin):
         # Track if music is enabled - loaded from settings
         self.music_enabled = settings.AUDIO_MUSIC_ENABLED
         self.sfx_enabled = settings.AUDIO_SFX_ENABLED
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the audio plugin with game settings.
-
-        This method is called by the PluginLoader after all plugins have been
-        instantiated. It configures volume levels based on settings.
-
-        Args:
-            context: Game context (not used by AudioPlugin).
-        """
-        self.context = context
-        logger.debug("AudioPlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up audio resources when the scene unloads.

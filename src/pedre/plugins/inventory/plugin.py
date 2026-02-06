@@ -158,12 +158,10 @@ class InventoryPlugin(InventoryBasePlugin):
         Args:
             context: Game context providing access to event bus.
         """
-        self.context = context
+        super().setup(context)
 
         # Initialize default items
         self._initialize_default_items()
-
-        logger.debug("InventoryPlugin setup complete")
 
     def cleanup(self) -> None:
         """Clean up inventory resources when the scene unloads."""

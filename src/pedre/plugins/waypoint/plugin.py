@@ -11,7 +11,6 @@ from pedre.plugins.waypoint.base import WaypointBasePlugin
 if TYPE_CHECKING:
     import arcade
 
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +31,6 @@ class WaypointPlugin(WaypointBasePlugin):
     def __init__(self) -> None:
         """Initialize waypoint plugin."""
         self.waypoints: dict[str, tuple[float, float]] = {}
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize waypoint plugin."""
-        self.context = context
 
     def reset(self) -> None:
         """Reset waypoint plugin."""

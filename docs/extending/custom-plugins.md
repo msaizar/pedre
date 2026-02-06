@@ -48,7 +48,7 @@ class WeatherPlugin(BasePlugin):
 
         Subscribe to events and set up initial state.
         """
-        self.context = context
+        super().setup(context)
 
         # Subscribe to events
         from myproject.events import TimeChangedEvent
@@ -202,6 +202,7 @@ class QuestPlugin(BasePlugin):
     DEPENDENCIES = ["inventory", "npc"]
 
     def setup(self, context: GameContext) -> None:
+        super().setup(context)
         # These plugins are guaranteed to be initialized
         self.inventory = context.get_plugin("inventory")
         self.npc_plugin = context.get_plugin("npc")
@@ -326,7 +327,7 @@ class QuestPlugin(BasePlugin):
         self.context: GameContext | None = None
 
     def setup(self, context: GameContext) -> None:
-        self.context = context
+        super().setup(context)
 
         # Subscribe to events that affect quests
         from pedre.plugins.inventory.events import ItemAcquiredEvent

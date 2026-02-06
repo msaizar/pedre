@@ -63,7 +63,6 @@ from pedre.plugins.save.base import GameSaveData, SaveBasePlugin
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from pedre.plugins.game_context import GameContext
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +88,6 @@ class SavePlugin(SaveBasePlugin):
         self.saves_dir.mkdir(parents=True, exist_ok=True)
 
         self.current_slot: int | None = None
-
-    def setup(self, context: GameContext) -> None:
-        """Initialize the save plugin with settings."""
-        self.context = context
 
     def cleanup(self) -> None:
         """Clean up save plugin resources."""
