@@ -7,7 +7,6 @@
 [![Ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
 [![QA](https://github.com/msaizar/pedre/actions/workflows/qa.yml/badge.svg)](https://github.com/msaizar/pedre/actions/workflows/qa.yml)
 
-
 A Python RPG framework built on [Arcade](https://api.arcade.academy/) with seamless [Tiled](https://www.mapeditor.org/) map editor integration. Build Zelda-like games with dialog systems, NPC interactions, inventory management, and event-driven scripting.
 
 ## Features
