@@ -58,10 +58,7 @@ Example usage:
     npc.start_interact_animation()
 """
 
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING
 
 import arcade
 from PIL import Image
@@ -69,10 +66,6 @@ from PIL import Image
 from pedre.conf import settings
 from pedre.sprites.animated_sprite import AnimatedSprite
 from pedre.sprites.helpers import load_animation_frames
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +100,7 @@ class AnimatedNPC(AnimatedSprite):
 
     def __init__(
         self,
-        sprite_sheet_path: Path | str,
+        sprite_sheet_path: str,
         *,
         tile_size: int = settings.TILE_SIZE,
         scale: float = 1.0,
@@ -276,7 +269,7 @@ class AnimatedNPC(AnimatedSprite):
         if not has_any_base_animation and self.animation_textures["appear"]:
             self.texture = self.animation_textures["appear"][0]
 
-    def _load_npc_textures(self, sprite_sheet_path: Path | str) -> None:
+    def _load_npc_textures(self, sprite_sheet_path: str) -> None:
         """Load NPC-specific animation textures (appear, disappear, interact in 4 directions).
 
         Loads only the special animations unique to NPCs. Base animations (idle, walk)
@@ -297,7 +290,7 @@ class AnimatedNPC(AnimatedSprite):
             Logs debug information about loaded NPC animations.
         """
         # Open the sprite sheet
-        sprite_sheet = Image.open(str(sprite_sheet_path))
+        sprite_sheet = Image.open(sprite_sheet_path)
 
         # Build list of animations to load for logging
         animations_to_load = []
