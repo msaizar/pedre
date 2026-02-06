@@ -148,6 +148,102 @@ class TestParticlePlugin(unittest.TestCase):
         self.plugin.restore_save_state(state)
         assert self.plugin.enabled is False
 
+    def test_cleanup(self) -> None:
+        """Test cleanup clears particles."""
+        self.plugin.particles.append(Particle(0, 0, 0, 0, 1))
+        assert len(self.plugin.particles) == 1
+
+        self.plugin.cleanup()
+        assert len(self.plugin.particles) == 0
+
+    def test_emit_trail(self) -> None:
+        """Test emitting trail particles."""
+        self.plugin.emit_trail(100, 200, count=3)
+
+        assert len(self.plugin.particles) == 3
+        for p in self.plugin.particles:
+            assert isinstance(p, Particle)
+            assert p.fade is True
+            # Trail particles start semi-transparent (alpha=128)
+            r, g, b = settings.PARTICLE_COLOR_TRAIL
+            assert p.color == (r, g, b, 128)
+            # Small size for trail particles
+            assert 2.0 <= p.size <= 3.0
+
+    def test_emit_trail_disabled(self) -> None:
+        """Test that trail particles are not emitted when disabled."""
+        self.plugin.enabled = False
+        self.plugin.emit_trail(100, 200)
+        assert len(self.plugin.particles) == 0
+
+    def test_emit_burst(self) -> None:
+        """Test emitting burst particles."""
+        self.plugin.emit_burst(100, 200, count=20)
+
+        assert len(self.plugin.particles) == 20
+        for p in self.plugin.particles:
+            assert isinstance(p, Particle)
+            assert p.fade is True
+            r, g, b = settings.PARTICLE_COLOR_BURST
+            assert p.color == (r, g, b, 255)
+            # Burst particles are larger
+            assert 4.0 <= p.size <= 8.0
+
+    def test_emit_burst_disabled(self) -> None:
+        """Test that burst particles are not emitted when disabled."""
+        self.plugin.enabled = False
+        self.plugin.emit_burst(100, 200)
+        assert len(self.plugin.particles) == 0
+
+    def test_on_draw(self) -> None:
+        """Test on_draw calls draw."""
+        with patch.object(self.plugin, "draw") as mock_draw:
+            self.plugin.on_draw()
+            mock_draw.assert_called_once()
+
+    @patch("arcade.draw_circle_filled")
+    def test_draw_non_fading_particle(self, mock_draw: MagicMock) -> None:
+        """Test drawing particles without fade."""
+        p = Particle(
+            x=10.0,
+            y=20.0,
+            velocity_x=0,
+            velocity_y=0,
+            lifetime=1.0,
+            age=0.0,
+            color=(255, 0, 0, 200),
+            size=5.0,
+            fade=False,  # Non-fading particle
+        )
+        self.plugin.particles.append(p)
+
+        self.plugin.draw()
+
+        assert mock_draw.called
+        args, _ = mock_draw.call_args
+        # Alpha should remain constant at 200
+        assert args[3] == (255, 0, 0, 200)
+
+    def test_reset(self) -> None:
+        """Test reset clears particles."""
+        self.plugin.particles.append(Particle(0, 0, 0, 0, 1))
+        assert len(self.plugin.particles) == 1
+
+        self.plugin.reset()
+        assert len(self.plugin.particles) == 0
+
+    def test_emit_sparkles_disabled(self) -> None:
+        """Test sparkles emission when plugin is disabled."""
+        self.plugin.enabled = False
+        self.plugin.emit_sparkles(100, 200, count=10)
+        assert len(self.plugin.particles) == 0
+
+    def test_emit_hearts_disabled(self) -> None:
+        """Test hearts emission when plugin is disabled."""
+        self.plugin.enabled = False
+        self.plugin.emit_hearts(100, 200, count=5)
+        assert len(self.plugin.particles) == 0
+
 
 if __name__ == "__main__":
     unittest.main()
