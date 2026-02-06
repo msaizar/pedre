@@ -5,8 +5,6 @@ condition checkers for the scripting plugin. Plugins register their own
 condition logic, enabling the script plugin to remain decoupled.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 

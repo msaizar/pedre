@@ -48,8 +48,6 @@ Example usage:
     inventory_mgr.from_dict(save_data)
 """
 
-from __future__ import annotations
-
 import json
 import logging
 from pathlib import Path

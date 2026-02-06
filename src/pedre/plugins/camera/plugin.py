@@ -48,8 +48,6 @@ Integration:
     - Used before drawing world objects in on_draw()
 """
 
-from __future__ import annotations
-
 import logging
 from typing import Any, ClassVar
 

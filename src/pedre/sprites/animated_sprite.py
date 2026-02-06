@@ -24,16 +24,11 @@ This base class is extended by:
 """
 
 import logging
-from typing import TYPE_CHECKING
 
 import arcade
 from PIL import Image
 
 from pedre.conf import settings
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
 from pedre.sprites.helpers import load_animation_frames
 
 logger = logging.getLogger(__name__)
@@ -65,7 +60,7 @@ class AnimatedSprite(arcade.Sprite):
 
     def __init__(
         self,
-        sprite_sheet_path: Path | str,
+        sprite_sheet_path: str,
         *,
         tile_size: int = settings.TILE_SIZE,
         scale: float = 1.0,
@@ -299,7 +294,7 @@ class AnimatedSprite(arcade.Sprite):
                 flip=True,
             )
 
-    def _load_textures(self, sprite_sheet_path: Path | str) -> None:
+    def _load_textures(self, sprite_sheet_path: str) -> None:
         """Load animation textures from the sprite sheet (internal implementation).
 
         Reads the sprite sheet image and extracts individual frames for idle and walk
@@ -316,7 +311,7 @@ class AnimatedSprite(arcade.Sprite):
             Logs debug message with total frame counts.
         """
         # Open the sprite sheet
-        sprite_sheet = Image.open(str(sprite_sheet_path))
+        sprite_sheet = Image.open(sprite_sheet_path)
         sheet_width = sprite_sheet.width
         sheet_height = sprite_sheet.height
 

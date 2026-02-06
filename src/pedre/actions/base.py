@@ -1,7 +1,5 @@
 """Action plugin for reusable, chainable game actions."""
 
-from __future__ import annotations
-
 import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING

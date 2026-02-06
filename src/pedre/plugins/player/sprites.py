@@ -46,10 +46,7 @@ Example usage:
 """
 
 import logging
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from pathlib import Path
 from pedre.conf import settings
 from pedre.sprites.animated_sprite import AnimatedSprite
 
@@ -83,7 +80,7 @@ class AnimatedPlayer(AnimatedSprite):
 
     def __init__(
         self,
-        sprite_sheet_path: Path | str,
+        sprite_sheet_path: str,
         *,
         tile_size: int = settings.TILE_SIZE,
         scale: float = 1.0,

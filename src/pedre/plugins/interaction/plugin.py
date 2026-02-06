@@ -44,8 +44,6 @@ Example usage in a map:
             interaction_mgr.handle_interaction(obj)
 """
 
-from __future__ import annotations
-
 import logging
 from typing import Any, ClassVar
 
