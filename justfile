@@ -38,6 +38,11 @@ coverage:
     uv run coverage run -m pytest
     uv run coverage report
 
+coverage-ci:
+    uv run coverage run -m pytest -m "not window"
+    uv run coverage xml
+    uv run coverage report
+
 # Run tests with coverage and generate HTML report
 coverage-html:
     uv run coverage run -m pytest
