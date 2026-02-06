@@ -1,19 +1,33 @@
 # Pedre
 
+[![PyPI version](https://img.shields.io/pypi/v/pedre.svg)](https://pypi.org/project/pedre/)
+[![Python](https://img.shields.io/pypi/pyversions/pedre.svg)](https://pypi.org/project/pedre/)
+[![License](https://img.shields.io/github/license/msaizar/pedre.svg)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-online-brightgreen)](https://msaizar.github.io/pedre/)
+[![Ruff](https://img.shields.io/badge/code%20style-ruff-261230)](https://github.com/astral-sh/ruff)
+
 A Python RPG framework built on [Arcade](https://api.arcade.academy/) with seamless [Tiled](https://www.mapeditor.org/) map editor integration. Build Zelda-like games with dialog systems, NPC interactions, inventory management, and event-driven scripting.
 
 ## Features
 
 - **Tiled Map Integration** - Load .tmx maps with automatic layer detection and object parsing
-- **NPC Plugin** - Animated NPCs with dialog trees, pathfinding, and state management
-- **Dialog Plugin** - Multi-page conversations with character names and pagination
-- **Event-Driven Scripting** - JSON-based cutscenes and interactive sequences
-- **Inventory Management** - Item collection and categorization plugin
-- **Portal Plugin** - Map transitions with conditional triggers
-- **Save/Load Plugin** - Automatic game state persistence
-- **Audio Management** - Background music and sound effects with caching
-- **Camera Plugin** - Smooth camera following with optional bounds
-- **Particle Effects** - Visual feedback plugin for interactions
+- **Event-Driven Scripting** - JSON-based cutscenes, triggers, conditions, and actions
+- **NPC System** - Animated NPCs with dialog trees, pathfinding, and state management
+- **Dialog System** - Multi-page conversations with character names and text reveal animation
+- **Inventory System** - Item collection, categorization, and photo viewing
+- **Portal System** - Map transitions with conditional triggers and waypoint spawning
+- **Save/Load System** - Multi-slot game state persistence with auto-save
+- **Pause Menu** - In-game overlay with save/load, new game, and resume options
+- **Player Control** - Animated player sprite with 8-directional movement and collision
+- **Camera System** - Smooth camera following with target switching and bounds
+- **Audio System** - Background music and sound effects with volume control
+- **Particle Effects** - Visual feedback for interactions (sparkles, hearts, trails, bursts)
+- **Interaction System** - Distance-based object and NPC interaction detection
+- **Physics System** - Collision detection with configurable wall layers
+- **Pathfinding** - A* pathfinding for NPC movement around obstacles
+- **Input Handling** - Normalized movement vectors with customizable key bindings
+- **Debug Mode** - Development overlay showing coordinates and NPC states
+- **Resource Caching** - Efficient loading and caching of sprites, audio, and maps
 
 ## Requirements
 
@@ -52,85 +66,7 @@ WINDOW_TITLE = "My RPG"
 INITIAL_MAP = "my_map.tmx"
 ```
 
-### Adding NPCs with Dialogs
-
-Create a dialog file `assets/dialogs/village_dialogs.json` (where "village" matches your map name):
-
-```json
-{
-  "merchant": {
-    "0": {
-      "name": "Merchant",
-      "text": [
-        "Welcome to my shop!",
-        "Take a look around."
-      ]
-    }
-  }
-}
-```
-
-Place the NPC in your Tiled map's "NPCs" object layer as a point with these custom properties:
-
-- `name` (string): "merchant" - unique identifier
-- `sprite_sheet` (string): "images/characters/merchant.png" - path to sprite sheet
-- `tile_size` (int): 32 - size of each tile in the sprite sheet
-- Animation properties like `idle_down_frames`, `idle_down_row`, `walk_right_frames`, `walk_right_row`, etc.
-
-See the [Getting Started Guide](https://msaizar.github.io/pedre/getting-started/) for complete NPC setup instructions.
-
-### Creating Interactive Scripts
-
-Create a script file `assets/scripts/village_scripts.json`:
-
-```json
-{
-  "meet_merchant": {
-    "scene": "village",
-    "trigger": {
-      "event": "npc_interacted",
-      "npc": "merchant"
-    },
-    "actions": [
-      {
-        "type": "dialog",
-        "speaker": "Merchant",
-        "text": ["Welcome to my shop!", "Take a look around."]
-      },
-      {
-        "type": "play_sfx",
-        "file": "coin.wav"
-      }
-    ]
-  }
-}
-```
-
-### Adding Portals Between Maps
-
-Portals use an event-driven system that gives you full control over transitions.
-
-**In Tiled:**
-
-1. Create a "Portals" object layer
-2. Add a rectangle where you want the portal
-3. Set the `name` property: "to_forest"
-4. In the target map, create a "Waypoints" object layer with a point named "from_village"
-
-**In your scripts file** (`assets/scripts/village_scripts.json`):
-
-```json
-{
-  "to_forest_portal": {
-    "trigger": {"event": "portal_entered", "portal": "to_forest"},
-    "actions": [
-      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
-    ]
-  }
-}
-```
-
-This event-driven approach allows conditional portals, cutscenes before transitions, and locked doors with custom failure messages. See the [Portal Plugin](https://msaizar.github.io/pedre/plugins/portal/) and [Scripting Guide](https://msaizar.github.io/pedre/scripting/) for more details.
+See the [Getting Started Guide](https://msaizar.github.io/pedre/getting-started/) for a complete step-by-step tutorial covering NPCs, dialogs, scripts, portals, and more.
 
 ## Demo Project
 
@@ -138,19 +74,17 @@ Want to see a complete working example? Check out **[msaizar/pedre-demo](https:/
 
 ## Architecture
 
-The framework uses a **plugin-based architecture** with event-driven communication:
+Pedre uses a **plugin-based architecture** where plugins communicate via a central GameContext:
 
-- **Views** - Menu, Game, Inventory, Load screens
-- **Sprites** - AnimatedPlayer, AnimatedNPC with sprite sheet support
-- **Plugins** - Modular plugins for different game aspects:
-  - DialogPlugin - Conversation display
-  - NPCPlugin - NPC state and interactions
-  - PortalPlugin - Map transitions
-  - ScriptPlugin - Event-driven actions
-  - InventoryPlugin - Item management
-  - AudioPlugin - Sound and music
-  - SavePlugin - Game persistence
-  - And more...
+- **GameView** - Single view managing gameplay (pause menu and inventory are plugin overlays, not separate views)
+- **GameContext** - Central coordinator providing plugins access to each other
+- **EventBus** - Powers the event-driven scripting system (triggers and actions)
+- **Plugins** - Modular, replaceable components for different game aspects
+  - See [Plugin Reference](https://msaizar.github.io/pedre/plugins/) for complete list
+- **Extensible scripting system** - Create custom actions, events, and conditions
+- **Sprites** - AnimatedPlayer and AnimatedNPC with multi-directional sprite sheet support
+
+All core plugins can be replaced or extended to customize your game's behavior.
 
 ## Development
 
