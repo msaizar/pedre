@@ -139,6 +139,9 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = ["-v", "--strict-markers"]
+markers = [
+    "window: tests that require a graphical window (skipped in CI)",
+]
 
 [tool.coverage.run]
 source = ["src"]

@@ -39,6 +39,7 @@ def game_view(mock_game: Mock) -> GameView:
     return GameView(mock_game)
 
 
+@pytest.mark.window
 def test_game_view_initialization(game_view: GameView, mock_game: Mock) -> None:
     """Test that GameView initializes correctly.
 
@@ -49,6 +50,7 @@ def test_game_view_initialization(game_view: GameView, mock_game: Mock) -> None:
     assert game_view.game == mock_game
 
 
+@pytest.mark.window
 def test_on_key_press_other_keys_do_nothing(
     game_view: GameView,
     mock_game: Mock,
