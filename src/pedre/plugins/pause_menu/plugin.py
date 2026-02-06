@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.helpers import compute_ui_scale, scale_font
+from pedre.helpers import compute_ui_scale, scale, scale_font
 from pedre.plugins.pause_menu.base import PauseMenuBasePlugin, PauseMenuOption, PauseMenuState
 from pedre.plugins.registry import PluginRegistry
 
@@ -266,20 +266,6 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         self.selected_option = 1  # Default to "No" for safety
         logger.debug("Showing new game confirmation overlay")
 
-    @staticmethod
-    def _scaled(value: int, scale: float, floor: int = 1) -> int:
-        """Scale a design-unit value by ui_scale with a minimum floor.
-
-        Args:
-            value: Design-unit value (pixels at reference resolution).
-            scale: UI scale factor from compute_ui_scale().
-            floor: Minimum result value. Defaults to 1.
-
-        Returns:
-            Scaled integer value, at least floor.
-        """
-        return max(floor, int(value * scale))
-
     def _prepare_text_objects(
         self,
         ui_scale: float,
@@ -314,11 +300,11 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             title = settings.PAUSE_MENU_TITLE
 
         # Scale design values
-        title_padding = self._scaled(design["title_padding"], ui_scale)
+        title_padding = scale(design["title_padding"], ui_scale)
         title_font_size = scale_font(
             settings.UI_FONT_LARGE, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
         )
-        feedback_offset = self._scaled(design["feedback_offset"], ui_scale)
+        feedback_offset = scale(design["feedback_offset"], ui_scale)
         feedback_font_size = scale_font(
             settings.UI_FONT_NORMAL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
         )
@@ -389,12 +375,12 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         ]
 
         # Scale design values
-        title_area_height = self._scaled(design["title_area_height"], ui_scale)
-        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        title_area_height = scale(design["title_area_height"], ui_scale)
+        horizontal_padding = scale(design["horizontal_padding"], ui_scale)
         option_font_size = scale_font(
             settings.UI_FONT_NORMAL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
         )
-        spacing = self._scaled(design["spacing"], ui_scale)
+        spacing = scale(design["spacing"], ui_scale)
 
         # Calculate positions
         content_top = box_top - title_area_height
@@ -453,13 +439,13 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         design = settings.PAUSE_MENU_DESIGN
 
         # Scale design values
-        title_area_height = self._scaled(design["title_area_height"], ui_scale)
-        content_bottom_padding = self._scaled(design["content_bottom_padding"], ui_scale)
-        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        title_area_height = scale(design["title_area_height"], ui_scale)
+        content_bottom_padding = scale(design["content_bottom_padding"], ui_scale)
+        horizontal_padding = scale(design["horizontal_padding"], ui_scale)
         slot_font_size = scale_font(
             settings.UI_FONT_SMALL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
         )
-        spacing = self._scaled(design["spacing"], ui_scale)
+        spacing = scale(design["spacing"], ui_scale)
 
         # Calculate positions
         slots = [0, 1, 2, 3]
@@ -539,13 +525,13 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         design = settings.PAUSE_MENU_DESIGN
 
         # Scale design values
-        title_area_height = self._scaled(design["title_area_height"], ui_scale)
-        content_bottom_padding = self._scaled(design["content_bottom_padding"], ui_scale)
-        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        title_area_height = scale(design["title_area_height"], ui_scale)
+        content_bottom_padding = scale(design["content_bottom_padding"], ui_scale)
+        horizontal_padding = scale(design["horizontal_padding"], ui_scale)
         slot_font_size = scale_font(
             settings.UI_FONT_SMALL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
         )
-        spacing = self._scaled(design["spacing"], ui_scale)
+        spacing = scale(design["spacing"], ui_scale)
 
         # Calculate positions
         slots = [1, 2, 3]
@@ -620,13 +606,13 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         design = settings.PAUSE_MENU_DESIGN
 
         # Scale design values
-        confirmation_message_offset = self._scaled(design["confirmation_message_offset"], ui_scale)
-        confirmation_options_offset = self._scaled(design["confirmation_options_offset"], ui_scale)
-        horizontal_padding = self._scaled(design["horizontal_padding"], ui_scale)
+        confirmation_message_offset = scale(design["confirmation_message_offset"], ui_scale)
+        confirmation_options_offset = scale(design["confirmation_options_offset"], ui_scale)
+        horizontal_padding = scale(design["horizontal_padding"], ui_scale)
         option_font_size = scale_font(
             settings.UI_FONT_NORMAL, ui_scale, settings.PAUSE_MENU_UI_SCALE_MIN, settings.PAUSE_MENU_UI_SCALE_MAX
         )
-        spacing = self._scaled(design["spacing"], ui_scale)
+        spacing = scale(design["spacing"], ui_scale)
 
         # Create confirmation message with wrapping
         message_y = center_y + confirmation_message_offset
@@ -707,12 +693,12 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
         )
 
         # Scale box dimensions, clamp to window bounds
-        box_width = min(self._scaled(design["box_width"], ui_scale), int(window.width * 0.9))
-        box_height = min(self._scaled(design["box_height"], ui_scale), int(window.height * 0.9))
+        box_width = min(scale(design["box_width"], ui_scale), int(window.width * 0.9))
+        box_height = min(scale(design["box_height"], ui_scale), int(window.height * 0.9))
         center_x = window.width // 2
         center_y = window.height // 2
 
-        border_width = self._scaled(design["border_width"], ui_scale)
+        border_width = scale(design["border_width"], ui_scale)
 
         # Menu box background
         arcade.draw_lrbt_rectangle_filled(
