@@ -48,8 +48,6 @@ Integration:
     - Responds to user settings for volume and enable/disable
 """
 
-from __future__ import annotations
-
 import logging
 import time
 from typing import Any, ClassVar

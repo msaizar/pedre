@@ -48,8 +48,6 @@ Example usage:
         save_plugin.restore_game_data(save_data, context)
 """
 
-from __future__ import annotations
-
 import json
 import logging
 from datetime import UTC, datetime

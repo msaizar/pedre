@@ -5,8 +5,6 @@ their events by name. This enables the script plugin to discover and subscribe
 to events without direct class imports, improving decoupling.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, ClassVar, TypeVar
 

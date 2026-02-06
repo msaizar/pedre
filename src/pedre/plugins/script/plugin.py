@@ -51,8 +51,6 @@ Integration with other plugins:
 - GameContext: Provides access to all plugins for condition evaluation
 """
 
-from __future__ import annotations
-
 import json
 import logging
 from dataclasses import asdict

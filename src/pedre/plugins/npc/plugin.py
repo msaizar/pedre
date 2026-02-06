@@ -54,8 +54,6 @@ Example usage:
     npc_mgr.update(delta_time, context)
 """
 
-from __future__ import annotations
-
 import json
 import logging
 from pathlib import Path

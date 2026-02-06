@@ -5,8 +5,6 @@ movement processing, and animation updates. It decouples the player logic
 from the main GameView.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar
 

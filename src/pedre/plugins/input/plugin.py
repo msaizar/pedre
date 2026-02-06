@@ -42,8 +42,6 @@ Example usage:
         interact_with_npc()
 """
 
-from __future__ import annotations
-
 import logging
 from typing import Any, ClassVar
 

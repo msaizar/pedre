@@ -4,8 +4,6 @@ This module provides the PhysicsPlugin class, which wraps the arcade physics eng
 and manages collision handling between the player and walls/objects.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, ClassVar
 

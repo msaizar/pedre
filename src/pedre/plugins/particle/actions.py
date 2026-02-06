@@ -4,8 +4,6 @@ These actions allow scripts to emit particle effects at specific
 locations or following NPCs.
 """
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Any, Self
 

@@ -19,8 +19,6 @@ Example:
         loader.load_modules()
 """
 
-from __future__ import annotations
-
 import importlib
 import logging
 

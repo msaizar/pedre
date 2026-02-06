@@ -1,7 +1,5 @@
 """Script actions for scene plugin operations."""
 
-from __future__ import annotations
-
 import logging
 from typing import TYPE_CHECKING, Any, Self
 
