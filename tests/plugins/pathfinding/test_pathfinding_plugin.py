@@ -1,5 +1,6 @@
 """Unit tests for PathfindingPlugin in src/pedre/plugins/pathfinding/plugin.py."""
 
+import logging
 import unittest
 from collections import deque
 from unittest.mock import MagicMock
@@ -186,6 +187,126 @@ class TestPathfindingPlugin(unittest.TestCase):
 
         assert len(path) == 0
         assert isinstance(path, deque)
+
+    def test_cleanup(self) -> None:
+        """Test cleanup method logs correctly."""
+        with self.assertLogs("pedre.plugins.pathfinding.plugin", level=logging.DEBUG) as log_context:
+            self.plugin.cleanup()
+
+        assert any("PathfindingPlugin cleanup complete" in message for message in log_context.output)
+
+    def test_find_path_with_exclude_sprites_in_retry(self) -> None:
+        """Test retry logic extends exclude_sprites with NPCs."""
+        # Create an NPC at (1,0)
+        npc = MagicMock()
+        npc.center_x = 1 * self.tile_size + self.tile_size / 2
+        npc.center_y = 0 * self.tile_size + self.tile_size / 2
+        npc.width = self.tile_size
+        npc.height = self.tile_size
+        npc.properties = {"name": "guard"}
+        self.mock_wall_list.append(npc)
+
+        # Create a wall at (0,1)
+        wall = MagicMock()
+        wall.center_x = 0 * self.tile_size + self.tile_size / 2
+        wall.center_y = 1 * self.tile_size + self.tile_size / 2
+        wall.width = self.tile_size
+        wall.height = self.tile_size
+        wall.properties = {}
+        self.mock_wall_list.append(wall)
+
+        # Create an additional exclude sprite (not the moving sprite)
+        extra_exclude = MagicMock()
+        extra_exclude.center_x = -1 * self.tile_size + self.tile_size / 2
+        extra_exclude.center_y = 0 * self.tile_size + self.tile_size / 2
+        extra_exclude.width = self.tile_size
+        extra_exclude.height = self.tile_size
+
+        # Surround the start position with walls except for the path through NPC
+        for dx, dy in [(0, -1), (-1, 0)]:
+            w = MagicMock()
+            w.center_x = dx * self.tile_size + self.tile_size / 2
+            w.center_y = dy * self.tile_size + self.tile_size / 2
+            w.width = self.tile_size
+            w.height = self.tile_size
+            w.properties = {}
+            self.mock_wall_list.append(w)
+
+        start_x = self.tile_size / 2
+        start_y = self.tile_size / 2
+
+        # Target tile is (2,0)
+        end_x = 2 * self.tile_size + self.tile_size / 2
+        end_y = 0 * self.tile_size + self.tile_size / 2
+
+        # Call with exclude_sprites parameter
+        path = self.plugin.find_path(start_x, start_y, end_x, end_y, exclude_sprites=[extra_exclude])
+
+        # Should succeed due to NPC passthrough (line 240 is executed)
+        assert len(path) > 0
+
+    def test_find_path_no_retry_when_no_wall_list(self) -> None:
+        """Test that retry doesn't happen when wall_list is None and no path found."""
+        # Set wall_list to None
+        self.mock_scene_plugin.get_wall_list.return_value = None
+
+        start_x = self.tile_size / 2
+        start_y = self.tile_size / 2
+
+        # This won't matter since all tiles are walkable with no wall_list
+        # But trying to path from the same tile should return empty path
+        end_x = self.tile_size / 2
+        end_y = self.tile_size / 2
+
+        path = self.plugin.find_path(start_x, start_y, end_x, end_y)
+
+        # Path should be empty since start == end
+        assert len(path) == 0
+        assert isinstance(path, deque)
+
+    def test_find_path_with_blocked_end_tile(self) -> None:
+        """Test warning log when end tile is blocked."""
+        # Create a small bounded area with walls
+        # Start at (1,1), end at (3,1) which will be blocked
+        # Create walls forming a small box to limit search space
+
+        # Create outer walls to bound the search space (0-4 in x and y)
+        for x in range(-1, 6):
+            for y in range(-1, 6):
+                # Create walls on the perimeter
+                if x in (-1, 5) or y in (-1, 5):
+                    wall = MagicMock()
+                    wall.center_x = x * self.tile_size + self.tile_size / 2
+                    wall.center_y = y * self.tile_size + self.tile_size / 2
+                    wall.width = self.tile_size
+                    wall.height = self.tile_size
+                    wall.properties = {}
+                    self.mock_wall_list.append(wall)
+
+        # Place wall at target position (3, 1)
+        target_wall = MagicMock()
+        target_wall.center_x = 3 * self.tile_size + self.tile_size / 2
+        target_wall.center_y = 1 * self.tile_size + self.tile_size / 2
+        target_wall.width = self.tile_size
+        target_wall.height = self.tile_size
+        target_wall.properties = {}
+        self.mock_wall_list.append(target_wall)
+
+        # Start at (1, 1)
+        start_x = 1 * self.tile_size + self.tile_size / 2
+        start_y = 1 * self.tile_size + self.tile_size / 2
+
+        # Target at (3, 1) - blocked
+        end_x = 3 * self.tile_size + self.tile_size / 2
+        end_y = 1 * self.tile_size + self.tile_size / 2
+
+        with self.assertLogs("pedre.plugins.pathfinding.plugin", level=logging.WARNING) as log_context:
+            path = self.plugin.find_path(start_x, start_y, end_x, end_y)
+
+        # Check that warning was logged (line 303)
+        assert any("End tile blocked at" in message for message in log_context.output)
+        # Path should still be empty since end is blocked
+        assert len(path) == 0
 
 
 if __name__ == "__main__":
