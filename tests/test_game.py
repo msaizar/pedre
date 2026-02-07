@@ -999,6 +999,45 @@ class TestGame(unittest.TestCase):
         # Verify window was closed
         mock_close_window.assert_called_once()
 
+    @patch("pedre.game.PluginLoader")
+    @patch("pedre.game.ConditionLoader")
+    @patch("pedre.game.EventLoader")
+    @patch("pedre.game.ActionLoader")
+    @patch("pedre.game.GameContext")
+    @patch("pedre.game.EventBus")
+    def test_load_game_no_game_context(
+        self,
+        mock_event_bus_class: MagicMock,
+        mock_game_context_class: MagicMock,
+        mock_action_loader_class: MagicMock,
+        mock_event_loader_class: MagicMock,
+        mock_condition_loader_class: MagicMock,
+        mock_plugin_loader_class: MagicMock,
+    ) -> None:
+        """Test load_game does nothing when game_context is None."""
+        mock_plugin_loader = MagicMock()
+        mock_plugin_loader.instantiate_all.return_value = {}
+        mock_plugin_loader_class.return_value = mock_plugin_loader
+
+        game = Game(self.mock_window)
+
+        # Verify all loaders were called during init
+        mock_event_bus_class.assert_called_once()
+        mock_game_context_class.assert_called_once()
+        mock_action_loader_class.assert_called_once()
+        mock_event_loader_class.assert_called_once()
+        mock_condition_loader_class.assert_called_once()
+        mock_plugin_loader_class.assert_called_once()
+
+        # Set game_context to None to trigger the error path
+        game.game_context = None
+
+        mock_save_data = MagicMock()
+        game.load_game(mock_save_data)
+
+        # Window show_view should not be called
+        self.mock_window.show_view.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
