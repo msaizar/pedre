@@ -9,11 +9,14 @@ omit =
     src/pedre/plugins/base.py
     src/pedre/actions/base.py
     src/pedre/events/base.py
-
+    src/pedre/plugins/player/types.py
+    src/pedre/plugins/npc/types.py
+    src/pedre/constants.py
 [report]
 exclude_lines =
     pragma: no cover
     if TYPE_CHECKING:
     if __name__ == .__main__.:
+
 fail_under = 80
 show_missing = true
