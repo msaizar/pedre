@@ -18,7 +18,7 @@ class TestCheckScriptCompleted(unittest.TestCase):
 
     def test_check_script_completed_returns_true(self) -> None:
         """Test that check_script_completed returns True when script is completed."""
-        mock_script = MagicMock(spec=Script)
+        mock_script = MagicMock()
         mock_script.completed = True
         self.mock_script_plugin.get_scripts.return_value = {"test_script": mock_script}
 
@@ -30,7 +30,7 @@ class TestCheckScriptCompleted(unittest.TestCase):
 
     def test_check_script_completed_returns_false_not_completed(self) -> None:
         """Test that check_script_completed returns False when script is not completed."""
-        mock_script = MagicMock(spec=Script)
+        mock_script = MagicMock()
         mock_script.completed = False
         self.mock_script_plugin.get_scripts.return_value = {"test_script": mock_script}
 
@@ -74,10 +74,10 @@ class TestCheckScriptCompleted(unittest.TestCase):
 
     def test_check_script_completed_with_multiple_scripts(self) -> None:
         """Test checking a specific script when multiple scripts exist."""
-        mock_script_completed = MagicMock(spec=Script)
+        mock_script_completed = MagicMock()
         mock_script_completed.completed = True
 
-        mock_script_not_completed = MagicMock(spec=Script)
+        mock_script_not_completed = MagicMock()
         mock_script_not_completed.completed = False
 
         self.mock_script_plugin.get_scripts.return_value = {
@@ -127,7 +127,7 @@ class TestCheckScriptCompleted(unittest.TestCase):
         """Test that None script name is handled correctly."""
         # When using .get() with default "", None as a value still returns None
         # The code will evaluate `if not script_name:` which catches None
-        mock_script = MagicMock(spec=Script)
+        mock_script = MagicMock()
         mock_script.completed = True
         self.mock_script_plugin.get_scripts.return_value = {"some_script": mock_script}
 

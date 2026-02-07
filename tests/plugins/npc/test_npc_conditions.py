@@ -3,7 +3,6 @@
 import unittest
 from unittest.mock import MagicMock
 
-from pedre.plugins.npc.base import NPCState
 from pedre.plugins.npc.conditions import check_npc_dialog_level, check_npc_interacted
 
 
@@ -119,7 +118,7 @@ class TestCheckNpcDialogLevel(unittest.TestCase):
 
     def test_check_npc_dialog_level_returns_true(self) -> None:
         """Test that check_npc_dialog_level returns True when dialog level matches."""
-        mock_npc_state = MagicMock(spec=NPCState)
+        mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 3
         self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
@@ -131,7 +130,7 @@ class TestCheckNpcDialogLevel(unittest.TestCase):
 
     def test_check_npc_dialog_level_returns_false_wrong_level(self) -> None:
         """Test that check_npc_dialog_level returns False when dialog level doesn't match."""
-        mock_npc_state = MagicMock(spec=NPCState)
+        mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 2
         self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
@@ -142,7 +141,7 @@ class TestCheckNpcDialogLevel(unittest.TestCase):
 
     def test_check_npc_dialog_level_zero_level(self) -> None:
         """Test check_npc_dialog_level with dialog level 0."""
-        mock_npc_state = MagicMock(spec=NPCState)
+        mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 0
         self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
@@ -187,7 +186,7 @@ class TestCheckNpcDialogLevel(unittest.TestCase):
 
     def test_check_npc_dialog_level_missing_equals(self) -> None:
         """Test that missing equals parameter returns False."""
-        mock_npc_state = MagicMock(spec=NPCState)
+        mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 3
         self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
@@ -207,7 +206,7 @@ class TestCheckNpcDialogLevel(unittest.TestCase):
 
     def test_check_npc_dialog_level_with_negative_level(self) -> None:
         """Test check_npc_dialog_level with negative dialog level (edge case)."""
-        mock_npc_state = MagicMock(spec=NPCState)
+        mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = -1
         self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
@@ -218,7 +217,7 @@ class TestCheckNpcDialogLevel(unittest.TestCase):
 
     def test_check_npc_dialog_level_with_high_level(self) -> None:
         """Test check_npc_dialog_level with high dialog level."""
-        mock_npc_state = MagicMock(spec=NPCState)
+        mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 100
         self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
