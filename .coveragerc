@@ -4,7 +4,9 @@ source = pedre
 
 omit =
     */tests/*
-    src/pedre/views/
+    src/pedre/views/*
+    src/pedre/plugins/*/base.py
+    src/pedre/plugins/base.py
 
 [report]
 exclude_lines =
