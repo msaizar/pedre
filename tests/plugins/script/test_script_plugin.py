@@ -245,6 +245,20 @@ class TestScriptPlugin(unittest.TestCase):
 
         assert self.plugin.scripts["test_script"].has_run is True
 
+    def test_restore_save_state_completed_script_not_in_registry(self) -> None:
+        """Test restoring completed script that's not in registry."""
+        state = {"completed_scripts": ["nonexistent_script"]}
+
+        # Should not crash, just skip the missing script
+        self.plugin.restore_save_state(state)
+
+    def test_restore_save_state_run_once_script_not_in_registry(self) -> None:
+        """Test restoring run-once script that's not in registry."""
+        state = {"run_once_scripts": ["nonexistent_script"]}
+
+        # Should not crash, just skip the missing script
+        self.plugin.restore_save_state(state)
+
     @patch("pedre.plugins.script.plugin.ActionRegistry")
     def test_restore_save_state_active_scripts(self, mock_action_registry: MagicMock) -> None:
         """Test restoring active scripts."""
@@ -351,6 +365,22 @@ class TestScriptPlugin(unittest.TestCase):
 
         assert len(self.plugin.active_sequences) == 0
         assert script.completed is True
+        self.mock_event_bus.publish.assert_called_once()
+
+    def test_update_completed_sequence_not_in_scripts(self) -> None:
+        """Test update handles completed sequence not in scripts registry."""
+        self.plugin.setup(self.mock_context)
+
+        # Create mock completed sequence for a script not in registry
+        mock_sequence = MagicMock()
+        mock_sequence.execute.return_value = True  # Completed
+
+        self.plugin.active_sequences = [("nonexistent_script", mock_sequence)]
+
+        self.plugin.update(0.016)
+
+        # Should still remove sequence and publish event
+        assert len(self.plugin.active_sequences) == 0
         self.mock_event_bus.publish.assert_called_once()
 
     def test_update_publishes_completion_event(self) -> None:
@@ -563,6 +593,30 @@ class TestScriptPlugin(unittest.TestCase):
 
             assert script.has_run is True
 
+    def test_process_pending_checks_script_not_in_registry(self) -> None:
+        """Test process pending checks when script not in registry."""
+        self.plugin.setup(self.mock_context)
+        self.plugin._pending_script_checks = ["nonexistent_script"]
+
+        # Should not crash, just skip the missing script
+        self.plugin._process_pending_checks()
+
+        assert len(self.plugin._pending_script_checks) == 0
+
+    def test_process_pending_checks_conditions_fail(self) -> None:
+        """Test process pending checks when conditions fail."""
+        script = Script(conditions=[{"check": "test"}], actions=[{"type": "action"}])
+        self.plugin.scripts = {"test_script": script}
+        self.plugin.setup(self.mock_context)
+
+        self.plugin._pending_script_checks = ["test_script"]
+
+        with patch.object(self.plugin, "_check_conditions", return_value=False):
+            self.plugin._process_pending_checks()
+
+            # Should not execute script
+            assert len(self.plugin.active_sequences) == 0
+
     def test_trigger_matches_event_correct_match(self) -> None:
         """Test trigger matches event correctly."""
         trigger = {"event": "test_event", "npc": "martin"}
@@ -698,6 +752,21 @@ class TestScriptPlugin(unittest.TestCase):
 
         assert len(self.plugin.active_sequences) == 0
 
+    def test_handle_event_trigger_mismatched_trigger(self) -> None:
+        """Test handle event trigger skips scripts with mismatched triggers."""
+        script = Script(
+            trigger={"event": "other_event", "npc": "bob"},
+            actions=[{"type": "action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+        self.plugin.setup(self.mock_context)
+
+        # Trigger with different event type
+        self.plugin._handle_event_trigger("test_event", {"npc": "bob"})
+
+        # Should not execute because trigger doesn't match
+        assert len(self.plugin.active_sequences) == 0
+
     @patch("pedre.plugins.script.plugin.EventRegistry")
     def test_register_event_handlers_subscribes_to_events(self, mock_event_registry: MagicMock) -> None:
         """Test register event handlers subscribes to all required events."""
@@ -799,6 +868,168 @@ class TestScriptPlugin(unittest.TestCase):
             self.plugin._on_generic_event(mock_event)
 
             mock_handle.assert_not_called()
+
+    def test_restore_save_state_script_not_found(self) -> None:
+        """Test restoring active script that doesn't exist warns."""
+        state = {
+            "active_scripts": [
+                {
+                    "script_name": "nonexistent_script",
+                    "current_index": 0,
+                    "is_fail_sequence": False,
+                }
+            ]
+        }
+
+        with patch("pedre.plugins.script.plugin.logger") as mock_logger:
+            self.plugin.restore_save_state(state)
+
+            mock_logger.warning.assert_called_once()
+            assert len(self.plugin.active_sequences) == 0
+
+    def test_restore_save_state_empty_action_list(self) -> None:
+        """Test restoring script with empty action list."""
+        script = Script(actions=[])
+        self.plugin.scripts = {"test_script": script}
+
+        state = {
+            "active_scripts": [
+                {
+                    "script_name": "test_script",
+                    "current_index": 0,
+                    "is_fail_sequence": False,
+                }
+            ]
+        }
+
+        self.plugin.restore_save_state(state)
+
+        # Should not add to active sequences
+        assert len(self.plugin.active_sequences) == 0
+
+    def test_restore_save_state_empty_fail_sequence(self) -> None:
+        """Test restoring fail sequence with empty on_condition_fail."""
+        script = Script(on_condition_fail=[])
+        self.plugin.scripts = {"test_script": script}
+
+        state = {
+            "active_scripts": [
+                {
+                    "script_name": "test_script",
+                    "current_index": 0,
+                    "is_fail_sequence": True,
+                }
+            ]
+        }
+
+        self.plugin.restore_save_state(state)
+
+        # Should not add to active sequences
+        assert len(self.plugin.active_sequences) == 0
+
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_restore_save_state_no_valid_actions(self, mock_action_registry: MagicMock) -> None:
+        """Test restoring script when all actions fail to parse."""
+        script = Script(actions=[{"type": "invalid_action"}])
+        self.plugin.scripts = {"test_script": script}
+
+        # Mock action parsing to return None (failed parse)
+        mock_action_registry.parse.return_value = None
+
+        state = {
+            "active_scripts": [
+                {
+                    "script_name": "test_script",
+                    "current_index": 0,
+                    "is_fail_sequence": False,
+                }
+            ]
+        }
+
+        self.plugin.restore_save_state(state)
+
+        # Should not add to active sequences when no valid actions
+        assert len(self.plugin.active_sequences) == 0
+
+    @patch("pedre.plugins.script.plugin.asset_path")
+    def test_setup_json_decode_error(self, mock_asset_path: MagicMock) -> None:
+        """Test setup handles JSON decode errors gracefully."""
+        # Create mock script file with invalid JSON
+        mock_file = MagicMock()
+        mock_file.name = "invalid_scripts.json"
+        m_open = mock_open(read_data="invalid json{")
+        mock_file.open = m_open
+
+        # Create mock Path
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+        mock_path.glob.return_value = [mock_file]
+        mock_asset_path.return_value = "/fake/scripts"
+
+        with (
+            patch("pedre.plugins.script.plugin.Path") as mock_path_class,
+            patch("pedre.plugins.script.plugin.logger") as mock_logger,
+        ):
+            mock_path_class.return_value = mock_path
+
+            self.plugin.setup(self.mock_context)
+
+            # Should log the exception
+            mock_logger.exception.assert_called()
+
+    @patch("pedre.plugins.script.plugin.asset_path")
+    def test_setup_generic_exception_in_file_load(self, mock_asset_path: MagicMock) -> None:
+        """Test setup handles generic exceptions during file load."""
+        # Create mock script file that raises exception on open
+        mock_file = MagicMock()
+        mock_file.name = "error_scripts.json"
+        mock_file.open.side_effect = OSError("Cannot read file")
+
+        # Create mock Path
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+        mock_path.glob.return_value = [mock_file]
+        mock_asset_path.return_value = "/fake/scripts"
+
+        with (
+            patch("pedre.plugins.script.plugin.Path") as mock_path_class,
+            patch("pedre.plugins.script.plugin.logger") as mock_logger,
+        ):
+            mock_path_class.return_value = mock_path
+
+            self.plugin.setup(self.mock_context)
+
+            # Should log the exception
+            mock_logger.exception.assert_called()
+
+    def test_check_single_condition_no_context(self) -> None:
+        """Test check single condition without context."""
+        self.plugin.context = None
+
+        result = self.plugin._check_single_condition({"check": "test"})
+
+        assert result is False
+
+    def test_handle_event_trigger_conditions_fail_no_fail_actions(self) -> None:
+        """Test handle event trigger logs when conditions fail with no fail actions."""
+        script = Script(
+            trigger={"event": "test_event"},
+            conditions=[{"check": "test"}],
+            actions=[{"type": "success_action"}],
+            on_condition_fail=[],  # No fail actions
+        )
+        self.plugin.scripts = {"test_script": script}
+        self.plugin.setup(self.mock_context)
+
+        with (
+            patch.object(self.plugin, "_check_conditions", return_value=False),
+            patch("pedre.plugins.script.plugin.logger") as mock_logger,
+        ):
+            self.plugin._handle_event_trigger("test_event", {})
+
+            # Should log that conditions failed with no fail actions
+            mock_logger.debug.assert_called()
+            assert len(self.plugin.active_sequences) == 0
 
 
 class TestScript(unittest.TestCase):
