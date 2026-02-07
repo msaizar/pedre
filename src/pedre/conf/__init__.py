@@ -64,9 +64,6 @@ class LazySettings:
         """Get a setting value, loading settings if not yet loaded."""
         if self._wrapped is None:
             self._setup()
-        if self._wrapped is None:
-            msg = "Settings could not be loaded"
-            raise RuntimeError(msg)
         return getattr(self._wrapped, name)
 
     def __setattr__(self, name: str, value: Any) -> None:  # noqa: ANN401
@@ -76,9 +73,6 @@ class LazySettings:
         else:
             if self._wrapped is None:
                 self._setup()
-            if self._wrapped is None:
-                msg = "Settings could not be loaded"
-                raise RuntimeError(msg)
             setattr(self._wrapped, name, value)
 
     def configure(self, **options: Any) -> None:  # noqa: ANN401
