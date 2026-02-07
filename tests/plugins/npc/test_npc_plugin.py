@@ -1263,6 +1263,539 @@ class TestNPCPlugin(unittest.TestCase):
         assert npc_sprite.disappear_complete is True
         assert npc_sprite.interact_complete is False
 
+    def test_load_scene_dialogs_exception_handling(self) -> None:
+        """Test load_scene_dialogs handles exceptions during load."""
+        NPCPlugin._dialog_cache.clear()
+
+        with (
+            patch.object(self.plugin, "load_dialogs_from_json", side_effect=RuntimeError("Unexpected error")),
+            patch("pedre.plugins.npc.plugin.asset_path", return_value=Path("/assets/dialogs/error_scene_dialogs.json")),
+        ):
+            result = self.plugin.load_scene_dialogs("error_scene")
+
+            # Should handle exception and return empty dict
+            assert result == {}
+
+    def test_load_dialog_file_filename_with_dialog_suffix(self) -> None:
+        """Test _load_dialog_file with '_dialog' (singular) in filename."""
+        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
+
+        mock_path = MagicMock(spec=Path)
+        mock_path.stem = "scene_dialog"  # singular, not plural
+        mock_path.name = "scene_dialog.json"
+
+        with patch("json.load", return_value=dialog_data):
+            result = self.plugin._load_dialog_file(mock_path)
+
+            assert result is True
+            assert "scene" in self.plugin.dialogs
+
+    def test_load_dialog_file_filename_without_suffix(self) -> None:
+        """Test _load_dialog_file with filename without '_dialog(s)' suffix."""
+        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
+
+        mock_path = MagicMock(spec=Path)
+        mock_path.stem = "custom_name"  # No _dialog or _dialogs
+        mock_path.name = "custom_name.json"
+
+        with patch("json.load", return_value=dialog_data):
+            result = self.plugin._load_dialog_file(mock_path)
+
+            assert result is True
+            assert "default" in self.plugin.dialogs
+
+    def test_load_dialog_file_string_level_key_not_convertible(self) -> None:
+        """Test _load_dialog_file with string level keys that are not numbers."""
+        dialog_data = {"npc1": {"special_state": {"text": ["Special dialog"]}}}
+
+        mock_path = MagicMock(spec=Path)
+        mock_path.stem = "scene_dialogs"
+        mock_path.name = "scene_dialogs.json"
+
+        with patch("json.load", return_value=dialog_data):
+            result = self.plugin._load_dialog_file(mock_path)
+
+            assert result is True
+            assert "scene" in self.plugin.dialogs
+            assert "npc1" in self.plugin.dialogs["scene"]
+            assert "special_state" in self.plugin.dialogs["scene"]["npc1"]
+
+    def test_interact_with_npc_no_dialog_config_returned(self) -> None:
+        """Test interact_with_npc when get_dialog returns (None, None)."""
+        self.mock_context.dialog_plugin = MagicMock()
+        self.mock_scene_plugin.get_current_scene.return_value = "empty_scene"
+
+        mock_sprite = MagicMock()
+        self.plugin.register_npc(mock_sprite, "silent_npc")
+
+        # Empty dialogs - get_dialog will return (None, None)
+        self.plugin.dialogs = {}
+
+        result = self.plugin.interact_with_npc("silent_npc")
+
+        assert result is False
+        self.mock_context.dialog_plugin.show_dialog.assert_not_called()
+
+    def test_get_dialog_exact_match_with_conditions_met_returns_dialog(self) -> None:
+        """Test get_dialog returns dialog when exact match has conditions that are met."""
+        dialog_config = NPCDialogConfig(text=["Conditional success"], conditions=[{"check": "test"}])
+        self.plugin.dialogs = {"scene1": {"npc1": {5: dialog_config}}}
+
+        with patch.object(self.plugin, "_check_dialog_conditions", return_value=True):
+            result, fail_actions = self.plugin.get_dialog("npc1", 5, "scene1")
+
+            assert result == dialog_config
+            assert fail_actions is None
+
+    def test_get_dialog_fallback_with_conditions_appends_candidates(self) -> None:
+        """Test get_dialog fallback includes dialogs with met conditions."""
+        dialog_no_cond = NPCDialogConfig(text=["No conditions"])
+        dialog_with_cond = NPCDialogConfig(text=["With met conditions"], conditions=[{"check": "test"}])
+        self.plugin.dialogs = {"scene1": {"npc1": {1: dialog_no_cond, 2: dialog_with_cond}}}
+
+        with patch.object(self.plugin, "_check_dialog_conditions", return_value=True):
+            result, _ = self.plugin.get_dialog("npc1", 10, "scene1")
+
+            # Should find a candidate
+            assert result is not None
+
+    def test_get_dialog_fallback_last_resort_first_candidate(self) -> None:
+        """Test get_dialog returns first candidate as last resort."""
+        # Create numeric dialogs that are all > requested level
+        dialog_high = NPCDialogConfig(text=["High level"])
+        self.plugin.dialogs = {"scene1": {"npc1": {10: dialog_high}}}
+
+        # Request level 5, but only level 10 exists and is > 5
+        result, _ = self.plugin.get_dialog("npc1", 5, "scene1")
+
+        # Should return the only available dialog as last resort
+        assert result == dialog_high
+
+    def test_update_animated_npc_direction_left(self) -> None:
+        """Test update sets direction to left for animated NPC."""
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        npc_sprite.current_direction = "right"
+        npc_sprite.appear_complete = False
+        npc_sprite.disappear_complete = False
+        self.plugin.register_npc(npc_sprite, "walker")
+
+        # Setup path moving left
+        self.plugin.npcs["walker"].path = deque([(80.0, 100.0)])
+        self.plugin.npcs["walker"].is_moving = True
+
+        self.plugin.update(0.1)
+
+        npc_sprite.set_direction.assert_called_with("left")
+
+    def test_update_animated_npc_direction_up(self) -> None:
+        """Test update sets direction to up for animated NPC."""
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        npc_sprite.current_direction = "down"
+        npc_sprite.appear_complete = False
+        npc_sprite.disappear_complete = False
+        self.plugin.register_npc(npc_sprite, "walker")
+
+        # Setup path moving up (no horizontal movement)
+        self.plugin.npcs["walker"].path = deque([(100.0, 120.0)])
+        self.plugin.npcs["walker"].is_moving = True
+
+        self.plugin.update(0.1)
+
+        npc_sprite.set_direction.assert_called_with("up")
+
+    def test_update_animated_npc_direction_down(self) -> None:
+        """Test update sets direction to down for animated NPC."""
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        npc_sprite.current_direction = "up"
+        npc_sprite.appear_complete = False
+        npc_sprite.disappear_complete = False
+        self.plugin.register_npc(npc_sprite, "walker")
+
+        # Setup path moving down (no horizontal movement)
+        self.plugin.npcs["walker"].path = deque([(100.0, 80.0)])
+        self.plugin.npcs["walker"].is_moving = True
+
+        self.plugin.update(0.1)
+
+        npc_sprite.set_direction.assert_called_with("down")
+
+    def test_update_animated_npc_direction_unchanged_when_same(self) -> None:
+        """Test update doesn't change direction if it's already correct."""
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        npc_sprite.current_direction = "right"
+        npc_sprite.appear_complete = False
+        npc_sprite.disappear_complete = False
+        self.plugin.register_npc(npc_sprite, "walker")
+
+        # Setup path moving right (same as current direction)
+        self.plugin.npcs["walker"].path = deque([(120.0, 100.0)])
+        self.plugin.npcs["walker"].is_moving = True
+
+        self.plugin.update(0.1)
+
+        # Should not call set_direction since direction didn't change
+        npc_sprite.set_direction.assert_not_called()
+
+    def test_load_npcs_from_objects_removes_existing_layer(self) -> None:
+        """Test load_npcs_from_objects removes existing NPCs layer from scene."""
+        mock_scene = MagicMock(spec=arcade.Scene)
+        mock_scene.__contains__ = MagicMock(return_value=True)  # Scene already has NPCs layer
+        mock_obj = MagicMock()
+        mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
+        mock_obj.shape = [100.0, 200.0]
+
+        with (
+            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
+            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
+        ):
+            mock_npc_instance = MagicMock()
+            mock_npc_instance.visible = True
+            mock_anim_npc_class.return_value = mock_npc_instance
+
+            self.plugin.load_npcs_from_objects([mock_obj], mock_scene)
+
+            # Should remove existing NPCs layer before adding new one
+            mock_scene.remove_sprite_list_by_name.assert_called_once_with("NPCs")
+
+    def test_apply_npc_state_skips_unknown_npc(self) -> None:
+        """Test _apply_npc_state continues when NPC doesn't exist."""
+        # Register one NPC
+        npc_sprite = MagicMock()
+        self.plugin.register_npc(npc_sprite, "known_npc")
+
+        # State includes unknown NPC
+        state = {
+            "known_npc": {"x": 100.0, "y": 200.0, "visible": True, "dialog_level": 1},
+            "unknown_npc": {"x": 300.0, "y": 400.0, "visible": False, "dialog_level": 2},
+        }
+
+        self.plugin._apply_npc_state(state)
+
+        # Should apply state to known NPC
+        assert npc_sprite.center_x == 100.0
+        # Should continue without error for unknown NPC
+
+    def test_load_scene_dialogs_load_returns_false(self) -> None:
+        """Test load_scene_dialogs when load_dialogs_from_json returns False."""
+        NPCPlugin._dialog_cache.clear()
+
+        with (
+            patch.object(self.plugin, "load_dialogs_from_json", return_value=False),
+            patch("pedre.plugins.npc.plugin.asset_path", return_value=Path("/assets/dialogs/missing_dialogs.json")),
+        ):
+            result = self.plugin.load_scene_dialogs("missing_scene")
+
+            # Should return empty dict when load fails
+            assert result == {}
+
+    def test_load_dialog_file_scene_already_exists(self) -> None:
+        """Test _load_dialog_file when scene already exists in dialogs."""
+        # Pre-populate scene
+        self.plugin.dialogs["existing_scene"] = {}
+
+        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
+        mock_path = MagicMock(spec=Path)
+        mock_path.stem = "existing_scene_dialogs"
+        mock_path.name = "existing_scene_dialogs.json"
+
+        with patch("json.load", return_value=dialog_data):
+            result = self.plugin._load_dialog_file(mock_path)
+
+            assert result is True
+            # Should add to existing scene
+            assert "npc1" in self.plugin.dialogs["existing_scene"]
+
+    def test_load_dialog_file_npc_already_exists_in_scene(self) -> None:
+        """Test _load_dialog_file when NPC already exists in scene."""
+        # Pre-populate scene and NPC
+        self.plugin.dialogs["scene"] = {"npc1": {}}
+
+        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
+        mock_path = MagicMock(spec=Path)
+        mock_path.stem = "scene_dialogs"
+        mock_path.name = "scene_dialogs.json"
+
+        with patch("json.load", return_value=dialog_data):
+            result = self.plugin._load_dialog_file(mock_path)
+
+            assert result is True
+            # Should add to existing NPC
+            assert 0 in self.plugin.dialogs["scene"]["npc1"]
+
+    def test_interact_with_npc_with_on_condition_fail_but_no_dialog_plugin(self) -> None:
+        """Test interact_with_npc when on_condition_fail exists but no dialog plugin."""
+        self.mock_context.dialog_plugin = None
+        self.mock_scene_plugin.get_current_scene.return_value = "test_scene"
+
+        mock_sprite = MagicMock()
+        self.plugin.register_npc(mock_sprite, "test_npc")
+
+        # Dialog with failing conditions and on_condition_fail
+        dialog_config = NPCDialogConfig(
+            text=["You shall pass"], conditions=[{"check": "has_item"}], on_condition_fail=[{"type": "dialog"}]
+        )
+        self.plugin.dialogs = {"test_scene": {"test_npc": {0: dialog_config}}}
+
+        with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
+            result = self.plugin.interact_with_npc("test_npc")
+
+            # Should return False when no dialog plugin available
+            assert result is False
+
+    def test_get_dialog_fallback_skip_exact_level_in_loop(self) -> None:
+        """Test get_dialog skips the exact level when building candidates."""
+        # Create multiple dialogs - exact level doesn't exist, so we'll search for candidates
+        # This tests the "continue" line when state == dialog_level in the loop
+        dialog_level_3 = NPCDialogConfig(text=["Level 3"])
+        dialog_level_5 = NPCDialogConfig(text=["Level 5"])
+        dialog_level_7 = NPCDialogConfig(text=["Level 7"])
+        # All three levels are available, but we request level 5
+        self.plugin.dialogs = {"scene1": {"npc1": {3: dialog_level_3, 5: dialog_level_5, 7: dialog_level_7}}}
+
+        # Request level 5 - should find level 5 (no conditions)
+        # But let's test when we ask for level 6 - then the loop will skip level 6 (not exists)
+        # and consider levels 3, 5, 7
+        result, _ = self.plugin.get_dialog("npc1", 6, "scene1")
+
+        # Should find level 5 (highest <= 6)
+        assert result == dialog_level_5
+
+    def test_update_animated_npc_no_movement_keeps_direction(self) -> None:
+        """Test update when NPC is at exact waypoint position (dx=0, dy=0)."""
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        npc_sprite.current_direction = "down"
+        npc_sprite.appear_complete = False
+        npc_sprite.disappear_complete = False
+        self.plugin.register_npc(npc_sprite, "stationary")
+
+        # Setup path at exact current position (will trigger else branch for direction)
+        self.plugin.npcs["stationary"].path = deque([(100.0, 100.0)])
+        self.plugin.npcs["stationary"].is_moving = True
+
+        self.plugin.update(0.1)
+
+        # Direction should remain unchanged when dx=0 and dy=0
+        # The NPC sprite's current_direction is checked in the else branch
+        # Since we're at the exact position, the waypoint will be popped
+        assert len(self.plugin.npcs["stationary"].path) == 0
+
+    def test_interact_with_npc_no_dialog_plugin(self) -> None:
+        """Test interact_with_npc when dialog_plugin is None (line 417)."""
+        self.mock_context.dialog_plugin = None
+        self.mock_scene_plugin.get_current_scene.return_value = "village"
+
+        mock_sprite = MagicMock()
+        self.plugin.register_npc(mock_sprite, "npc")
+        dialog_config = NPCDialogConfig(text=["Hello"])
+        self.plugin.dialogs = {"village": {"npc": {0: dialog_config}}}
+
+        result = self.plugin.interact_with_npc("npc")
+
+        # Should return False when no dialog plugin
+        assert result is False
+
+    def test_get_dialog_exact_level_match_with_failed_conditions(self) -> None:
+        """Test get_dialog when exact level exists but conditions fail (line 413 in interact)."""
+        self.mock_context.dialog_plugin = MagicMock()
+        self.mock_scene_plugin.get_current_scene.return_value = "castle"
+
+        mock_sprite = MagicMock()
+        self.plugin.register_npc(mock_sprite, "guard")
+
+        # Dialog with conditions that will fail, and no on_condition_fail
+        dialog_config = NPCDialogConfig(text=["You shall pass"], conditions=[{"check": "has_key"}])
+        self.plugin.dialogs = {"castle": {"guard": {0: dialog_config}}}
+
+        with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
+            result = self.plugin.interact_with_npc("guard")
+
+            # Should return False because dialog_data is (None, None) since no on_condition_fail
+            assert result is False
+
+    def test_get_dialog_candidates_loop_with_exact_level_skipped(self) -> None:
+        """Test get_dialog fallback loop actually skips exact level (line 535)."""
+        # This specifically tests the continue statement in the fallback loop
+        # Create scenario where exact level has no conditions but we still search candidates
+        dialog_level_2 = NPCDialogConfig(text=["Level 2"])
+        dialog_level_4 = NPCDialogConfig(text=["Level 4"])
+        dialog_level_6 = NPCDialogConfig(text=["Level 6"])
+        # Request level 4 which exists - should return it immediately (no fallback)
+        # But let's make it request level 5 to trigger fallback that needs to skip exact matches
+        self.plugin.dialogs = {"scene": {"npc": {2: dialog_level_2, 4: dialog_level_4, 6: dialog_level_6}}}
+
+        # Request level 5, which doesn't exist - will search candidates and should skip 5 in loop
+        result, _ = self.plugin.get_dialog("npc", 5, "scene")
+
+        # Should return level 4 (highest <= 5)
+        assert result == dialog_level_4
+
+    def test_mark_npc_as_interacted_creates_new_scene_set(self) -> None:
+        """Test mark_npc_as_interacted creates new set for new scene (line 447-448)."""
+        self.mock_scene_plugin.get_current_scene.return_value = "new_scene"
+
+        # Initially no scenes in interacted_npcs
+        assert "new_scene" not in self.plugin.interacted_npcs
+
+        self.plugin.mark_npc_as_interacted("npc1")
+
+        # Should create new set for scene
+        assert "new_scene" in self.plugin.interacted_npcs
+        assert "npc1" in self.plugin.interacted_npcs["new_scene"]
+
+    def test_move_npc_to_position_with_empty_path(self) -> None:
+        """Test move_npc_to_position when pathfinding returns empty path (line 621)."""
+        self.mock_context.pathfinding_plugin = MagicMock()
+        npc_sprite = MagicMock()
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        self.plugin.register_npc(npc_sprite, "blocked_npc")
+
+        # Pathfinding returns empty path (unreachable destination)
+        self.mock_context.pathfinding_plugin.find_path.return_value = []
+
+        self.plugin.move_npc_to_position("blocked_npc", 200.0, 200.0)
+
+        # NPC should not be moving with empty path
+        assert self.plugin.npcs["blocked_npc"].is_moving is False
+        assert len(self.plugin.npcs["blocked_npc"].path) == 0
+
+    def test_show_npcs_without_scene_plugin(self) -> None:
+        """Test show_npcs when scene_plugin is None (line 641-643)."""
+        self.mock_context.scene_plugin = None
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.visible = False
+        self.plugin.register_npc(npc_sprite, "npc1")
+
+        # Should not crash when scene_plugin is None
+        self.plugin.show_npcs(["npc1"])
+
+        assert npc_sprite.visible is True
+
+    def test_update_movement_complete_without_event_bus(self) -> None:
+        """Test update when movement completes but no event bus (line 696)."""
+        self.mock_context.event_bus = None
+        npc_sprite = MagicMock()
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        self.plugin.register_npc(npc_sprite, "walker")
+
+        # Setup close waypoint
+        self.plugin.npcs["walker"].path = deque([(100.5, 100.0)])
+        self.plugin.npcs["walker"].is_moving = True
+
+        # Should not crash without event bus
+        self.plugin.update(1.0)
+
+        assert self.plugin.npcs["walker"].is_moving is False
+
+    def test_update_appear_complete_without_event_bus(self) -> None:
+        """Test update when appear completes but no event bus (line 717)."""
+        self.mock_context.event_bus = None
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.appear_complete = True
+        npc_sprite.disappear_complete = False
+        self.plugin.register_npc(npc_sprite, "appearing")
+        self.plugin.npcs["appearing"].appear_event_emitted = False
+
+        # Should not crash without event bus
+        self.plugin.update(0.1)
+
+        # Event flag should still be set even without event bus
+        assert self.plugin.npcs["appearing"].appear_event_emitted is True
+
+    def test_update_disappear_complete_without_event_bus(self) -> None:
+        """Test update when disappear completes but no event bus (line 724)."""
+        self.mock_context.event_bus = None
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite.appear_complete = False
+        npc_sprite.disappear_complete = True
+        self.plugin.register_npc(npc_sprite, "disappearing")
+        self.plugin.npcs["disappearing"].disappear_event_emitted = False
+
+        # Should not crash without event bus
+        self.plugin.update(0.1)
+
+        # Event flag should still be set even without event bus
+        assert self.plugin.npcs["disappearing"].disappear_event_emitted is True
+
+    def test_load_npcs_from_objects_without_scene_plugin(self) -> None:
+        """Test load_npcs_from_objects when scene_plugin is None (line 920)."""
+        self.mock_context.scene_plugin = None
+        mock_scene = MagicMock(spec=arcade.Scene)
+        mock_obj = MagicMock()
+        mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
+        mock_obj.shape = [100.0, 200.0]
+
+        with (
+            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
+            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
+        ):
+            mock_npc_instance = MagicMock()
+            mock_npc_instance.visible = True
+            mock_anim_npc_class.return_value = mock_npc_instance
+
+            # Should not crash without scene_plugin
+            self.plugin.load_npcs_from_objects([mock_obj], mock_scene)
+
+            assert "guard" in self.plugin.npcs
+
+    def test_get_save_state_with_regular_sprite(self) -> None:
+        """Test get_save_state with non-AnimatedNPC sprite (line 954)."""
+        # Regular sprite (not AnimatedNPC)
+        npc_sprite = MagicMock(spec=arcade.Sprite)
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 200.0
+        npc_sprite.visible = True
+        self.plugin.register_npc(npc_sprite, "regular_npc")
+
+        save_state = self.plugin.get_save_state()
+
+        # Should not have animation flags for regular sprite
+        npc_state = save_state["npcs"]["regular_npc"]
+        assert "appear_complete" not in npc_state
+        assert "disappear_complete" not in npc_state
+        assert "interact_complete" not in npc_state
+
+    def test_cache_scene_state_with_regular_sprite(self) -> None:
+        """Test cache_scene_state with non-AnimatedNPC sprite (line 1023)."""
+        # Regular sprite (not AnimatedNPC)
+        npc_sprite = MagicMock(spec=arcade.Sprite)
+        npc_sprite.center_x = 150.0
+        npc_sprite.center_y = 250.0
+        npc_sprite.visible = False
+        self.plugin.register_npc(npc_sprite, "regular_npc")
+
+        state = self.plugin.cache_scene_state("test_scene")
+
+        # Should not have animation flags for regular sprite
+        npc_state = state["regular_npc"]
+        assert "appear_complete" not in npc_state
+        assert "disappear_complete" not in npc_state
+
+    def test_apply_npc_state_with_regular_sprite(self) -> None:
+        """Test _apply_npc_state with non-AnimatedNPC sprite (line 1000)."""
+        # Regular sprite (not AnimatedNPC)
+        npc_sprite = MagicMock(spec=arcade.Sprite)
+        self.plugin.register_npc(npc_sprite, "regular_npc")
+
+        state = {"regular_npc": {"x": 300.0, "y": 400.0, "visible": True, "dialog_level": 2}}
+
+        self.plugin._apply_npc_state(state)
+
+        # Should apply state without animation flags
+        assert npc_sprite.center_x == 300.0
+        assert npc_sprite.center_y == 400.0
+
 
 if __name__ == "__main__":
     unittest.main()
