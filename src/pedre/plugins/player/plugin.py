@@ -148,10 +148,9 @@ class PlayerPlugin(PlayerBasePlugin):
         self.player_list.append(self.player_sprite)
 
         # Add to scene
-        if arcade_scene:
-            if "Player" in arcade_scene:
-                arcade_scene.remove_sprite_list_by_name("Player")
-            arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
+        if "Player" in arcade_scene:
+            arcade_scene.remove_sprite_list_by_name("Player")
+        arcade_scene.add_sprite_list("Player", sprite_list=self.player_list)
 
         logger.info("Player loaded at (%.1f, %.1f)", spawn_x, spawn_y)
 
