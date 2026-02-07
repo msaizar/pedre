@@ -1,6 +1,6 @@
 """Tests for PluginRegistry."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import pytest
 
@@ -17,7 +17,7 @@ class SimplePlugin(BasePlugin):
     """Simple test plugin."""
 
     name = "simple"
-    dependencies = []
+    dependencies: ClassVar[list[str]] = []
 
     def setup(self, context: GameContext) -> None:
         """Set up the plugin.
@@ -28,21 +28,20 @@ class SimplePlugin(BasePlugin):
         del context  # Unused in test
         self.setup_called = True
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update the plugin.
 
         Args:
             delta_time: Time since last update (unused in test).
-            context: Game context (unused in test).
         """
-        del delta_time, context  # Unused in test
+        del delta_time  # Unused in test
 
 
 class AnotherPlugin(BasePlugin):
     """Another test plugin."""
 
     name = "another"
-    dependencies = ["simple"]
+    dependencies: ClassVar[list[str]] = ["simple"]
 
     def setup(self, context: GameContext) -> None:
         """Set up the plugin.
@@ -52,20 +51,19 @@ class AnotherPlugin(BasePlugin):
         """
         del context  # Unused in test
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update the plugin.
 
         Args:
             delta_time: Time since last update (unused in test).
-            context: Game context (unused in test).
         """
-        del delta_time, context  # Unused in test
+        del delta_time  # Unused in test
 
 
 class PluginWithoutName(BasePlugin):
     """Test plugin without a name attribute."""
 
-    dependencies = []
+    dependencies: ClassVar[list[str]] = []
 
     def setup(self, context: GameContext) -> None:
         """Set up the plugin.
@@ -75,21 +73,20 @@ class PluginWithoutName(BasePlugin):
         """
         del context  # Unused in test
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update the plugin.
 
         Args:
             delta_time: Time since last update (unused in test).
-            context: Game context (unused in test).
         """
-        del delta_time, context  # Unused in test
+        del delta_time  # Unused in test
 
 
 class PluginWithEmptyName(BasePlugin):
     """Test plugin with empty name attribute."""
 
     name = ""
-    dependencies = []
+    dependencies: ClassVar[list[str]] = []
 
     def setup(self, context: GameContext) -> None:
         """Set up the plugin.
@@ -99,14 +96,13 @@ class PluginWithEmptyName(BasePlugin):
         """
         del context  # Unused in test
 
-    def update(self, delta_time: float, context: GameContext) -> None:
+    def update(self, delta_time: float) -> None:
         """Update the plugin.
 
         Args:
             delta_time: Time since last update (unused in test).
-            context: Game context (unused in test).
         """
-        del delta_time, context  # Unused in test
+        del delta_time  # Unused in test
 
 
 @pytest.fixture(autouse=True)
