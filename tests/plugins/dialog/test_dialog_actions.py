@@ -185,6 +185,40 @@ class TestWaitForDialogCloseAction(unittest.TestCase):
         action = WaitForDialogCloseAction.from_dict({})
         assert action is not None
 
+    def test_execute_returns_false_when_dialog_showing(self) -> None:
+        """Test execute returns False when dialog is still showing."""
+        action = WaitForDialogCloseAction()
+        context = MagicMock()
+        dialog_plugin = MagicMock()
+        dialog_plugin.is_showing.return_value = True
+        context.dialog_plugin = dialog_plugin
+
+        result = action.execute(context)
+
+        assert result is False
+
+    def test_execute_returns_true_when_dialog_closed(self) -> None:
+        """Test execute returns True when dialog is closed."""
+        action = WaitForDialogCloseAction()
+        context = MagicMock()
+        dialog_plugin = MagicMock()
+        dialog_plugin.is_showing.return_value = False
+        context.dialog_plugin = dialog_plugin
+
+        result = action.execute(context)
+
+        assert result is True
+
+    def test_execute_returns_true_when_dialog_plugin_is_none(self) -> None:
+        """Test execute returns True when dialog_plugin is None."""
+        action = WaitForDialogCloseAction()
+        context = MagicMock()
+        context.dialog_plugin = None
+
+        result = action.execute(context)
+
+        assert result is True
+
 
 if __name__ == "__main__":
     unittest.main()
