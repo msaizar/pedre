@@ -1,0 +1,199 @@
+"""Unit tests for inventory events in src/pedre/plugins/inventory/events.py."""
+
+import unittest
+
+from pedre.plugins.inventory.events import (
+    InventoryClosedEvent,
+    ItemAcquiredEvent,
+    ItemAcquisitionFailedEvent,
+    ItemConsumedEvent,
+)
+
+
+class TestInventoryClosedEvent(unittest.TestCase):
+    """Test suite for InventoryClosedEvent."""
+
+    def test_initialization(self) -> None:
+        """Test event initialization with attributes."""
+        event = InventoryClosedEvent(has_been_accessed=True)
+
+        assert event.has_been_accessed is True
+
+    def test_initialization_false(self) -> None:
+        """Test event initialization with False value."""
+        event = InventoryClosedEvent(has_been_accessed=False)
+
+        assert event.has_been_accessed is False
+
+    def test_get_script_data(self) -> None:
+        """Test get_script_data returns correct data."""
+        event = InventoryClosedEvent(has_been_accessed=True)
+
+        script_data = event.get_script_data()
+
+        assert "inventory_accessed" in script_data
+        assert script_data["inventory_accessed"] is True
+
+    def test_get_script_data_false(self) -> None:
+        """Test get_script_data with False value."""
+        event = InventoryClosedEvent(has_been_accessed=False)
+
+        script_data = event.get_script_data()
+
+        assert script_data["inventory_accessed"] is False
+
+
+class TestItemAcquiredEvent(unittest.TestCase):
+    """Test suite for ItemAcquiredEvent."""
+
+    def test_initialization(self) -> None:
+        """Test event initialization with attributes."""
+        event = ItemAcquiredEvent(item_id="test_item", item_name="Test Item")
+
+        assert event.item_id == "test_item"
+        assert event.item_name == "Test Item"
+
+    def test_get_script_data(self) -> None:
+        """Test get_script_data returns correct data."""
+        event = ItemAcquiredEvent(item_id="rusty_key", item_name="Rusty Key")
+
+        script_data = event.get_script_data()
+
+        assert "item_id" in script_data
+        assert script_data["item_id"] == "rusty_key"
+        # item_name should not be in script data
+        assert "item_name" not in script_data
+
+    def test_different_items(self) -> None:
+        """Test creating events for different items."""
+        event1 = ItemAcquiredEvent(item_id="photo_01", item_name="First Photo")
+        event2 = ItemAcquiredEvent(item_id="note_01", item_name="Mysterious Note")
+
+        assert event1.item_id == "photo_01"
+        assert event2.item_id == "note_01"
+        assert event1.item_name != event2.item_name
+
+
+class TestItemAcquisitionFailedEvent(unittest.TestCase):
+    """Test suite for ItemAcquisitionFailedEvent."""
+
+    def test_initialization_capacity(self) -> None:
+        """Test event initialization with capacity reason."""
+        event = ItemAcquisitionFailedEvent(item_id="test_item", reason="capacity")
+
+        assert event.item_id == "test_item"
+        assert event.reason == "capacity"
+
+    def test_initialization_unknown_item(self) -> None:
+        """Test event initialization with unknown_item reason."""
+        event = ItemAcquisitionFailedEvent(item_id="missing_item", reason="unknown_item")
+
+        assert event.item_id == "missing_item"
+        assert event.reason == "unknown_item"
+
+    def test_initialization_already_owned(self) -> None:
+        """Test event initialization with already_owned reason."""
+        event = ItemAcquisitionFailedEvent(item_id="owned_item", reason="already_owned")
+
+        assert event.item_id == "owned_item"
+        assert event.reason == "already_owned"
+
+    def test_get_script_data(self) -> None:
+        """Test get_script_data returns correct data."""
+        event = ItemAcquisitionFailedEvent(item_id="test_item", reason="capacity")
+
+        script_data = event.get_script_data()
+
+        assert "item_id" in script_data
+        assert "reason" in script_data
+        assert script_data["item_id"] == "test_item"
+        assert script_data["reason"] == "capacity"
+
+    def test_all_failure_reasons(self) -> None:
+        """Test creating events with all documented failure reasons."""
+        reasons = ["capacity", "unknown_item", "already_owned"]
+
+        for reason in reasons:
+            event = ItemAcquisitionFailedEvent(item_id="test_item", reason=reason)
+            assert event.reason == reason
+            assert event.get_script_data()["reason"] == reason
+
+
+class TestItemConsumedEvent(unittest.TestCase):
+    """Test suite for ItemConsumedEvent."""
+
+    def test_initialization(self) -> None:
+        """Test event initialization with attributes."""
+        event = ItemConsumedEvent(item_id="potion_01", item_name="Health Potion", category="consumable")
+
+        assert event.item_id == "potion_01"
+        assert event.item_name == "Health Potion"
+        assert event.category == "consumable"
+
+    def test_get_script_data(self) -> None:
+        """Test get_script_data returns correct data."""
+        event = ItemConsumedEvent(item_id="potion_01", item_name="Health Potion", category="consumable")
+
+        script_data = event.get_script_data()
+
+        assert "item_id" in script_data
+        assert "category" in script_data
+        assert script_data["item_id"] == "potion_01"
+        assert script_data["category"] == "consumable"
+        # item_name should not be in script data
+        assert "item_name" not in script_data
+
+    def test_different_categories(self) -> None:
+        """Test creating events with different categories."""
+        event1 = ItemConsumedEvent(item_id="item1", item_name="Item 1", category="consumable")
+        event2 = ItemConsumedEvent(item_id="item2", item_name="Item 2", category="food")
+        event3 = ItemConsumedEvent(item_id="item3", item_name="Item 3", category="general")
+
+        assert event1.category == "consumable"
+        assert event2.category == "food"
+        assert event3.category == "general"
+
+    def test_script_data_includes_category(self) -> None:
+        """Test that script data includes category for filtering."""
+        event = ItemConsumedEvent(item_id="apple", item_name="Red Apple", category="food")
+
+        script_data = event.get_script_data()
+
+        # Both item_id and category should be included for flexible filtering
+        assert script_data["item_id"] == "apple"
+        assert script_data["category"] == "food"
+
+
+class TestInventoryEventsIntegration(unittest.TestCase):
+    """Integration tests for inventory events."""
+
+    def test_events_are_dataclasses(self) -> None:
+        """Test that all events are properly defined as dataclasses."""
+        events = [
+            InventoryClosedEvent,
+            ItemAcquiredEvent,
+            ItemAcquisitionFailedEvent,
+            ItemConsumedEvent,
+        ]
+
+        for event_class in events:
+            # Dataclasses have __dataclass_fields__ attribute
+            assert hasattr(event_class, "__dataclass_fields__")
+
+    def test_script_data_always_returns_dict(self) -> None:
+        """Test that all events return dict from get_script_data."""
+        events = [
+            InventoryClosedEvent(has_been_accessed=True),
+            ItemAcquiredEvent(item_id="test", item_name="Test"),
+            ItemAcquisitionFailedEvent(item_id="test", reason="capacity"),
+            ItemConsumedEvent(item_id="test", item_name="Test", category="general"),
+        ]
+
+        for event in events:
+            script_data = event.get_script_data()
+            assert isinstance(script_data, dict)
+            assert len(script_data) > 0
+
+
+if __name__ == "__main__":
+    unittest.main()
