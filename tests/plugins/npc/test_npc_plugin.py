@@ -1263,7 +1263,6 @@ class TestNPCPlugin(unittest.TestCase):
         assert npc_sprite.disappear_complete is True
         assert npc_sprite.interact_complete is False
 
-
     def test_load_scene_dialogs_exception_handling(self) -> None:
         """Test load_scene_dialogs handles exceptions during load."""
         NPCPlugin._dialog_cache.clear()

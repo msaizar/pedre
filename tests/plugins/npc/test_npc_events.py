@@ -1,8 +1,8 @@
 """Unit tests for NPC events in src/pedre/plugins/npc/events.py."""
 
 import unittest
+from dataclasses import is_dataclass
 
-from pedre.events.registry import EventRegistry
 from pedre.plugins.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
@@ -135,8 +135,6 @@ class TestNPCEventsIntegration(unittest.TestCase):
 
     def test_events_are_dataclasses(self) -> None:
         """Test that all event classes are dataclasses."""
-        from dataclasses import is_dataclass
-
         event_classes = [
             NPCInteractedEvent,
             NPCMovementCompleteEvent,
