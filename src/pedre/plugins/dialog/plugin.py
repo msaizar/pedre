@@ -456,8 +456,9 @@ class DialogPlugin(DialogBasePlugin):
         """
         if not self.showing:
             return
-        if self.context:
-            window = self.context.window
+        if not self.context:
+            return
+        window = self.context.window
         if not window:
             return
         current_page = self.get_current_page()
