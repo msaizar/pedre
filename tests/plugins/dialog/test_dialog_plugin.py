@@ -941,6 +941,63 @@ class TestDialogPlugin(unittest.TestCase):
         mock_filled.assert_called()
         mock_outline.assert_called_once()
 
+    def test_speed_up_text_when_no_current_page(self) -> None:
+        """Test speed_up_text() when get_current_page() returns None."""
+        # Set up plugin in a state where showing is True but pages is empty
+        self.plugin.showing = True
+        self.plugin.pages = []
+        self.plugin.text_fully_revealed = False
+
+        # Should handle gracefully without error
+        self.plugin.speed_up_text()
+
+        # Nothing should change since there's no current page
+        assert self.plugin.revealed_chars == 0
+        assert self.plugin.text_fully_revealed is False
+
+    def test_advance_page_calls_speed_up_when_text_not_revealed(self) -> None:
+        """Test advance_page() speeds up text when not fully revealed."""
+        self.plugin.show_dialog("TestNPC", ["Hello!"], dialog_level=0)
+
+        # Text should not be fully revealed initially
+        assert self.plugin.text_fully_revealed is False
+
+        # Advance page should speed up text instead of advancing
+        closed = self.plugin.advance_page()
+
+        # Should not close, just reveal text
+        assert closed is False
+        assert self.plugin.text_fully_revealed is True
+
+    def test_update_with_zero_chars_to_reveal(self) -> None:
+        """Test update() when chars_to_reveal is 0 (very small delta_time)."""
+        self.plugin.show_dialog("TestNPC", ["Hello world!"], dialog_level=0)
+
+        initial_revealed = self.plugin.revealed_chars
+
+        # Update with very small delta_time that results in 0 chars to reveal
+        # Given char_reveal_speed, we need a delta_time smaller than 1/char_reveal_speed
+        self.plugin.update(0.0001)
+
+        # Should not reveal any characters yet
+        assert self.plugin.revealed_chars == initial_revealed
+
+    @patch("arcade.draw_lrbt_rectangle_filled")
+    @patch("arcade.draw_lrbt_rectangle_outline")
+    def test_on_draw_ui_returns_early_without_context(self, mock_outline: MagicMock, mock_filled: MagicMock) -> None:
+        """Test on_draw_ui() returns early when context is None."""
+        self.plugin.show_dialog("TestNPC", ["Hello!"], dialog_level=0)
+
+        # Set context to None
+        self.plugin.context = None
+
+        # Should not raise error, just return early
+        self.plugin.on_draw_ui()
+
+        # Should not draw anything
+        mock_filled.assert_not_called()
+        mock_outline.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
