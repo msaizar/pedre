@@ -368,6 +368,6 @@ class InteractionPlugin(InteractionBasePlugin):
         """Convert interaction state to dictionary for save data serialization."""
         return {"interacted_objects": list(self.interacted_objects)}
 
-    def from_dict(self, data: dict[str, set]) -> None:
-        """Convert interaction state to dictionary for save data serialization."""
+    def from_dict(self, data: dict[str, Any]) -> None:
+        """Restore interaction state from dictionary (deserialize save data)."""
         self.interacted_objects = set(data["interacted_objects"])
