@@ -190,6 +190,48 @@ class TestSavePlugin(unittest.TestCase):
         result = self.plugin.save_game(slot=1)
         assert result is True
 
+    @patch("pedre.plugins.save.plugin.datetime")
+    def test_save_game_with_empty_plugin_state(self, mock_datetime: MagicMock) -> None:
+        """Test save game handles plugins that return None or empty state."""
+        # Setup mock timestamp
+        mock_now = MagicMock()
+        mock_now.timestamp.return_value = 1234567890.0
+        mock_datetime.now.return_value = mock_now
+        mock_datetime.UTC = UTC
+
+        # Mock player sprite
+        mock_player = MagicMock()
+        self.mock_player_plugin.get_player_sprite.return_value = mock_player
+
+        # Mock plugins with empty/None states
+        mock_plugin_empty = MagicMock()
+        mock_plugin_empty.name = "empty_plugin"
+        mock_plugin_empty.get_save_state.return_value = None
+
+        mock_plugin_valid = MagicMock()
+        mock_plugin_valid.name = "valid_plugin"
+        mock_plugin_valid.get_save_state.return_value = {"data": "test"}
+
+        self.mock_context.get_plugins.return_value = {
+            "empty_plugin": mock_plugin_empty,
+            "valid_plugin": mock_plugin_valid,
+        }
+
+        # Mock file operations
+        m_open = mock_open()
+        mock_path = MagicMock()
+        mock_path.open = m_open
+
+        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
+            result = self.plugin.save_game(slot=1)
+
+        assert result is True
+        # Verify only the valid plugin's state was saved
+        handle = m_open()
+        written_data = "".join([call[0][0] for call in handle.write.call_args_list])
+        assert "valid_plugin" in written_data
+        assert "empty_plugin" not in written_data
+
     def test_save_game_exception(self) -> None:
         """Test save game handles exceptions."""
         self.mock_player_plugin.get_player_sprite.side_effect = Exception("Test error")
@@ -258,6 +300,25 @@ class TestSavePlugin(unittest.TestCase):
         plugins["plugin1"].restore_save_state.assert_called_once_with({"key1": "value1"})
         plugins["plugin2"].restore_save_state.assert_called_once_with({"key2": "value2"})
 
+    def test_restore_game_data_plugin_not_in_save_states(self) -> None:
+        """Test restoring game data when some plugins are not in save states."""
+        save_data = GameSaveData(
+            save_states={
+                "plugin1": {"key1": "value1"},
+                # plugin2 is not in save_states
+            }
+        )
+
+        self.plugin.restore_game_data(save_data)
+
+        # Verify pending save data was set
+        self.mock_context.set_pending_save_data.assert_called_once_with(save_data)
+
+        # Verify only plugin1's restore_save_state was called
+        plugins = self.mock_context.get_plugins()
+        plugins["plugin1"].restore_save_state.assert_called_once_with({"key1": "value1"})
+        plugins["plugin2"].restore_save_state.assert_not_called()
+
     def test_apply_entity_states(self) -> None:
         """Test applying entity states after sprites exist."""
         save_data = GameSaveData(
@@ -275,6 +336,27 @@ class TestSavePlugin(unittest.TestCase):
         plugins = self.mock_context.get_plugins()
         plugins["plugin1"].apply_entity_state.assert_called_once_with({"entity_data": "test1"})
         plugins["plugin2"].apply_entity_state.assert_called_once_with({"entity_data": "test2"})
+
+        # Verify pending save data was cleared
+        self.mock_context.clear_pending_save_data.assert_called_once()
+
+    def test_apply_entity_states_plugin_not_in_save_states(self) -> None:
+        """Test applying entity states when some plugins are not in save states."""
+        save_data = GameSaveData(
+            save_states={
+                "plugin1": {"entity_data": "test1"},
+                # plugin2 is not in save_states
+            }
+        )
+
+        self.mock_context.get_pending_save_data.return_value = save_data
+
+        self.plugin.apply_entity_states()
+
+        # Verify only plugin1's apply_entity_state was called
+        plugins = self.mock_context.get_plugins()
+        plugins["plugin1"].apply_entity_state.assert_called_once_with({"entity_data": "test1"})
+        plugins["plugin2"].apply_entity_state.assert_not_called()
 
         # Verify pending save data was cleared
         self.mock_context.clear_pending_save_data.assert_called_once()
