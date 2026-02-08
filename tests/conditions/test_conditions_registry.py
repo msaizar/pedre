@@ -336,6 +336,60 @@ class TestConditionRegistryClear:
         assert ConditionRegistry.check("reusable_condition", {}, mock_context) is False
 
 
+class TestConditionRegistryIntrospection:
+    """Tests for registry introspection methods."""
+
+    def test_is_registered_returns_true_for_registered_condition(self) -> None:
+        """Test is_registered returns True for registered conditions."""
+
+        @ConditionRegistry.register("test_condition")
+        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
+            del condition_data, context
+            return True
+
+        assert ConditionRegistry.is_registered("test_condition") is True
+
+    def test_is_registered_returns_false_for_unregistered_condition(self) -> None:
+        """Test is_registered returns False for unregistered conditions."""
+        assert ConditionRegistry.is_registered("nonexistent_condition") is False
+
+    def test_get_all_types_returns_empty_list_initially(self) -> None:
+        """Test get_all_types returns empty list when no conditions registered."""
+        assert ConditionRegistry.get_all_types() == []
+
+    def test_get_all_types_returns_registered_conditions(self) -> None:
+        """Test get_all_types returns all registered condition names."""
+
+        @ConditionRegistry.register("condition1")
+        def checker1(condition_data: dict[str, Any], context: GameContext) -> bool:
+            del condition_data, context
+            return True
+
+        @ConditionRegistry.register("condition2")
+        def checker2(condition_data: dict[str, Any], context: GameContext) -> bool:
+            del condition_data, context
+            return True
+
+        types = ConditionRegistry.get_all_types()
+        assert len(types) == 2
+        assert "condition1" in types
+        assert "condition2" in types
+
+    def test_get_all_types_after_clear_returns_empty_list(self) -> None:
+        """Test get_all_types returns empty list after clear."""
+
+        @ConditionRegistry.register("temp_condition")
+        def temp_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
+            del condition_data, context
+            return True
+
+        assert len(ConditionRegistry.get_all_types()) == 1
+
+        ConditionRegistry.clear()
+
+        assert ConditionRegistry.get_all_types() == []
+
+
 class TestConditionRegistryIntegration:
     """Integration tests for ConditionRegistry."""
 

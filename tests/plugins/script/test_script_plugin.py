@@ -4,7 +4,9 @@ import json
 import unittest
 from unittest.mock import MagicMock, mock_open, patch
 
-from pedre.plugins.script.base import Script
+import pytest
+
+from pedre.plugins.script.base import Script, ScriptValidationError
 from pedre.plugins.script.events import ScriptCompleteEvent
 from pedre.plugins.script.plugin import ScriptPlugin
 
@@ -100,14 +102,17 @@ class TestScriptPlugin(unittest.TestCase):
         mock_path.glob.return_value = [mock_file]
         mock_asset_path.return_value = "/fake/scripts"
 
-        # Mock EventRegistry to return a valid event class
+        # Mock registries for validation
         with (
             patch("pedre.plugins.script.plugin.Path") as mock_path_class,
             patch("pedre.plugins.script.plugin.EventRegistry") as mock_event_registry,
+            patch("pedre.plugins.script.plugin.ActionRegistry") as mock_action_registry,
         ):
             mock_path_class.return_value = mock_path
             mock_event_class = MagicMock()
             mock_event_registry.get.return_value = mock_event_class
+            mock_event_registry.is_registered.return_value = True
+            mock_action_registry.is_registered.return_value = True
 
             self.plugin.setup(self.mock_context)
 
@@ -1086,6 +1091,284 @@ class TestScript(unittest.TestCase):
 
         script.completed = True
         assert script.completed is True
+
+
+class TestScriptValidation(unittest.TestCase):
+    """Test Suite for script validation functionality."""
+
+    def setUp(self) -> None:
+        """Set up test plugin."""
+        self.plugin = ScriptPlugin()
+        self.mock_context = MagicMock()
+
+    @patch("pedre.plugins.script.plugin.EventRegistry")
+    @patch("pedre.plugins.script.plugin.ConditionRegistry")
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_validate_scripts_success(
+        self,
+        mock_action_registry: MagicMock,
+        mock_condition_registry: MagicMock,
+        mock_event_registry: MagicMock,
+    ) -> None:
+        """Test validate_scripts passes with valid scripts."""
+        # Mock registries to return True for all checks
+        mock_event_registry.is_registered.return_value = True
+        mock_condition_registry.is_registered.return_value = True
+        mock_action_registry.is_registered.return_value = True
+
+        script = Script(
+            trigger={"event": "test_event"},
+            conditions=[{"check": "test_condition"}],
+            actions=[{"type": "test_action"}],
+            on_condition_fail=[{"type": "fail_action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        # Should not raise
+        self.plugin.validate_scripts()
+
+    @patch("pedre.plugins.script.plugin.EventRegistry")
+    def test_validate_scripts_unknown_event(self, mock_event_registry: MagicMock) -> None:
+        """Test validate_scripts detects unknown events."""
+        mock_event_registry.is_registered.return_value = False
+        mock_event_registry.get_all_types.return_value = ["event1", "event2"]
+
+        script = Script(
+            trigger={"event": "unknown_event"},
+            actions=[{"type": "test_action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "unknown event 'unknown_event'" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    @patch("pedre.plugins.script.plugin.ConditionRegistry")
+    def test_validate_scripts_unknown_condition(self, mock_condition_registry: MagicMock) -> None:
+        """Test validate_scripts detects unknown conditions."""
+        mock_condition_registry.is_registered.return_value = False
+        mock_condition_registry.get_all_types.return_value = ["cond1", "cond2"]
+
+        script = Script(
+            conditions=[{"check": "unknown_condition"}],
+            actions=[{"type": "test_action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "unknown condition 'unknown_condition'" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_validate_scripts_unknown_action(self, mock_action_registry: MagicMock) -> None:
+        """Test validate_scripts detects unknown actions."""
+        mock_action_registry.is_registered.return_value = False
+        mock_action_registry.get_all_types.return_value = ["action1", "action2"]
+
+        script = Script(actions=[{"type": "unknown_action"}])
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "unknown action type 'unknown_action'" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_validate_scripts_unknown_fail_action(self, mock_action_registry: MagicMock) -> None:
+        """Test validate_scripts detects unknown on_condition_fail actions."""
+        mock_action_registry.is_registered.side_effect = lambda t: t != "unknown_fail_action"
+        mock_action_registry.get_all_types.return_value = ["action1", "action2"]
+
+        script = Script(
+            actions=[{"type": "action1"}],
+            on_condition_fail=[{"type": "unknown_fail_action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "on_condition_fail" in str(cm.value)
+        assert "unknown_fail_action" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    def test_validate_scripts_empty_actions(self) -> None:
+        """Test validate_scripts detects empty actions list."""
+        script = Script(actions=[])
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "'actions' list is empty" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    def test_validate_scripts_trigger_missing_event(self) -> None:
+        """Test validate_scripts detects trigger without event key."""
+        script = Script(
+            trigger={"npc": "martin"},  # Missing 'event' key
+            actions=[{"type": "test_action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "trigger missing required 'event' key" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    def test_validate_scripts_condition_missing_check(self) -> None:
+        """Test validate_scripts detects condition without check key."""
+        script = Script(
+            conditions=[{"value": "test"}],  # Missing 'check' key
+            actions=[{"type": "test_action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "condition 0 missing required 'check' key" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    def test_validate_scripts_action_missing_type(self) -> None:
+        """Test validate_scripts detects action without type key."""
+        script = Script(actions=[{"speaker": "martin"}])  # Missing 'type' key
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "action 0 missing required 'type' key" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    def test_validate_scripts_on_condition_fail_action_missing_type(self) -> None:
+        """Test validate_scripts detects on_condition_fail action without type key."""
+        script = Script(
+            actions=[{"type": "test_action"}],
+            on_condition_fail=[{"speaker": "martin"}],  # Missing 'type' key
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        assert "on_condition_fail action 0 missing required 'type' key" in str(cm.value)
+        assert "test_script" in str(cm.value)
+
+    @patch("pedre.plugins.script.plugin.EventRegistry")
+    @patch("pedre.plugins.script.plugin.ConditionRegistry")
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_validate_scripts_multiple_errors(
+        self,
+        mock_action_registry: MagicMock,
+        mock_condition_registry: MagicMock,
+        mock_event_registry: MagicMock,
+    ) -> None:
+        """Test validate_scripts collects multiple errors."""
+        mock_event_registry.is_registered.return_value = False
+        mock_event_registry.get_all_types.return_value = []
+        mock_condition_registry.is_registered.return_value = False
+        mock_condition_registry.get_all_types.return_value = []
+        mock_action_registry.is_registered.return_value = False
+        mock_action_registry.get_all_types.return_value = []
+
+        script = Script(
+            trigger={"event": "bad_event"},
+            conditions=[{"check": "bad_condition"}],
+            actions=[{"type": "bad_action"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        error_msg = str(cm.value)
+        assert "unknown event 'bad_event'" in error_msg
+        assert "unknown condition 'bad_condition'" in error_msg
+        assert "unknown action type 'bad_action'" in error_msg
+        # Check that it reports 3 errors
+        assert "3 script validation error(s)" in error_msg
+
+    def test_validate_scripts_includes_parsing_errors(self) -> None:
+        """Test validate_scripts includes errors from _validation_errors."""
+        self.plugin._validation_errors = ["Script 'foo': unknown key 'bad_key'"]
+        script = Script(actions=[{"type": "test_action"}])
+        self.plugin.scripts = {"test_script": script}
+
+        with patch("pedre.plugins.script.plugin.ActionRegistry") as mock_action_registry:
+            mock_action_registry.is_registered.return_value = False
+            mock_action_registry.get_all_types.return_value = []
+
+            with pytest.raises(ScriptValidationError) as cm:
+                self.plugin.validate_scripts()
+
+        error_msg = str(cm.value)
+        assert "unknown key 'bad_key'" in error_msg
+
+    def test_parse_scripts_detects_unknown_keys(self) -> None:
+        """Test _parse_scripts detects unknown top-level keys."""
+        script_data = {
+            "test_script": {
+                "trigger": {"event": "test_event"},
+                "actions": [{"type": "test_action"}],
+                "unknown_key": "value",
+                "another_bad_key": 123,
+            }
+        }
+
+        self.plugin._parse_scripts(script_data)
+
+        assert len(self.plugin._validation_errors) == 1
+        assert "test_script" in self.plugin._validation_errors[0]
+        assert "unknown_key" in self.plugin._validation_errors[0]
+        assert "another_bad_key" in self.plugin._validation_errors[0]
+
+    @patch("pedre.plugins.script.plugin.asset_path")
+    @patch("pedre.plugins.script.plugin.EventRegistry")
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_load_all_scripts_validates(
+        self,
+        mock_action_registry: MagicMock,
+        mock_event_registry: MagicMock,
+        mock_asset_path: MagicMock,
+    ) -> None:
+        """Test _load_all_scripts calls validate_scripts."""
+        # Setup invalid script
+        script_data = {
+            "test_script": {
+                "trigger": {"event": "unknown_event"},
+                "actions": [{"type": "test_action"}],
+            }
+        }
+
+        mock_file = MagicMock()
+        mock_file.name = "test_scripts.json"
+        m_open = mock_open(read_data=json.dumps(script_data))
+        mock_file.open = m_open
+
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+        mock_path.glob.return_value = [mock_file]
+        mock_asset_path.return_value = "/fake/scripts"
+
+        # Mock registries - event is invalid, action is valid
+        mock_event_registry.is_registered.return_value = False
+        mock_event_registry.get_all_types.return_value = []
+        mock_action_registry.is_registered.return_value = True
+
+        with patch("pedre.plugins.script.plugin.Path") as mock_path_class:
+            mock_path_class.return_value = mock_path
+
+            with pytest.raises(ScriptValidationError) as cm:
+                self.plugin._load_all_scripts()
+
+        assert "unknown event 'unknown_event'" in str(cm.value)
 
 
 if __name__ == "__main__":
