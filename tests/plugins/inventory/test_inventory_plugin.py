@@ -1246,6 +1246,109 @@ class TestInventoryPlugin(unittest.TestCase):
             # Should return False (not handled)
             assert result is False
 
+    def test_viewing_photo_other_key_handled(self) -> None:
+        """Test that other keys are consumed when viewing photo - covers branch 194->225."""
+        with patch("pedre.plugins.inventory.plugin.settings") as mock_settings:
+            mock_settings.INVENTORY_KEY_TOGGLE = "I"
+
+            self.plugin.showing = True
+            self.plugin.viewing_photo = True
+
+            # Press a key that's not ESCAPE while viewing photo
+            result = self.plugin.on_key_press(arcade.key.A, 0)
+
+            # Should return True (consumed) to prevent other handlers
+            assert result is True
+            # Photo should still be showing
+            assert self.plugin.viewing_photo is True
+
+    def test_consume_item_no_selection_adjustment(self) -> None:
+        """Test consuming item when selection doesn't need adjustment - covers branch 308->exit."""
+        with patch("pedre.plugins.inventory.plugin.settings") as mock_settings:
+            mock_settings.INVENTORY_MAX_SPACE = 10
+            mock_settings.INVENTORY_GRID_COLS = 5
+
+            # Add multiple items
+            item1 = InventoryItem(id="i1", name="I1", description="D1", acquired=True, consumable=True)
+            item2 = InventoryItem(id="i2", name="I2", description="D2", acquired=True, consumable=True)
+            item3 = InventoryItem(id="i3", name="I3", description="D3", acquired=True, consumable=True)
+
+            self.plugin.items["i1"] = item1
+            self.plugin.items["i2"] = item2
+            self.plugin.items["i3"] = item3
+            self.plugin.all_items = [item1, item2, item3]
+
+            # Select the first item (index 0)
+            self.plugin.selected_row = 0
+            self.plugin.selected_col = 0
+
+            # Consume it via _consume_selected_item
+            self.plugin._consume_selected_item()
+
+            # After consuming i1, we have i2 and i3
+            # Selection at index 0 is still valid (now pointing to i2)
+            # So no adjustment should occur - this covers the branch where current_index <= max_index
+            assert self.plugin.selected_row == 0
+            assert self.plugin.selected_col == 0
+
+    def test_restore_save_state_without_inventory_items(self) -> None:
+        """Test restore_save_state when inventory_items key is missing - covers branch 691->exit."""
+        # Add some items to verify they remain unchanged
+        item = InventoryItem(id="test", name="Test", description="D", acquired=True)
+        self.plugin.items["test"] = item
+
+        # State without inventory_items key
+        state = {"some_other_key": "value"}
+
+        # Should not raise and handle gracefully
+        self.plugin.restore_save_state(state)
+
+        # No changes should occur - items should remain
+        assert "test" in self.plugin.items
+
+    def test_to_dict_dynamic_item_not_in_items(self) -> None:
+        """Test to_dict when dynamic item ID is not in items dict - covers branch 1037->1036."""
+        # Add a dynamic item ID that doesn't exist in items
+        self.plugin.dynamic_items.add("nonexistent_id")
+
+        # Should not crash when serializing
+        data = self.plugin.to_dict()
+
+        # Should not include the nonexistent item
+        assert "dynamic_items" in data
+        # Check that nonexistent_id is not in the serialized dynamic items
+        dynamic_ids = [item["id"] for item in data["dynamic_items"]]
+        assert "nonexistent_id" not in dynamic_ids
+
+    def test_from_dict_dynamic_item_already_exists(self) -> None:
+        """Test from_dict when dynamic item already exists in items - covers branch 1094->1091."""
+        # Add an item that we'll try to restore
+        existing_item = InventoryItem(id="existing", name="Existing", description="D", acquired=True)
+        self.plugin.items["existing"] = existing_item
+        self.plugin.dynamic_items.add("existing")
+
+        # Try to restore with the same item in dynamic_items
+        data = {
+            "item_states": {},
+            "dynamic_items": [
+                {
+                    "id": "existing",
+                    "name": "Existing Updated",
+                    "description": "Updated description",
+                    "category": "general",
+                    "acquired": True,
+                    "consumed": False,
+                    "consumable": False,
+                }
+            ],
+        }
+
+        self.plugin.from_dict(data)
+
+        # Should skip adding the duplicate
+        # The original item should remain unchanged
+        assert self.plugin.items["existing"].name == "Existing"
+
 
 if __name__ == "__main__":
     unittest.main()
