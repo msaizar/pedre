@@ -13,7 +13,7 @@ nav = [
     ]},
     {"API Reference" = [
         "api/index.md",
-        "api/view-manager.md",
+        "api/game.md",
         "api/views.md",
         "api/sprites.md",
         "api/game-context.md",
