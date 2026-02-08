@@ -437,6 +437,35 @@ class TestInteractionPlugin(unittest.TestCase):
             # Should return False when no player
             assert result is False
 
+    def test_load_from_tiled_shape_with_invalid_points(self) -> None:
+        """Test load_from_tiled with nested shape containing invalid points - covers branch 136->135."""
+        mock_tile_map = MagicMock()
+        mock_layer = MagicMock()
+
+        mock_obj = MagicMock()
+        mock_obj.name = "InvalidPoints"
+        mock_obj.properties = {}
+        # Nested list shape with some invalid points (less than 2 elements)
+        # Valid point: [10, 20], invalid points: [30] (only 1 element), [] (empty)
+        mock_obj.shape = [[10, 20], [30], [], [40, 50]]
+
+        mock_layer.__iter__.return_value = [mock_obj]
+        mock_tile_map.object_lists = {"Interactive": mock_layer}
+        mock_scene = MagicMock()
+
+        self.plugin.load_from_tiled(mock_tile_map, mock_scene)
+
+        # Should create object with only the valid points
+        assert "invalidpoints" in self.plugin.interactive_objects
+        obj = self.plugin.interactive_objects["invalidpoints"]
+        # Only points [10, 20] and [40, 50] should be used
+        # min x=10, max x=40 -> center 25, width 30
+        # min y=20, max y=50 -> center 35, height 30
+        assert obj.sprite.center_x == 25.0
+        assert obj.sprite.center_y == 35.0
+        assert obj.sprite.width == 30.0
+        assert obj.sprite.height == 30.0
+
 
 if __name__ == "__main__":
     unittest.main()
