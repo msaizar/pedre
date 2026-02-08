@@ -9,7 +9,23 @@
 [![Tests](https://github.com/msaizar/pedre/actions/workflows/tests.yml/badge.svg)](https://github.com/msaizar/pedre/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/msaizar/pedre/branch/main/graph/badge.svg)](https://codecov.io/gh/msaizar/pedre)
 
-A Python RPG framework built on [Arcade](https://api.arcade.academy/) with seamless [Tiled](https://www.mapeditor.org/) map editor integration. Build Zelda-like games with dialog systems, NPC interactions, inventory management, and event-driven scripting.
+A Python RPG framework built on [Arcade](https://api.arcade.academy/) with seamless [Tiled](https://www.mapeditor.org/) map editor integration. Build Zelda-like games with dialog systems, NPC interactions, inventory management, and event-driven scripting. Built with a plugin-based architecture that lets you replace or extend core systems without forking the engine.
+
+![Pedre demo screenshot](https://raw.githubusercontent.com/msaizar/pedre/main/docs/images/screenshot.png)
+
+## Is Pedre for you?
+
+Pedre is designed for:
+
+- Developers who want to build 2D RPGs in Python
+- Projects using Arcade + Tiled
+- Games with dialog, NPCs, and scripted events
+
+Pedre may not be a good fit if:
+
+- You need a visual editor like Unity/Godot
+- You want a low-level engine rather than a framework
+- You are targeting mobile or web
 
 ## Features
 
@@ -34,8 +50,10 @@ A Python RPG framework built on [Arcade](https://api.arcade.academy/) with seaml
 
 ## Requirements
 
-- Python 3.14 or higher
-- [Tiled Map Editor](https://www.mapeditor.org/) for creating game maps
+- Python 3.14+
+- Arcade 3.x
+- Tiled Map Editor (for map creation)
+- Windows, macOS, or Linux
 
 ## Installation
 
@@ -52,6 +70,21 @@ uv add pedre
 ```
 
 ## Quick Start
+
+Project structure example:
+
+```text
+my_game/
+├── main.py
+├── settings.py
+├── assets/
+│   ├── audio/
+│   ├── data/
+│   ├── dialogs/
+│   ├── images/
+│   ├── maps/
+│   └── scripts/
+```
 
 ```python
 from pedre import run_game
