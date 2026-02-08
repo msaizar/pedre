@@ -82,9 +82,9 @@ my_game/
     │   ├── music/
     │   └── sfx/
     ├── data/
+    │   ├── dialogs/
     │   ├── inventory-items.json
     │   └── scripts/
-    ├── dialogs/
     ├── images/
     │   └── characters/
     └── maps/

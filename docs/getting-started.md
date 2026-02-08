@@ -33,15 +33,15 @@ uv add pedre
 my-rpg/
 ├── assets/
 │   ├── data/
+│   │   ├── dialogs/    # NPC dialog JSON files
 │   │   ├── inventory-items.json
 │   │   └── scripts/    # Event scripts JSON files
 │   ├── maps/           # Tiled .tmx files
 │   ├── images/
 │   │   └── characters/ # Sprite sheets
-│   ├── audio/
-│   │   ├── music/      # Background music
-│   │   └── sfx/        # Sound effects
-│   └── dialogs/        # NPC dialog JSON files
+│   └── audio/
+│       ├── music/      # Background music
+│       └── sfx/        # Sound effects
 └── main.py             # Your game entry point
 ```
 
@@ -200,7 +200,7 @@ Save your NPC sprite sheet as `assets/images/characters/merchant.png`.
 
 ### Create NPC Dialog
 
-Create `assets/dialogs/village_dialogs.json`:
+Create `assets/data/dialogs/village_dialogs.json`:
 
 ```json
 {
