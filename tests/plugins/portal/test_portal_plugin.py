@@ -133,6 +133,52 @@ class TestPortalPlugin(unittest.TestCase):
         # Should skip invalid portal
         assert len(self.plugin.portals) == 0
 
+    @patch("pedre.plugins.portal.plugin.logger")
+    def test_load_from_tiled_shape_wrong_type(self, mock_logger: MagicMock) -> None:
+        """Test loading skips portals with shape that is wrong type (not list/tuple)."""
+        mock_tile_map = MagicMock()
+        mock_arcade_scene = MagicMock()
+
+        # Mock portal with shape as string (truthy but wrong type)
+        mock_portal = MagicMock()
+        mock_portal.name = "broken_portal"
+        mock_portal.properties = {"some": "prop"}
+        mock_portal.shape = "invalid"  # Truthy but not list/tuple
+
+        mock_tile_map.object_lists.get.return_value = [mock_portal]
+
+        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+
+        # Should skip portal with invalid shape type
+        assert len(self.plugin.portals) == 0
+        # Should log warning about invalid shape
+        assert mock_logger.warning.call_count == 1
+        assert "invalid shape" in str(mock_logger.warning.call_args)
+
+    @patch("pedre.plugins.portal.plugin.arcade.Sprite")
+    def test_load_from_tiled_polygon_with_invalid_point(self, mock_sprite_cls: MagicMock) -> None:
+        """Test loading polygon portal with invalid point in shape."""
+        mock_tile_map = MagicMock()
+        mock_arcade_scene = MagicMock()
+
+        # Mock portal with polygon shape containing invalid point (too short)
+        mock_portal = MagicMock()
+        mock_portal.name = "gate"
+        mock_portal.properties = {"some_prop": "value"}
+        # First point is valid tuple, second is too short (should be skipped)
+        mock_portal.shape = [(50.0, 100.0), (150.0,), (150.0, 200.0), (50.0, 200.0)]
+
+        mock_tile_map.object_lists.get.return_value = [mock_portal]
+
+        # Mock sprite creation
+        mock_sprite = MagicMock()
+        mock_sprite_cls.return_value = mock_sprite
+
+        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+
+        # Portal should still be registered (valid points are used)
+        assert len(self.plugin.portals) == 1
+
     def test_check_portals_no_player(self) -> None:
         """Test check_portals handles missing player."""
         self.plugin.check_portals(None)
