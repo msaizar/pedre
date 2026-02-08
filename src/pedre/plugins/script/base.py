@@ -7,6 +7,27 @@ from typing import Any, Protocol
 from pedre.plugins.base import BasePlugin
 
 
+class ScriptValidationError(Exception):
+    """Raised when script preflight validation fails.
+
+    This exception is raised when one or more scripts fail validation during
+    the preflight check. It contains a list of all validation errors found.
+
+    Attributes:
+        errors: List of error messages describing validation failures.
+    """
+
+    def __init__(self, errors: list[str]) -> None:
+        """Initialize the exception with a list of errors.
+
+        Args:
+            errors: List of error message strings.
+        """
+        self.errors = errors
+        summary = f"{len(errors)} script validation error(s):\n" + "\n".join(f"  - {e}" for e in errors)
+        super().__init__(summary)
+
+
 class ScriptEvent(Protocol):
     """Protocol for events that support script data extraction."""
 

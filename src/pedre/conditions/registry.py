@@ -76,6 +76,27 @@ class ConditionRegistry:
             return False
 
     @classmethod
+    def is_registered(cls, name: str) -> bool:
+        """Check if a condition type is registered.
+
+        Args:
+            name: The condition type name to check.
+
+        Returns:
+            True if the condition type has a checker registered, False otherwise.
+        """
+        return name in cls._checkers
+
+    @classmethod
+    def get_all_types(cls) -> list[str]:
+        """Get all registered condition type names.
+
+        Returns:
+            List of condition type strings that have checkers registered.
+        """
+        return list(cls._checkers.keys())
+
+    @classmethod
     def clear(cls) -> None:
         """Clear the registry (primarily for testing)."""
         cls._checkers.clear()

@@ -66,6 +66,27 @@ class EventRegistry:
         return cls._names.get(event_class)
 
     @classmethod
+    def is_registered(cls, name: str) -> bool:
+        """Check if an event type is registered.
+
+        Args:
+            name: The event type name to check.
+
+        Returns:
+            True if the event type is registered, False otherwise.
+        """
+        return name in cls._events
+
+    @classmethod
+    def get_all_types(cls) -> list[str]:
+        """Get all registered event type names.
+
+        Returns:
+            List of event type strings that are registered.
+        """
+        return list(cls._events.keys())
+
+    @classmethod
     def clear(cls) -> None:
         """Clear the registry (primarily for testing)."""
         cls._events.clear()
