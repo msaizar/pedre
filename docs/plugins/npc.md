@@ -352,7 +352,7 @@ npc_plugin.show_npcs(["guard", "captain", "merchant"])
 - Makes sprite.visible = True
 - Starts appear animation for AnimatedNPCs
 - Adds NPC to wall collision list
-- Used by `reveal_npcs` action
+- Used by `start_appear_animation` action
 
 ### State Queries
 
@@ -959,11 +959,11 @@ Move one or more NPCs to a waypoint using pathfinding.
 - Uses A* pathfinding to avoid obstacles
 - Publishes `NPCMovementCompleteEvent` when done
 
-### RevealNPCsAction
+### StartAppearAnimationAction
 
-Make hidden NPCs visible with appear animation.
+Start the appear animation for one or more NPCs.
 
-**Type:** `reveal_npcs`
+**Type:** `start_appear_animation`
 
 **Parameters:**
 
@@ -973,7 +973,7 @@ Make hidden NPCs visible with appear animation.
 
 ```json
 {
-    "type": "reveal_npcs",
+    "type": "start_appear_animation",
     "npcs": ["spirit", "guardian"]
 }
 ```
@@ -1102,7 +1102,7 @@ Wait for multiple NPCs to complete appear animations.
 
 ```json
 [
-    {"type": "reveal_npcs", "npcs": ["spirit", "guardian"]},
+    {"type": "start_appear_animation", "npcs": ["spirit", "guardian"]},
     {"type": "wait_npcs_appear", "npcs": ["spirit", "guardian"]},
     {"type": "dialog", "speaker": "Spirit", "text": ["We have arrived!"]}
 ]
@@ -1290,7 +1290,7 @@ if nearby:
         },
         "actions": [
             {"type": "play_sfx", "file": "magic.wav"},
-            {"type": "reveal_npcs", "npcs": ["spirit_1", "spirit_2", "spirit_3"]},
+            {"type": "start_appear_animation", "npcs": ["spirit_1", "spirit_2", "spirit_3"]},
             {"type": "wait_npcs_appear", "npcs": ["spirit_1", "spirit_2", "spirit_3"]},
             {"type": "dialog", "speaker": "Spirit", "text": ["You have summoned us!"]}
         ]

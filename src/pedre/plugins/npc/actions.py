@@ -100,9 +100,9 @@ class MoveNPCAction(Action):
         return cls(npc_names=npcs, waypoint=waypoint)
 
 
-@ActionRegistry.register("reveal_npcs")
-class RevealNPCsAction(Action):
-    """Reveal hidden NPCs with visual effects.
+@ActionRegistry.register("start_appear_animation")
+class StartAppearAnimationAction(Action):
+    """Start the appear animation for one or more NPCs.
 
     This action makes NPCs visible that have their sprite.visible property set to False.
     Hidden NPCs are not rendered and cannot be interacted with by the player. When revealed,
@@ -113,13 +113,13 @@ class RevealNPCsAction(Action):
 
     Example usage:
         {
-            "type": "reveal_npcs",
+            "type": "start_appear_animation",
             "npcs": ["martin", "yema", "romi"]
         }
     """
 
     def __init__(self, npc_names: list[str]) -> None:
-        """Initialize NPC reveal action.
+        """Initialize NPC appear animation action.
 
         Args:
             npc_names: List of NPC names to reveal.
@@ -133,7 +133,7 @@ class RevealNPCsAction(Action):
             npc_plugin = context.npc_plugin
             npc_plugin.show_npcs(self.npc_names)
             self.executed = True
-            logger.debug("RevealNPCsAction: Revealed NPCs %s", self.npc_names)
+            logger.debug("StartAppearAnimationAction: Revealed NPCs %s", self.npc_names)
 
         return True
 
@@ -143,7 +143,7 @@ class RevealNPCsAction(Action):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
-        """Create RevealNPCsAction from a dictionary."""
+        """Create StartAppearAnimationAction from a dictionary."""
         return cls(npc_names=data.get("npcs", []))
 
 
@@ -387,19 +387,19 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
 
     This action pauses script execution until all specified AnimatedNPCs finish
     their appear animation. AnimatedNPCs play a special appear animation when
-    they're revealed (see RevealNPCsAction), and this action ensures that animation
+    they're revealed (see StartAppearAnimationAction), and this action ensures that animation
     completes before proceeding.
 
     Only AnimatedNPC sprites have appear animations. Regular NPC sprites will be
     considered complete immediately. The action waits for all NPCs in the list
     to finish appearing.
 
-    Commonly used after RevealNPCsAction to ensure NPCs have fully materialized
+    Commonly used after StartAppearAnimationAction to ensure NPCs have fully materialized
     before starting dialog or other interactions.
 
     Example usage in a reveal sequence:
         [
-            {"type": "reveal_npcs", "npcs": ["martin", "yema"]},
+            {"type": "start_appear_animation", "npcs": ["martin", "yema"]},
             {"type": "wait_npcs_appear", "npcs": ["martin", "yema"]},
             {"type": "dialog", "speaker": "martin", "text": ["We're here!"]}
         ]

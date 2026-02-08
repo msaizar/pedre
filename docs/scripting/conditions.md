@@ -475,7 +475,7 @@ Create branching paths based on player actions:
         "text": ["You have the royal seal! Enter."]
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["king"]
       }
     ]

@@ -43,7 +43,7 @@ Chain multiple scripts using `script_complete` to create multi-part cutscenes.
         "npc": "elder"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["spirit"]
       }
     ]
@@ -111,7 +111,7 @@ Create branching paths based on player actions and game state.
         "text": ["You have the royal seal! Enter."]
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["king"]
       }
     ]
@@ -339,7 +339,7 @@ Create dramatic timing with coordinated movement, dialog, and effects.
         "file": "ominous.ogg"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["villain"]
       },
       {
@@ -364,7 +364,7 @@ Create dramatic timing with coordinated movement, dialog, and effects.
         "type": "wait_for_dialog_close"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["minion_1", "minion_2"]
       }
     ]
@@ -405,7 +405,7 @@ Coordinate multiple NPCs with precise timing.
         "type": "wait_for_dialog_close"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["guard", "merchant", "healer"]
       },
       {
@@ -592,7 +592,7 @@ Reveal NPCs based on quest progress or conditions.
         "type": "wait_for_dialog_close"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["merchant_1", "merchant_2", "merchant_3", "buyer_1", "buyer_2"]
       }
     ]

@@ -166,9 +166,9 @@ Move NPC(s) to a waypoint using pathfinding.
 - Dynamic positioning
 - Timed sequences
 
-### reveal_npcs
+### start_appear_animation
 
-Make NPCs visible with appear animation.
+Start the appear animation for one or more NPCs.
 
 **Parameters:**
 
@@ -178,7 +178,7 @@ Make NPCs visible with appear animation.
 
 ```json
 {
-  "type": "reveal_npcs",
+  "type": "start_appear_animation",
   "npcs": ["guard", "captain", "merchant"]
 }
 ```
@@ -757,7 +757,7 @@ Pause until NPCs finish their appear animation.
 {
   "actions": [
     {
-      "type": "reveal_npcs",
+      "type": "start_appear_animation",
       "npcs": ["villain"]
     },
     {
@@ -889,7 +889,7 @@ Actions execute in order. Use wait actions to control timing:
     },
     // 3. Reveal NPC
     {
-      "type": "reveal_npcs",
+      "type": "start_appear_animation",
       "npcs": ["spirit"]
     },
     // 4. Wait for appear animation
@@ -1077,7 +1077,7 @@ Actions execute in order. Use wait actions to control timing:
       "file": "ominous.ogg"
     },
     {
-      "type": "reveal_npcs",
+      "type": "start_appear_animation",
       "npcs": ["villain"]
     },
     {

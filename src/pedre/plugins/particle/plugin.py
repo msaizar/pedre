@@ -70,8 +70,6 @@ class ParticlePlugin(ParticleBasePlugin):
 
     Integration with actions:
     - EmitParticlesAction can trigger effects from scripts
-    - RevealNPCsAction emits gold burst particles when NPCs appear
-    - Various game plugins emit particles for player feedback
 
     Attributes:
         particles: List of currently active particles.
@@ -282,7 +280,6 @@ class ParticlePlugin(ParticleBasePlugin):
         larger and live longer than sparkles, making the effect more prominent.
 
         Common uses:
-        - NPC reveals (RevealNPCsAction uses gold burst)
         - Quest completion moments
         - Major event triggers
         - Dramatic reveals and discoveries
