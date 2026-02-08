@@ -337,6 +337,30 @@ class TestCameraPlugin(unittest.TestCase):
             self.plugin.update(0.016)
             mock_smooth.assert_not_called()
 
+    def test_update_follow_npc_no_plugin(self) -> None:
+        """Test update with NPC mode but no npc_plugin available."""
+        mock_context = MagicMock()
+        mock_context.npc_plugin = None
+        self.plugin.setup(mock_context)
+
+        self.plugin.set_follow_npc("merchant", smooth=True)
+
+        with patch.object(self.plugin, "smooth_follow") as mock_smooth:
+            self.plugin.update(0.016)
+            mock_smooth.assert_not_called()
+
+    def test_update_follow_npc_no_target_name(self) -> None:
+        """Test update with NPC mode but no target NPC name set."""
+        mock_context = MagicMock()
+        self.plugin.setup(mock_context)
+
+        self.plugin.follow_mode = "npc"
+        self.plugin.follow_target_npc = None  # No target
+
+        with patch.object(self.plugin, "smooth_follow") as mock_smooth:
+            self.plugin.update(0.016)
+            mock_smooth.assert_not_called()
+
     def test_update_no_follow_mode(self) -> None:
         """Test update with no follow mode set."""
         mock_context = MagicMock()
@@ -413,6 +437,21 @@ class TestCameraPlugin(unittest.TestCase):
         with patch.object(self.plugin, "set_follow_npc") as mock_set:
             self.plugin.apply_follow_config()
             mock_set.assert_not_called()
+
+    def test_apply_follow_config_unknown_mode(self) -> None:
+        """Test apply_follow_config with unknown mode does nothing."""
+        self.plugin._follow_config = {"mode": "unknown", "smooth": True}
+
+        with (
+            patch.object(self.plugin, "stop_follow") as mock_stop,
+            patch.object(self.plugin, "set_follow_player") as mock_player,
+            patch.object(self.plugin, "set_follow_npc") as mock_npc,
+        ):
+            self.plugin.apply_follow_config()
+            # None of the methods should be called
+            mock_stop.assert_not_called()
+            mock_player.assert_not_called()
+            mock_npc.assert_not_called()
 
     @patch("arcade.get_window")
     @patch("arcade.camera.Camera2D")
@@ -759,6 +798,56 @@ class TestCameraPlugin(unittest.TestCase):
 
         # Should fallback to origin
         assert pos == (0.0, 0.0)
+
+    def test_get_initial_position_npc_mode_no_target(self) -> None:
+        """Test _get_initial_position with NPC mode but no target specified."""
+        mock_context = MagicMock()
+        mock_player_sprite = MagicMock()
+        mock_player_sprite.center_x = 100.0
+        mock_player_sprite.center_y = 150.0
+        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
+        self.plugin.setup(mock_context)
+
+        self.plugin._follow_config = {"mode": "npc"}  # No target
+
+        pos = self.plugin._get_initial_position(1000, 1000)
+
+        # Should fallback to player
+        assert pos == (100.0, 150.0)
+
+    def test_get_initial_position_npc_mode_no_plugin(self) -> None:
+        """Test _get_initial_position with NPC mode but no npc_plugin."""
+        mock_context = MagicMock()
+        mock_context.npc_plugin = None
+        mock_player_sprite = MagicMock()
+        mock_player_sprite.center_x = 200.0
+        mock_player_sprite.center_y = 250.0
+        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
+        self.plugin.setup(mock_context)
+
+        self.plugin._follow_config = {"mode": "npc", "target": "merchant"}
+
+        pos = self.plugin._get_initial_position(1000, 1000)
+
+        # Should fallback to player
+        assert pos == (200.0, 250.0)
+
+    def test_get_initial_position_npc_mode_npc_not_found(self) -> None:
+        """Test _get_initial_position with NPC mode but NPC not found."""
+        mock_context = MagicMock()
+        mock_context.npc_plugin.get_npc_by_name.return_value = None
+        mock_player_sprite = MagicMock()
+        mock_player_sprite.center_x = 300.0
+        mock_player_sprite.center_y = 350.0
+        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
+        self.plugin.setup(mock_context)
+
+        self.plugin._follow_config = {"mode": "npc", "target": "nonexistent"}
+
+        pos = self.plugin._get_initial_position(1000, 1000)
+
+        # Should fallback to player
+        assert pos == (300.0, 350.0)
 
 
 if __name__ == "__main__":
