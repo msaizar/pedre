@@ -193,7 +193,10 @@ class NPCPlugin(NPCBasePlugin):
             self.dialogs[scene_name] = self._dialog_cache[scene_name]
         else:
             try:
-                scene_dialog_file = asset_path(f"dialogs/{scene_name}_dialogs.json", settings.ASSETS_HANDLE)
+                dialog_filename = f"{scene_name}_dialogs.json"
+                scene_dialog_file = asset_path(
+                    f"{settings.DIALOGS_DIRECTORY}/{dialog_filename}", settings.ASSETS_HANDLE
+                )
                 if self.load_dialogs_from_json(scene_dialog_file) and scene_name in self.dialogs:
                     self._dialog_cache[scene_name] = self.dialogs[scene_name]
                 else:

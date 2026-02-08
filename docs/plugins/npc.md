@@ -15,16 +15,27 @@ Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 
 The NPCPlugin uses the following settings from `pedre.conf.settings`:
 
-### Movement and Interaction Settings
+### Dialog Configuration
 
-- `NPC_INTERACTION_DISTANCE` - Maximum distance in pixels for player to interact with NPCs (default: 50)
-- `NPC_WAYPOINT_THRESHOLD` - Distance in pixels to consider an NPC has reached a waypoint (default: 5)
-- `NPC_MOVEMENT_SPEED` - Movement speed in pixels per second (default: 80.0)
-- `NPC_INTERACTION_KEY` - Key to interact with NPCs (default: "SPACE")
+| Setting             | Type   | Default         | Description                                                          |
+| ------------------- | ------ | --------------- | -------------------------------------------------------------------- |
+| `DIALOGS_DIRECTORY` | string | "data/dialogs"  | Directory where NPC dialog files are stored (relative to assets)     |
+
+### Movement and Interaction Configuration
+
+| Setting                    | Type   | Default | Description                                                          |
+| -------------------------- | ------ | ------- | -------------------------------------------------------------------- |
+| `NPC_INTERACTION_DISTANCE` | int    | 50      | Maximum distance in pixels for player to interact with NPCs          |
+| `NPC_WAYPOINT_THRESHOLD`   | int    | 5       | Distance in pixels to consider an NPC has reached a waypoint         |
+| `NPC_MOVEMENT_SPEED`       | float  | 80.0    | Movement speed in pixels per second                                  |
+| `NPC_INTERACTION_KEY`      | string | "SPACE" | Key to interact with NPCs                                            |
 
 These can be overridden in your project's `settings.py`:
 
 ```python
+# Custom dialog directory
+DIALOGS_DIRECTORY = "custom_dialogs"
+
 # Custom NPC settings
 NPC_INTERACTION_DISTANCE = 60
 NPC_WAYPOINT_THRESHOLD = 8
@@ -93,9 +104,10 @@ npc_plugin.load_dialogs_from_json("assets/dialogs/")
 
 **Notes:**
 
-- Files are named `{scene}_dialogs.json` (e.g., `casa_dialogs.json`)
+- Files are named `{scene}_dialogs.json` (e.g., `village_dialogs.json`)
 - Scene name is extracted from filename
 - Loading a directory processes all `.json` files
+- The directory location is configured via `DIALOGS_DIRECTORY` setting (default: `"data/dialogs"`)
 
 #### get_dialog
 

@@ -142,6 +142,9 @@ SAVE_QUICK_SAVE_KEY: str
 SAVE_QUICK_LOAD_KEY: str
 SAVE_SFX_FILE: str
 
+# Dialog settings
+DIALOGS_DIRECTORY: str
+
 # Script settings
 SCRIPTS_DIRECTORY: str
 

@@ -505,6 +505,23 @@ Asset management configuration.
   - In PyInstaller bundles, uses the bundled assets directory
 - Typically both settings use the same value ("assets"), but can differ for flexibility
 
+### Dialog Plugin Settings
+
+Dialog plugin configuration for NPC dialogs.
+
+| Setting             | Type   | Default         | Description                                                          |
+| ------------------- | ------ | --------------- | -------------------------------------------------------------------- |
+| `DIALOGS_DIRECTORY` | string | "data/dialogs"  | Directory where NPC dialog files are stored (relative to assets)     |
+
+**Notes:**
+
+- `DIALOGS_DIRECTORY` specifies where the NPCPlugin looks for `*_dialogs.json` files
+  - Path is relative to the assets directory
+  - Example: If `ASSETS_HANDLE` points to "assets/", then "data/dialogs" resolves to "assets/data/dialogs/"
+  - Dialog files are named `{scene}_dialogs.json` (e.g., `village_dialogs.json`)
+  - Dialogs are loaded automatically when a scene starts
+- For more details, see the [NPCPlugin documentation](../plugins/npc.md)
+
 ### Script Plugin Settings
 
 Script plugin configuration for event-driven scripting.
@@ -767,6 +784,9 @@ PARTICLE_COLOR_HEARTS: tuple[int, int, int] = (255, 105, 180)
 PARTICLE_COLOR_SPARKLES: tuple[int, int, int] = (255, 255, 100)
 PARTICLE_COLOR_TRAIL: tuple[int, int, int] = (200, 200, 255)
 PARTICLE_COLOR_BURST: tuple[int, int, int] = (255, 200, 0)
+
+# Dialog plugin settings
+DIALOGS_DIRECTORY: str = "data/dialogs"
 
 # Script plugin settings
 SCRIPTS_DIRECTORY: str = "data/scripts"

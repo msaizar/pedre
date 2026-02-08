@@ -442,6 +442,10 @@ INVENTORY_COLOR_PHOTO_BACKGROUND = (0, 0, 0)
 INVENTORY_EMPTY_BOX_ALPHA = 180
 """Transparency of empty inventory slot backgrounds (0-255)."""
 
+# Dialog settings
+DIALOGS_DIRECTORY = "data/dialogs"
+"""Directory where NPC dialog files are stored (relative to assets directory)."""
+
 # Script settings
 SCRIPTS_DIRECTORY = "data/scripts"
 """Directory where script files are stored (relative to assets directory)."""
