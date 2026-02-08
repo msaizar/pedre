@@ -408,11 +408,7 @@ class NPCPlugin(NPCBasePlugin):
         # Get dialog
         current_scene = self.context.scene_plugin.get_current_scene()
 
-        dialog_data = self.get_dialog(name, npc.dialog_level, current_scene)
-        if not dialog_data:
-            return False
-
-        dialog_config, on_condition_fail = dialog_data
+        dialog_config, on_condition_fail = self.get_dialog(name, npc.dialog_level, current_scene)
 
         if dialog_plugin:
             # If conditions failed, execute on_condition_fail actions
@@ -530,10 +526,6 @@ class NPCPlugin(NPCBasePlugin):
         candidates: list[tuple[int | str, NPCDialogConfig]] = []
 
         for state, dialog_config in available_dialogs.items():
-            # Skip the exact level we already checked
-            if state == dialog_level:
-                continue
-
             # Check if this dialog's conditions are met
             if dialog_config.conditions:
                 if self._check_dialog_conditions(dialog_config.conditions):
@@ -554,13 +546,12 @@ class NPCPlugin(NPCBasePlugin):
 
         # Fall back to numeric progression - highest level <= dialog_level
         numeric_candidates = [(s, d) for s, d in candidates if isinstance(s, int)]
-        if numeric_candidates:
-            numeric_candidates.sort(key=lambda x: x[0], reverse=True)
-            for state, dialog_config in numeric_candidates:
-                if state <= dialog_level:
-                    return dialog_config, None
+        numeric_candidates.sort(key=lambda x: x[0], reverse=True)
+        for state, dialog_config in numeric_candidates:
+            if state <= dialog_level:
+                return dialog_config, None
 
-        # Last resort: return first candidate
+        # All levels are above dialog_level, return first candidate
         return candidates[0][1], None
 
     def advance_dialog(self, npc_name: str) -> int:
@@ -700,8 +691,8 @@ class NPCPlugin(NPCBasePlugin):
                         # More waypoints remaining, NPC is still moving
                         moving = True
 
-                # Move NPC (only if distance > 0 to avoid division by zero)
-                elif distance > 0:
+                # Move NPC towards target
+                else:
                     move_distance = self.movement_speed * delta_time
                     move_distance = min(move_distance, distance)
                     npc.sprite.center_x += (dx / distance) * move_distance
