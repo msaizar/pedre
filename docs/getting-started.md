@@ -32,15 +32,16 @@ uv add pedre
 ```text
 my-rpg/
 ├── assets/
-│   ├── data/inventory-items.json
+│   ├── data/
+│   │   ├── inventory-items.json
+│   │   └── scripts/    # Event scripts JSON files
 │   ├── maps/           # Tiled .tmx files
 │   ├── images/
 │   │   └── characters/ # Sprite sheets
 │   ├── audio/
 │   │   ├── music/      # Background music
 │   │   └── sfx/        # Sound effects
-│   ├── dialogs/        # NPC dialog JSON files
-│   └── scripts/        # Event scripts JSON files
+│   └── dialogs/        # NPC dialog JSON files
 └── main.py             # Your game entry point
 ```
 
@@ -246,7 +247,7 @@ Scripts let you trigger actions when events occur. Let's make the NPC give the p
 
 ### Create Script File
 
-Create `assets/scripts/village_scripts.json`:
+Create `assets/data/scripts/village_scripts.json`:
 
 ```json
 {
@@ -410,7 +411,7 @@ The inventory plugin automatically loads this file on startup. Items with `image
 
 ### Create Collection Script
 
-Add to `assets/scripts/forest_scripts.json`:
+Add to `assets/data/scripts/forest_scripts.json`:
 
 ```json
 {
@@ -461,7 +462,7 @@ Let's make an NPC walk to different locations.
 
 ### Create Movement Script
 
-Add to `assets/scripts/village_scripts.json`:
+Add to `assets/data/scripts/village_scripts.json`:
 
 ```json
 {

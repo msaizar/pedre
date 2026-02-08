@@ -76,13 +76,19 @@ Scripts are organized by scene/map and automatically loaded when a scene starts.
 
 ## File Organization
 
-Scripts are stored in the `assets/scripts/` directory, organized by scene:
+Scripts are stored in the directory specified by the `SCRIPTS_DIRECTORY` setting (default: `assets/data/scripts/`), organized by scene:
 
 ```text
-assets/scripts/
+assets/data/scripts/
   ├── village_scripts.json
   ├── forest_scripts.json
   └── castle_scripts.json
 ```
 
 Each file contains multiple scripts related to that specific scene or map.
+
+You can customize the scripts directory in your `settings.py`:
+
+```python
+SCRIPTS_DIRECTORY = "custom_scripts"  # Relative to assets directory
+```

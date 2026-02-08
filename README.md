@@ -77,13 +77,17 @@ Project structure example:
 my_game/
 ├── main.py
 ├── settings.py
-├── assets/
-│   ├── audio/
-│   ├── data/
-│   ├── dialogs/
-│   ├── images/
-│   ├── maps/
-│   └── scripts/
+└── assets/
+    ├── audio/
+    │   ├── music/
+    │   └── sfx/
+    ├── data/
+    │   ├── inventory-items.json
+    │   └── scripts/
+    ├── dialogs/
+    ├── images/
+    │   └── characters/
+    └── maps/
 ```
 
 ```python

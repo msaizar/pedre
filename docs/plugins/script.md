@@ -11,9 +11,12 @@ Event-driven scripting plugin for cutscenes and interactive sequences.
 
 ## Configuration
 
-The ScriptPlugin uses the following setting from `pedre.conf.settings`:
+The ScriptPlugin uses the following settings from `pedre.conf.settings`:
 
-- `ASSETS_HANDLE` - Base path for asset loading (default: "assets")
+| Setting              | Type   | Default         | Description                                                  |
+| -------------------- | ------ | --------------- | ------------------------------------------------------------ |
+| `SCRIPTS_DIRECTORY`  | string | "data/scripts"  | Directory where script files are stored (relative to assets) |
+| `ASSETS_HANDLE`      | string | "assets"        | Base path for asset loading                                  |
 
 ## Public API
 
@@ -33,13 +36,19 @@ script_plugin.setup(context)  # Loads all scripts from scripts directory
 
 **Script File Naming:**
 
-Script files should follow the naming pattern `*_scripts.json`:
+Script files should follow the naming pattern `*_scripts.json` and be placed in the directory specified by `SCRIPTS_DIRECTORY` (default: `data/scripts`):
 
 ```text
-assets/scripts/
+assets/data/scripts/
   ├── village_scripts.json
   ├── forest_scripts.json
   └── castle_scripts.json
+```
+
+You can customize the scripts directory in your `settings.py`:
+
+```python
+SCRIPTS_DIRECTORY = "custom_scripts"  # Relative to assets directory
 ```
 
 **Notes:**
@@ -225,7 +234,7 @@ script = Script(
 
 ### Script JSON Format
 
-Scripts are defined in JSON files located in `assets/scripts/` with the naming pattern `*_scripts.json`:
+Scripts are defined in JSON files located in `assets/data/scripts/` with the naming pattern `*_scripts.json`:
 
 ```json
 {
@@ -336,7 +345,7 @@ For available condition types, see [Conditions](../scripting/conditions.md).
 
 All scripts are loaded globally during plugin initialization:
 
-1. ScriptPlugin scans `assets/scripts/` for all `*_scripts.json` files
+1. ScriptPlugin scans the `SCRIPTS_DIRECTORY` (default: `assets/data/scripts/`) for all `*_scripts.json` files
 2. All scripts are loaded into a single registry
 3. Event triggers are registered with the EventBus
 4. Scripts can be referenced in conditions across all scenes
