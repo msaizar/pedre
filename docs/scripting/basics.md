@@ -72,13 +72,19 @@ Every script follows this basic structure:
 
 ## File Location
 
-Scripts are organized by scene/map in the `assets/scripts/` directory:
+Scripts are organized by scene/map in the directory specified by the `SCRIPTS_DIRECTORY` setting (default: `assets/data/scripts/`):
 
 ```text
-assets/scripts/
+assets/data/scripts/
   ├── village_scripts.json
   ├── forest_scripts.json
   └── castle_scripts.json
+```
+
+You can customize the scripts directory in your `settings.py`:
+
+```python
+SCRIPTS_DIRECTORY = "custom_scripts"  # Relative to assets directory
 ```
 
 ### File Organization Tips
@@ -92,7 +98,7 @@ You can organize scripts by:
 Example organization:
 
 ```text
-assets/scripts/
+assets/data/scripts/
   ├── village_main_quest.json
   ├── village_side_quests.json
   ├── village_npcs.json
@@ -101,7 +107,7 @@ assets/scripts/
 
 ## Loading Scripts
 
-All scripts are automatically loaded globally when the ScriptPlugin initializes during plugin setup. The plugin scans the `assets/scripts/` directory for all files matching the pattern `*_scripts.json` and loads them into a single registry.
+All scripts are automatically loaded globally when the ScriptPlugin initializes during plugin setup. The plugin scans the scripts directory (configured via `SCRIPTS_DIRECTORY` setting, default: `assets/data/scripts/`) for all files matching the pattern `*_scripts.json` and loads them into a single registry.
 
 **Global Loading:**
 

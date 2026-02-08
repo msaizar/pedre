@@ -142,6 +142,9 @@ SAVE_QUICK_SAVE_KEY: str
 SAVE_QUICK_LOAD_KEY: str
 SAVE_SFX_FILE: str
 
+# Script settings
+SCRIPTS_DIRECTORY: str
+
 # Installed systems
 INSTALLED_PLUGINS: list[str]
 

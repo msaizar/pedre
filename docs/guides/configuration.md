@@ -505,6 +505,24 @@ Asset management configuration.
   - In PyInstaller bundles, uses the bundled assets directory
 - Typically both settings use the same value ("assets"), but can differ for flexibility
 
+### Script Plugin Settings
+
+Script plugin configuration for event-driven scripting.
+
+| Setting             | Type   | Default         | Description                                                       |
+| ------------------- | ------ | --------------- | ----------------------------------------------------------------- |
+| `SCRIPTS_DIRECTORY` | string | "data/scripts"  | Directory where script files are stored (relative to assets)      |
+
+**Notes:**
+
+- `SCRIPTS_DIRECTORY` specifies where the ScriptPlugin looks for `*_scripts.json` files
+  - Path is relative to the assets directory
+  - Example: If `ASSETS_HANDLE` points to "assets/", then "data/scripts" resolves to "assets/data/scripts/"
+  - All script files matching the pattern `*_scripts.json` in this directory are loaded automatically
+- Scripts are loaded globally during plugin initialization and made available across all scenes
+- The `scene` field in each script definition controls when it can execute
+- For more details, see the [ScriptPlugin documentation](../plugins/script.md)
+
 ### Save Plugin Settings
 
 Save plugin configuration for game persistence.
@@ -749,6 +767,9 @@ PARTICLE_COLOR_HEARTS: tuple[int, int, int] = (255, 105, 180)
 PARTICLE_COLOR_SPARKLES: tuple[int, int, int] = (255, 255, 100)
 PARTICLE_COLOR_TRAIL: tuple[int, int, int] = (200, 200, 255)
 PARTICLE_COLOR_BURST: tuple[int, int, int] = (255, 200, 0)
+
+# Script plugin settings
+SCRIPTS_DIRECTORY: str = "data/scripts"
 
 # Save plugin settings
 SAVE_FOLDER: str = "saves"

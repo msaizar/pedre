@@ -305,7 +305,7 @@ class ScriptPlugin(ScriptBasePlugin):
         The scene field in each script definition controls when it can actually execute.
         """
         try:
-            scripts_dir = Path(asset_path("scripts", settings.ASSETS_HANDLE))
+            scripts_dir = Path(asset_path(settings.SCRIPTS_DIRECTORY, settings.ASSETS_HANDLE))
             if not scripts_dir.exists():
                 logger.warning("Scripts directory not found: %s", scripts_dir)
                 return
