@@ -442,6 +442,10 @@ INVENTORY_COLOR_PHOTO_BACKGROUND = (0, 0, 0)
 INVENTORY_EMPTY_BOX_ALPHA = 180
 """Transparency of empty inventory slot backgrounds (0-255)."""
 
+# Script settings
+SCRIPTS_DIRECTORY = "data/scripts"
+"""Directory where script files are stored (relative to assets directory)."""
+
 # Installed plugins (like Django's INSTALLED_APPS)
 INSTALLED_PLUGINS = [
     "pedre.plugins.audio",
