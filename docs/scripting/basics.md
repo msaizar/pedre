@@ -205,7 +205,7 @@ Break long action sequences into multiple scripts using `script_complete`:
     {"type": "dialog", ...},
     {"type": "move_npc", ...},
     {"type": "play_music", ...},
-    {"type": "reveal_npcs", ...}
+    {"type": "start_appear_animation", ...}
     // 20 more actions...
   ]
 }

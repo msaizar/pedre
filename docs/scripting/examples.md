@@ -111,7 +111,7 @@ Coordinating multiple NPCs with movement and dialog.
         "type": "wait_for_dialog_close"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["guard", "merchant"]
       },
       {
@@ -230,7 +230,7 @@ Dramatic boss appearance with music and effects.
         "interactive_object": "altar"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["boss"]
       },
       {
@@ -487,7 +487,7 @@ Different responses based on whether player has required item.
         "npc": "guard"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["king"]
       }
     ]
@@ -672,7 +672,7 @@ Complex cutscene with multiple stages.
         "type": "wait_for_dialog_close"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["dark_knight_1", "dark_knight_2"]
       }
     ]
@@ -712,7 +712,7 @@ Time-gated event that unlocks new NPCs.
         "type": "wait_for_dialog_close"
       },
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["merchant_1", "merchant_2", "merchant_3"]
       },
       {

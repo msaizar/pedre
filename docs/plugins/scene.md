@@ -796,7 +796,7 @@ context.scene_plugin.request_transition("castle.tmx", "main_entrance")
             {"type": "play_music", "file": "forest_ambience.ogg"},
             {"type": "dialog", "speaker": "Narrator", "text": ["The forest is dark and mysterious..."]},
             {"type": "wait_for_dialog_close"},
-            {"type": "reveal_npcs", "npcs": ["forest_spirit"]}
+            {"type": "start_appear_animation", "npcs": ["forest_spirit"]}
         ]
     }
 }

@@ -534,7 +534,7 @@ class AnimatedNPC(AnimatedSprite):
         """Start the appear animation (invisible to visible).
 
         Triggers the appear animation which transitions the sprite from invisible to visible.
-        This is typically used when revealing NPCs through scripts (RevealNPCsAction).
+        This is typically used when revealing NPCs through scripts (StartAppearAnimationAction).
 
         The animation plays once and sets appear_complete = True when finished. The sprite
         then transitions to idle animation automatically.

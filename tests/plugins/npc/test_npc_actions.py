@@ -8,9 +8,9 @@ from unittest.mock import MagicMock
 from pedre.plugins.npc.actions import (
     AdvanceDialogAction,
     MoveNPCAction,
-    RevealNPCsAction,
     SetCurrentNPCAction,
     SetDialogLevelAction,
+    StartAppearAnimationAction,
     StartDisappearAnimationAction,
     WaitForNPCMovementAction,
     WaitForNPCsAppearAction,
@@ -132,8 +132,8 @@ class TestMoveNPCAction(unittest.TestCase):
         assert action.waypoint == ""
 
 
-class TestRevealNPCsAction(unittest.TestCase):
-    """Test Suite for RevealNPCsAction."""
+class TestStartAppearAnimationAction(unittest.TestCase):
+    """Test Suite for StartAppearAnimationAction."""
 
     def setUp(self) -> None:
         """Set up the test context."""
@@ -142,14 +142,14 @@ class TestRevealNPCsAction(unittest.TestCase):
         self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
-        """Test proper initialization of RevealNPCsAction."""
-        action = RevealNPCsAction(npc_names=["martin", "yema"])
+        """Test proper initialization of StartAppearAnimationAction."""
+        action = StartAppearAnimationAction(npc_names=["martin", "yema"])
         assert action.npc_names == ["martin", "yema"]
         assert not action.executed
 
     def test_execute(self) -> None:
-        """Test executing reveal action."""
-        action = RevealNPCsAction(npc_names=["martin", "yema"])
+        """Test executing appear animation action."""
+        action = StartAppearAnimationAction(npc_names=["martin", "yema"])
 
         # Execute action
         result = action.execute(self.mock_context)
@@ -162,8 +162,8 @@ class TestRevealNPCsAction(unittest.TestCase):
         self.mock_npc_plugin.show_npcs.assert_called_once_with(["martin", "yema"])
 
     def test_execute_idempotent(self) -> None:
-        """Test that executing multiple times doesn't repeat the reveal."""
-        action = RevealNPCsAction(npc_names=["martin"])
+        """Test that executing multiple times doesn't repeat the appear animation."""
+        action = StartAppearAnimationAction(npc_names=["martin"])
 
         # Execute twice
         action.execute(self.mock_context)
@@ -174,7 +174,7 @@ class TestRevealNPCsAction(unittest.TestCase):
 
     def test_reset(self) -> None:
         """Test resetting the action."""
-        action = RevealNPCsAction(npc_names=["martin"])
+        action = StartAppearAnimationAction(npc_names=["martin"])
         action.executed = True
 
         action.reset()
@@ -185,7 +185,7 @@ class TestRevealNPCsAction(unittest.TestCase):
         """Test creating action from dictionary."""
         data = {"npcs": ["martin", "yema", "romi"]}
 
-        action = RevealNPCsAction.from_dict(data)
+        action = StartAppearAnimationAction.from_dict(data)
 
         assert action.npc_names == ["martin", "yema", "romi"]
 
@@ -193,7 +193,7 @@ class TestRevealNPCsAction(unittest.TestCase):
         """Test creating action from dictionary with missing fields."""
         data = {}
 
-        action = RevealNPCsAction.from_dict(data)
+        action = StartAppearAnimationAction.from_dict(data)
 
         assert action.npc_names == []
 

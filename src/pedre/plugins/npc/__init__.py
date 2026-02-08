@@ -11,7 +11,7 @@ The NPC plugin consists of:
 - AnimatedNPC: Animated sprite class for NPCs with special animations
 
 Actions (registered via INSTALLED_ACTIONS):
-- AdvanceDialogAction, MoveNPCAction, RevealNPCsAction, SetCurrentNPCAction
+- AdvanceDialogAction, MoveNPCAction, StartAppearAnimationAction, SetCurrentNPCAction
 - SetDialogLevelAction, StartDisappearAnimationAction, WaitForNPCMovementAction
 - WaitForNPCsAppearAction, WaitForNPCsDisappearAction
 

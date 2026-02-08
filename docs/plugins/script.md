@@ -402,7 +402,7 @@ Published when a script completes execution.
       "script": "intro_cutscene"
     },
     "actions": [
-      {"type": "reveal_npcs", "npcs": ["guard"]}
+      {"type": "start_appear_animation", "npcs": ["guard"]}
     ]
   }
 }
@@ -509,7 +509,7 @@ Check if a specific script has fully completed all its actions.
     "run_once": true,
     "actions": [
       {"type": "play_sfx", "file": "magic.wav"},
-      {"type": "reveal_npcs", "npcs": ["spirit"]},
+      {"type": "start_appear_animation", "npcs": ["spirit"]},
       {"type": "wait_npcs_appear", "npcs": ["spirit"]}
     ]
   },

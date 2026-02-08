@@ -709,7 +709,7 @@ Triggered when a new scene/map finishes loading.
     "run_once": true,
     "actions": [
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["king", "advisor"]
       },
       {
@@ -742,7 +742,7 @@ Triggered when another script finishes executing.
     },
     "actions": [
       {
-        "type": "reveal_npcs",
+        "type": "start_appear_animation",
         "npcs": ["guard", "captain"]
       }
     ]
