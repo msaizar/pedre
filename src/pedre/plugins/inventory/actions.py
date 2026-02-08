@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("wait_inventory_access")
+@ActionRegistry.register("wait_for_inventory_access")
 class WaitForInventoryAccessAction(WaitForConditionAction):
     """Wait for inventory to be accessed.
 
@@ -33,7 +33,7 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
         [
             {"type": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
             {"type": "wait_for_dialog_close"},
-            {"type": "wait_inventory_access"},
+            {"type": "wait_for_inventory_access"},
             {"type": "dialog", "speaker": "martin", "text": ["Great job!"]}
         ]
     """

@@ -754,7 +754,7 @@ Consume an item from the player's inventory.
 
 Wait for inventory to be accessed.
 
-**Type:** `wait_inventory_access`
+**Type:** `wait_for_inventory_access`
 
 **Parameters:** None
 
@@ -764,7 +764,7 @@ Wait for inventory to be accessed.
 [
     {"type": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
     {"type": "wait_for_dialog_close"},
-    {"type": "wait_inventory_access"},
+    {"type": "wait_for_inventory_access"},
     {"type": "dialog", "speaker": "martin", "text": ["Great job!"]}
 ]
 ```
@@ -996,7 +996,7 @@ INSTALLED_PLUGINS = [
             {"type": "acquire_item", "item_id": "beach_photo"},
             {"type": "dialog", "speaker": "Martin", "text": ["Check your inventory (press I)!"]},
             {"type": "wait_for_dialog_close"},
-            {"type": "wait_inventory_access"},
+            {"type": "wait_for_inventory_access"},
             {"type": "dialog", "speaker": "Martin", "text": ["Great! You can view the photo by pressing V."]},
             {"type": "wait_for_dialog_close"},
             {"type": "advance_dialog", "npc": "martin"}
