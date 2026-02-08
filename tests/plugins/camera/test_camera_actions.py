@@ -65,6 +65,20 @@ class TestFollowPlayerAction(unittest.TestCase):
         action.reset()
         assert action.executed is False
 
+    def test_execute_twice_only_runs_once(self) -> None:
+        """Test that executing twice only calls plugin once."""
+        action = FollowPlayerAction(smooth=True)
+        context = MagicMock()
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
+
+        # Execute twice
+        action.execute(context)
+        action.execute(context)
+
+        # Should only be called once
+        camera_plugin.set_follow_player.assert_called_once_with(smooth=True)
+
 
 class TestFollowNPCAction(unittest.TestCase):
     """Test FollowNPCAction."""
@@ -136,13 +150,32 @@ class TestFollowNPCAction(unittest.TestCase):
         action = FollowNPCAction("martin")
         context = MagicMock()
         camera_plugin = MagicMock()
+        npc_plugin = MagicMock()
         context.camera_plugin = camera_plugin
+        context.npc_plugin = npc_plugin
 
         action.execute(context)
         assert action.executed is True
 
         action.reset()
         assert action.executed is False
+
+    def test_execute_twice_only_runs_once(self) -> None:
+        """Test that executing twice only calls plugin once."""
+        action = FollowNPCAction("martin", smooth=True)
+        context = MagicMock()
+        camera_plugin = MagicMock()
+        npc_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
+        context.npc_plugin = npc_plugin
+        npc_plugin.get_npc_by_name.return_value = MagicMock()
+
+        # Execute twice
+        action.execute(context)
+        action.execute(context)
+
+        # Should only be called once
+        camera_plugin.set_follow_npc.assert_called_once_with("martin", smooth=True)
 
 
 class TestStopCameraFollowAction(unittest.TestCase):
@@ -177,6 +210,20 @@ class TestStopCameraFollowAction(unittest.TestCase):
 
         action.reset()
         assert action.executed is False
+
+    def test_execute_twice_only_runs_once(self) -> None:
+        """Test that executing twice only calls plugin once."""
+        action = StopCameraFollowAction()
+        context = MagicMock()
+        camera_plugin = MagicMock()
+        context.camera_plugin = camera_plugin
+
+        # Execute twice
+        action.execute(context)
+        action.execute(context)
+
+        # Should only be called once
+        camera_plugin.stop_follow.assert_called_once()
 
 
 if __name__ == "__main__":

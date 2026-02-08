@@ -544,6 +544,29 @@ class TestAnimatedNPC(unittest.TestCase):
             npc.is_interacting = False
             npc.current_frame = 0
 
+    def test_interact_completion_without_idle_animation(self) -> None:
+        """Test interact animation completion when no idle animation exists for direction."""
+        npc = AnimatedNPC(
+            str(self.sprite_sheet_path),
+            interact_down_frames=3,
+            interact_down_row=2,
+            tile_size=16,
+        )
+
+        npc.current_direction = "down"
+        npc.animation_speed = 0.1
+        npc.start_interact_animation()
+
+        # Advance through all frames to complete the animation
+        for _ in range(3):
+            npc.update_animation(delta_time=0.1)
+
+        # Should complete but not change texture (no idle to fall back to)
+        assert not npc.is_interacting
+        assert npc.interact_complete
+        assert npc.current_frame == 0
+        # Texture should remain as it was since no idle animation exists
+
 
 if __name__ == "__main__":
     unittest.main()

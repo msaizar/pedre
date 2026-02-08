@@ -431,6 +431,141 @@ class TestEmitParticlesAction(unittest.TestCase):
         assert isinstance(action, EmitParticlesAction)
         assert action.player is False
 
+    def test_execute_unknown_particle_type(self) -> None:
+        """Test execution with unknown particle type (no matching condition)."""
+        action = EmitParticlesAction("unknown_type", player=True)
+
+        # Create mock context
+        mock_context = MagicMock()
+        mock_player_plugin = MagicMock()
+        mock_particle_plugin = MagicMock()
+        mock_player_sprite = MagicMock()
+        mock_player_sprite.center_x = 150.0
+        mock_player_sprite.center_y = 250.0
+
+        mock_context.player_plugin = mock_player_plugin
+        mock_context.particle_plugin = mock_particle_plugin
+        mock_player_plugin.get_player_sprite.return_value = mock_player_sprite
+
+        # Execute action
+        result = action.execute(mock_context)
+
+        # Should return True and mark as executed even though no particle type matched
+        assert result is True
+        assert action.executed is True
+
+        # No particle emission methods should be called
+        mock_particle_plugin.emit_hearts.assert_not_called()
+        mock_particle_plugin.emit_sparkles.assert_not_called()
+        mock_particle_plugin.emit_trail.assert_not_called()
+        mock_particle_plugin.emit_burst.assert_not_called()
+
+    def test_execute_burst_at_interactive_object_with_color(self) -> None:
+        """Test emitting burst at interactive object with custom color."""
+        action = EmitParticlesAction("burst", interactive_object="chest", color=(255, 215, 0))
+
+        # Create mock context
+        mock_context = MagicMock()
+        mock_interaction_plugin = MagicMock()
+        mock_particle_plugin = MagicMock()
+        mock_obj_sprite = MagicMock()
+        mock_obj_sprite.center_x = 500.0
+        mock_obj_sprite.center_y = 600.0
+        mock_interactive_obj = MagicMock()
+        mock_interactive_obj.sprite = mock_obj_sprite
+
+        mock_context.interaction_plugin = mock_interaction_plugin
+        mock_context.particle_plugin = mock_particle_plugin
+        mock_interaction_plugin.get_interactive_objects.return_value = {"chest": mock_interactive_obj}
+
+        # Execute action
+        result = action.execute(mock_context)
+
+        assert result is True
+        mock_particle_plugin.emit_burst.assert_called_once_with(500.0, 600.0, color=(255, 215, 0))
+        assert action.executed is True
+
+    def test_execute_unknown_particle_type_at_interactive_object(self) -> None:
+        """Test execution with unknown particle type at interactive object."""
+        action = EmitParticlesAction("unknown", interactive_object="waypoint")
+
+        # Create mock context
+        mock_context = MagicMock()
+        mock_interaction_plugin = MagicMock()
+        mock_particle_plugin = MagicMock()
+        mock_obj_sprite = MagicMock()
+        mock_obj_sprite.center_x = 300.0
+        mock_obj_sprite.center_y = 400.0
+        mock_interactive_obj = MagicMock()
+        mock_interactive_obj.sprite = mock_obj_sprite
+
+        mock_context.interaction_plugin = mock_interaction_plugin
+        mock_context.particle_plugin = mock_particle_plugin
+        mock_interaction_plugin.get_interactive_objects.return_value = {"waypoint": mock_interactive_obj}
+
+        # Execute action
+        result = action.execute(mock_context)
+
+        # Should return True and mark as executed even though no particle type matched
+        assert result is True
+        assert action.executed is True
+
+        # No particle emission methods should be called
+        mock_particle_plugin.emit_hearts.assert_not_called()
+        mock_particle_plugin.emit_sparkles.assert_not_called()
+        mock_particle_plugin.emit_trail.assert_not_called()
+        mock_particle_plugin.emit_burst.assert_not_called()
+
+    def test_execute_hearts_at_interactive_object(self) -> None:
+        """Test emitting hearts at interactive object location."""
+        action = EmitParticlesAction("hearts", interactive_object="shrine")
+
+        # Create mock context
+        mock_context = MagicMock()
+        mock_interaction_plugin = MagicMock()
+        mock_particle_plugin = MagicMock()
+        mock_obj_sprite = MagicMock()
+        mock_obj_sprite.center_x = 250.0
+        mock_obj_sprite.center_y = 350.0
+        mock_interactive_obj = MagicMock()
+        mock_interactive_obj.sprite = mock_obj_sprite
+
+        mock_context.interaction_plugin = mock_interaction_plugin
+        mock_context.particle_plugin = mock_particle_plugin
+        mock_interaction_plugin.get_interactive_objects.return_value = {"shrine": mock_interactive_obj}
+
+        # Execute action
+        result = action.execute(mock_context)
+
+        assert result is True
+        mock_particle_plugin.emit_hearts.assert_called_once_with(250.0, 350.0)
+        assert action.executed is True
+
+    def test_execute_sparkles_at_interactive_object(self) -> None:
+        """Test emitting sparkles at interactive object location."""
+        action = EmitParticlesAction("sparkles", interactive_object="portal")
+
+        # Create mock context
+        mock_context = MagicMock()
+        mock_interaction_plugin = MagicMock()
+        mock_particle_plugin = MagicMock()
+        mock_obj_sprite = MagicMock()
+        mock_obj_sprite.center_x = 450.0
+        mock_obj_sprite.center_y = 550.0
+        mock_interactive_obj = MagicMock()
+        mock_interactive_obj.sprite = mock_obj_sprite
+
+        mock_context.interaction_plugin = mock_interaction_plugin
+        mock_context.particle_plugin = mock_particle_plugin
+        mock_interaction_plugin.get_interactive_objects.return_value = {"portal": mock_interactive_obj}
+
+        # Execute action
+        result = action.execute(mock_context)
+
+        assert result is True
+        mock_particle_plugin.emit_sparkles.assert_called_once_with(450.0, 550.0)
+        assert action.executed is True
+
 
 if __name__ == "__main__":
     unittest.main()

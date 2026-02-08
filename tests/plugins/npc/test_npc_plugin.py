@@ -1796,6 +1796,69 @@ class TestNPCPlugin(unittest.TestCase):
         assert npc_sprite.center_x == 300.0
         assert npc_sprite.center_y == 400.0
 
+    def test_on_key_press_nearby_npc_interact_fails(self) -> None:
+        """Test on_key_press when nearby NPC exists but interact_with_npc returns False."""
+        self.mock_context.player_plugin = MagicMock()
+        player_sprite = MagicMock()
+        player_sprite.center_x = 100
+        player_sprite.center_y = 100
+        self.mock_context.player_plugin.get_player_sprite.return_value = player_sprite
+
+        npc_sprite = MagicMock()
+        npc_sprite.center_x = 110
+        npc_sprite.center_y = 100
+        npc_sprite.visible = True
+        self.plugin.register_npc(npc_sprite, "nearby_npc")
+
+        with (
+            patch("pedre.plugins.npc.plugin.matches_key", return_value=True),
+            patch("pedre.plugins.npc.plugin.arcade.get_distance_between_sprites", return_value=10.0),
+            patch.object(self.plugin, "interact_with_npc", return_value=False),
+        ):
+            result = self.plugin.on_key_press(123, 0)
+
+            assert result is False
+
+    def test_mark_npc_as_interacted_scene_already_exists(self) -> None:
+        """Test mark_npc_as_interacted when scene already has an interacted set."""
+        self.plugin.interacted_npcs["village"] = {"alice"}
+
+        self.plugin.mark_npc_as_interacted("bob", "village")
+
+        assert self.plugin.interacted_npcs["village"] == {"alice", "bob"}
+
+    def test_update_npc_movement_distance_exactly_zero(self) -> None:
+        """Test update when NPC is moving but distance to waypoint is exactly 0 and above threshold."""
+        npc_sprite = MagicMock()
+        npc_sprite.center_x = 100.0
+        npc_sprite.center_y = 100.0
+        self.plugin.register_npc(npc_sprite, "stuck")
+
+        self.mock_context.event_bus = MagicMock()
+        self.plugin.npcs["stuck"].path = deque([(200.0, 100.0)])
+        self.plugin.npcs["stuck"].is_moving = True
+
+        self.plugin.update(0.016)
+
+        # NPC should be actively moving towards the waypoint
+        assert npc_sprite.center_x > 100.0
+        assert self.plugin.npcs["stuck"].is_moving is True
+
+    def test_apply_entity_state_without_interacted_npcs(self) -> None:
+        """Test apply_entity_state when state has no interacted_npcs key."""
+        npc_sprite = MagicMock(spec=AnimatedNPC)
+        self.plugin.register_npc(npc_sprite, "npc1")
+        self.plugin.interacted_npcs = {"old_scene": {"old_npc"}}
+
+        save_data = {
+            "npcs": {"npc1": {"x": 10.0, "y": 20.0, "visible": True, "dialog_level": 0}},
+        }
+
+        self.plugin.apply_entity_state(save_data)
+
+        # interacted_npcs should remain unchanged since key was missing
+        assert self.plugin.interacted_npcs == {"old_scene": {"old_npc"}}
+
 
 if __name__ == "__main__":
     unittest.main()

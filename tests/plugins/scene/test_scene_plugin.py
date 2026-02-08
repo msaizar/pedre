@@ -235,6 +235,14 @@ class TestScenePlugin(unittest.TestCase):
         assert mock_sprite1 in self.plugin.wall_list
         assert mock_sprite2 in self.plugin.wall_list
 
+    def test_extract_collision_layers_none_scene(self) -> None:
+        """Test extracting collision layers when arcade scene is None."""
+        wall_list = self.plugin._extract_collision_layers(None)
+
+        # Should return empty sprite list
+        assert isinstance(wall_list, arcade.SpriteList)
+        assert len(wall_list) == 0
+
     def test_load_plugins_from_tiled(self) -> None:
         """Test loading plugins from tiled data."""
         # Create mock plugins with load_from_tiled methods
@@ -335,6 +343,35 @@ class TestScenePlugin(unittest.TestCase):
         # Verify visible NPC was added to wall list
         assert visible_npc_sprite in self.plugin.wall_list
 
+    @patch.object(ScenePlugin, "_load_map")
+    def test_load_level_npc_already_in_wall_list(self, mock_load_map: MagicMock) -> None:
+        """Test load level handles NPC that's already in wall list."""
+        # Create mock NPC that's visible
+        visible_npc_sprite = MagicMock()
+        visible_npc_sprite.visible = True
+        visible_npc = MagicMock()
+        visible_npc.sprite = visible_npc_sprite
+
+        self.mock_npc_plugin.get_npcs.return_value = {
+            "npc1": visible_npc,
+        }
+
+        # NPC is already in wall list
+        self.plugin.wall_list.append(visible_npc_sprite)
+        initial_wall_list_length = len(self.plugin.wall_list)
+
+        # Mock NPC plugin methods
+        self.mock_npc_plugin.load_scene_dialogs = MagicMock()
+
+        self.plugin.load_level("test_map.tmx", initial=True)
+
+        # Verify _load_map was called
+        mock_load_map.assert_called_once_with("test_map.tmx")
+
+        # Verify NPC is still in wall list and wasn't duplicated
+        assert visible_npc_sprite in self.plugin.wall_list
+        assert len(self.plugin.wall_list) == initial_wall_list_length
+
     def test_update_no_transition(self) -> None:
         """Test update when no transition is happening."""
         self.plugin.transition_state = TransitionState.NONE
@@ -395,6 +432,17 @@ class TestScenePlugin(unittest.TestCase):
         # Should complete fade in
         assert self.plugin.transition_alpha == 0.0
         assert self.plugin.transition_state == TransitionState.NONE
+
+    def test_update_loading_state(self) -> None:
+        """Test update handles LOADING state (though typically brief)."""
+        self.plugin.transition_state = TransitionState.LOADING
+        self.plugin.transition_alpha = 1.0
+
+        self.plugin.update(0.016)
+
+        # Should remain in LOADING state (not handled by update)
+        assert self.plugin.transition_state == TransitionState.LOADING
+        assert self.plugin.transition_alpha == 1.0
 
     @patch.object(ScenePlugin, "load_level")
     def test_perform_map_switch(self, mock_load_level: MagicMock) -> None:

@@ -5,7 +5,7 @@ locations or following NPCs.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
@@ -134,10 +134,11 @@ class EmitParticlesAction(Action):
                     logger.warning("EmitParticlesAction: NPC '%s' not found", self.npc_name)
                     return True
 
-            elif self.interactive_object:
+            else:  # self.interactive_object
                 interaction_plugin = context.interaction_plugin
                 # Lowercase for case-insensitive matching
-                obj_name = self.interactive_object.lower()
+                # At this point, validation guarantees interactive_object is a string
+                obj_name = cast("str", self.interactive_object).lower()
                 interactive_obj = interaction_plugin.get_interactive_objects().get(obj_name)
                 if interactive_obj:
                     emit_x = interactive_obj.sprite.center_x
@@ -146,32 +147,32 @@ class EmitParticlesAction(Action):
                     logger.warning("EmitParticlesAction: Interactive object '%s' not found", self.interactive_object)
                     return True
 
-            # Emit particles
-            if emit_x is not None and emit_y is not None:
-                particle_plugin = context.particle_plugin
-                if self.particle_type == "hearts":
-                    if self.color:
-                        particle_plugin.emit_hearts(emit_x, emit_y, color=self.color)
-                    else:
-                        particle_plugin.emit_hearts(emit_x, emit_y)
-                elif self.particle_type == "sparkles":
-                    if self.color:
-                        particle_plugin.emit_sparkles(emit_x, emit_y, color=self.color)
-                    else:
-                        particle_plugin.emit_sparkles(emit_x, emit_y)
-                elif self.particle_type == "trail":
-                    if self.color:
-                        particle_plugin.emit_trail(emit_x, emit_y, color=self.color)
-                    else:
-                        particle_plugin.emit_trail(emit_x, emit_y)
-                elif self.particle_type == "burst":
-                    if self.color:
-                        particle_plugin.emit_burst(emit_x, emit_y, color=self.color)
-                    else:
-                        particle_plugin.emit_burst(emit_x, emit_y)
+            # Emit particles - emit_x and emit_y are guaranteed to be set here
+            # because all paths above either set them or return early
+            particle_plugin = context.particle_plugin
+            if self.particle_type == "hearts":
+                if self.color:
+                    particle_plugin.emit_hearts(emit_x, emit_y, color=self.color)
+                else:
+                    particle_plugin.emit_hearts(emit_x, emit_y)
+            elif self.particle_type == "sparkles":
+                if self.color:
+                    particle_plugin.emit_sparkles(emit_x, emit_y, color=self.color)
+                else:
+                    particle_plugin.emit_sparkles(emit_x, emit_y)
+            elif self.particle_type == "trail":
+                if self.color:
+                    particle_plugin.emit_trail(emit_x, emit_y, color=self.color)
+                else:
+                    particle_plugin.emit_trail(emit_x, emit_y)
+            elif self.particle_type == "burst":
+                if self.color:
+                    particle_plugin.emit_burst(emit_x, emit_y, color=self.color)
+                else:
+                    particle_plugin.emit_burst(emit_x, emit_y)
 
-                self.executed = True
-                logger.debug("EmitParticlesAction: Emitted %s at (%s, %s)", self.particle_type, emit_x, emit_y)
+            self.executed = True
+            logger.debug("EmitParticlesAction: Emitted %s at (%s, %s)", self.particle_type, emit_x, emit_y)
 
         return True
 

@@ -86,6 +86,19 @@ class TestPhysicsPlugin(unittest.TestCase):
         mock_engine_cls.assert_not_called()
         assert self.plugin._needs_recreate is False
 
+    @patch("pedre.plugins.physics.plugin.arcade.PhysicsEngineSimple")
+    def test_update_with_no_physics_engine(self, mock_engine_cls: MagicMock) -> None:
+        """Test update handles missing physics engine gracefully."""
+        self.mock_player_plugin.get_player_sprite.return_value = None
+
+        self.plugin.setup(self.mock_context)
+        # Update should not crash even though physics_engine is None
+        self.plugin.update(1.0)
+
+        assert self.plugin.physics_engine is None
+        # Verify engine was never created since player sprite is None
+        mock_engine_cls.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

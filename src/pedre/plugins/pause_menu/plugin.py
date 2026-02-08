@@ -256,6 +256,9 @@ class PauseMenuPlugin(PauseMenuBasePlugin):
             if self.context and hasattr(self.context, "window"):
                 arcade.close_window()
             logger.debug("Exit game")
+        else:
+            # This should never happen as all enum values are handled above
+            logger.error("Unknown menu option: %s", option)
 
     def _show_new_game_confirmation(self) -> None:
         """Show confirmation overlay for starting a new game."""

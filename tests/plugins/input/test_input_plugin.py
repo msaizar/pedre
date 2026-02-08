@@ -143,6 +143,30 @@ class TestInputPlugin(unittest.TestCase):
         self.plugin.restore_save_state(state)
         assert self.plugin.movement_speed == 999.0
 
+    def test_cleanup(self) -> None:
+        """Test cleanup clears all pressed keys."""
+        # Add some keys
+        self.plugin.keys_pressed = {arcade.key.W, arcade.key.D, arcade.key.SPACE}
+
+        # Cleanup
+        self.plugin.cleanup()
+
+        assert self.plugin.keys_pressed == set()
+
+    def test_pause_menu_not_shown_when_already_showing(self) -> None:
+        """Test that pause menu is not shown when already showing."""
+        # Setup mock pause menu plugin that's already showing
+        mock_pause_menu = MagicMock()
+        mock_pause_menu.showing = True
+        self.mock_context.pause_menu_plugin = mock_pause_menu
+
+        handled = self.plugin.on_key_press(arcade.key.ESCAPE, 0)
+
+        # Should still handle the key press
+        assert handled is True
+        # But should not call show() since it's already showing
+        mock_pause_menu.show.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

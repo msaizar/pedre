@@ -716,6 +716,25 @@ class TestAudioPlugin(unittest.TestCase):
         assert self.plugin.music_enabled is True  # Unchanged
         assert self.plugin.sfx_enabled is True  # Unchanged
 
+    def test_from_dict_without_music_volume(self) -> None:
+        """Test loading audio settings without music_volume key."""
+        # Set initial values
+        self.plugin.music_volume = 0.5
+        self.plugin.sfx_volume = 0.7
+        self.plugin.music_enabled = True
+        self.plugin.sfx_enabled = True
+
+        # Load data without music_volume to test branch coverage
+        data = {"sfx_volume": 0.9}
+
+        self.plugin.from_dict(data)
+
+        # Only sfx_volume should change
+        assert self.plugin.music_volume == 0.5  # Unchanged
+        assert self.plugin.sfx_volume == 0.9
+        assert self.plugin.music_enabled is True  # Unchanged
+        assert self.plugin.sfx_enabled is True  # Unchanged
+
     def test_get_save_state(self) -> None:
         """Test get_save_state delegates to to_dict."""
         self.plugin.music_volume = 0.6
