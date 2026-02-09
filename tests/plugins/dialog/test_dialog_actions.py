@@ -222,6 +222,47 @@ class TestDialogActionValidation(unittest.TestCase):
         assert any("'text'" in e for e in errors)
         assert any("'speaker'" in e for e in errors)
 
+    def test_validate_params_text_wrong_type_not_list(self) -> None:
+        """Test validate_params detects text field that is not a list."""
+        data = {"text": "not a list", "speaker": "TestNPC"}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'text' must be a list" in errors[0]
+
+    def test_validate_params_text_items_not_strings(self) -> None:
+        """Test validate_params detects non-string items in text list."""
+        data = {"text": [123, 456], "speaker": "TestNPC"}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'text' items must be strings" in errors[0]
+
+    def test_validate_params_speaker_wrong_type(self) -> None:
+        """Test validate_params detects speaker field that is not a string."""
+        data = {"text": ["Hello!"], "speaker": 123}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'speaker' must be a string" in errors[0]
+
+    def test_validate_params_instant_wrong_type(self) -> None:
+        """Test validate_params detects instant field that is not a bool."""
+        data = {"text": ["Hello!"], "speaker": "TestNPC", "instant": "yes"}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'instant' must be a bool" in errors[0]
+
+    def test_validate_params_auto_close_wrong_type(self) -> None:
+        """Test validate_params detects auto_close field that is not a bool."""
+        data = {"text": ["Hello!"], "speaker": "TestNPC", "auto_close": 1}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'auto_close' must be a bool" in errors[0]
+
+    def test_validate_params_valid_with_optional_bools(self) -> None:
+        """Test validate_params passes with valid optional bool fields."""
+        data = {"text": ["Hello!"], "speaker": "TestNPC", "instant": True, "auto_close": False}
+        errors = DialogAction.validate_params(data)
+        assert errors == []
+
 
 class TestWaitForDialogCloseAction(unittest.TestCase):
     """Test WaitForDialogCloseAction."""

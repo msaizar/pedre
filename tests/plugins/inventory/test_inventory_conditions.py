@@ -74,6 +74,13 @@ class TestValidateItemAcquired(unittest.TestCase):
         assert len(errors) == 1
         assert "missing required 'item_id' field" in errors[0]
 
+    def test_validate_item_acquired_item_id_not_string(self) -> None:
+        """Test validator detects non-string item_id field."""
+        data = {"item_id": 123}
+        errors = _validate_item_acquired(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
+
 
 class TestCheckItemAcquired(unittest.TestCase):
     """Test cases for check_item_acquired condition."""

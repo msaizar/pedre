@@ -69,6 +69,13 @@ class TestAcquireItemActionValidation(unittest.TestCase):
         assert len(errors) == 1
         assert "missing required 'item_id' field" in errors[0]
 
+    def test_validate_params_item_id_not_string(self) -> None:
+        """Test validate_params detects non-string item_id field."""
+        data = {"item_id": 123}
+        errors = AcquireItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
+
 
 class TestAcquireItemAction(unittest.TestCase):
     """Test AcquireItemAction."""
@@ -178,6 +185,62 @@ class TestAddItemActionValidation(unittest.TestCase):
         errors = AddItemAction.validate_params(data)
         assert len(errors) == 1
         assert "missing required 'name' field" in errors[0]
+
+    def test_validate_params_name_not_string(self) -> None:
+        """Test validate_params detects non-string name field."""
+        data = {"name": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'name' must be a string" in errors[0]
+
+    def test_validate_params_description_not_string(self) -> None:
+        """Test validate_params detects non-string description field."""
+        data = {"name": "Item", "description": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'description' must be a string" in errors[0]
+
+    def test_validate_params_item_id_not_string(self) -> None:
+        """Test validate_params detects non-string item_id field."""
+        data = {"name": "Item", "item_id": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
+
+    def test_validate_params_image_path_not_string(self) -> None:
+        """Test validate_params detects non-string image_path field."""
+        data = {"name": "Item", "image_path": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'image_path' must be a string" in errors[0]
+
+    def test_validate_params_icon_path_not_string(self) -> None:
+        """Test validate_params detects non-string icon_path field."""
+        data = {"name": "Item", "icon_path": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'icon_path' must be a string" in errors[0]
+
+    def test_validate_params_category_not_string(self) -> None:
+        """Test validate_params detects non-string category field."""
+        data = {"name": "Item", "category": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'category' must be a string" in errors[0]
+
+    def test_validate_params_acquired_not_bool(self) -> None:
+        """Test validate_params detects non-bool acquired field."""
+        data = {"name": "Item", "acquired": "yes"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'acquired' must be a bool" in errors[0]
+
+    def test_validate_params_consumable_not_bool(self) -> None:
+        """Test validate_params detects non-bool consumable field."""
+        data = {"name": "Item", "consumable": "yes"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'consumable' must be a bool" in errors[0]
 
 
 class TestAddItemAction(unittest.TestCase):
@@ -449,6 +512,13 @@ class TestConsumeItemActionValidation(unittest.TestCase):
         errors = ConsumeItemAction.validate_params(data)
         assert len(errors) == 1
         assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_params_item_id_not_string(self) -> None:
+        """Test validate_params detects non-string item_id field."""
+        data = {"item_id": 123}
+        errors = ConsumeItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
 
 
 class TestConsumeItemAction(unittest.TestCase):

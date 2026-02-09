@@ -255,6 +255,27 @@ class TestValidateNpcInteracted(unittest.TestCase):
         assert len(errors) == 1
         assert "missing required 'npc' field" in errors[0]
 
+    def test_validate_npc_interacted_npc_not_string(self) -> None:
+        """Test validator detects non-string npc field."""
+        data = {"npc": 123}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_validate_npc_interacted_scene_not_string(self) -> None:
+        """Test validator detects non-string scene field."""
+        data = {"npc": "test_npc", "scene": 123}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "'scene' must be a string" in errors[0]
+
+    def test_validate_npc_interacted_equals_not_bool(self) -> None:
+        """Test validator detects non-bool equals field."""
+        data = {"npc": "test_npc", "equals": "yes"}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "'equals' must be a bool" in errors[0]
+
 
 class TestValidateNpcDialogLevel(unittest.TestCase):
     """Test cases for _validate_npc_dialog_level validator."""
@@ -299,6 +320,27 @@ class TestValidateNpcDialogLevel(unittest.TestCase):
         data = {"npc": "test_npc", "equals": 0}
         errors = _validate_npc_dialog_level(data)
         assert errors == []
+
+    def test_validate_npc_dialog_level_npc_not_string(self) -> None:
+        """Test validator detects non-string npc field."""
+        data = {"npc": 123, "equals": 2}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_validate_npc_dialog_level_equals_not_int(self) -> None:
+        """Test validator detects non-int equals field."""
+        data = {"npc": "test_npc", "equals": "2"}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "'equals' must be an int" in errors[0]
+
+    def test_validate_npc_dialog_level_equals_bool(self) -> None:
+        """Test validator detects bool equals field."""
+        data = {"npc": "test_npc", "equals": True}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "'equals' must be an int" in errors[0]
 
 
 if __name__ == "__main__":

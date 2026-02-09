@@ -160,6 +160,13 @@ class TestValidateScriptCompleted(unittest.TestCase):
         assert len(errors) == 1
         assert "missing required 'script' field" in errors[0]
 
+    def test_validate_script_completed_script_not_string(self) -> None:
+        """Test validator detects non-string script field."""
+        data = {"script": 123}
+        errors = _validate_script_completed(data)
+        assert len(errors) == 1
+        assert "'script' must be a string" in errors[0]
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -110,6 +110,20 @@ class TestValidateObjectInteracted(unittest.TestCase):
         assert len(errors) == 1
         assert "missing required 'object' field" in errors[0]
 
+    def test_validate_object_interacted_object_not_string(self) -> None:
+        """Test validator detects non-string object field."""
+        data = {"object": 123}
+        errors = _validate_object_interacted(data)
+        assert len(errors) == 1
+        assert "'object' must be a string" in errors[0]
+
+    def test_validate_object_interacted_equals_not_bool(self) -> None:
+        """Test validator detects non-bool equals field."""
+        data = {"object": "test_object", "equals": "yes"}
+        errors = _validate_object_interacted(data)
+        assert len(errors) == 1
+        assert "'equals' must be a bool" in errors[0]
+
 
 if __name__ == "__main__":
     unittest.main()
