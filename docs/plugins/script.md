@@ -68,6 +68,7 @@ All scripts are validated after loading to catch configuration errors early. Val
 - **Required Fields**: Scripts must have required keys (`trigger`, `actions`) and valid structure
 - **Unknown Keys**: Scripts cannot have unrecognized top-level keys
 - **Non-Empty Actions**: The `actions` list must contain at least one action
+- **Type Validation**: All action, event, and condition parameters are validated for correct types (strings, booleans, integers, lists, etc.)
 
 **Validation Errors:**
 
@@ -75,13 +76,15 @@ If validation fails, a `ScriptValidationError` is raised with detailed error mes
 
 ```python
 # Example validation error output
-ScriptValidationError: 3 script validation error(s):
+ScriptValidationError: 5 script validation error(s):
   - Script 'intro_cutscene': unknown event 'scene_loaded' (registered events: scene_start, npc_interacted, ...)
   - Script 'merchant_greeting': unknown action type 'show_dialog' (registered actions: dialog, move_npc, ...)
   - Script 'broken_script': unknown keys ['conditions_fail'] (valid keys: actions, conditions, on_condition_fail, run_once, scene, trigger)
+  - Script 'npc_move': action 'move_npc': 'waypoint' must be a string
+  - Script 'dialog_test': action 'dialog': 'text' must be a list
 ```
 
-This validation helps catch typos and configuration errors before they cause runtime issues. All referenced events, conditions, and actions must be properly registered with their respective registries.
+This validation helps catch typos, type errors, and configuration errors before they cause runtime issues. All referenced events, conditions, and actions must be properly registered with their respective registries, and all parameters must be the correct types.
 
 ### Script Execution
 
@@ -251,6 +254,7 @@ except ScriptValidationError as e:
 - Missing required fields (event, check, type)
 - Unknown top-level script keys
 - Empty actions list
+- Invalid parameter types (e.g., string where bool expected, list where string expected)
 
 This exception is typically raised during plugin setup when scripts are loaded, ensuring all scripts are valid before the game runs.
 
