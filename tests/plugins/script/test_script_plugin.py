@@ -112,7 +112,9 @@ class TestScriptPlugin(unittest.TestCase):
             mock_event_class = MagicMock()
             mock_event_registry.get.return_value = mock_event_class
             mock_event_registry.is_registered.return_value = True
+            mock_event_registry.get_trigger_keys.return_value = None  # No trigger validation
             mock_action_registry.is_registered.return_value = True
+            mock_action_registry.validate.return_value = []  # No validation errors
 
             self.plugin.setup(self.mock_context)
 
@@ -1113,8 +1115,11 @@ class TestScriptValidation(unittest.TestCase):
         """Test validate_scripts passes with valid scripts."""
         # Mock registries to return True for all checks
         mock_event_registry.is_registered.return_value = True
+        mock_event_registry.get_trigger_keys.return_value = None  # No trigger key validation
         mock_condition_registry.is_registered.return_value = True
+        mock_condition_registry.validate.return_value = []  # No validation errors
         mock_action_registry.is_registered.return_value = True
+        mock_action_registry.validate.return_value = []  # No validation errors
 
         script = Script(
             trigger={"event": "test_event"},
@@ -1310,6 +1315,83 @@ class TestScriptValidation(unittest.TestCase):
 
         error_msg = str(cm.value)
         assert "unknown key 'bad_key'" in error_msg
+
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_validate_scripts_invalid_action_parameters(self, mock_action_registry: MagicMock) -> None:
+        """Test validate_scripts detects invalid action parameters."""
+        mock_action_registry.is_registered.return_value = True
+        mock_action_registry.validate.return_value = ["missing required 'text' field"]
+
+        script = Script(actions=[{"type": "dialog"}])  # Missing text parameter
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        error_msg = str(cm.value)
+        assert "missing required 'text' field" in error_msg
+        assert "test_script" in error_msg
+        assert "action 0 (dialog)" in error_msg
+
+    @patch("pedre.plugins.script.plugin.ConditionRegistry")
+    def test_validate_scripts_invalid_condition_parameters(self, mock_condition_registry: MagicMock) -> None:
+        """Test validate_scripts detects invalid condition parameters."""
+        mock_condition_registry.is_registered.return_value = True
+        mock_condition_registry.validate.return_value = ["missing required 'npc' field"]
+
+        script = Script(
+            conditions=[{"check": "npc_interacted"}],  # Missing npc parameter
+            actions=[{"type": "test"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        error_msg = str(cm.value)
+        assert "missing required 'npc' field" in error_msg
+        assert "test_script" in error_msg
+        assert "condition 0 (npc_interacted)" in error_msg
+
+    @patch("pedre.plugins.script.plugin.EventRegistry")
+    def test_validate_scripts_unknown_trigger_filter_keys(self, mock_event_registry: MagicMock) -> None:
+        """Test validate_scripts detects unknown trigger filter keys."""
+        mock_event_registry.is_registered.return_value = True
+        mock_event_registry.get_trigger_keys.return_value = frozenset({"npc", "dialog_level"})
+
+        script = Script(
+            trigger={"event": "npc_interacted", "name": "martin"},  # 'name' is invalid, should be 'npc'
+            actions=[{"type": "test"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        with pytest.raises(ScriptValidationError) as cm:
+            self.plugin.validate_scripts()
+
+        error_msg = str(cm.value)
+        assert "unknown filter keys ['name']" in error_msg
+        assert "valid keys: ['dialog_level', 'npc']" in error_msg
+        assert "test_script" in error_msg
+
+    @patch("pedre.plugins.script.plugin.EventRegistry")
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_validate_scripts_skips_validation_when_no_validator(
+        self, mock_action_registry: MagicMock, mock_event_registry: MagicMock
+    ) -> None:
+        """Test validate_scripts skips parameter validation when validator not available."""
+        mock_event_registry.is_registered.return_value = True
+        mock_event_registry.get_trigger_keys.return_value = None  # No trigger keys defined
+        mock_action_registry.is_registered.return_value = True
+        mock_action_registry.validate.return_value = []  # No validator defined
+
+        script = Script(
+            trigger={"event": "some_event", "random_key": "value"},  # Unknown key but no validation
+            actions=[{"type": "some_action", "bad_param": "value"}],  # Bad param but no validator
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        # Should not raise because validators aren't defined (opt-in validation)
+        self.plugin.validate_scripts()
 
     def test_parse_scripts_detects_unknown_keys(self) -> None:
         """Test _parse_scripts detects unknown top-level keys."""
