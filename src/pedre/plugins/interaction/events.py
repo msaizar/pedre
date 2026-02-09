@@ -1,7 +1,7 @@
 """Events for the interaction plugin."""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pedre.events import Event
 from pedre.events.registry import EventRegistry
@@ -34,6 +34,7 @@ class ObjectInteractedEvent(Event):
         object_name: Name of the object that was interacted with.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"object_name"})
     object_name: str
 
     def get_script_data(self) -> dict[str, Any]:

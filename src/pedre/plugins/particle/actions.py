@@ -197,3 +197,31 @@ class EmitParticlesAction(Action):
             interactive_object=data.get("interactive_object"),
             color=color,
         )
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate emit_particles action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+
+        # Validate particle_type enum
+        valid_types = {"hearts", "sparkles", "trail", "burst"}
+        particle_type = data.get("particle_type", "burst")
+        if particle_type not in valid_types:
+            errors.append(f"unknown particle_type '{particle_type}' (valid: {', '.join(sorted(valid_types))})")
+
+        # Validate exactly one location is specified
+        has_npc = "npc" in data
+        has_player = data.get("player", False)
+        has_object = "interactive_object" in data
+        locations = sum([has_npc, bool(has_player), has_object])
+
+        if locations == 0:
+            errors.append("must specify one location (npc, player, or interactive_object)")
+        elif locations > 1:
+            errors.append("only one location allowed (npc, player, or interactive_object)")
+
+        return errors

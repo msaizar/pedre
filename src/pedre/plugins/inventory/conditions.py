@@ -15,7 +15,14 @@ def check_inventory_accessed(_condition_data: dict[str, Any], context: GameConte
     return inventory.has_been_accessed()
 
 
-@ConditionRegistry.register("item_acquired")
+def _validate_item_acquired(data: dict[str, Any]) -> list[str]:
+    errors = []
+    if not data.get("item_id"):
+        errors.append("missing required 'item_id' field")
+    return errors
+
+
+@ConditionRegistry.register("item_acquired", validator=_validate_item_acquired)
 def check_item_acquired(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if we've acquired an item."""
     inventory = context.inventory_plugin

@@ -130,6 +130,18 @@ class AcquireItemAction(Action):
         """Create AcquireItemAction from a dictionary."""
         return cls(item_id=data.get("item_id", ""))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate acquire_item action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("item_id"):
+            errors.append("missing required 'item_id' field")
+        return errors
+
 
 @ActionRegistry.register("add_item")
 class AddItemAction(Action):
@@ -274,6 +286,18 @@ class AddItemAction(Action):
             consumable=data.get("consumable", False),
         )
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate add_item action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("name"):
+            errors.append("missing required 'name' field")
+        return errors
+
 
 @ActionRegistry.register("consume_item")
 class ConsumeItemAction(Action):
@@ -337,3 +361,15 @@ class ConsumeItemAction(Action):
     def from_dict(cls, data: dict[str, Any]) -> ConsumeItemAction:
         """Create ConsumeItemAction from a dictionary."""
         return cls(item_id=data.get("item_id", ""))
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate consume_item action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("item_id"):
+            errors.append("missing required 'item_id' field")
+        return errors

@@ -90,3 +90,15 @@ class ChangeSceneAction(Action):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create ChangeSceneAction from a dictionary."""
         return cls(target_map=data.get("target_map", ""), spawn_waypoint=data.get("spawn_waypoint", ""))
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate change_scene action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("target_map"):
+            errors.append("missing required 'target_map' field")
+        return errors

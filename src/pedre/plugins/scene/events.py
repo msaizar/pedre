@@ -4,7 +4,7 @@ This module contains events published by the scene plugin.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pedre.events import Event
 from pedre.events.registry import EventRegistry
@@ -35,6 +35,7 @@ class SceneStartEvent(Event):
         scene_name: Name of the scene/map that just started (e.g., "casa", "forest").
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"scene"})
     scene_name: str
 
     def get_script_data(self) -> dict[str, Any]:

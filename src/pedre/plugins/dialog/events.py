@@ -1,7 +1,7 @@
 """Events for dialog plugin."""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pedre.events import Event
 from pedre.events.registry import EventRegistry
@@ -37,6 +37,7 @@ class DialogClosedEvent(Event):
         dialog_level: Conversation level at the time dialog was shown.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc", "dialog_level"})
     npc_name: str
     dialog_level: int
 
@@ -75,6 +76,7 @@ class DialogOpenedEvent(Event):
         dialog_level: Conversation level at the time dialog was shown.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc", "dialog_level"})
     npc_name: str
     dialog_level: int
 

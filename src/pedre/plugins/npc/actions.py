@@ -99,6 +99,21 @@ class MoveNPCAction(Action):
         waypoint = data.get("waypoint", "")
         return cls(npc_names=npcs, waypoint=waypoint)
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate move_npc action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        npcs = data.get("npcs")
+        if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
+            errors.append("missing required 'npcs' field (non-empty list)")
+        if not data.get("waypoint"):
+            errors.append("missing required 'waypoint' field")
+        return errors
+
 
 @ActionRegistry.register("start_appear_animation")
 class StartAppearAnimationAction(Action):
@@ -146,6 +161,19 @@ class StartAppearAnimationAction(Action):
         """Create StartAppearAnimationAction from a dictionary."""
         return cls(npc_names=data.get("npcs", []))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate start_appear_animation action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        npcs = data.get("npcs")
+        if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
+            errors.append("missing required 'npcs' field (non-empty list)")
+        return errors
+
 
 @ActionRegistry.register("advance_dialog")
 class AdvanceDialogAction(Action):
@@ -192,6 +220,18 @@ class AdvanceDialogAction(Action):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create AdvanceDialogAction from a dictionary."""
         return cls(npc_name=data.get("npc", ""))
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate advance_dialog action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("npc"):
+            errors.append("missing required 'npc' field")
+        return errors
 
 
 @ActionRegistry.register("set_dialog_level")
@@ -264,6 +304,20 @@ class SetDialogLevelAction(Action):
             level=data.get("dialog_level", 0),
         )
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate set_dialog_level action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("npc"):
+            errors.append("missing required 'npc' field")
+        if "dialog_level" not in data:
+            errors.append("missing required 'dialog_level' field")
+        return errors
+
 
 @ActionRegistry.register("set_current_npc")
 class SetCurrentNPCAction(Action):
@@ -334,6 +388,18 @@ class SetCurrentNPCAction(Action):
         """Create SetCurrentNPCAction from a dictionary."""
         return cls(npc_name=data.get("npc", ""))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate set_current_npc action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("npc"):
+            errors.append("missing required 'npc' field")
+        return errors
+
 
 @ActionRegistry.register("wait_for_movement")
 class WaitForNPCMovementAction(WaitForConditionAction):
@@ -379,6 +445,18 @@ class WaitForNPCMovementAction(WaitForConditionAction):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create WaitForNPCMovementAction from a dictionary."""
         return cls(npc_name=data.get("npc", ""))
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate wait_for_movement action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("npc"):
+            errors.append("missing required 'npc' field")
+        return errors
 
 
 @ActionRegistry.register("wait_npcs_appear")
@@ -432,6 +510,19 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
         """Create WaitForNPCsAppearAction from a dictionary."""
         return cls(npc_names=data.get("npcs", []))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate wait_npcs_appear action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        npcs = data.get("npcs")
+        if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
+            errors.append("missing required 'npcs' field (non-empty list)")
+        return errors
+
 
 @ActionRegistry.register("wait_for_npcs_disappear")
 class WaitForNPCsDisappearAction(WaitForConditionAction):
@@ -483,6 +574,19 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create WaitForNPCsDisappearAction from a dictionary."""
         return cls(npc_names=data.get("npcs", []))
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate wait_for_npcs_disappear action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        npcs = data.get("npcs")
+        if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
+            errors.append("missing required 'npcs' field (non-empty list)")
+        return errors
 
 
 @ActionRegistry.register("start_disappear_animation")
@@ -569,3 +673,16 @@ class StartDisappearAnimationAction(Action):
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create StartDisappearAnimationAction from a dictionary."""
         return cls(npc_names=data.get("npcs", []))
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate start_disappear_animation action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        npcs = data.get("npcs")
+        if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
+            errors.append("missing required 'npcs' field (non-empty list)")
+        return errors

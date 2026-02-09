@@ -27,6 +27,7 @@ class EventRegistry:
 
     _events: ClassVar[dict[str, type]] = {}
     _names: ClassVar[dict[type, str]] = {}
+    _trigger_keys: ClassVar[dict[str, frozenset[str]]] = {}
 
     @classmethod
     def register(cls, name: str) -> Callable[[type[T]], type[T]]:
@@ -51,6 +52,12 @@ class EventRegistry:
             cls._events[name] = event_class
             cls._names[event_class] = name
             logger.debug("Registered event: %s -> %s", name, event_class.__name__)
+
+            # Auto-register trigger keys if event class has them
+            if hasattr(event_class, "trigger_keys"):
+                cls._trigger_keys[name] = event_class.trigger_keys  # type: ignore[attr-defined]
+                logger.debug("Registered trigger keys for event: %s", name)
+
             return event_class
 
         return decorator
@@ -87,7 +94,31 @@ class EventRegistry:
         return list(cls._events.keys())
 
     @classmethod
+    def get_trigger_keys(cls, name: str) -> frozenset[str] | None:
+        """Get valid trigger filter keys for an event type.
+
+        Args:
+            name: The event type name.
+
+        Returns:
+            Frozenset of valid filter key names, or None if not declared.
+
+        Example:
+            Getting trigger keys for an event::
+
+                keys = EventRegistry.get_trigger_keys("item_consumed")
+                # Returns: frozenset({"item_id", "category"})
+
+                # Check if a filter key is valid
+                if "category" in keys:
+                    # Valid filter key
+                    pass
+        """
+        return cls._trigger_keys.get(name)
+
+    @classmethod
     def clear(cls) -> None:
         """Clear the registry (primarily for testing)."""
         cls._events.clear()
         cls._names.clear()
+        cls._trigger_keys.clear()

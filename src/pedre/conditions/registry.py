@@ -25,10 +25,14 @@ class ConditionRegistry:
     """
 
     _checkers: ClassVar[dict[str, Callable[[dict[str, Any], GameContext], bool]]] = {}
+    _validators: ClassVar[dict[str, Callable[[dict[str, Any]], list[str]]]] = {}
 
     @classmethod
     def register(
-        cls, name: str
+        cls,
+        name: str,
+        *,
+        validator: Callable[[dict[str, Any]], list[str]] | None = None,
     ) -> Callable[
         [Callable[[dict[str, Any], GameContext], bool]],
         Callable[[dict[str, Any], GameContext], bool],
@@ -38,9 +42,24 @@ class ConditionRegistry:
         Args:
             name: The name used in JSON scripts to identify this condition
                  (e.g., "inventory_accessed").
+            validator: Optional parameter validation function that takes condition
+                 data and returns a list of error strings.
 
         Returns:
             Decorator function that registers the checker.
+
+        Example:
+            Registering a condition with validator::
+
+                def _validate_npc_interacted(data: dict[str, Any]) -> list[str]:
+                    errors = []
+                    if not data.get("npc"):
+                        errors.append("npc_interacted: missing required 'npc' field")
+                    return errors
+
+                @ConditionRegistry.register("npc_interacted", validator=_validate_npc_interacted)
+                def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
+                    ...
         """
 
         def decorator(
@@ -48,6 +67,11 @@ class ConditionRegistry:
         ) -> Callable[[dict[str, Any], GameContext], bool]:
             cls._checkers[name] = checker_func
             logger.debug("Registered condition checker: %s", name)
+
+            if validator is not None:
+                cls._validators[name] = validator
+                logger.debug("Registered condition validator: %s", name)
+
             return checker_func
 
         return decorator
@@ -97,7 +121,34 @@ class ConditionRegistry:
         return list(cls._checkers.keys())
 
     @classmethod
+    def validate(cls, name: str, condition_data: dict[str, Any]) -> list[str]:
+        """Validate condition parameters.
+
+        Args:
+            name: The condition type name.
+            condition_data: Dictionary of condition parameters from the script.
+
+        Returns:
+            List of error message strings. Empty list means validation passed.
+
+        Example:
+            Validating a condition::
+
+                errors = ConditionRegistry.validate("npc_interacted", {
+                    "check": "npc_interacted",
+                    "scene": "village"
+                    # Missing required "npc" field
+                })
+                # Returns: ["npc_interacted: missing required 'npc' field"]
+        """
+        validator = cls._validators.get(name)
+        if validator:
+            return validator(condition_data)
+        return []
+
+    @classmethod
     def clear(cls) -> None:
         """Clear the registry (primarily for testing)."""
         cls._checkers.clear()
+        cls._validators.clear()
         logger.debug("Condition registry cleared")

@@ -156,6 +156,18 @@ class FollowNPCAction(Action):
         """Create FollowNPCAction from a dictionary."""
         return cls(npc_name=data.get("npc", ""), smooth=data.get("smooth", True))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate follow_npc action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("npc"):
+            errors.append("missing required 'npc' field")
+        return errors
+
 
 @ActionRegistry.register("stop_camera_follow")
 class StopCameraFollowAction(Action):

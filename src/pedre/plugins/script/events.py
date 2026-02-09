@@ -1,7 +1,7 @@
 """Script-related events for the script plugin."""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pedre.events import Event
 from pedre.events.registry import EventRegistry
@@ -34,6 +34,7 @@ class ScriptCompleteEvent(Event):
         script_name: Name of the script that completed.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"script"})
     script_name: str
 
     def get_script_data(self) -> dict[str, Any]:

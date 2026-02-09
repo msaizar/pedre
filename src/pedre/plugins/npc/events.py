@@ -1,7 +1,7 @@
 """Events for NPC plugin."""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pedre.events import Event
 from pedre.events.registry import EventRegistry
@@ -35,6 +35,7 @@ class NPCInteractedEvent(Event):
         dialog_level: Current conversation level.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc", "dialog_level"})
     npc_name: str
     dialog_level: int
 
@@ -70,6 +71,7 @@ class NPCMovementCompleteEvent(Event):
         npc_name: Name of the NPC that completed movement.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
     npc_name: str
 
     def get_script_data(self) -> dict[str, Any]:
@@ -104,6 +106,7 @@ class NPCAppearCompleteEvent(Event):
         npc_name: Name of the NPC that appeared.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
     npc_name: str
 
     def get_script_data(self) -> dict[str, Any]:
@@ -138,6 +141,7 @@ class NPCDisappearCompleteEvent(Event):
         npc_name: Name of the NPC that disappeared.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
     npc_name: str
 
     def get_script_data(self) -> dict[str, Any]:

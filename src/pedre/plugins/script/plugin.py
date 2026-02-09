@@ -635,6 +635,18 @@ class ScriptPlugin(ScriptBasePlugin):
                         f"Script '{script_name}': unknown event '{event_name}' "
                         f"(registered events: {', '.join(EventRegistry.get_all_types())})"
                     )
+                else:
+                    # Validate trigger filter keys
+                    trigger_keys_set = EventRegistry.get_trigger_keys(event_name)
+                    if trigger_keys_set is not None:
+                        filter_keys = {k for k in script.trigger if k != "event"}
+                        unknown_filter_keys = filter_keys - trigger_keys_set
+                        if unknown_filter_keys:
+                            errors.append(
+                                f"Script '{script_name}': trigger has unknown filter keys "
+                                f"{sorted(unknown_filter_keys)} for event '{event_name}' "
+                                f"(valid keys: {sorted(trigger_keys_set)})"
+                            )
 
             # Validate conditions
             for i, condition in enumerate(script.conditions):
@@ -645,6 +657,12 @@ class ScriptPlugin(ScriptBasePlugin):
                     errors.append(
                         f"Script '{script_name}': unknown condition '{check_type}' "
                         f"(registered conditions: {', '.join(ConditionRegistry.get_all_types())})"
+                    )
+                else:
+                    # Validate condition parameters
+                    param_errors = ConditionRegistry.validate(check_type, condition)
+                    errors.extend(
+                        f"Script '{script_name}': condition {i} ({check_type}): {err}" for err in param_errors
                     )
 
             # Validate actions list is not empty
@@ -661,6 +679,10 @@ class ScriptPlugin(ScriptBasePlugin):
                         f"Script '{script_name}': unknown action type '{action_type}' "
                         f"(registered actions: {', '.join(ActionRegistry.get_all_types())})"
                     )
+                else:
+                    # Validate action parameters
+                    param_errors = ActionRegistry.validate(action_type, action)
+                    errors.extend(f"Script '{script_name}': action {i} ({action_type}): {err}" for err in param_errors)
 
             # Validate on_condition_fail actions
             for i, action in enumerate(script.on_condition_fail):
@@ -671,6 +693,13 @@ class ScriptPlugin(ScriptBasePlugin):
                     errors.append(
                         f"Script '{script_name}': on_condition_fail action {i} has unknown type '{action_type}' "
                         f"(registered actions: {', '.join(ActionRegistry.get_all_types())})"
+                    )
+                else:
+                    # Validate action parameters
+                    param_errors = ActionRegistry.validate(action_type, action)
+                    errors.extend(
+                        f"Script '{script_name}': on_condition_fail action {i} ({action_type}): {err}"
+                        for err in param_errors
                     )
 
         if errors:

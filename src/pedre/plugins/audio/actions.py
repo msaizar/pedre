@@ -58,6 +58,18 @@ class PlaySFXAction(Action):
         """Create PlaySFXAction from a dictionary."""
         return cls(sfx_file=data.get("file", ""))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate play_sfx action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("file"):
+            errors.append("missing required 'file' field")
+        return errors
+
 
 @ActionRegistry.register("play_music")
 class PlayMusicAction(Action):
@@ -122,3 +134,15 @@ class PlayMusicAction(Action):
             loop=data.get("loop", True),
             volume=data.get("volume"),
         )
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate play_music action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if not data.get("file"):
+            errors.append("missing required 'file' field")
+        return errors

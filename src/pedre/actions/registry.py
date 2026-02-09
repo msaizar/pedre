@@ -87,6 +87,7 @@ class ActionRegistry:
 
     _actions: ClassVar[dict[str, type[Action]]] = {}
     _parsers: ClassVar[dict[str, Callable[[dict[str, Any]], Action]]] = {}
+    _validators: ClassVar[dict[str, Callable[[dict[str, Any]], list[str]]]] = {}
 
     @classmethod
     def register(cls, action_type: str) -> Callable[[type[Action]], type[Action]]:
@@ -135,6 +136,13 @@ class ActionRegistry:
                 logger.debug("Registered action with parser: %s", action_type)
             else:
                 logger.debug("Registered action without parser: %s", action_type)
+
+            # Auto-register validator if action has validate_params classmethod
+            if hasattr(action_class, "validate_params"):
+                # Type-safe access to the classmethod
+                validate_method: Callable[[dict[str, Any]], list[str]] = action_class.validate_params  # type: ignore[attr-defined]
+                cls._validators[action_type] = validate_method
+                logger.debug("Registered action with validator: %s", action_type)
 
             return action_class
 
@@ -241,6 +249,32 @@ class ActionRegistry:
         return action_type in cls._parsers
 
     @classmethod
+    def validate(cls, action_type: str, data: dict[str, Any]) -> list[str]:
+        """Validate action parameters.
+
+        Args:
+            action_type: The action type name.
+            data: Dictionary of action parameters from the script.
+
+        Returns:
+            List of error message strings. Empty list means validation passed.
+
+        Example:
+            Validating an action::
+
+                errors = ActionRegistry.validate("emit_particles", {
+                    "type": "emit_particles",
+                    "particle_type": "harts",  # Typo
+                    "npc": "martin"
+                })
+                # Returns: ["emit_particles: unknown particle_type 'harts' (valid: burst, hearts, sparkles, trail)"]
+        """
+        validator = cls._validators.get(action_type)
+        if validator:
+            return validator(data)
+        return []
+
+    @classmethod
     def clear(cls) -> None:
         """Clear the registry.
 
@@ -253,4 +287,5 @@ class ActionRegistry:
         """
         cls._actions.clear()
         cls._parsers.clear()
+        cls._validators.clear()
         logger.debug("Action registry cleared")

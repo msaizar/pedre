@@ -8,7 +8,14 @@ if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
 
 
-@ConditionRegistry.register("object_interacted")
+def _validate_object_interacted(data: dict[str, Any]) -> list[str]:
+    errors = []
+    if not data.get("object"):
+        errors.append("missing required 'object' field")
+    return errors
+
+
+@ConditionRegistry.register("object_interacted", validator=_validate_object_interacted)
 def check_object_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if an object has been interacted with."""
     interaction = context.interaction_plugin
