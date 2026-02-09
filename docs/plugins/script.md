@@ -58,6 +58,31 @@ SCRIPTS_DIRECTORY = "custom_scripts"  # Relative to assets directory
 - Scripts are available for condition checking regardless of current scene
 - Scripts are reloaded on reset (new game or load game)
 
+### Script Validation
+
+All scripts are validated after loading to catch configuration errors early. Validation checks:
+
+- **Trigger Events**: All `event` values in triggers must be registered in EventRegistry
+- **Conditions**: All `check` types in conditions must be registered in ConditionRegistry
+- **Actions**: All action `type` values must be registered in ActionRegistry
+- **Required Fields**: Scripts must have required keys (`trigger`, `actions`) and valid structure
+- **Unknown Keys**: Scripts cannot have unrecognized top-level keys
+- **Non-Empty Actions**: The `actions` list must contain at least one action
+
+**Validation Errors:**
+
+If validation fails, a `ScriptValidationError` is raised with detailed error messages listing all problems found:
+
+```python
+# Example validation error output
+ScriptValidationError: 3 script validation error(s):
+  - Script 'intro_cutscene': unknown event 'scene_loaded' (registered events: scene_start, npc_interacted, ...)
+  - Script 'merchant_greeting': unknown action type 'show_dialog' (registered actions: dialog, move_npc, ...)
+  - Script 'broken_script': unknown keys ['conditions_fail'] (valid keys: actions, conditions, on_condition_fail, run_once, scene, trigger)
+```
+
+This validation helps catch typos and configuration errors before they cause runtime issues. All referenced events, conditions, and actions must be properly registered with their respective registries.
+
 ### Script Execution
 
 #### update
@@ -199,6 +224,36 @@ Reset script plugin for new game.
 
 ## Script Data Structures
 
+### ScriptValidationError
+
+Exception raised when script validation fails during loading.
+
+**Attributes:**
+
+- `errors: list[str]` - List of validation error messages
+
+**Example:**
+
+```python
+try:
+    script_plugin.load_all_scripts()
+except ScriptValidationError as e:
+    print(f"Script validation failed with {len(e.errors)} errors:")
+    for error in e.errors:
+        print(f"  - {error}")
+```
+
+**Raised When:**
+
+- Unknown event types in triggers
+- Unknown condition types in conditions
+- Unknown action types in actions or on_condition_fail
+- Missing required fields (event, check, type)
+- Unknown top-level script keys
+- Empty actions list
+
+This exception is typically raised during plugin setup when scripts are loaded, ensuring all scripts are valid before the game runs.
+
 ### Script
 
 Container for action sequences with trigger conditions and metadata.
@@ -279,8 +334,10 @@ Scripts are defined in JSON files located in `assets/data/scripts/` with the nam
 | `conditions`        | array  | No       | Conditions to check before running                                     |
 | `scene`             | string | No       | Only run in this scene/map (omit for global scripts that run anywhere) |
 | `run_once`          | bool   | No       | Only execute once (default: false)                                     |
-| `actions`           | array  | Yes      | Sequence of actions to execute                                         |
+| `actions`           | array  | Yes      | Sequence of actions to execute (must not be empty)                     |
 | `on_condition_fail` | array  | No       | Actions to execute when conditions fail                                |
+
+**Note:** Only the keys listed above are valid. Using unknown keys will cause a validation error during script loading.
 
 ### Trigger Object
 
