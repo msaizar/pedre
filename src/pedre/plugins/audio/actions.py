@@ -66,8 +66,11 @@ class PlaySFXAction(Action):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("file"):
+        file = data.get("file")
+        if not file:
             errors.append("missing required 'file' field")
+        elif not isinstance(file, str):
+            errors.append("'file' must be a string")
         return errors
 
 
@@ -143,6 +146,18 @@ class PlayMusicAction(Action):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("file"):
+        file = data.get("file")
+        if not file:
             errors.append("missing required 'file' field")
+        elif not isinstance(file, str):
+            errors.append("'file' must be a string")
+
+        if "loop" in data and not isinstance(data["loop"], bool):
+            errors.append("'loop' must be a bool")
+
+        if "volume" in data and data["volume"] is not None:
+            vol = data["volume"]
+            if isinstance(vol, bool) or not isinstance(vol, (int, float)):
+                errors.append("'volume' must be a number")
+
         return errors

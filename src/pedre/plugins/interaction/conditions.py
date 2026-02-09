@@ -10,8 +10,15 @@ if TYPE_CHECKING:
 
 def _validate_object_interacted(data: dict[str, Any]) -> list[str]:
     errors = []
-    if not data.get("object"):
+    obj = data.get("object")
+    if not obj:
         errors.append("missing required 'object' field")
+    elif not isinstance(obj, str):
+        errors.append("'object' must be a string")
+
+    if "equals" in data and not isinstance(data["equals"], bool):
+        errors.append("'equals' must be a bool")
+
     return errors
 
 

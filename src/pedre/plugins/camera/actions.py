@@ -70,6 +70,18 @@ class FollowPlayerAction(Action):
         """Create FollowPlayerAction from a dictionary."""
         return cls(smooth=data.get("smooth", True))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate follow_player action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        if "smooth" in data and not isinstance(data["smooth"], bool):
+            errors.append("'smooth' must be a bool")
+        return errors
+
 
 @ActionRegistry.register("follow_npc")
 class FollowNPCAction(Action):
@@ -164,8 +176,15 @@ class FollowNPCAction(Action):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("npc"):
+        npc = data.get("npc")
+        if not npc:
             errors.append("missing required 'npc' field")
+        elif not isinstance(npc, str):
+            errors.append("'npc' must be a string")
+
+        if "smooth" in data and not isinstance(data["smooth"], bool):
+            errors.append("'smooth' must be a bool")
+
         return errors
 
 

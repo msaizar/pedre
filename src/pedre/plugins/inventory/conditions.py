@@ -17,8 +17,11 @@ def check_inventory_accessed(_condition_data: dict[str, Any], context: GameConte
 
 def _validate_item_acquired(data: dict[str, Any]) -> list[str]:
     errors = []
-    if not data.get("item_id"):
+    item_id = data.get("item_id")
+    if not item_id:
         errors.append("missing required 'item_id' field")
+    elif not isinstance(item_id, str):
+        errors.append("'item_id' must be a string")
     return errors
 
 

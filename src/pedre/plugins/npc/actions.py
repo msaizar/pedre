@@ -110,8 +110,17 @@ class MoveNPCAction(Action):
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
             errors.append("missing required 'npcs' field (non-empty list)")
-        if not data.get("waypoint"):
+        elif not isinstance(npcs, list):
+            errors.append("'npcs' must be a list")
+        elif not all(isinstance(item, str) for item in npcs):
+            errors.append("'npcs' items must be strings")
+
+        waypoint = data.get("waypoint")
+        if not waypoint:
             errors.append("missing required 'waypoint' field")
+        elif not isinstance(waypoint, str):
+            errors.append("'waypoint' must be a string")
+
         return errors
 
 
@@ -172,6 +181,10 @@ class StartAppearAnimationAction(Action):
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
             errors.append("missing required 'npcs' field (non-empty list)")
+        elif not isinstance(npcs, list):
+            errors.append("'npcs' must be a list")
+        elif not all(isinstance(item, str) for item in npcs):
+            errors.append("'npcs' items must be strings")
         return errors
 
 
@@ -229,8 +242,11 @@ class AdvanceDialogAction(Action):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("npc"):
+        npc = data.get("npc")
+        if not npc:
             errors.append("missing required 'npc' field")
+        elif not isinstance(npc, str):
+            errors.append("'npc' must be a string")
         return errors
 
 
@@ -312,10 +328,17 @@ class SetDialogLevelAction(Action):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("npc"):
+        npc = data.get("npc")
+        if not npc:
             errors.append("missing required 'npc' field")
+        elif not isinstance(npc, str):
+            errors.append("'npc' must be a string")
+
         if "dialog_level" not in data:
             errors.append("missing required 'dialog_level' field")
+        elif not isinstance(data["dialog_level"], int) or isinstance(data["dialog_level"], bool):
+            errors.append("'dialog_level' must be an int")
+
         return errors
 
 
@@ -396,8 +419,11 @@ class SetCurrentNPCAction(Action):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("npc"):
+        npc = data.get("npc")
+        if not npc:
             errors.append("missing required 'npc' field")
+        elif not isinstance(npc, str):
+            errors.append("'npc' must be a string")
         return errors
 
 
@@ -454,8 +480,11 @@ class WaitForNPCMovementAction(WaitForConditionAction):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("npc"):
+        npc = data.get("npc")
+        if not npc:
             errors.append("missing required 'npc' field")
+        elif not isinstance(npc, str):
+            errors.append("'npc' must be a string")
         return errors
 
 
@@ -521,6 +550,10 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
             errors.append("missing required 'npcs' field (non-empty list)")
+        elif not isinstance(npcs, list):
+            errors.append("'npcs' must be a list")
+        elif not all(isinstance(item, str) for item in npcs):
+            errors.append("'npcs' items must be strings")
         return errors
 
 
@@ -586,6 +619,10 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
             errors.append("missing required 'npcs' field (non-empty list)")
+        elif not isinstance(npcs, list):
+            errors.append("'npcs' must be a list")
+        elif not all(isinstance(item, str) for item in npcs):
+            errors.append("'npcs' items must be strings")
         return errors
 
 
@@ -685,4 +722,8 @@ class StartDisappearAnimationAction(Action):
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
             errors.append("missing required 'npcs' field (non-empty list)")
+        elif not isinstance(npcs, list):
+            errors.append("'npcs' must be a list")
+        elif not all(isinstance(item, str) for item in npcs):
+            errors.append("'npcs' items must be strings")
         return errors

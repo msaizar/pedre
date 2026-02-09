@@ -99,6 +99,13 @@ class ChangeSceneAction(Action):
             List of error messages. Empty list means valid.
         """
         errors = []
-        if not data.get("target_map"):
+        target_map = data.get("target_map")
+        if not target_map:
             errors.append("missing required 'target_map' field")
+        elif not isinstance(target_map, str):
+            errors.append("'target_map' must be a string")
+
+        if "spawn_waypoint" in data and not isinstance(data["spawn_waypoint"], str):
+            errors.append("'spawn_waypoint' must be a string")
+
         return errors

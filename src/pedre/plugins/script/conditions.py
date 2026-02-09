@@ -13,8 +13,11 @@ logger = logging.getLogger(__name__)
 
 def _validate_script_completed(data: dict[str, Any]) -> list[str]:
     errors = []
-    if not data.get("script"):
+    script = data.get("script")
+    if not script:
         errors.append("missing required 'script' field")
+    elif not isinstance(script, str):
+        errors.append("'script' must be a string")
     return errors
 
 

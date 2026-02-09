@@ -10,8 +10,18 @@ if TYPE_CHECKING:
 
 def _validate_npc_interacted(data: dict[str, Any]) -> list[str]:
     errors = []
-    if not data.get("npc"):
+    npc = data.get("npc")
+    if not npc:
         errors.append("missing required 'npc' field")
+    elif not isinstance(npc, str):
+        errors.append("'npc' must be a string")
+
+    if "scene" in data and not isinstance(data["scene"], str):
+        errors.append("'scene' must be a string")
+
+    if "equals" in data and not isinstance(data["equals"], bool):
+        errors.append("'equals' must be a bool")
+
     return errors
 
 
@@ -50,10 +60,17 @@ def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -
 
 def _validate_npc_dialog_level(data: dict[str, Any]) -> list[str]:
     errors = []
-    if not data.get("npc"):
+    npc = data.get("npc")
+    if not npc:
         errors.append("missing required 'npc' field")
+    elif not isinstance(npc, str):
+        errors.append("'npc' must be a string")
+
     if "equals" not in data:
         errors.append("missing required 'equals' field")
+    elif not isinstance(data["equals"], int) or isinstance(data["equals"], bool):
+        errors.append("'equals' must be an int")
+
     return errors
 
 
