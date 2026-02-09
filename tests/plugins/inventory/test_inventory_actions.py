@@ -46,6 +46,37 @@ class TestWaitForInventoryAccessAction(unittest.TestCase):
         assert result is True
 
 
+class TestAcquireItemActionValidation(unittest.TestCase):
+    """Test AcquireItemAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"item_id": "test_item"}
+        errors = AcquireItemAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_item_id(self) -> None:
+        """Test validate_params detects missing item_id field."""
+        data = {}
+        errors = AcquireItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_params_empty_item_id(self) -> None:
+        """Test validate_params detects empty item_id field."""
+        data = {"item_id": ""}
+        errors = AcquireItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_params_item_id_not_string(self) -> None:
+        """Test validate_params detects non-string item_id field."""
+        data = {"item_id": 123}
+        errors = AcquireItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
+
+
 class TestAcquireItemAction(unittest.TestCase):
     """Test AcquireItemAction."""
 
@@ -130,6 +161,86 @@ class TestAcquireItemAction(unittest.TestCase):
         action.reset()
         assert action.started is False
         assert action.success is False
+
+
+class TestAddItemActionValidation(unittest.TestCase):
+    """Test AddItemAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"name": "Test Item", "description": "A test item"}
+        errors = AddItemAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_name(self) -> None:
+        """Test validate_params detects missing name field."""
+        data = {"description": "A test item"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'name' field" in errors[0]
+
+    def test_validate_params_empty_name(self) -> None:
+        """Test validate_params detects empty name field."""
+        data = {"name": "", "description": "A test item"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'name' field" in errors[0]
+
+    def test_validate_params_name_not_string(self) -> None:
+        """Test validate_params detects non-string name field."""
+        data = {"name": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'name' must be a string" in errors[0]
+
+    def test_validate_params_description_not_string(self) -> None:
+        """Test validate_params detects non-string description field."""
+        data = {"name": "Item", "description": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'description' must be a string" in errors[0]
+
+    def test_validate_params_item_id_not_string(self) -> None:
+        """Test validate_params detects non-string item_id field."""
+        data = {"name": "Item", "item_id": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
+
+    def test_validate_params_image_path_not_string(self) -> None:
+        """Test validate_params detects non-string image_path field."""
+        data = {"name": "Item", "image_path": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'image_path' must be a string" in errors[0]
+
+    def test_validate_params_icon_path_not_string(self) -> None:
+        """Test validate_params detects non-string icon_path field."""
+        data = {"name": "Item", "icon_path": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'icon_path' must be a string" in errors[0]
+
+    def test_validate_params_category_not_string(self) -> None:
+        """Test validate_params detects non-string category field."""
+        data = {"name": "Item", "category": 123}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'category' must be a string" in errors[0]
+
+    def test_validate_params_acquired_not_bool(self) -> None:
+        """Test validate_params detects non-bool acquired field."""
+        data = {"name": "Item", "acquired": "yes"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'acquired' must be a bool" in errors[0]
+
+    def test_validate_params_consumable_not_bool(self) -> None:
+        """Test validate_params detects non-bool consumable field."""
+        data = {"name": "Item", "consumable": "yes"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'consumable' must be a bool" in errors[0]
 
 
 class TestAddItemAction(unittest.TestCase):
@@ -377,6 +488,37 @@ class TestAddItemAction(unittest.TestCase):
         action.reset()
         assert action.started is False
         assert action.success is False
+
+
+class TestConsumeItemActionValidation(unittest.TestCase):
+    """Test ConsumeItemAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"item_id": "test_item"}
+        errors = ConsumeItemAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_item_id(self) -> None:
+        """Test validate_params detects missing item_id field."""
+        data = {}
+        errors = ConsumeItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_params_empty_item_id(self) -> None:
+        """Test validate_params detects empty item_id field."""
+        data = {"item_id": ""}
+        errors = ConsumeItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_params_item_id_not_string(self) -> None:
+        """Test validate_params detects non-string item_id field."""
+        data = {"item_id": 123}
+        errors = ConsumeItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
 
 
 class TestConsumeItemAction(unittest.TestCase):

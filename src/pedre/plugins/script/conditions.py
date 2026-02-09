@@ -11,7 +11,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ConditionRegistry.register("script_completed")
+def _validate_script_completed(data: dict[str, Any]) -> list[str]:
+    errors = []
+    script = data.get("script")
+    if not script:
+        errors.append("missing required 'script' field")
+    elif not isinstance(script, str):
+        errors.append("'script' must be a string")
+    return errors
+
+
+@ConditionRegistry.register("script_completed", validator=_validate_script_completed)
 def check_script_completed(condition: dict[str, Any], context: GameContext) -> bool:
     """Check if a specific script has fully completed all its actions.
 

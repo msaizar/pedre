@@ -269,5 +269,106 @@ class TestPlayMusicAction(unittest.TestCase):
         assert action.volume == 1.0
 
 
+class TestPlaySFXActionValidation(unittest.TestCase):
+    """Test PlaySFXAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"file": "sound.wav"}
+        errors = PlaySFXAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_file(self) -> None:
+        """Test validate_params detects missing file field."""
+        data = {}
+        errors = PlaySFXAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+    def test_validate_params_empty_file(self) -> None:
+        """Test validate_params detects empty file field."""
+        data = {"file": ""}
+        errors = PlaySFXAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+    def test_validate_params_file_not_string(self) -> None:
+        """Test validate_params detects non-string file field."""
+        data = {"file": 123}
+        errors = PlaySFXAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'file' must be a string" in errors[0]
+
+
+class TestPlayMusicActionValidation(unittest.TestCase):
+    """Test PlayMusicAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"file": "music.ogg"}
+        errors = PlayMusicAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_file(self) -> None:
+        """Test validate_params detects missing file field."""
+        data = {}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+    def test_validate_params_empty_file(self) -> None:
+        """Test validate_params detects empty file field."""
+        data = {"file": ""}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+    def test_validate_params_file_not_string(self) -> None:
+        """Test validate_params detects non-string file field."""
+        data = {"file": 123}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'file' must be a string" in errors[0]
+
+    def test_validate_params_loop_not_bool(self) -> None:
+        """Test validate_params detects non-bool loop field."""
+        data = {"file": "music.ogg", "loop": "yes"}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'loop' must be a bool" in errors[0]
+
+    def test_validate_params_volume_not_number(self) -> None:
+        """Test validate_params detects non-number volume field."""
+        data = {"file": "music.ogg", "volume": "loud"}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'volume' must be a number" in errors[0]
+
+    def test_validate_params_volume_bool(self) -> None:
+        """Test validate_params detects bool volume field."""
+        data = {"file": "music.ogg", "volume": True}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'volume' must be a number" in errors[0]
+
+    def test_validate_params_volume_none(self) -> None:
+        """Test validate_params accepts None volume field (skips validation)."""
+        data = {"file": "music.ogg", "volume": None}
+        errors = PlayMusicAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_volume_valid_float(self) -> None:
+        """Test validate_params accepts valid float volume."""
+        data = {"file": "music.ogg", "volume": 0.5}
+        errors = PlayMusicAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_volume_valid_int(self) -> None:
+        """Test validate_params accepts valid int volume."""
+        data = {"file": "music.ogg", "volume": 1}
+        errors = PlayMusicAction.validate_params(data)
+        assert errors == []
+
+
 if __name__ == "__main__":
     unittest.main()

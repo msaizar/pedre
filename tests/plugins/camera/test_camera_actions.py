@@ -226,5 +226,66 @@ class TestStopCameraFollowAction(unittest.TestCase):
         camera_plugin.stop_follow.assert_called_once()
 
 
+class TestFollowPlayerActionValidation(unittest.TestCase):
+    """Test FollowPlayerAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"smooth": True}
+        errors = FollowPlayerAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_empty_dict(self) -> None:
+        """Test validate_params with empty dict."""
+        data = {}
+        errors = FollowPlayerAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_smooth_not_bool(self) -> None:
+        """Test validate_params detects non-bool smooth field."""
+        data = {"smooth": "yes"}
+        errors = FollowPlayerAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'smooth' must be a bool" in errors[0]
+
+
+class TestFollowNPCActionValidation(unittest.TestCase):
+    """Test FollowNPCAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"npc": "martin"}
+        errors = FollowNPCAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_npc(self) -> None:
+        """Test validate_params detects missing npc field."""
+        data = {}
+        errors = FollowNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_validate_params_empty_npc(self) -> None:
+        """Test validate_params detects empty npc field."""
+        data = {"npc": ""}
+        errors = FollowNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_validate_params_npc_not_string(self) -> None:
+        """Test validate_params detects non-string npc field."""
+        data = {"npc": 123}
+        errors = FollowNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_validate_params_smooth_not_bool(self) -> None:
+        """Test validate_params detects non-bool smooth field."""
+        data = {"npc": "martin", "smooth": "yes"}
+        errors = FollowNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'smooth' must be a bool" in errors[0]
+
+
 if __name__ == "__main__":
     unittest.main()

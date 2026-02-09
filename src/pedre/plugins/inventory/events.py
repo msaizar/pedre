@@ -6,7 +6,7 @@ or the inventory view being closed.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pedre.events import Event
 from pedre.events.registry import EventRegistry
@@ -32,6 +32,7 @@ class InventoryClosedEvent(Event):
         has_been_accessed: Whether inventory has been accessed before.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"inventory_accessed"})
     has_been_accessed: bool
 
     def get_script_data(self) -> dict[str, Any]:
@@ -67,6 +68,7 @@ class ItemAcquiredEvent(Event):
         item_name: Display name of the item (for logging/debugging).
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id"})
     item_id: str
     item_name: str
 
@@ -102,6 +104,7 @@ class ItemAcquisitionFailedEvent(Event):
         reason: Reason for failure ("capacity", "unknown_item", or "already_owned").
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id", "reason"})
     item_id: str
     reason: str
 
@@ -151,6 +154,7 @@ class ItemConsumedEvent(Event):
         category: Category of the consumed item (e.g., "consumable").
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id", "category"})
     item_id: str
     item_name: str
     category: str

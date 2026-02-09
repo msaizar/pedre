@@ -1000,5 +1000,316 @@ class TestStartDisappearAnimationAction(unittest.TestCase):
         assert action.npc_names == []
 
 
+class TestNPCActionValidation(unittest.TestCase):
+    """Test NPC action parameter validation."""
+
+    def test_move_npc_validate_params_success(self) -> None:
+        """Test MoveNPCAction validate_params with valid data."""
+        data = {"npcs": ["martin"], "waypoint": "town_square"}
+        errors = MoveNPCAction.validate_params(data)
+        assert errors == []
+
+    def test_move_npc_validate_params_missing_npcs(self) -> None:
+        """Test MoveNPCAction validate_params detects missing npcs field."""
+        data = {"waypoint": "town_square"}
+        errors = MoveNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_move_npc_validate_params_empty_npcs(self) -> None:
+        """Test MoveNPCAction validate_params detects empty npcs list."""
+        data = {"npcs": [], "waypoint": "town_square"}
+        errors = MoveNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_move_npc_validate_params_missing_waypoint(self) -> None:
+        """Test MoveNPCAction validate_params detects missing waypoint field."""
+        data = {"npcs": ["martin"]}
+        errors = MoveNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'waypoint' field" in errors[0]
+
+    def test_move_npc_validate_params_empty_waypoint(self) -> None:
+        """Test MoveNPCAction validate_params detects empty waypoint field."""
+        data = {"npcs": ["martin"], "waypoint": ""}
+        errors = MoveNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'waypoint' field" in errors[0]
+
+    def test_move_npc_validate_params_npcs_not_list(self) -> None:
+        """Test MoveNPCAction validate_params detects non-list npcs field."""
+        data = {"npcs": "martin", "waypoint": "town_square"}
+        errors = MoveNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' must be a list" in errors[0]
+
+    def test_move_npc_validate_params_npcs_items_not_strings(self) -> None:
+        """Test MoveNPCAction validate_params detects non-string items in npcs list."""
+        data = {"npcs": ["martin", 123, "yema"], "waypoint": "town_square"}
+        errors = MoveNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' items must be strings" in errors[0]
+
+    def test_move_npc_validate_params_waypoint_not_string(self) -> None:
+        """Test MoveNPCAction validate_params detects non-string waypoint field."""
+        data = {"npcs": ["martin"], "waypoint": 123}
+        errors = MoveNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'waypoint' must be a string" in errors[0]
+
+    def test_start_appear_animation_validate_params_success(self) -> None:
+        """Test StartAppearAnimationAction validate_params with valid data."""
+        data = {"npcs": ["martin", "yema"]}
+        errors = StartAppearAnimationAction.validate_params(data)
+        assert errors == []
+
+    def test_start_appear_animation_validate_params_missing_npcs(self) -> None:
+        """Test StartAppearAnimationAction validate_params detects missing npcs field."""
+        data = {}
+        errors = StartAppearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_start_appear_animation_validate_params_empty_npcs(self) -> None:
+        """Test StartAppearAnimationAction validate_params detects empty npcs list."""
+        data = {"npcs": []}
+        errors = StartAppearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_start_appear_animation_validate_params_npcs_not_list(self) -> None:
+        """Test StartAppearAnimationAction validate_params detects non-list npcs field."""
+        data = {"npcs": "martin"}
+        errors = StartAppearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' must be a list" in errors[0]
+
+    def test_start_appear_animation_validate_params_npcs_items_not_strings(self) -> None:
+        """Test StartAppearAnimationAction validate_params detects non-string items in npcs list."""
+        data = {"npcs": ["martin", 123, "yema"]}
+        errors = StartAppearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' items must be strings" in errors[0]
+
+    def test_advance_dialog_validate_params_success(self) -> None:
+        """Test AdvanceDialogAction validate_params with valid data."""
+        data = {"npc": "martin"}
+        errors = AdvanceDialogAction.validate_params(data)
+        assert errors == []
+
+    def test_advance_dialog_validate_params_missing_npc(self) -> None:
+        """Test AdvanceDialogAction validate_params detects missing npc field."""
+        data = {}
+        errors = AdvanceDialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_advance_dialog_validate_params_empty_npc(self) -> None:
+        """Test AdvanceDialogAction validate_params detects empty npc field."""
+        data = {"npc": ""}
+        errors = AdvanceDialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_advance_dialog_validate_params_npc_not_string(self) -> None:
+        """Test AdvanceDialogAction validate_params detects non-string npc field."""
+        data = {"npc": 123}
+        errors = AdvanceDialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_set_dialog_level_validate_params_success(self) -> None:
+        """Test SetDialogLevelAction validate_params with valid data."""
+        data = {"npc": "martin", "dialog_level": 2}
+        errors = SetDialogLevelAction.validate_params(data)
+        assert errors == []
+
+    def test_set_dialog_level_validate_params_missing_npc(self) -> None:
+        """Test SetDialogLevelAction validate_params detects missing npc field."""
+        data = {"dialog_level": 2}
+        errors = SetDialogLevelAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_set_dialog_level_validate_params_missing_dialog_level(self) -> None:
+        """Test SetDialogLevelAction validate_params detects missing dialog_level field."""
+        data = {"npc": "martin"}
+        errors = SetDialogLevelAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'dialog_level' field" in errors[0]
+
+    def test_set_dialog_level_validate_params_missing_both(self) -> None:
+        """Test SetDialogLevelAction validate_params detects both missing fields."""
+        data = {}
+        errors = SetDialogLevelAction.validate_params(data)
+        assert len(errors) == 2
+        assert any("'npc'" in e for e in errors)
+        assert any("'dialog_level'" in e for e in errors)
+
+    def test_set_dialog_level_validate_params_npc_not_string(self) -> None:
+        """Test SetDialogLevelAction validate_params detects non-string npc field."""
+        data = {"npc": 123, "dialog_level": 2}
+        errors = SetDialogLevelAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_set_dialog_level_validate_params_dialog_level_not_int(self) -> None:
+        """Test SetDialogLevelAction validate_params detects non-int dialog_level field."""
+        data = {"npc": "martin", "dialog_level": "2"}
+        errors = SetDialogLevelAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'dialog_level' must be an int" in errors[0]
+
+    def test_set_dialog_level_validate_params_dialog_level_bool(self) -> None:
+        """Test SetDialogLevelAction validate_params detects bool dialog_level field."""
+        data = {"npc": "martin", "dialog_level": True}
+        errors = SetDialogLevelAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'dialog_level' must be an int" in errors[0]
+
+    def test_set_current_npc_validate_params_success(self) -> None:
+        """Test SetCurrentNPCAction validate_params with valid data."""
+        data = {"npc": "martin"}
+        errors = SetCurrentNPCAction.validate_params(data)
+        assert errors == []
+
+    def test_set_current_npc_validate_params_missing_npc(self) -> None:
+        """Test SetCurrentNPCAction validate_params detects missing npc field."""
+        data = {}
+        errors = SetCurrentNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_set_current_npc_validate_params_npc_not_string(self) -> None:
+        """Test SetCurrentNPCAction validate_params detects non-string npc field."""
+        data = {"npc": 123}
+        errors = SetCurrentNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_wait_for_movement_validate_params_success(self) -> None:
+        """Test WaitForNPCMovementAction validate_params with valid data."""
+        data = {"npc": "martin"}
+        errors = WaitForNPCMovementAction.validate_params(data)
+        assert errors == []
+
+    def test_wait_for_movement_validate_params_missing_npc(self) -> None:
+        """Test WaitForNPCMovementAction validate_params detects missing npc field."""
+        data = {}
+        errors = WaitForNPCMovementAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_wait_for_movement_validate_params_npc_not_string(self) -> None:
+        """Test WaitForNPCMovementAction validate_params detects non-string npc field."""
+        data = {"npc": 123}
+        errors = WaitForNPCMovementAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_wait_npcs_appear_validate_params_success(self) -> None:
+        """Test WaitForNPCsAppearAction validate_params with valid data."""
+        data = {"npcs": ["martin", "yema"]}
+        errors = WaitForNPCsAppearAction.validate_params(data)
+        assert errors == []
+
+    def test_wait_npcs_appear_validate_params_missing_npcs(self) -> None:
+        """Test WaitForNPCsAppearAction validate_params detects missing npcs field."""
+        data = {}
+        errors = WaitForNPCsAppearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_wait_npcs_appear_validate_params_empty_npcs(self) -> None:
+        """Test WaitForNPCsAppearAction validate_params detects empty npcs list."""
+        data = {"npcs": []}
+        errors = WaitForNPCsAppearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_wait_npcs_appear_validate_params_npcs_not_list(self) -> None:
+        """Test WaitForNPCsAppearAction validate_params detects non-list npcs field."""
+        data = {"npcs": "martin"}
+        errors = WaitForNPCsAppearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' must be a list" in errors[0]
+
+    def test_wait_npcs_appear_validate_params_npcs_items_not_strings(self) -> None:
+        """Test WaitForNPCsAppearAction validate_params detects non-string items in npcs list."""
+        data = {"npcs": ["martin", 123, "yema"]}
+        errors = WaitForNPCsAppearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' items must be strings" in errors[0]
+
+    def test_wait_for_npcs_disappear_validate_params_success(self) -> None:
+        """Test WaitForNPCsDisappearAction validate_params with valid data."""
+        data = {"npcs": ["martin", "yema"]}
+        errors = WaitForNPCsDisappearAction.validate_params(data)
+        assert errors == []
+
+    def test_wait_for_npcs_disappear_validate_params_missing_npcs(self) -> None:
+        """Test WaitForNPCsDisappearAction validate_params detects missing npcs field."""
+        data = {}
+        errors = WaitForNPCsDisappearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_wait_for_npcs_disappear_validate_params_empty_npcs(self) -> None:
+        """Test WaitForNPCsDisappearAction validate_params detects empty npcs list."""
+        data = {"npcs": []}
+        errors = WaitForNPCsDisappearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_wait_for_npcs_disappear_validate_params_npcs_not_list(self) -> None:
+        """Test WaitForNPCsDisappearAction validate_params detects non-list npcs field."""
+        data = {"npcs": "martin"}
+        errors = WaitForNPCsDisappearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' must be a list" in errors[0]
+
+    def test_wait_for_npcs_disappear_validate_params_npcs_items_not_strings(self) -> None:
+        """Test WaitForNPCsDisappearAction validate_params detects non-string items in npcs list."""
+        data = {"npcs": ["martin", 123, "yema"]}
+        errors = WaitForNPCsDisappearAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' items must be strings" in errors[0]
+
+    def test_start_disappear_animation_validate_params_success(self) -> None:
+        """Test StartDisappearAnimationAction validate_params with valid data."""
+        data = {"npcs": ["martin", "yema"]}
+        errors = StartDisappearAnimationAction.validate_params(data)
+        assert errors == []
+
+    def test_start_disappear_animation_validate_params_missing_npcs(self) -> None:
+        """Test StartDisappearAnimationAction validate_params detects missing npcs field."""
+        data = {}
+        errors = StartDisappearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_start_disappear_animation_validate_params_empty_npcs(self) -> None:
+        """Test StartDisappearAnimationAction validate_params detects empty npcs list."""
+        data = {"npcs": []}
+        errors = StartDisappearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npcs' field (non-empty list)" in errors[0]
+
+    def test_start_disappear_animation_validate_params_npcs_not_list(self) -> None:
+        """Test StartDisappearAnimationAction validate_params detects non-list npcs field."""
+        data = {"npcs": "martin"}
+        errors = StartDisappearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' must be a list" in errors[0]
+
+    def test_start_disappear_animation_validate_params_npcs_items_not_strings(self) -> None:
+        """Test StartDisappearAnimationAction validate_params detects non-string items in npcs list."""
+        data = {"npcs": ["martin", 123, "yema"]}
+        errors = StartDisappearAnimationAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npcs' items must be strings" in errors[0]
+
+
 if __name__ == "__main__":
     unittest.main()

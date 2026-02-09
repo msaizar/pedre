@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from pedre.plugins.inventory.conditions import (
+    _validate_item_acquired,
     check_inventory_accessed,
     check_item_acquired,
 )
@@ -48,6 +49,37 @@ class TestCheckInventoryAccessed(unittest.TestCase):
 
         assert result is True
         self.mock_inventory_plugin.has_been_accessed.assert_called_once()
+
+
+class TestValidateItemAcquired(unittest.TestCase):
+    """Test cases for _validate_item_acquired validator."""
+
+    def test_validate_item_acquired_success(self) -> None:
+        """Test validator passes with valid data."""
+        data = {"item_id": "test_item"}
+        errors = _validate_item_acquired(data)
+        assert errors == []
+
+    def test_validate_item_acquired_missing_item_id(self) -> None:
+        """Test validator detects missing item_id field."""
+        data = {}
+        errors = _validate_item_acquired(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_item_acquired_empty_item_id(self) -> None:
+        """Test validator detects empty item_id field."""
+        data = {"item_id": ""}
+        errors = _validate_item_acquired(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_item_acquired_item_id_not_string(self) -> None:
+        """Test validator detects non-string item_id field."""
+        data = {"item_id": 123}
+        errors = _validate_item_acquired(data)
+        assert len(errors) == 1
+        assert "'item_id' must be a string" in errors[0]
 
 
 class TestCheckItemAcquired(unittest.TestCase):

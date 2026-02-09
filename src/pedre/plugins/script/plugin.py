@@ -64,7 +64,7 @@ from pedre.conf import settings
 from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
 from pedre.plugins.registry import PluginRegistry
-from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptEvent
+from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptEvent, ScriptValidationError
 from pedre.plugins.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
@@ -129,6 +129,7 @@ class ScriptPlugin(ScriptBasePlugin):
         self.active_sequences: list[tuple[str, ActionSequence]] = []
         self._pending_script_checks: list[str] = []  # Scripts to check conditions for after current update
         self._subscribed_events: set[str] = set()  # Track subscribed event types to avoid duplicates
+        self._validation_errors: list[str] = []  # Collects validation errors during script parsing
 
     def setup(self, context: GameContext) -> None:
         """Set up the script plugin.
@@ -166,6 +167,7 @@ class ScriptPlugin(ScriptBasePlugin):
         self.scripts.clear()
         self.active_sequences.clear()
         self._subscribed_events.clear()
+        self._validation_errors.clear()
 
         # Reload all scripts and re-register event handlers so the plugin
         # is functional after reset (needed for both new games and loaded games).
@@ -303,6 +305,9 @@ class ScriptPlugin(ScriptBasePlugin):
         Scans the scripts directory for all *_scripts.json files and loads them globally.
         This makes all scripts available for conditions regardless of the current scene.
         The scene field in each script definition controls when it can actually execute.
+
+        Raises:
+            ScriptValidationError: If any validation errors are found after loading scripts.
         """
         try:
             scripts_dir = Path(asset_path(settings.SCRIPTS_DIRECTORY, settings.ASSETS_HANDLE))
@@ -315,6 +320,9 @@ class ScriptPlugin(ScriptBasePlugin):
             if not script_files:
                 logger.info("No script files found in %s", scripts_dir)
                 return
+
+            # Clear validation errors from any previous load
+            self._validation_errors.clear()
 
             # Load each script file
             for script_file in script_files:
@@ -334,6 +342,12 @@ class ScriptPlugin(ScriptBasePlugin):
 
             logger.info("Total scripts loaded globally: %d", len(self.scripts))
 
+            # Validate all loaded scripts
+            self.validate_scripts()
+
+        except ScriptValidationError:
+            # Re-raise validation errors
+            raise
         except Exception:
             logger.exception("Failed to load scripts from directory")
 
@@ -424,7 +438,17 @@ class ScriptPlugin(ScriptBasePlugin):
         Args:
             script_data: Dictionary containing script definitions.
         """
+        # Valid top-level keys for script definitions
+        valid_keys = {"trigger", "conditions", "scene", "run_once", "actions", "on_condition_fail"}
+
         for script_name, script_def in script_data.items():
+            # Check for unknown keys
+            unknown_keys = set(script_def.keys()) - valid_keys
+            if unknown_keys:
+                self._validation_errors.append(
+                    f"Script '{script_name}': unknown keys {sorted(unknown_keys)} (valid keys: {sorted(valid_keys)})"
+                )
+
             script = Script(
                 trigger=script_def.get("trigger"),
                 conditions=script_def.get("conditions", []),
@@ -584,3 +608,99 @@ class ScriptPlugin(ScriptBasePlugin):
                 return False
 
         return True
+
+    def validate_scripts(self) -> None:
+        """Validate all loaded scripts against registered events, conditions, and actions.
+
+        Checks that:
+        - All trigger events are registered in EventRegistry
+        - All conditions have valid "check" types registered in ConditionRegistry
+        - All actions have valid "type" values registered in ActionRegistry
+        - Each script has at least one action in its actions list
+
+        Raises:
+            ScriptValidationError: If any validation errors are found. The exception
+                contains a list of all error messages.
+        """
+        errors = list(self._validation_errors)  # Include any errors from parsing
+
+        for script_name, script in self.scripts.items():
+            # Validate trigger event
+            if script.trigger:
+                event_name = script.trigger.get("event")
+                if not event_name:
+                    errors.append(f"Script '{script_name}': trigger missing required 'event' key")
+                elif not EventRegistry.is_registered(event_name):
+                    errors.append(
+                        f"Script '{script_name}': unknown event '{event_name}' "
+                        f"(registered events: {', '.join(EventRegistry.get_all_types())})"
+                    )
+                else:
+                    # Validate trigger filter keys
+                    trigger_keys_set = EventRegistry.get_trigger_keys(event_name)
+                    if trigger_keys_set is not None:
+                        filter_keys = {k for k in script.trigger if k != "event"}
+                        unknown_filter_keys = filter_keys - trigger_keys_set
+                        if unknown_filter_keys:
+                            errors.append(
+                                f"Script '{script_name}': trigger has unknown filter keys "
+                                f"{sorted(unknown_filter_keys)} for event '{event_name}' "
+                                f"(valid keys: {sorted(trigger_keys_set)})"
+                            )
+
+            # Validate conditions
+            for i, condition in enumerate(script.conditions):
+                check_type = condition.get("check")
+                if not check_type:
+                    errors.append(f"Script '{script_name}': condition {i} missing required 'check' key")
+                elif not ConditionRegistry.is_registered(check_type):
+                    errors.append(
+                        f"Script '{script_name}': unknown condition '{check_type}' "
+                        f"(registered conditions: {', '.join(ConditionRegistry.get_all_types())})"
+                    )
+                else:
+                    # Validate condition parameters
+                    param_errors = ConditionRegistry.validate(check_type, condition)
+                    errors.extend(
+                        f"Script '{script_name}': condition {i} ({check_type}): {err}" for err in param_errors
+                    )
+
+            # Validate actions list is not empty
+            if not script.actions:
+                errors.append(f"Script '{script_name}': 'actions' list is empty")
+
+            # Validate actions
+            for i, action in enumerate(script.actions):
+                action_type = action.get("type")
+                if not action_type:
+                    errors.append(f"Script '{script_name}': action {i} missing required 'type' key")
+                elif not ActionRegistry.is_registered(action_type):
+                    errors.append(
+                        f"Script '{script_name}': unknown action type '{action_type}' "
+                        f"(registered actions: {', '.join(ActionRegistry.get_all_types())})"
+                    )
+                else:
+                    # Validate action parameters
+                    param_errors = ActionRegistry.validate(action_type, action)
+                    errors.extend(f"Script '{script_name}': action {i} ({action_type}): {err}" for err in param_errors)
+
+            # Validate on_condition_fail actions
+            for i, action in enumerate(script.on_condition_fail):
+                action_type = action.get("type")
+                if not action_type:
+                    errors.append(f"Script '{script_name}': on_condition_fail action {i} missing required 'type' key")
+                elif not ActionRegistry.is_registered(action_type):
+                    errors.append(
+                        f"Script '{script_name}': on_condition_fail action {i} has unknown type '{action_type}' "
+                        f"(registered actions: {', '.join(ActionRegistry.get_all_types())})"
+                    )
+                else:
+                    # Validate action parameters
+                    param_errors = ActionRegistry.validate(action_type, action)
+                    errors.extend(
+                        f"Script '{script_name}': on_condition_fail action {i} ({action_type}): {err}"
+                        for err in param_errors
+                    )
+
+        if errors:
+            raise ScriptValidationError(errors)

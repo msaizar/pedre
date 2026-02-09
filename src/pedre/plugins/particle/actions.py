@@ -197,3 +197,54 @@ class EmitParticlesAction(Action):
             interactive_object=data.get("interactive_object"),
             color=color,
         )
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate emit_particles action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+
+        # Validate particle_type enum
+        valid_types = {"hearts", "sparkles", "trail", "burst"}
+        particle_type = data.get("particle_type", "burst")
+        if not isinstance(particle_type, str):
+            errors.append("'particle_type' must be a string")
+        elif particle_type not in valid_types:
+            errors.append(f"unknown particle_type '{particle_type}' (valid: {', '.join(sorted(valid_types))})")
+
+        # Validate exactly one location is specified
+        has_npc = "npc" in data
+        has_player = data.get("player", False)
+        has_object = "interactive_object" in data
+        locations = sum([has_npc, bool(has_player), has_object])
+
+        if locations == 0:
+            errors.append("must specify one location (npc, player, or interactive_object)")
+        elif locations > 1:
+            errors.append("only one location allowed (npc, player, or interactive_object)")
+
+        # Type checks for location fields
+        if "npc" in data and not isinstance(data["npc"], str):
+            errors.append("'npc' must be a string")
+
+        if "player" in data and not isinstance(data["player"], bool):
+            errors.append("'player' must be a bool")
+
+        if "interactive_object" in data and not isinstance(data["interactive_object"], str):
+            errors.append("'interactive_object' must be a string")
+
+        # Type check for color
+        if "color" in data:
+            color = data["color"]
+            is_valid_color = (
+                isinstance(color, list)
+                and len(color) == 3
+                and all(isinstance(c, int) and not isinstance(c, bool) for c in color)
+            )
+            if not is_valid_color:
+                errors.append("'color' must be a list of 3 integers")
+
+        return errors

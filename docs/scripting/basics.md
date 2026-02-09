@@ -306,6 +306,34 @@ Break long action sequences into multiple scripts using `script_complete`:
 
 ## Debugging Scripts
 
+### Script Validation
+
+All scripts are validated when they're loaded. If there are any errors in your script definitions, you'll get a detailed error message listing all problems:
+
+```text
+ScriptValidationError: 5 script validation error(s):
+  - Script 'intro_cutscene': unknown event 'scene_loaded' (registered events: scene_start, npc_interacted, ...)
+  - Script 'merchant_greeting': unknown action type 'show_dialog' (registered actions: dialog, move_npc, ...)
+  - Script 'broken_script': unknown keys ['conditions_fail'] (valid keys: actions, conditions, on_condition_fail, run_once, scene, trigger)
+  - Script 'npc_move': action 'move_npc': 'waypoint' must be a string
+  - Script 'dialog_test': action 'dialog': 'text' must be a list
+```
+
+**Validation Checks:**
+
+- Event types in `trigger.event` must be registered (e.g., "npc_interacted", "dialog_closed")
+- Condition types in `conditions[].check` must be registered (e.g., "inventory_accessed", "script_completed")
+- Action types in `actions[].type` and `on_condition_fail[].type` must be registered (e.g., "dialog", "move_npc")
+- Only valid top-level keys are allowed: `trigger`, `conditions`, `scene`, `run_once`, `actions`, `on_condition_fail`
+- The `actions` array must contain at least one action
+- All action, event, and condition parameters must be the correct types:
+  - String fields (like `npc`, `waypoint`, `file`) must be strings, not numbers or booleans
+  - Boolean fields (like `loop`, `smooth`, `run_once`) must be true/false, not strings
+  - Number fields (like `volume`, `dialog_level`) must be numbers, not strings or booleans
+  - List fields (like `npcs`, `text`, `color`) must be arrays with the correct element types
+
+This catches typos, type errors, and configuration errors before they cause runtime issues.
+
 ### Check Script Loading
 
 Enable logging to see script load messages:

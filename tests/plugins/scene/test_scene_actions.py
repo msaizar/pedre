@@ -177,5 +177,43 @@ class TestChangeSceneAction(unittest.TestCase):
         assert action.executed is False
 
 
+class TestChangeSceneActionValidation(unittest.TestCase):
+    """Test ChangeSceneAction parameter validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"target_map": "Village.tmx"}
+        errors = ChangeSceneAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_target_map(self) -> None:
+        """Test validate_params detects missing target_map field."""
+        data = {}
+        errors = ChangeSceneAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'target_map' field" in errors[0]
+
+    def test_validate_params_empty_target_map(self) -> None:
+        """Test validate_params detects empty target_map field."""
+        data = {"target_map": ""}
+        errors = ChangeSceneAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'target_map' field" in errors[0]
+
+    def test_validate_params_target_map_not_string(self) -> None:
+        """Test validate_params detects non-string target_map field."""
+        data = {"target_map": 123}
+        errors = ChangeSceneAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'target_map' must be a string" in errors[0]
+
+    def test_validate_params_spawn_waypoint_not_string(self) -> None:
+        """Test validate_params detects non-string spawn_waypoint field."""
+        data = {"target_map": "Village.tmx", "spawn_waypoint": 123}
+        errors = ChangeSceneAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'spawn_waypoint' must be a string" in errors[0]
+
+
 if __name__ == "__main__":
     unittest.main()

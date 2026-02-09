@@ -3,7 +3,12 @@
 import unittest
 from unittest.mock import MagicMock
 
-from pedre.plugins.npc.conditions import check_npc_dialog_level, check_npc_interacted
+from pedre.plugins.npc.conditions import (
+    _validate_npc_dialog_level,
+    _validate_npc_interacted,
+    check_npc_dialog_level,
+    check_npc_interacted,
+)
 
 
 class TestCheckNpcInteracted(unittest.TestCase):
@@ -225,6 +230,117 @@ class TestCheckNpcDialogLevel(unittest.TestCase):
         result = check_npc_dialog_level(condition_data, self.mock_context)
 
         assert result is True
+
+
+class TestValidateNpcInteracted(unittest.TestCase):
+    """Test cases for _validate_npc_interacted validator."""
+
+    def test_validate_npc_interacted_success(self) -> None:
+        """Test validator passes with valid data."""
+        data = {"npc": "test_npc"}
+        errors = _validate_npc_interacted(data)
+        assert errors == []
+
+    def test_validate_npc_interacted_missing_npc(self) -> None:
+        """Test validator detects missing npc field."""
+        data = {}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_validate_npc_interacted_empty_npc(self) -> None:
+        """Test validator detects empty npc field."""
+        data = {"npc": ""}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_validate_npc_interacted_npc_not_string(self) -> None:
+        """Test validator detects non-string npc field."""
+        data = {"npc": 123}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_validate_npc_interacted_scene_not_string(self) -> None:
+        """Test validator detects non-string scene field."""
+        data = {"npc": "test_npc", "scene": 123}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "'scene' must be a string" in errors[0]
+
+    def test_validate_npc_interacted_equals_not_bool(self) -> None:
+        """Test validator detects non-bool equals field."""
+        data = {"npc": "test_npc", "equals": "yes"}
+        errors = _validate_npc_interacted(data)
+        assert len(errors) == 1
+        assert "'equals' must be a bool" in errors[0]
+
+
+class TestValidateNpcDialogLevel(unittest.TestCase):
+    """Test cases for _validate_npc_dialog_level validator."""
+
+    def test_validate_npc_dialog_level_success(self) -> None:
+        """Test validator passes with valid data."""
+        data = {"npc": "test_npc", "equals": 2}
+        errors = _validate_npc_dialog_level(data)
+        assert errors == []
+
+    def test_validate_npc_dialog_level_missing_npc(self) -> None:
+        """Test validator detects missing npc field."""
+        data = {"equals": 2}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_validate_npc_dialog_level_empty_npc(self) -> None:
+        """Test validator detects empty npc field."""
+        data = {"npc": "", "equals": 2}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_validate_npc_dialog_level_missing_equals(self) -> None:
+        """Test validator detects missing equals field."""
+        data = {"npc": "test_npc"}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "missing required 'equals' field" in errors[0]
+
+    def test_validate_npc_dialog_level_missing_both(self) -> None:
+        """Test validator detects both missing fields."""
+        data = {}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 2
+        assert any("'npc'" in e for e in errors)
+        assert any("'equals'" in e for e in errors)
+
+    def test_validate_npc_dialog_level_equals_zero(self) -> None:
+        """Test validator accepts equals=0."""
+        data = {"npc": "test_npc", "equals": 0}
+        errors = _validate_npc_dialog_level(data)
+        assert errors == []
+
+    def test_validate_npc_dialog_level_npc_not_string(self) -> None:
+        """Test validator detects non-string npc field."""
+        data = {"npc": 123, "equals": 2}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_validate_npc_dialog_level_equals_not_int(self) -> None:
+        """Test validator detects non-int equals field."""
+        data = {"npc": "test_npc", "equals": "2"}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "'equals' must be an int" in errors[0]
+
+    def test_validate_npc_dialog_level_equals_bool(self) -> None:
+        """Test validator detects bool equals field."""
+        data = {"npc": "test_npc", "equals": True}
+        errors = _validate_npc_dialog_level(data)
+        assert len(errors) == 1
+        assert "'equals' must be an int" in errors[0]
 
 
 if __name__ == "__main__":

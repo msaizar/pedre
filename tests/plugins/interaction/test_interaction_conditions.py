@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from pedre.plugins.interaction.conditions import check_object_interacted
+from pedre.plugins.interaction.conditions import _validate_object_interacted, check_object_interacted
 
 
 class TestCheckObjectInteracted(unittest.TestCase):
@@ -85,6 +85,44 @@ class TestCheckObjectInteracted(unittest.TestCase):
 
         assert result is False
         self.mock_interaction_plugin.has_interacted_with.assert_not_called()
+
+
+class TestValidateObjectInteracted(unittest.TestCase):
+    """Test cases for _validate_object_interacted validator."""
+
+    def test_validate_object_interacted_success(self) -> None:
+        """Test validator passes with valid data."""
+        data = {"object": "test_object"}
+        errors = _validate_object_interacted(data)
+        assert errors == []
+
+    def test_validate_object_interacted_missing_object(self) -> None:
+        """Test validator detects missing object field."""
+        data = {}
+        errors = _validate_object_interacted(data)
+        assert len(errors) == 1
+        assert "missing required 'object' field" in errors[0]
+
+    def test_validate_object_interacted_empty_object(self) -> None:
+        """Test validator detects empty object field."""
+        data = {"object": ""}
+        errors = _validate_object_interacted(data)
+        assert len(errors) == 1
+        assert "missing required 'object' field" in errors[0]
+
+    def test_validate_object_interacted_object_not_string(self) -> None:
+        """Test validator detects non-string object field."""
+        data = {"object": 123}
+        errors = _validate_object_interacted(data)
+        assert len(errors) == 1
+        assert "'object' must be a string" in errors[0]
+
+    def test_validate_object_interacted_equals_not_bool(self) -> None:
+        """Test validator detects non-bool equals field."""
+        data = {"object": "test_object", "equals": "yes"}
+        errors = _validate_object_interacted(data)
+        assert len(errors) == 1
+        assert "'equals' must be a bool" in errors[0]
 
 
 if __name__ == "__main__":

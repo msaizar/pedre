@@ -5,7 +5,7 @@ with portals in the game world.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from pedre.events import Event
 from pedre.events.registry import EventRegistry
@@ -42,6 +42,7 @@ class PortalEnteredEvent(Event):
         portal_name: Name of the portal the player entered.
     """
 
+    trigger_keys: ClassVar[frozenset[str]] = frozenset({"portal"})
     portal_name: str
 
     def get_script_data(self) -> dict[str, Any]:

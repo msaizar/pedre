@@ -293,6 +293,56 @@ class TestEventRegistryClear:
         assert EventRegistry.get("reusable_event") == NewTestEvent
 
 
+class TestEventRegistryIntrospection:
+    """Tests for registry introspection methods."""
+
+    def test_is_registered_returns_true_for_registered_event(self) -> None:
+        """Test is_registered returns True for registered events."""
+
+        @EventRegistry.register("test_event")
+        class TestEvent(SimpleEvent):
+            pass
+
+        assert EventRegistry.is_registered("test_event") is True
+
+    def test_is_registered_returns_false_for_unregistered_event(self) -> None:
+        """Test is_registered returns False for unregistered events."""
+        assert EventRegistry.is_registered("nonexistent_event") is False
+
+    def test_get_all_types_returns_empty_list_initially(self) -> None:
+        """Test get_all_types returns empty list when no events registered."""
+        assert EventRegistry.get_all_types() == []
+
+    def test_get_all_types_returns_registered_events(self) -> None:
+        """Test get_all_types returns all registered event names."""
+
+        @EventRegistry.register("event1")
+        class Event1(SimpleEvent):
+            pass
+
+        @EventRegistry.register("event2")
+        class Event2(AnotherEvent):
+            pass
+
+        types = EventRegistry.get_all_types()
+        assert len(types) == 2
+        assert "event1" in types
+        assert "event2" in types
+
+    def test_get_all_types_after_clear_returns_empty_list(self) -> None:
+        """Test get_all_types returns empty list after clear."""
+
+        @EventRegistry.register("temp_event")
+        class TempEvent(SimpleEvent):
+            pass
+
+        assert len(EventRegistry.get_all_types()) == 1
+
+        EventRegistry.clear()
+
+        assert EventRegistry.get_all_types() == []
+
+
 class TestEventRegistryIntegration:
     """Integration tests for EventRegistry."""
 
@@ -348,3 +398,39 @@ class TestEventRegistryIntegration:
 
         # The most recent registration wins for reverse lookup
         assert EventRegistry.get_name(MultiNameEvent) == "name_a"
+
+
+class TestEventRegistryGetTriggerKeys:
+    """Tests for the get_trigger_keys method."""
+
+    def test_get_trigger_keys_with_keys(self) -> None:
+        """Test get_trigger_keys with registered trigger keys."""
+        EventRegistry.clear()
+
+        @EventRegistry.register("test_event")
+        class TestEvent(SimpleEvent):
+            trigger_keys = frozenset({"npc", "dialog_level"})
+
+        result = EventRegistry.get_trigger_keys("test_event")
+        assert result is not None
+        assert result == frozenset({"npc", "dialog_level"})
+        assert "npc" in result
+        assert "dialog_level" in result
+
+    def test_get_trigger_keys_without_keys(self) -> None:
+        """Test get_trigger_keys with no registered trigger keys."""
+        EventRegistry.clear()
+
+        @EventRegistry.register("test_event")
+        class TestEvent(SimpleEvent):
+            pass
+
+        result = EventRegistry.get_trigger_keys("test_event")
+        assert result is None
+
+    def test_get_trigger_keys_unregistered_event(self) -> None:
+        """Test get_trigger_keys with unregistered event."""
+        EventRegistry.clear()
+
+        result = EventRegistry.get_trigger_keys("nonexistent_event")
+        assert result is None

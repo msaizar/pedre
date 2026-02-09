@@ -567,5 +567,132 @@ class TestEmitParticlesAction(unittest.TestCase):
         assert action.executed is True
 
 
+class TestEmitParticlesActionValidation(unittest.TestCase):
+    """Test EmitParticlesAction parameter validation."""
+
+    def test_validate_params_success_with_npc(self) -> None:
+        """Test validate_params with valid npc location."""
+        data = {"particle_type": "hearts", "npc": "martin"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_success_with_player(self) -> None:
+        """Test validate_params with valid player location."""
+        data = {"particle_type": "sparkles", "player": True}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_success_with_interactive_object(self) -> None:
+        """Test validate_params with valid interactive_object location."""
+        data = {"particle_type": "burst", "interactive_object": "portal"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_success_default_particle_type(self) -> None:
+        """Test validate_params with default particle_type (burst)."""
+        data = {"npc": "martin"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_invalid_particle_type(self) -> None:
+        """Test validate_params detects invalid particle_type."""
+        data = {"particle_type": "invalid_type", "npc": "martin"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "unknown particle_type 'invalid_type'" in errors[0]
+        assert "valid: " in errors[0]
+
+    def test_validate_params_no_location(self) -> None:
+        """Test validate_params detects missing location."""
+        data = {"particle_type": "hearts"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "must specify one location" in errors[0]
+
+    def test_validate_params_multiple_locations_npc_and_player(self) -> None:
+        """Test validate_params detects multiple locations (npc and player)."""
+        data = {"particle_type": "hearts", "npc": "martin", "player": True}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "only one location allowed" in errors[0]
+
+    def test_validate_params_multiple_locations_all_three(self) -> None:
+        """Test validate_params detects all three locations specified."""
+        data = {"particle_type": "hearts", "npc": "martin", "player": True, "interactive_object": "portal"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "only one location allowed" in errors[0]
+
+    def test_validate_params_multiple_errors(self) -> None:
+        """Test validate_params detects multiple errors at once."""
+        data = {"particle_type": "invalid_type"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 2
+        assert any("unknown particle_type" in e for e in errors)
+        assert any("must specify one location" in e for e in errors)
+
+    def test_validate_params_particle_type_not_string(self) -> None:
+        """Test validate_params detects non-string particle_type."""
+        data = {"particle_type": 123, "npc": "martin"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'particle_type' must be a string" in errors[0]
+
+    def test_validate_params_npc_not_string(self) -> None:
+        """Test validate_params detects non-string npc field."""
+        data = {"npc": 123}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'npc' must be a string" in errors[0]
+
+    def test_validate_params_player_not_bool(self) -> None:
+        """Test validate_params detects non-bool player field."""
+        data = {"player": "yes"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'player' must be a bool" in errors[0]
+
+    def test_validate_params_interactive_object_not_string(self) -> None:
+        """Test validate_params detects non-string interactive_object field."""
+        data = {"interactive_object": 123}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'interactive_object' must be a string" in errors[0]
+
+    def test_validate_params_color_not_list(self) -> None:
+        """Test validate_params detects non-list color field."""
+        data = {"npc": "martin", "color": "red"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'color' must be a list of 3 integers" in errors[0]
+
+    def test_validate_params_color_wrong_length(self) -> None:
+        """Test validate_params detects color list with wrong length."""
+        data = {"npc": "martin", "color": [255, 0]}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'color' must be a list of 3 integers" in errors[0]
+
+    def test_validate_params_color_non_integers(self) -> None:
+        """Test validate_params detects color list with non-integers."""
+        data = {"npc": "martin", "color": [255, "green", 0]}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'color' must be a list of 3 integers" in errors[0]
+
+    def test_validate_params_color_with_bools(self) -> None:
+        """Test validate_params detects color list with bools."""
+        data = {"npc": "martin", "color": [True, False, 0]}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "'color' must be a list of 3 integers" in errors[0]
+
+    def test_validate_params_color_valid(self) -> None:
+        """Test validate_params accepts valid color list."""
+        data = {"npc": "martin", "color": [255, 128, 0]}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+
 if __name__ == "__main__":
     unittest.main()

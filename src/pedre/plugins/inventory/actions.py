@@ -130,6 +130,21 @@ class AcquireItemAction(Action):
         """Create AcquireItemAction from a dictionary."""
         return cls(item_id=data.get("item_id", ""))
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate acquire_item action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        item_id = data.get("item_id")
+        if not item_id:
+            errors.append("missing required 'item_id' field")
+        elif not isinstance(item_id, str):
+            errors.append("'item_id' must be a string")
+        return errors
+
 
 @ActionRegistry.register("add_item")
 class AddItemAction(Action):
@@ -274,6 +289,43 @@ class AddItemAction(Action):
             consumable=data.get("consumable", False),
         )
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate add_item action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        name = data.get("name")
+        if not name:
+            errors.append("missing required 'name' field")
+        elif not isinstance(name, str):
+            errors.append("'name' must be a string")
+
+        if "description" in data and not isinstance(data["description"], str):
+            errors.append("'description' must be a string")
+
+        if "item_id" in data and data["item_id"] is not None and not isinstance(data["item_id"], str):
+            errors.append("'item_id' must be a string")
+
+        if "image_path" in data and data["image_path"] is not None and not isinstance(data["image_path"], str):
+            errors.append("'image_path' must be a string")
+
+        if "icon_path" in data and data["icon_path"] is not None and not isinstance(data["icon_path"], str):
+            errors.append("'icon_path' must be a string")
+
+        if "category" in data and not isinstance(data["category"], str):
+            errors.append("'category' must be a string")
+
+        if "acquired" in data and not isinstance(data["acquired"], bool):
+            errors.append("'acquired' must be a bool")
+
+        if "consumable" in data and not isinstance(data["consumable"], bool):
+            errors.append("'consumable' must be a bool")
+
+        return errors
+
 
 @ActionRegistry.register("consume_item")
 class ConsumeItemAction(Action):
@@ -337,3 +389,18 @@ class ConsumeItemAction(Action):
     def from_dict(cls, data: dict[str, Any]) -> ConsumeItemAction:
         """Create ConsumeItemAction from a dictionary."""
         return cls(item_id=data.get("item_id", ""))
+
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate consume_item action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        item_id = data.get("item_id")
+        if not item_id:
+            errors.append("missing required 'item_id' field")
+        elif not isinstance(item_id, str):
+            errors.append("'item_id' must be a string")
+        return errors

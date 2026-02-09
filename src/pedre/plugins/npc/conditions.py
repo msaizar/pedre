@@ -8,7 +8,24 @@ if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
 
 
-@ConditionRegistry.register("npc_interacted")
+def _validate_npc_interacted(data: dict[str, Any]) -> list[str]:
+    errors = []
+    npc = data.get("npc")
+    if not npc:
+        errors.append("missing required 'npc' field")
+    elif not isinstance(npc, str):
+        errors.append("'npc' must be a string")
+
+    if "scene" in data and not isinstance(data["scene"], str):
+        errors.append("'scene' must be a string")
+
+    if "equals" in data and not isinstance(data["equals"], bool):
+        errors.append("'equals' must be a bool")
+
+    return errors
+
+
+@ConditionRegistry.register("npc_interacted", validator=_validate_npc_interacted)
 def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check if an NPC has been interacted with in a specific scene.
 
@@ -41,7 +58,23 @@ def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -
     return npc_mgr.has_npc_been_interacted_with(npc_name, scene_name) == expected
 
 
-@ConditionRegistry.register("npc_dialog_level")
+def _validate_npc_dialog_level(data: dict[str, Any]) -> list[str]:
+    errors = []
+    npc = data.get("npc")
+    if not npc:
+        errors.append("missing required 'npc' field")
+    elif not isinstance(npc, str):
+        errors.append("'npc' must be a string")
+
+    if "equals" not in data:
+        errors.append("missing required 'equals' field")
+    elif not isinstance(data["equals"], int) or isinstance(data["equals"], bool):
+        errors.append("'equals' must be an int")
+
+    return errors
+
+
+@ConditionRegistry.register("npc_dialog_level", validator=_validate_npc_dialog_level)
 def check_npc_dialog_level(condition_data: dict[str, Any], context: GameContext) -> bool:
     """Check an NPC's dialog level."""
     npc_mgr = context.npc_plugin

@@ -102,6 +102,36 @@ class DialogAction(Action):
             auto_close=data.get("auto_close", settings.DIALOG_AUTO_CLOSE_DEFAULT),
         )
 
+    @classmethod
+    def validate_params(cls, data: dict[str, Any]) -> list[str]:
+        """Validate dialog action parameters.
+
+        Returns:
+            List of error messages. Empty list means valid.
+        """
+        errors = []
+        text = data.get("text")
+        if not text:
+            errors.append("missing required 'text' field")
+        elif not isinstance(text, list):
+            errors.append("'text' must be a list")
+        elif not all(isinstance(item, str) for item in text):
+            errors.append("'text' items must be strings")
+
+        speaker = data.get("speaker")
+        if not speaker:
+            errors.append("missing required 'speaker' field")
+        elif not isinstance(speaker, str):
+            errors.append("'speaker' must be a string")
+
+        if "instant" in data and not isinstance(data["instant"], bool):
+            errors.append("'instant' must be a bool")
+
+        if "auto_close" in data and not isinstance(data["auto_close"], bool):
+            errors.append("'auto_close' must be a bool")
+
+        return errors
+
 
 @ActionRegistry.register("wait_for_dialog_close")
 class WaitForDialogCloseAction(WaitForConditionAction):
