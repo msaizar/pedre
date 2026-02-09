@@ -1,6 +1,6 @@
 """Tests for ActionRegistry."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -424,3 +424,49 @@ class TestActionRegistryClear:
         ActionRegistry.clear()
         ActionRegistry.clear()  # Should not raise
         assert ActionRegistry.get_all_types() == []
+
+
+class TestActionRegistryValidate:
+    """Tests for the validate method."""
+
+    def test_validate_with_validator(self) -> None:
+        """Test validate with a registered validator."""
+        ActionRegistry.clear()
+
+        @ActionRegistry.register("test_action")
+        class TestAction(SimpleAction):
+            @classmethod
+            def validate_params(cls, data: dict[str, Any]) -> list[str]:
+                errors = []
+                if not data.get("required_field"):
+                    errors.append("missing required 'required_field' field")
+                return errors
+
+        # Valid data
+        errors = ActionRegistry.validate("test_action", {"required_field": "value"})
+        assert errors == []
+
+        # Invalid data
+        errors = ActionRegistry.validate("test_action", {})
+        assert len(errors) == 1
+        assert "missing required 'required_field' field" in errors[0]
+
+    def test_validate_without_validator(self) -> None:
+        """Test validate with no registered validator."""
+        ActionRegistry.clear()
+
+        @ActionRegistry.register("test_action")
+        class TestAction(SimpleAction):
+            pass  # No validate_params method
+
+        # Should return empty list when no validator exists
+        errors = ActionRegistry.validate("test_action", {"any": "data"})
+        assert errors == []
+
+    def test_validate_unregistered_action(self) -> None:
+        """Test validate with unregistered action type."""
+        ActionRegistry.clear()
+
+        # Should return empty list for unregistered action
+        errors = ActionRegistry.validate("nonexistent_action", {"data": "value"})
+        assert errors == []

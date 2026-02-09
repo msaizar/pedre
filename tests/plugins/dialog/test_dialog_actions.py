@@ -177,6 +177,52 @@ class TestDialogAction(unittest.TestCase):
         assert action.started is False
 
 
+class TestDialogActionValidation(unittest.TestCase):
+    """Test DialogAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"text": ["Hello!"], "speaker": "TestNPC"}
+        errors = DialogAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_text(self) -> None:
+        """Test validate_params detects missing text field."""
+        data = {"speaker": "TestNPC"}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'text' field" in errors[0]
+
+    def test_validate_params_empty_text(self) -> None:
+        """Test validate_params detects empty text field."""
+        data = {"text": "", "speaker": "TestNPC"}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'text' field" in errors[0]
+
+    def test_validate_params_missing_speaker(self) -> None:
+        """Test validate_params detects missing speaker field."""
+        data = {"text": ["Hello!"]}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'speaker' field" in errors[0]
+
+    def test_validate_params_empty_speaker(self) -> None:
+        """Test validate_params detects empty speaker field."""
+        data = {"text": ["Hello!"], "speaker": ""}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'speaker' field" in errors[0]
+
+    def test_validate_params_missing_both_fields(self) -> None:
+        """Test validate_params detects both missing fields."""
+        data = {}
+        errors = DialogAction.validate_params(data)
+        assert len(errors) == 2
+        assert any("'text'" in e for e in errors)
+        assert any("'speaker'" in e for e in errors)
+
+
 class TestWaitForDialogCloseAction(unittest.TestCase):
     """Test WaitForDialogCloseAction."""
 

@@ -177,5 +177,29 @@ class TestChangeSceneAction(unittest.TestCase):
         assert action.executed is False
 
 
+class TestChangeSceneActionValidation(unittest.TestCase):
+    """Test ChangeSceneAction parameter validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"target_map": "Village.tmx"}
+        errors = ChangeSceneAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_target_map(self) -> None:
+        """Test validate_params detects missing target_map field."""
+        data = {}
+        errors = ChangeSceneAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'target_map' field" in errors[0]
+
+    def test_validate_params_empty_target_map(self) -> None:
+        """Test validate_params detects empty target_map field."""
+        data = {"target_map": ""}
+        errors = ChangeSceneAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'target_map' field" in errors[0]
+
+
 if __name__ == "__main__":
     unittest.main()

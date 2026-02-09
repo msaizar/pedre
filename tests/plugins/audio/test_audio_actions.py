@@ -269,5 +269,53 @@ class TestPlayMusicAction(unittest.TestCase):
         assert action.volume == 1.0
 
 
+class TestPlaySFXActionValidation(unittest.TestCase):
+    """Test PlaySFXAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"file": "sound.wav"}
+        errors = PlaySFXAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_file(self) -> None:
+        """Test validate_params detects missing file field."""
+        data = {}
+        errors = PlaySFXAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+    def test_validate_params_empty_file(self) -> None:
+        """Test validate_params detects empty file field."""
+        data = {"file": ""}
+        errors = PlaySFXAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+
+class TestPlayMusicActionValidation(unittest.TestCase):
+    """Test PlayMusicAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"file": "music.ogg"}
+        errors = PlayMusicAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_file(self) -> None:
+        """Test validate_params detects missing file field."""
+        data = {}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+    def test_validate_params_empty_file(self) -> None:
+        """Test validate_params detects empty file field."""
+        data = {"file": ""}
+        errors = PlayMusicAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'file' field" in errors[0]
+
+
 if __name__ == "__main__":
     unittest.main()

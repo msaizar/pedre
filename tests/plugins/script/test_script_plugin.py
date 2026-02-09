@@ -1375,6 +1375,26 @@ class TestScriptValidation(unittest.TestCase):
 
     @patch("pedre.plugins.script.plugin.EventRegistry")
     @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_validate_scripts_valid_trigger_filter_keys(
+        self, mock_action_registry: MagicMock, mock_event_registry: MagicMock
+    ) -> None:
+        """Test validate_scripts accepts valid trigger filter keys."""
+        mock_event_registry.is_registered.return_value = True
+        mock_event_registry.get_trigger_keys.return_value = frozenset({"npc", "dialog_level"})
+        mock_action_registry.is_registered.return_value = True
+        mock_action_registry.validate.return_value = []
+
+        script = Script(
+            trigger={"event": "npc_interacted", "npc": "martin", "dialog_level": 1},  # Valid filter keys
+            actions=[{"type": "test"}],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        # Should not raise - all filter keys are valid
+        self.plugin.validate_scripts()
+
+    @patch("pedre.plugins.script.plugin.EventRegistry")
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
     def test_validate_scripts_skips_validation_when_no_validator(
         self, mock_action_registry: MagicMock, mock_event_registry: MagicMock
     ) -> None:

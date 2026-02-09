@@ -398,3 +398,39 @@ class TestEventRegistryIntegration:
 
         # The most recent registration wins for reverse lookup
         assert EventRegistry.get_name(MultiNameEvent) == "name_a"
+
+
+class TestEventRegistryGetTriggerKeys:
+    """Tests for the get_trigger_keys method."""
+
+    def test_get_trigger_keys_with_keys(self) -> None:
+        """Test get_trigger_keys with registered trigger keys."""
+        EventRegistry.clear()
+
+        @EventRegistry.register("test_event")
+        class TestEvent(SimpleEvent):
+            trigger_keys = frozenset({"npc", "dialog_level"})
+
+        result = EventRegistry.get_trigger_keys("test_event")
+        assert result is not None
+        assert result == frozenset({"npc", "dialog_level"})
+        assert "npc" in result
+        assert "dialog_level" in result
+
+    def test_get_trigger_keys_without_keys(self) -> None:
+        """Test get_trigger_keys with no registered trigger keys."""
+        EventRegistry.clear()
+
+        @EventRegistry.register("test_event")
+        class TestEvent(SimpleEvent):
+            pass
+
+        result = EventRegistry.get_trigger_keys("test_event")
+        assert result is None
+
+    def test_get_trigger_keys_unregistered_event(self) -> None:
+        """Test get_trigger_keys with unregistered event."""
+        EventRegistry.clear()
+
+        result = EventRegistry.get_trigger_keys("nonexistent_event")
+        assert result is None

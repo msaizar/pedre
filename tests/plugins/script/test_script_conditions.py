@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from pedre.plugins.script.base import Script
-from pedre.plugins.script.conditions import check_script_completed
+from pedre.plugins.script.conditions import _validate_script_completed, check_script_completed
 
 
 class TestCheckScriptCompleted(unittest.TestCase):
@@ -135,6 +135,30 @@ class TestCheckScriptCompleted(unittest.TestCase):
         result = check_script_completed(condition_data, self.mock_context)
 
         assert result is False
+
+
+class TestValidateScriptCompleted(unittest.TestCase):
+    """Test cases for _validate_script_completed validator."""
+
+    def test_validate_script_completed_success(self) -> None:
+        """Test validator passes with valid data."""
+        data = {"script": "test_script"}
+        errors = _validate_script_completed(data)
+        assert errors == []
+
+    def test_validate_script_completed_missing_script(self) -> None:
+        """Test validator detects missing script field."""
+        data = {}
+        errors = _validate_script_completed(data)
+        assert len(errors) == 1
+        assert "missing required 'script' field" in errors[0]
+
+    def test_validate_script_completed_empty_script(self) -> None:
+        """Test validator detects empty script field."""
+        data = {"script": ""}
+        errors = _validate_script_completed(data)
+        assert len(errors) == 1
+        assert "missing required 'script' field" in errors[0]
 
 
 if __name__ == "__main__":

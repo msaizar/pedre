@@ -567,5 +567,70 @@ class TestEmitParticlesAction(unittest.TestCase):
         assert action.executed is True
 
 
+class TestEmitParticlesActionValidation(unittest.TestCase):
+    """Test EmitParticlesAction parameter validation."""
+
+    def test_validate_params_success_with_npc(self) -> None:
+        """Test validate_params with valid npc location."""
+        data = {"particle_type": "hearts", "npc": "martin"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_success_with_player(self) -> None:
+        """Test validate_params with valid player location."""
+        data = {"particle_type": "sparkles", "player": True}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_success_with_interactive_object(self) -> None:
+        """Test validate_params with valid interactive_object location."""
+        data = {"particle_type": "burst", "interactive_object": "portal"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_success_default_particle_type(self) -> None:
+        """Test validate_params with default particle_type (burst)."""
+        data = {"npc": "martin"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_invalid_particle_type(self) -> None:
+        """Test validate_params detects invalid particle_type."""
+        data = {"particle_type": "invalid_type", "npc": "martin"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "unknown particle_type 'invalid_type'" in errors[0]
+        assert "valid: " in errors[0]
+
+    def test_validate_params_no_location(self) -> None:
+        """Test validate_params detects missing location."""
+        data = {"particle_type": "hearts"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "must specify one location" in errors[0]
+
+    def test_validate_params_multiple_locations_npc_and_player(self) -> None:
+        """Test validate_params detects multiple locations (npc and player)."""
+        data = {"particle_type": "hearts", "npc": "martin", "player": True}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "only one location allowed" in errors[0]
+
+    def test_validate_params_multiple_locations_all_three(self) -> None:
+        """Test validate_params detects all three locations specified."""
+        data = {"particle_type": "hearts", "npc": "martin", "player": True, "interactive_object": "portal"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 1
+        assert "only one location allowed" in errors[0]
+
+    def test_validate_params_multiple_errors(self) -> None:
+        """Test validate_params detects multiple errors at once."""
+        data = {"particle_type": "invalid_type"}
+        errors = EmitParticlesAction.validate_params(data)
+        assert len(errors) == 2
+        assert any("unknown particle_type" in e for e in errors)
+        assert any("must specify one location" in e for e in errors)
+
+
 if __name__ == "__main__":
     unittest.main()

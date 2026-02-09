@@ -46,6 +46,30 @@ class TestWaitForInventoryAccessAction(unittest.TestCase):
         assert result is True
 
 
+class TestAcquireItemActionValidation(unittest.TestCase):
+    """Test AcquireItemAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"item_id": "test_item"}
+        errors = AcquireItemAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_item_id(self) -> None:
+        """Test validate_params detects missing item_id field."""
+        data = {}
+        errors = AcquireItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_params_empty_item_id(self) -> None:
+        """Test validate_params detects empty item_id field."""
+        data = {"item_id": ""}
+        errors = AcquireItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+
 class TestAcquireItemAction(unittest.TestCase):
     """Test AcquireItemAction."""
 
@@ -130,6 +154,30 @@ class TestAcquireItemAction(unittest.TestCase):
         action.reset()
         assert action.started is False
         assert action.success is False
+
+
+class TestAddItemActionValidation(unittest.TestCase):
+    """Test AddItemAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"name": "Test Item", "description": "A test item"}
+        errors = AddItemAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_name(self) -> None:
+        """Test validate_params detects missing name field."""
+        data = {"description": "A test item"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'name' field" in errors[0]
+
+    def test_validate_params_empty_name(self) -> None:
+        """Test validate_params detects empty name field."""
+        data = {"name": "", "description": "A test item"}
+        errors = AddItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'name' field" in errors[0]
 
 
 class TestAddItemAction(unittest.TestCase):
@@ -377,6 +425,30 @@ class TestAddItemAction(unittest.TestCase):
         action.reset()
         assert action.started is False
         assert action.success is False
+
+
+class TestConsumeItemActionValidation(unittest.TestCase):
+    """Test ConsumeItemAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"item_id": "test_item"}
+        errors = ConsumeItemAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_item_id(self) -> None:
+        """Test validate_params detects missing item_id field."""
+        data = {}
+        errors = ConsumeItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
+
+    def test_validate_params_empty_item_id(self) -> None:
+        """Test validate_params detects empty item_id field."""
+        data = {"item_id": ""}
+        errors = ConsumeItemAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'item_id' field" in errors[0]
 
 
 class TestConsumeItemAction(unittest.TestCase):

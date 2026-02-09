@@ -226,5 +226,29 @@ class TestStopCameraFollowAction(unittest.TestCase):
         camera_plugin.stop_follow.assert_called_once()
 
 
+class TestFollowNPCActionValidation(unittest.TestCase):
+    """Test FollowNPCAction validation."""
+
+    def test_validate_params_success(self) -> None:
+        """Test validate_params with valid data."""
+        data = {"npc": "martin"}
+        errors = FollowNPCAction.validate_params(data)
+        assert errors == []
+
+    def test_validate_params_missing_npc(self) -> None:
+        """Test validate_params detects missing npc field."""
+        data = {}
+        errors = FollowNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+    def test_validate_params_empty_npc(self) -> None:
+        """Test validate_params detects empty npc field."""
+        data = {"npc": ""}
+        errors = FollowNPCAction.validate_params(data)
+        assert len(errors) == 1
+        assert "missing required 'npc' field" in errors[0]
+
+
 if __name__ == "__main__":
     unittest.main()

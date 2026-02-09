@@ -507,3 +507,52 @@ class TestConditionRegistryIntegration:
             )
             is False
         )
+
+
+class TestConditionRegistryValidate:
+    """Tests for the validate method."""
+
+    def test_validate_with_validator(self) -> None:
+        """Test validate with a registered validator."""
+        ConditionRegistry.clear()
+
+        def validator(data: dict[str, Any]) -> list[str]:
+            errors = []
+            if not data.get("required_field"):
+                errors.append("missing required 'required_field' field")
+            return errors
+
+        @ConditionRegistry.register("test_condition", validator=validator)
+        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
+            del condition_data, context
+            return True
+
+        # Valid data
+        errors = ConditionRegistry.validate("test_condition", {"required_field": "value"})
+        assert errors == []
+
+        # Invalid data
+        errors = ConditionRegistry.validate("test_condition", {})
+        assert len(errors) == 1
+        assert "missing required 'required_field' field" in errors[0]
+
+    def test_validate_without_validator(self) -> None:
+        """Test validate with no registered validator."""
+        ConditionRegistry.clear()
+
+        @ConditionRegistry.register("test_condition")
+        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
+            del condition_data, context
+            return True
+
+        # Should return empty list when no validator exists
+        errors = ConditionRegistry.validate("test_condition", {"any": "data"})
+        assert errors == []
+
+    def test_validate_unregistered_condition(self) -> None:
+        """Test validate with unregistered condition type."""
+        ConditionRegistry.clear()
+
+        # Should return empty list for unregistered condition
+        errors = ConditionRegistry.validate("nonexistent_condition", {"data": "value"})
+        assert errors == []
