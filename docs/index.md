@@ -115,6 +115,14 @@ def update(self, delta_time):
 
     [:octicons-arrow-right-24: Configure](guides/configuration.md)
 
+-   :material-console:{ .lg .middle } **Command-Line Interface**
+
+    ---
+
+    Use the Pedre CLI to manage and extend your projects
+
+    [:octicons-arrow-right-24: CLI Guide](guides/cli.md)
+
 -   :material-puzzle:{ .lg .middle } **Extending Pedre**
 
     ---
