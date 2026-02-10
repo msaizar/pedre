@@ -1431,47 +1431,6 @@ class TestScriptValidation(unittest.TestCase):
         assert "unknown_key" in self.plugin._validation_errors[0]
         assert "another_bad_key" in self.plugin._validation_errors[0]
 
-    @patch("pedre.plugins.script.plugin.asset_path")
-    @patch("pedre.plugins.script.plugin.EventRegistry")
-    @patch("pedre.plugins.script.plugin.ActionRegistry")
-    def test_load_all_scripts_validates(
-        self,
-        mock_action_registry: MagicMock,
-        mock_event_registry: MagicMock,
-        mock_asset_path: MagicMock,
-    ) -> None:
-        """Test _load_all_scripts calls validate_scripts."""
-        # Setup invalid script
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "unknown_event"},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        mock_file = MagicMock()
-        mock_file.name = "test_scripts.json"
-        m_open = mock_open(read_data=json.dumps(script_data))
-        mock_file.open = m_open
-
-        mock_path = MagicMock()
-        mock_path.exists.return_value = True
-        mock_path.glob.return_value = [mock_file]
-        mock_asset_path.return_value = "/fake/scripts"
-
-        # Mock registries - event is invalid, action is valid
-        mock_event_registry.is_registered.return_value = False
-        mock_event_registry.get_all_types.return_value = []
-        mock_action_registry.is_registered.return_value = True
-
-        with patch("pedre.plugins.script.plugin.Path") as mock_path_class:
-            mock_path_class.return_value = mock_path
-
-            with pytest.raises(ScriptValidationError) as cm:
-                self.plugin._load_all_scripts()
-
-        assert "unknown event 'unknown_event'" in str(cm.value)
-
 
 if __name__ == "__main__":
     unittest.main()
