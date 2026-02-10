@@ -2,7 +2,8 @@
 
 import argparse
 import json
-from typing import TYPE_CHECKING
+from pathlib import Path as PathlibPath
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -134,18 +135,24 @@ class TestValidateCommand:
         """Test validate command with OS error when opening file."""
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text("{}")
-        # Make the file unreadable
-        script_file.chmod(0o000)
 
         command = ValidateCommand()
-        try:
+
+        # Mock Path.open to raise OSError (works cross-platform)
+        original_open = PathlibPath.open
+        error_msg = "Permission denied"
+
+        def mock_path_open(self: PathlibPath, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+            # Check if opening the test script file
+            if self.name == "test_scripts.json":
+                raise OSError(error_msg)
+            return original_open(self, *args, **kwargs)
+
+        with patch.object(PathlibPath, "open", mock_path_open):
             with pytest.raises(SystemExit) as exc_info:
                 command.execute(argparse.Namespace(path=scripts_dir))
 
             assert exc_info.value.code == 1
-        finally:
-            # Restore permissions for cleanup
-            script_file.chmod(0o644)
 
     def test_validate_scripts_trigger_without_event(self, scripts_dir: Path, setup_registries: None) -> None:
         """Test validate command with trigger missing event key."""
