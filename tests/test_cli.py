@@ -1,5 +1,6 @@
 """CLI tests."""
 
+import argparse
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
@@ -45,7 +46,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_directory_not_found(
         self,
         mock_path_class: MagicMock,
@@ -68,8 +68,9 @@ class TestCLI:
             mock_condition_registry,
         )
 
+        args = argparse.Namespace(path=None)
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(args)
 
         assert exc_info.value.code == 1
 
@@ -80,7 +81,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_no_script_files(
         self,
         mock_path_class: MagicMock,
@@ -104,8 +104,9 @@ class TestCLI:
             mock_condition_registry,
         )
 
+        args = argparse.Namespace(path=None)
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(args)
 
         assert exc_info.value.code == 0
 
@@ -116,7 +117,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_unknown_keys(
         self,
         mock_path_class: MagicMock,
@@ -157,8 +157,9 @@ class TestCLI:
         mock_action_registry.is_registered.return_value = True
         mock_action_registry.validate.return_value = []
 
+        args = argparse.Namespace(path=None)
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(args)
 
         assert exc_info.value.code == 1
 
@@ -169,7 +170,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_json_decode_error(
         self,
         mock_path_class: MagicMock,
@@ -198,7 +198,7 @@ class TestCLI:
         )
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -209,7 +209,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_os_error(
         self,
         mock_path_class: MagicMock,
@@ -238,7 +237,7 @@ class TestCLI:
         )
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -249,7 +248,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_trigger_without_event(
         self,
         mock_path_class: MagicMock,
@@ -288,7 +286,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -299,7 +297,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_with_invalid_event(
         self,
         mock_path_class: MagicMock,
@@ -339,7 +336,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -350,7 +347,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_trigger_valid_filter_keys(
         self,
         mock_path_class: MagicMock,
@@ -391,7 +387,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         # Should succeed - valid filter keys
-        validate_scripts()
+        validate_scripts(argparse.Namespace(path=None))
 
     @patch("pedre.cli.ActionLoader")
     @patch("pedre.cli.EventLoader")
@@ -400,7 +396,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_trigger_invalid_filter_keys(
         self,
         mock_path_class: MagicMock,
@@ -441,7 +436,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -452,7 +447,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_condition_missing_check(
         self,
         mock_path_class: MagicMock,
@@ -491,7 +485,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -502,7 +496,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_condition_unknown_type(
         self,
         mock_path_class: MagicMock,
@@ -542,7 +535,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -553,7 +546,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_condition_validation_errors(
         self,
         mock_path_class: MagicMock,
@@ -594,7 +586,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -605,7 +597,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_empty_actions(
         self,
         mock_path_class: MagicMock,
@@ -643,7 +634,7 @@ class TestCLI:
         mock_event_registry.is_registered.return_value = True
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -654,7 +645,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_action_missing_type(
         self,
         mock_path_class: MagicMock,
@@ -689,7 +679,7 @@ class TestCLI:
         )
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -700,7 +690,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_action_unknown_type(
         self,
         mock_path_class: MagicMock,
@@ -737,7 +726,7 @@ class TestCLI:
         mock_action_registry.is_registered.return_value = False
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -748,7 +737,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_action_validation_errors(
         self,
         mock_path_class: MagicMock,
@@ -786,7 +774,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = ["parameter error"]
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -797,7 +785,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_on_condition_fail_missing_type(
         self,
         mock_path_class: MagicMock,
@@ -836,7 +823,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -847,7 +834,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_on_condition_fail_unknown_type(
         self,
         mock_path_class: MagicMock,
@@ -889,7 +875,7 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -900,7 +886,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_on_condition_fail_validation_errors(
         self,
         mock_path_class: MagicMock,
@@ -945,7 +930,7 @@ class TestCLI:
         mock_action_registry.validate.side_effect = validate_side_effect
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
@@ -956,7 +941,6 @@ class TestCLI:
     @patch("pedre.cli.ActionRegistry")
     @patch("pedre.cli.ConditionRegistry")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_success(
         self,
         mock_path_class: MagicMock,
@@ -1003,13 +987,12 @@ class TestCLI:
         mock_action_registry.validate.return_value = []
 
         # Should not raise, completes successfully
-        validate_scripts()
+        validate_scripts(argparse.Namespace(path=None))
 
     @patch("pedre.cli.ActionLoader")
     @patch("pedre.cli.EventLoader")
     @patch("pedre.cli.ConditionLoader")
     @patch("pedre.cli.Path")
-    @patch("sys.argv", ["pedre-validate"])
     def test_validate_scripts_script_validation_error(
         self,
         mock_path_class: MagicMock,
@@ -1033,11 +1016,59 @@ class TestCLI:
         mock_path_class.cwd.return_value = mock_cwd
 
         with pytest.raises(SystemExit) as exc_info:
-            validate_scripts()
+            validate_scripts(argparse.Namespace(path=None))
 
         assert exc_info.value.code == 1
 
-    def test_main(self) -> None:
-        """Test main CLI entry point."""
+    @patch("sys.argv", ["pedre"])
+    def test_main_no_command(self) -> None:
+        """Test main CLI entry point with no command."""
         # Should just print help and not exit
+        main()
+
+    @patch("sys.argv", ["pedre", "validate"])
+    @patch("pedre.cli.ActionLoader")
+    @patch("pedre.cli.EventLoader")
+    @patch("pedre.cli.ConditionLoader")
+    @patch("pedre.cli.EventRegistry")
+    @patch("pedre.cli.ActionRegistry")
+    @patch("pedre.cli.ConditionRegistry")
+    @patch("pedre.cli.Path")
+    def test_main_validate_command(
+        self,
+        mock_path_class: MagicMock,
+        mock_condition_registry: MagicMock,
+        mock_action_registry: MagicMock,
+        mock_event_registry: MagicMock,
+        mock_condition_loader: MagicMock,  # noqa: ARG002
+        mock_event_loader: MagicMock,  # noqa: ARG002
+        mock_action_loader: MagicMock,  # noqa: ARG002
+    ) -> None:
+        """Test main CLI with validate subcommand."""
+        script_data = {
+            "test_script": {
+                "actions": [{"type": "test_action"}],
+            }
+        }
+
+        mock_file_path = MagicMock(spec=Path)
+        mock_file_path.name = "test_scripts.json"
+        mock_file_path.open = mock_open(read_data=json.dumps(script_data))
+
+        mock_scripts_dir = MagicMock(spec=Path)
+        mock_scripts_dir.exists.return_value = True
+        mock_scripts_dir.glob.return_value = [mock_file_path]
+
+        self._setup_mocks(
+            mock_path_class,
+            mock_scripts_dir,
+            mock_event_registry,
+            mock_action_registry,
+            mock_condition_registry,
+        )
+
+        mock_action_registry.is_registered.return_value = True
+        mock_action_registry.validate.return_value = []
+
+        # Should call validate_scripts and complete
         main()

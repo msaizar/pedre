@@ -4,17 +4,17 @@ This module provides command-line utilities for managing and validating Pedre ga
 
 Usage:
     With uv (recommended):
-        uv run pedre-validate          # Run validation command
+        uv run pedre validate          # Run validation command
         uv run pedre                   # Show CLI help
 
     With pip install:
         pip install -e .               # Install in editable mode
-        pedre-validate                 # Run validation command
+        pedre validate                 # Run validation command
         pedre                          # Show CLI help
 
     As a uv tool:
         uv tool install pedre          # Install as a tool
-        pedre-validate                 # Run validation command
+        pedre validate                 # Run validation command
         pedre                          # Show CLI help
 """
 
@@ -41,7 +41,7 @@ console = Console()
 logger = logging.getLogger(__name__)
 
 
-def validate_scripts() -> None:
+def validate_scripts(args: argparse.Namespace) -> None:
     """Validate all game scripts for errors.
 
     Loads and validates all script files in the scripts directory, checking:
@@ -52,18 +52,10 @@ def validate_scripts() -> None:
     - All parameters are correct
 
     Displays results using rich formatting with colors and tables.
-    """
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Validate Pedre game scripts")
-    parser.add_argument(
-        "--path",
-        "-p",
-        type=Path,
-        default=None,
-        help=f"Path to scripts directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCRIPTS_DIRECTORY})",
-    )
-    args = parser.parse_args()
 
+    Args:
+        args: Parsed command-line arguments containing optional path parameter.
+    """
     console.print("\n[bold cyan]Pedre Script Validator[/bold cyan]")
     console.print("=" * 60)
 
@@ -293,9 +285,37 @@ def validate_scripts() -> None:
 def main() -> None:
     """Main entry point for the Pedre CLI.
 
-    Displays available commands and help information.
+    Parses subcommands and routes to the appropriate handler.
     """
-    console.print("\n[bold cyan]Pedre CLI[/bold cyan]")
-    console.print("=" * 60)
-    console.print("\nAvailable commands:")
-    console.print("  [green]pedre-validate[/green]  - Validate game scripts\n")
+    parser = argparse.ArgumentParser(
+        prog="pedre",
+        description="Pedre game framework CLI",
+    )
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Validate subcommand
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="Validate game scripts",
+        description="Validate all game scripts for errors",
+    )
+    validate_parser.add_argument(
+        "--path",
+        "-p",
+        type=Path,
+        default=None,
+        help=f"Path to scripts directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCRIPTS_DIRECTORY})",
+    )
+
+    args = parser.parse_args()
+
+    # Route to appropriate subcommand
+    if args.command == "validate":
+        validate_scripts(args)
+    else:
+        # No subcommand provided - show help
+        console.print("\n[bold cyan]Pedre CLI[/bold cyan]")
+        console.print("=" * 60)
+        console.print("\nAvailable commands:")
+        console.print("  [green]pedre validate[/green]  - Validate game scripts")
+        console.print("\nRun [cyan]pedre <command> --help[/cyan] for more information on a command.\n")
