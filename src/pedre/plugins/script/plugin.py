@@ -342,12 +342,6 @@ class ScriptPlugin(ScriptBasePlugin):
 
             logger.info("Total scripts loaded globally: %d", len(self.scripts))
 
-            # Validate all loaded scripts
-            self.validate_scripts()
-
-        except ScriptValidationError:
-            # Re-raise validation errors
-            raise
         except Exception:
             logger.exception("Failed to load scripts from directory")
 

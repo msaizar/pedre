@@ -28,6 +28,10 @@ dependencies = [
     "platformdirs",
 ]
 
+[project.scripts]
+pedre = "pedre.cli:main"
+pedre-validate = "pedre.cli:validate_scripts"
+
 [project.urls]
 Homepage = "https://github.com/msaizar/pedre"
 Repository = "https://github.com/msaizar/pedre"
