@@ -1,10 +1,19 @@
-"""Tests for validate command."""
+"""Tests for validate command.
+
+These tests focus on command-specific logic:
+- Argument parsing and defaults
+- Integration of multiple validators
+- Error aggregation and display
+- Success/failure exit codes
+
+For validator-specific tests, see:
+- tests/validators/test_script_validator.py
+- tests/validators/test_dialog_validator.py
+"""
 
 import argparse
 import json
-from pathlib import Path as PathlibPath
-from typing import TYPE_CHECKING, Any
-from unittest.mock import patch
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -46,17 +55,24 @@ class TestValidateCommand:
     @pytest.fixture
     def scripts_dir(self, tmp_path: Path) -> Path:
         """Create a temporary scripts directory."""
-        scripts_dir = tmp_path / "assets" / "data" / "scripts"
+        scripts_dir = tmp_path / "scripts"
         scripts_dir.mkdir(parents=True)
         return scripts_dir
+
+    @pytest.fixture
+    def dialogs_dir(self, tmp_path: Path) -> Path:
+        """Create a temporary dialogs directory."""
+        dialogs_dir = tmp_path / "dialogs"
+        dialogs_dir.mkdir(parents=True)
+        return dialogs_dir
 
     @pytest.fixture
     def setup_registries(self) -> None:
         """Setup basic registries for tests."""
 
         # Register a simple event
-        @EventRegistry.register("valid_event")
-        class ValidEvent:
+        @EventRegistry.register("test_event")
+        class TestEvent:
             pass
 
         # Register a simple action
@@ -78,493 +94,233 @@ class TestValidateCommand:
         def test_condition(data: dict, context: object) -> bool:
             return True
 
+    # Argument Parsing Tests
+
+    def test_add_arguments_defaults(self) -> None:
+        """Test that add_arguments sets correct defaults."""
+        command = ValidateCommand()
+        parser = argparse.ArgumentParser()
+        command.add_arguments(parser)
+
+        args = parser.parse_args([])
+        assert args.path is None
+        assert args.type == "all"
+        assert args.dialogs_dir is None
+
+    def test_add_arguments_with_path(self, tmp_path: Path) -> None:
+        """Test add_arguments accepts custom path."""
+        command = ValidateCommand()
+        parser = argparse.ArgumentParser()
+        command.add_arguments(parser)
+
+        test_path = tmp_path / "custom"
+        args = parser.parse_args(["--path", str(test_path)])
+        assert args.path == test_path
+
+    def test_add_arguments_with_type(self) -> None:
+        """Test add_arguments accepts validation type."""
+        command = ValidateCommand()
+        parser = argparse.ArgumentParser()
+        command.add_arguments(parser)
+
+        args = parser.parse_args(["--type", "scripts"])
+        assert args.type == "scripts"
+
+        args = parser.parse_args(["--type", "dialogs"])
+        assert args.type == "dialogs"
+
+        args = parser.parse_args(["--type", "all"])
+        assert args.type == "all"
+
+    def test_add_arguments_with_dialogs_dir(self, tmp_path: Path) -> None:
+        """Test add_arguments accepts custom dialogs directory."""
+        command = ValidateCommand()
+        parser = argparse.ArgumentParser()
+        command.add_arguments(parser)
+
+        dialogs_path = tmp_path / "custom_dialogs"
+        args = parser.parse_args(["--dialogs-dir", str(dialogs_path)])
+        assert args.dialogs_dir == dialogs_path
+
+    # Validator Selection Tests
+
+    def test_validate_type_scripts_only(self, scripts_dir: Path, setup_registries: None) -> None:
+        """Test --type scripts validates only scripts."""
+        script_data = {
+            "test_script": {
+                "actions": [{"type": "test_action"}],
+            }
+        }
+
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(script_data))
+
+        command = ValidateCommand()
+        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
+        command.execute(args)
+
+    def test_validate_type_dialogs_only(self, dialogs_dir: Path, setup_registries: None) -> None:
+        """Test --type dialogs validates only dialogs."""
+        dialog_data = {
+            "merchant": {
+                "0": {
+                    "text": ["Hello, traveler!"],
+                }
+            }
+        }
+
+        dialog_file = dialogs_dir / "npc_dialogs.json"
+        dialog_file.write_text(json.dumps(dialog_data))
+
+        command = ValidateCommand()
+        args = argparse.Namespace(path=None, type="dialogs", dialogs_dir=dialogs_dir)
+        command.execute(args)
+
+    def test_validate_type_all_with_both(self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None) -> None:
+        """Test --type all validates both scripts and dialogs."""
+        script_data = {
+            "test_script": {
+                "actions": [{"type": "test_action"}],
+            }
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(script_data))
+
+        dialog_data = {
+            "merchant": {
+                "0": {
+                    "text": ["Hello, traveler!"],
+                }
+            }
+        }
+        dialog_file = dialogs_dir / "npc_dialogs.json"
+        dialog_file.write_text(json.dumps(dialog_data))
+
+        command = ValidateCommand()
+        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
+        command.execute(args)
+
+    def test_validate_with_custom_dialogs_dir(self, scripts_dir: Path, tmp_path: Path, setup_registries: None) -> None:
+        """Test validate uses custom dialogs directory when provided."""
+        dialogs_dir = tmp_path / "custom_dialogs"
+        dialogs_dir.mkdir(parents=True)
+
+        dialog_data = {
+            "merchant": {
+                "0": {
+                    "text": ["Hello!"],
+                }
+            }
+        }
+        dialog_file = dialogs_dir / "npc_dialogs.json"
+        dialog_file.write_text(json.dumps(dialog_data))
+
+        command = ValidateCommand()
+        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
+        command.execute(args)
+
+    # Error Handling Tests
+
     def test_validate_scripts_directory_not_found(self, tmp_path: Path) -> None:
-        """Test validate command when scripts directory doesn't exist."""
+        """Test validate exits with error when scripts directory not found."""
         nonexistent_dir = tmp_path / "nonexistent"
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=nonexistent_dir)
+        args = argparse.Namespace(path=nonexistent_dir, type="scripts", dialogs_dir=None)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 
         assert exc_info.value.code == 1
 
-    def test_validate_scripts_no_script_files(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command when no script files found."""
+    def test_validate_dialogs_directory_not_found(self, tmp_path: Path) -> None:
+        """Test validate exits with error when dialogs directory not found."""
+        nonexistent_dir = tmp_path / "nonexistent"
+
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir)
-        # New behavior: validates both scripts and dialogs, completes successfully without exit
+        args = argparse.Namespace(path=None, type="dialogs", dialogs_dir=nonexistent_dir)
+        with pytest.raises(SystemExit) as exc_info:
+            command.execute(args)
+
+        assert exc_info.value.code == 1
+
+    def test_validate_with_validation_errors_exits(self, scripts_dir: Path, setup_registries: None) -> None:
+        """Test validate exits with error code when validation fails."""
+        # Create invalid script (empty actions)
+        script_data = {"test_script": {"actions": []}}
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(script_data))
+
+        command = ValidateCommand()
+        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
+        with pytest.raises(SystemExit) as exc_info:
+            command.execute(args)
+
+        assert exc_info.value.code == 1
+
+    def test_validate_no_errors_succeeds(self, scripts_dir: Path, setup_registries: None) -> None:
+        """Test validate completes successfully when no errors."""
+        script_data = {
+            "test_script": {
+                "actions": [{"type": "test_action"}],
+            }
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(script_data))
+
+        command = ValidateCommand()
+        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
+        # Should not raise
         command.execute(args)
 
-    def test_validate_scripts_unknown_keys(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with unknown keys in script definition."""
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "valid_event"},
-                "actions": [{"type": "test_action"}],
-                "unknown_key": "value",
-                "another_bad_key": 123,
-            }
-        }
+    def test_validate_empty_directories_succeeds(
+        self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None
+    ) -> None:
+        """Test validate succeeds with empty directories (no files to validate)."""
+        command = ValidateCommand()
+        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
+        # Should not raise
+        command.execute(args)
 
+    # Error Aggregation Tests
+
+    def test_validate_aggregates_errors_from_multiple_validators(
+        self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None
+    ) -> None:
+        """Test that errors from both validators are aggregated."""
+        # Invalid script
+        script_data = {"test_script": {"actions": []}}
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
+        # Invalid dialog
+        dialog_data = {"merchant": {"0": {}}}  # Missing text field
+        dialog_file = dialogs_dir / "npc_dialogs.json"
+        dialog_file.write_text(json.dumps(dialog_data))
+
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir)
+        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 
+        # Should exit with error - both validators found issues
         assert exc_info.value.code == 1
 
-    def test_validate_scripts_json_decode_error(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with JSON decode error."""
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text("invalid json {")
+    def test_validate_aggregates_errors_from_multiple_files(self, scripts_dir: Path, setup_registries: None) -> None:
+        """Test that errors from multiple files are aggregated."""
+        # First invalid script file
+        script_data1 = {"script1": {"actions": []}}
+        script_file1 = scripts_dir / "game_scripts.json"
+        script_file1.write_text(json.dumps(script_data1))
+
+        # Second invalid script file
+        script_data2 = {"script2": {"actions": []}}
+        script_file2 = scripts_dir / "npc_scripts.json"
+        script_file2.write_text(json.dumps(script_data2))
 
         command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_os_error(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with OS error when opening file."""
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text("{}")
-
-        command = ValidateCommand()
-
-        # Mock Path.open to raise OSError (works cross-platform)
-        original_open = PathlibPath.open
-        error_msg = "Permission denied"
-
-        def mock_path_open(self: PathlibPath, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-            # Check if opening the test script file
-            if self.name == "test_scripts.json":
-                raise OSError(error_msg)
-            return original_open(self, *args, **kwargs)
-
-        with patch.object(PathlibPath, "open", mock_path_open):
-            with pytest.raises(SystemExit) as exc_info:
-                command.execute(argparse.Namespace(path=scripts_dir))
-
-            assert exc_info.value.code == 1
-
-    def test_validate_scripts_trigger_without_event(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with trigger missing event key."""
-        script_data = {
-            "test_script": {
-                "trigger": {"filter": "value"},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_with_invalid_event(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with invalid event triggers."""
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "unknown_event"},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_trigger_valid_filter_keys(self, scripts_dir: Path) -> None:
-        """Test validate command with valid trigger filter keys."""
-
-        # Register event with trigger keys
-        @EventRegistry.register("valid_event")
-        class ValidEvent:
-            trigger_keys = frozenset({"valid_key"})
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "valid_event", "valid_key": "value"},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        # Should succeed - valid filter keys
-        command.execute(argparse.Namespace(path=scripts_dir))
-
-    def test_validate_scripts_trigger_invalid_filter_keys(self, scripts_dir: Path) -> None:
-        """Test validate command with invalid trigger filter keys."""
-
-        # Register event with trigger keys
-        @EventRegistry.register("valid_event")
-        class ValidEvent:
-            trigger_keys = frozenset({"valid_key"})
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "valid_event", "invalid_filter": "value", "another_bad": 123},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_condition_missing_check(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with condition missing check key."""
-        script_data = {
-            "test_script": {
-                "conditions": [{"param": "value"}],
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_condition_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with unknown condition type."""
-        script_data = {
-            "test_script": {
-                "conditions": [{"check": "unknown_condition"}],
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_condition_validation_errors(self, scripts_dir: Path) -> None:
-        """Test validate command with condition parameter validation errors."""
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
-        # Validator that returns an error
-        @ConditionRegistry.register("test_condition", validator=lambda data: ["parameter error"])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
-
-        script_data = {
-            "test_script": {
-                "conditions": [{"check": "test_condition", "param": "bad_value"}],
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_empty_actions(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with empty actions list."""
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "valid_event"},
-                "actions": [],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_action_missing_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with action missing type key."""
-        script_data = {
-            "test_script": {
-                "actions": [{"param": "value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_action_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with unknown action type."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "unknown_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_action_validation_errors(self, scripts_dir: Path) -> None:
-        """Test validate command with action parameter validation errors."""
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return ["parameter error"]
-
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action", "param": "bad_value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_on_condition_fail_missing_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with on_condition_fail action missing type."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-                "on_condition_fail": [{"param": "value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_on_condition_fail_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with on_condition_fail unknown action type."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-                "on_condition_fail": [{"type": "unknown_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_on_condition_fail_validation_errors(self, scripts_dir: Path) -> None:
-        """Test validate command with on_condition_fail action validation errors."""
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(action: dict) -> list[str]:
-                if action.get("param") == "bad_value":
-                    return ["parameter error"]
-                return []
-
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-                "on_condition_fail": [{"type": "test_action", "param": "bad_value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(argparse.Namespace(path=scripts_dir))
-
-        assert exc_info.value.code == 1
-
-    def test_validate_scripts_success(self, scripts_dir: Path) -> None:
-        """Test validate command with all valid scripts."""
-
-        # Register event with no trigger keys
-        @EventRegistry.register("valid_event")
-        class ValidEvent:
-            pass
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **_kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
-        @ConditionRegistry.register("test_condition", validator=lambda _data: [])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
-
-        script_data = {
-            "script1": {
-                "trigger": {"event": "valid_event"},
-                "conditions": [{"check": "test_condition"}],
-                "actions": [{"type": "test_action"}],
-            },
-            "script2": {
-                "actions": [{"type": "test_action"}],
-            },
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        # Should not raise, completes successfully
-        command.execute(argparse.Namespace(path=scripts_dir))
-
-    def test_validate_scripts_script_validation_error(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with validation errors from validators."""
-        command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir)
-
-        # Create an invalid script file that will trigger validation errors
-        script_data = {"test_script": {"actions": []}}  # Empty actions list is invalid
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        # New behavior: validators return ValidationResult with errors
-        # Should exit with code 1 due to validation errors
+        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 
+        # Should exit with error - multiple files with errors
         assert exc_info.value.code == 1
-
-    def test_add_arguments_without_path(self) -> None:
-        """Test add_arguments method adds path argument with default None."""
-        command = ValidateCommand()
-        parser = argparse.ArgumentParser()
-
-        # Add arguments (covers line 39 default=None)
-        command.add_arguments(parser)
-
-        # Parse with no arguments - should use default
-        args = parser.parse_args([])
-        assert args.path is None
-
-    def test_add_arguments_with_path(self, tmp_path: Path) -> None:
-        """Test add_arguments method accepts path argument."""
-        command = ValidateCommand()
-        parser = argparse.ArgumentParser()
-
-        command.add_arguments(parser)
-
-        # Parse with path argument
-        test_path = tmp_path / "test"
-        args = parser.parse_args(["--path", str(test_path)])
-        assert args.path == test_path
