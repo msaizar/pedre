@@ -160,7 +160,19 @@ class ScriptValidator(Validator):
 
         # Populate context with entity references from scripts
         for script_name, script in scripts.items():
-            refs = {"npcs": set(), "waypoints": set()}
+            refs = {"npcs": set(), "waypoints": set(), "portals": set()}
+
+            # Scan trigger for portal references
+            if script.trigger and script.trigger.get("event") == "portal_entered":
+                if "portal_name" in script.trigger:
+                    refs["portals"].add(script.trigger["portal_name"])
+                elif "portal" in script.trigger:  # Handle possible legacy/alternative key
+                    refs["portals"].add(script.trigger["portal"])
+
+            # Scan conditions for NPC references
+            for condition in script.conditions:
+                if "npc" in condition:
+                    refs["npcs"].add(condition["npc"])
 
             # Scan actions for entity references
             for action in script.actions + script.on_condition_fail:
@@ -204,7 +216,7 @@ class ScriptValidator(Validator):
         )
 
     def validate_cross_references(self) -> ValidationResult:
-        """Validate that script references to NPCs and waypoints exist in maps.
+        """Validate that script references to NPCs, waypoints, and portals exist in maps.
 
         Returns:
             ValidationResult with cross-reference errors and metadata
@@ -212,6 +224,7 @@ class ScriptValidator(Validator):
         errors = []
         all_npcs = self.context.get_all_npcs()
         all_waypoints = self.context.get_all_waypoints()
+        all_portals = self.context.get_all_portals()
 
         for script_name, refs in self.context.script_references.items():
             # Validate NPC references
@@ -228,8 +241,16 @@ class ScriptValidator(Validator):
                 if waypoint_name and waypoint_name not in all_waypoints
             )
 
+            # Validate portal references
+            errors.extend(
+                f"Script '{script_name}': portal '{portal_name}' not found in any map"
+                for portal_name in refs.get("portals", set())
+                if portal_name and portal_name not in all_portals
+            )
+
         total_npc_refs = sum(len(refs.get("npcs", set())) for refs in self.context.script_references.values())
         total_waypoint_refs = sum(len(refs.get("waypoints", set())) for refs in self.context.script_references.values())
+        total_portal_refs = sum(len(refs.get("portals", set())) for refs in self.context.script_references.values())
 
         return ValidationResult(
             errors=errors,
@@ -237,5 +258,6 @@ class ScriptValidator(Validator):
             metadata={
                 "NPC references validated": total_npc_refs,
                 "Waypoint references validated": total_waypoint_refs,
+                "Portal references validated": total_portal_refs,
             },
         )

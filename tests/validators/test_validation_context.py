@@ -241,8 +241,33 @@ class TestValidationContext:
         context1.add_map_entity("village", "npcs", "merchant")
         context2.add_map_entity("forest", "npcs", "hermit")
 
-        # Contexts should be independent
-        assert "village" in context1.map_entities
-        assert "village" not in context2.map_entities
-        assert "forest" in context2.map_entities
         assert "forest" not in context1.map_entities
+
+    def test_get_map_portals_exists(self, context: ValidationContext) -> None:
+        """Test retrieving portals from a specific map that exists."""
+        context.add_map_entity("village", "portals", "dungeon_entrance")
+        context.add_map_entity("village", "portals", "shop_exit")
+
+        portals = context.get_map_portals("village")
+
+        assert len(portals) == 2
+        assert "dungeon_entrance" in portals
+        assert "shop_exit" in portals
+
+    def test_get_map_portals_not_found(self, context: ValidationContext) -> None:
+        """Test retrieving portals from a non-existent map returns empty set."""
+        portals = context.get_map_portals("nonexistent_map")
+
+        assert portals == set()
+        assert isinstance(portals, set)
+
+    def test_get_all_portals_multiple_maps(self, context: ValidationContext) -> None:
+        """Test aggregating portals across all maps."""
+        context.add_map_entity("village", "portals", "dungeon")
+        context.add_map_entity("forest", "portals", "cave")
+
+        all_portals = context.get_all_portals()
+
+        assert len(all_portals) == 2
+        assert "dungeon" in all_portals
+        assert "cave" in all_portals

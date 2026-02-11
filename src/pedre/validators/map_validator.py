@@ -1,7 +1,11 @@
 """Map validator for Tiled TMX map files."""
 
+from pathlib import Path
+
 import arcade
 
+from pedre.conf import settings
+from pedre.constants import asset_path
 from pedre.validators.base import ValidationResult, Validator
 
 
@@ -241,6 +245,10 @@ class MapValidator(Validator):
             # Validate shape exists
             if not hasattr(portal, "shape") or not portal.shape:
                 errors.append(f"Map '{map_name}': Portals layer: '{name}': missing shape")
+                continue
+
+            # Register portal in context
+            self.context.add_map_entity(map_name, "portals", name)
 
         return errors
 
@@ -297,6 +305,13 @@ class MapValidator(Validator):
                 errors.append(f"Map '{map_name}': Player layer: missing required 'sprite_sheet' property")
                 continue
 
+            # Validate sprite_sheet file exists
+            sprite_sheet = player.properties["sprite_sheet"]
+            if not isinstance(sprite_sheet, str):
+                errors.append(f"Map '{map_name}': Player layer: 'sprite_sheet' must be string")
+            elif not self._asset_exists(sprite_sheet):
+                errors.append(f"Map '{map_name}': Player layer: sprite_sheet '{sprite_sheet}' not found")
+
             # Validate optional properties have correct types
             if "tile_size" in player.properties:
                 error = self._validate_property_type(player.properties["tile_size"], int, "tile_size", "Player")
@@ -337,6 +352,11 @@ class MapValidator(Validator):
             error = self._validate_property_type(tile_map.properties["music"], str, "music", "Map")
             if error:
                 errors.append(f"Map '{map_name}': {error}")
+            else:
+                # Validate music file exists
+                music_file = tile_map.properties["music"]
+                if not self._asset_exists(music_file):
+                    errors.append(f"Map '{map_name}': music file '{music_file}' not found")
 
         if "camera_follow" in tile_map.properties:
             error = self._validate_property_type(tile_map.properties["camera_follow"], str, "camera_follow", "Map")
@@ -370,6 +390,22 @@ class MapValidator(Validator):
                 return f"{entity_name}: '{property_name}' must be {type_names}, got {type(value).__name__}"
             return f"{entity_name}: '{property_name}' must be {expected_type.__name__}, got {type(value).__name__}"
         return None
+
+    def _asset_exists(self, asset_path_str: str) -> bool:
+        """Check if an asset exists relative to the assets directory.
+
+        Args:
+            asset_path_str: Path string from Tiled property
+
+        Returns:
+            True if file exists, False otherwise
+        """
+        try:
+            path_str = asset_path(asset_path_str, settings.ASSETS_HANDLE)
+            path = Path(path_str)
+            return path.exists() and path.is_file()
+        except (OSError, ValueError, TypeError):
+            return False
 
     def validate_cross_references(self) -> ValidationResult:
         """Validate cross-references (no cross-validation needed for maps).

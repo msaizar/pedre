@@ -486,7 +486,10 @@ class TestMapValidator:
 
         validator = MapValidator(maps_dir, context)
 
-        with patch("arcade.load_tilemap", return_value=tile_map):
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=True),
+        ):
             result = validator.validate()
 
         assert result.errors == []
@@ -520,7 +523,10 @@ class TestMapValidator:
 
         validator = MapValidator(maps_dir, context)
 
-        with patch("arcade.load_tilemap", return_value=tile_map):
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=True),
+        ):
             result = validator.validate()
 
         assert len(result.errors) == 1
@@ -539,7 +545,10 @@ class TestMapValidator:
 
         validator = MapValidator(maps_dir, context)
 
-        with patch("arcade.load_tilemap", return_value=tile_map):
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=True),
+        ):
             result = validator.validate()
 
         assert len(result.errors) == 1
@@ -558,7 +567,10 @@ class TestMapValidator:
 
         validator = MapValidator(maps_dir, context)
 
-        with patch("arcade.load_tilemap", return_value=tile_map):
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=True),
+        ):
             result = validator.validate()
 
         assert len(result.errors) == 1
@@ -595,7 +607,10 @@ class TestMapValidator:
 
         validator = MapValidator(maps_dir, context)
 
-        with patch("arcade.load_tilemap", return_value=tile_map):
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=True),
+        ):
             result = validator.validate()
 
         assert result.errors == []
@@ -609,7 +624,10 @@ class TestMapValidator:
 
         validator = MapValidator(maps_dir, context)
 
-        with patch("arcade.load_tilemap", return_value=tile_map):
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=True),
+        ):
             result = validator.validate()
 
         assert len(result.errors) == 1
@@ -848,7 +866,86 @@ class TestMapValidator:
 
         validator = MapValidator(maps_dir, context)
 
-        with patch("arcade.load_tilemap", return_value=tile_map):
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=True),
+        ):
             result = validator.validate()
 
         assert result.errors == []
+
+    def test_player_invalid_sprite_sheet_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test player with sprite_sheet that is not a string."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(name="player", properties={"sprite_sheet": 123})
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "sprite_sheet' must be string" in result.errors[0]
+
+    def test_player_sprite_sheet_not_found(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test player with sprite_sheet that does not exist."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(name="player", properties={"sprite_sheet": "missing.png"})
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=False),
+        ):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "sprite_sheet 'missing.png' not found" in result.errors[0]
+
+    def test_map_music_not_found(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test map with music file that does not exist."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(properties={"music": "missing.mp3"})
+
+        validator = MapValidator(maps_dir, context)
+
+        with (
+            patch("arcade.load_tilemap", return_value=tile_map),
+            patch.object(validator, "_asset_exists", return_value=False),
+        ):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "music file 'missing.mp3' not found" in result.errors[0]
+
+    def test_asset_exists_success_and_failure(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test _asset_exists method branches (lines 403-408)."""
+        validator = MapValidator(maps_dir, context)
+
+        # Test success (file exists)
+        with (
+            patch("pedre.validators.map_validator.asset_path", return_value="/mock/assets/exists.png"),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
+        ):
+            assert validator._asset_exists("exists.png") is True
+
+        # Test failure (file does not exist)
+        with (
+            patch("pedre.validators.map_validator.asset_path", return_value="/mock/assets/missing.png"),
+            patch("pathlib.Path.exists", return_value=False),
+        ):
+            assert validator._asset_exists("missing.png") is False
+
+        # Test exception (line 407-408)
+        with patch("pedre.validators.map_validator.asset_path", side_effect=ValueError("Invalid path")):
+            assert validator._asset_exists("trigger_exception") is False

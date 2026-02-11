@@ -847,3 +847,61 @@ class TestScriptValidator:
         refs = context.script_references.get("test_script", {})
         assert not refs.get("npcs")
         assert not refs.get("waypoints")
+
+    def test_script_references_portal_key_variations(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test variations of portal keys in triggers to ensure full coverage."""
+
+        @EventRegistry.register("portal_entered")
+        class PortalEnteredEvent:
+            trigger_keys = frozenset({"portal", "portal_name"})
+
+        @ActionRegistry.register("test_action")
+        class TestAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> TestAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        @ConditionRegistry.register("unknown_cond", validator=lambda data: [])
+        def unknown_cond(data: dict, context: object) -> bool:
+            return True
+
+        script_data = {
+            "script_portal_name": {
+                "trigger": {"event": "portal_entered", "portal_name": "portal_1"},
+                "actions": [{"type": "test_action"}],
+            },
+            "script_no_portal_key": {"trigger": {"event": "portal_entered"}, "actions": [{"type": "test_action"}]},
+            "portal_script": {
+                "trigger": {"event": "portal_entered", "portal": "ancient_gateway"},
+                "conditions": [{"check": "unknown_cond", "npc": "quest_giver"}],
+                "actions": [{"type": "test_action"}],
+            },
+        }
+
+        # Use write_text to create the file
+        script_file = scripts_dir / "portal_scripts.json"
+        script_file.write_text(json.dumps(script_data))
+
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert result.errors == []
+
+        # Check reference extraction
+        refs_name = context.script_references.get("script_portal_name", {})
+        assert "portal_1" in refs_name.get("portals", set())
+
+        refs_no_key = context.script_references.get("script_no_portal_key", {})
+        assert not refs_no_key.get("portals")
+
+        # Verify references were captured for portal_script
+        refs = context.script_references.get("portal_script", {})
+        assert "ancient_gateway" in refs.get("portals", set())
+        assert "quest_giver" in refs.get("npcs", set())

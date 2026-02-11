@@ -58,6 +58,17 @@ class ValidationContext:
         """
         return self.map_entities.get(map_name, {}).get("waypoints", set())
 
+    def get_map_portals(self, map_name: str) -> set[str]:
+        """Get all portal names in a specific map.
+
+        Args:
+            map_name: Name of the map (without .tmx extension)
+
+        Returns:
+            Set of portal names in the map, or empty set if map not found
+        """
+        return self.map_entities.get(map_name, {}).get("portals", set())
+
     def get_all_npcs(self) -> set[str]:
         """Get all NPC names across all maps.
 
@@ -79,3 +90,14 @@ class ValidationContext:
         for map_data in self.map_entities.values():
             all_waypoints.update(map_data.get("waypoints", set()))
         return all_waypoints
+
+    def get_all_portals(self) -> set[str]:
+        """Get all portal names across all maps.
+
+        Returns:
+            Set of all portal names found in any map
+        """
+        all_portals = set()
+        for map_data in self.map_entities.values():
+            all_portals.update(map_data.get("portals", set()))
+        return all_portals
