@@ -255,7 +255,7 @@ class ValidateCommand(Command):
                 console.print(
                     Panel(
                         "[green bold]✓ All Scripts Valid[/green bold]\n\n"
-                        "Validated {len(scripts)} script(s) successfully",
+                        f"Validated {len(scripts)} script(s) successfully",
                         border_style="green",
                         expand=False,
                     )
