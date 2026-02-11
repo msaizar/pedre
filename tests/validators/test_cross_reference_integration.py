@@ -1,7 +1,7 @@
 """Integration tests for cross-reference validation between validators."""
 
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
 import pytest
@@ -14,6 +14,9 @@ from pedre.validators.context import ValidationContext
 from pedre.validators.dialog_validator import DialogValidator
 from pedre.validators.map_validator import MapValidator
 from pedre.validators.script_validator import ScriptValidator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestCrossReferenceIntegration:
@@ -44,6 +47,7 @@ class TestCrossReferenceIntegration:
     @pytest.fixture
     def setup_registries(self) -> None:
         """Setup basic registries for tests."""
+
         # Register test actions used in scripts
         @ActionRegistry.register("move_npc")
         class MoveNPCAction(Action):
@@ -51,7 +55,7 @@ class TestCrossReferenceIntegration:
                 pass
 
             @classmethod
-            def from_dict(cls, data: dict) -> "MoveNPCAction":
+            def from_dict(cls, data: dict) -> MoveNPCAction:
                 return cls(**data)
 
             @staticmethod
@@ -64,7 +68,7 @@ class TestCrossReferenceIntegration:
                 pass
 
             @classmethod
-            def from_dict(cls, data: dict) -> "ChangeSceneAction":
+            def from_dict(cls, data: dict) -> ChangeSceneAction:
                 return cls(**data)
 
             @staticmethod
@@ -142,11 +146,7 @@ class TestCrossReferenceIntegration:
 
         # Create dialog for that NPC
         dialog_file = temp_dirs["dialogs"] / "village_dialogs.json"
-        dialog_data = {
-            "merchant": {
-                "0": {"text": ["Hello!"]}
-            }
-        }
+        dialog_data = {"merchant": {"0": {"text": ["Hello!"]}}}
         dialog_file.write_text(json.dumps(dialog_data))
 
         # Phase 1: Structural validation
@@ -179,11 +179,7 @@ class TestCrossReferenceIntegration:
 
         # Create dialog for non-existent NPC
         dialog_file = temp_dirs["dialogs"] / "village_dialogs.json"
-        dialog_data = {
-            "merchant": {
-                "0": {"text": ["Hello!"]}
-            }
-        }
+        dialog_data = {"merchant": {"0": {"text": ["Hello!"]}}}
         dialog_file.write_text(json.dumps(dialog_data))
 
         # Phase 1: Structural validation

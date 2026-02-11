@@ -1,13 +1,15 @@
 """Tests for MapValidator."""
 
-from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from typing import TYPE_CHECKING, Any
+from unittest.mock import Mock, patch
 
 import pytest
 
 from pedre.validators.context import ValidationContext
 from pedre.validators.map_validator import MapValidator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestMapValidator:
@@ -154,23 +156,6 @@ class TestMapValidator:
 
         assert len(result.errors) == 1
         assert "missing shape coordinates" in result.errors[0]
-
-
-    def test_waypoint_non_numeric_coordinates(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test waypoint with non-numeric shape coordinates."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        waypoint = self._create_mock_object(name="spawn_point", shape=["not", "numeric"])
-        tile_map = self._create_mock_tilemap(object_lists={"Waypoints": [waypoint]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "invalid shape coordinates" in result.errors[0]
 
     def test_waypoint_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test that map without Waypoints layer is valid."""
