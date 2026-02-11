@@ -156,22 +156,21 @@ class ValidateCommand(Command):
             )
 
             # Show summary table
-            if all_metadata:
-                summary_table = Table(show_header=True, header_style="bold cyan")
-                summary_table.add_column("Type", style="cyan")
-                summary_table.add_column("Metric", style="cyan")
-                summary_table.add_column("Count", justify="right", style="green")
+            summary_table = Table(show_header=True, header_style="bold cyan")
+            summary_table.add_column("Type", style="cyan")
+            summary_table.add_column("Metric", style="cyan")
+            summary_table.add_column("Count", justify="right", style="green")
 
-                for validator_name, metadata in all_metadata.items():
-                    # Add count first
-                    count = metadata.get("Count", 0)
-                    summary_table.add_row(validator_name, "Total", str(count))
+            for validator_name, metadata in all_metadata.items():
+                # Add count first
+                count = metadata.get("Count", 0)
+                summary_table.add_row(validator_name, "Total", str(count))
 
-                    # Add other metrics
-                    for key, value in metadata.items():
-                        if key != "Count":
-                            summary_table.add_row("", key, str(value))
+                # Add other metrics
+                for key, value in metadata.items():
+                    if key != "Count":
+                        summary_table.add_row("", key, str(value))
 
-                console.print("\n[bold]Summary:[/bold]\n")
-                console.print(summary_table)
-                console.print()
+            console.print("\n[bold]Summary:[/bold]\n")
+            console.print(summary_table)
+            console.print()
