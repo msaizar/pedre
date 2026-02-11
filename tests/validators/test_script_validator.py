@@ -12,6 +12,7 @@ from pedre.actions.base import Action
 from pedre.actions.registry import ActionRegistry
 from pedre.conditions.registry import ConditionRegistry
 from pedre.events.registry import EventRegistry
+from pedre.validators.context import ValidationContext
 from pedre.validators.script_validator import ScriptValidator
 
 
@@ -48,6 +49,11 @@ class TestScriptValidator:
         return scripts_dir
 
     @pytest.fixture
+    def context(self) -> ValidationContext:
+        """Create a validation context for tests."""
+        return ValidationContext()
+
+    @pytest.fixture
     def setup_registries(self) -> None:
         """Setup basic registries for tests."""
 
@@ -75,15 +81,15 @@ class TestScriptValidator:
         def test_condition(data: dict, context: object) -> bool:
             return True
 
-    def test_validator_name(self, scripts_dir: Path) -> None:
+    def test_validator_name(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validator name property."""
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         assert validator.name == "Scripts"
 
-    def test_directory_not_found(self, tmp_path: Path) -> None:
+    def test_directory_not_found(self, tmp_path: Path, context: ValidationContext) -> None:
         """Test validate when directory doesn't exist."""
         nonexistent_dir = tmp_path / "nonexistent"
-        validator = ScriptValidator(nonexistent_dir)
+        validator = ScriptValidator(nonexistent_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -91,16 +97,16 @@ class TestScriptValidator:
         assert result.item_count == 0
         assert result.metadata == {}
 
-    def test_no_script_files(self, scripts_dir: Path) -> None:
+    def test_no_script_files(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate when no script files found."""
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
         assert result.item_count == 0
         assert result.metadata == {}
 
-    def test_valid_script_minimal(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_valid_script_minimal(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with minimal valid script."""
         script_data = {
             "test_script": {
@@ -111,7 +117,7 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -122,7 +128,7 @@ class TestScriptValidator:
             "Scripts with Triggers": 0,
         }
 
-    def test_valid_script_complete(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_valid_script_complete(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with complete valid script."""
         script_data = {
             "test_script": {
@@ -138,7 +144,7 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -149,7 +155,7 @@ class TestScriptValidator:
             "Scripts with Triggers": 1,
         }
 
-    def test_unknown_keys(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_unknown_keys(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with unknown keys in script definition."""
         script_data = {
             "test_script": {
@@ -162,7 +168,7 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -170,18 +176,18 @@ class TestScriptValidator:
         assert "'another_bad_key'" in result.errors[0]
         assert "'unknown_key'" in result.errors[0]
 
-    def test_json_decode_error(self, scripts_dir: Path) -> None:
+    def test_json_decode_error(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate with JSON decode error."""
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text("invalid json {")
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Failed to parse test_scripts.json" in result.errors[0]
 
-    def test_os_error(self, scripts_dir: Path) -> None:
+    def test_os_error(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate with OS error when opening file."""
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text("{}")
@@ -195,13 +201,13 @@ class TestScriptValidator:
             return original_open(self, *args, **kwargs)
 
         with patch.object(PathlibPath, "open", mock_path_open):
-            validator = ScriptValidator(scripts_dir)
+            validator = ScriptValidator(scripts_dir, context)
             result = validator.validate()
 
             assert len(result.errors) == 1
             assert "Failed to load test_scripts.json" in result.errors[0]
 
-    def test_trigger_missing_event(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_trigger_missing_event(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with trigger missing event key."""
         script_data = {
             "test_script": {
@@ -213,13 +219,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': trigger missing required 'event' key" in result.errors[0]
 
-    def test_trigger_unknown_event(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_trigger_unknown_event(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with unknown event in trigger."""
         script_data = {
             "test_script": {
@@ -231,13 +237,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': unknown event 'unknown_event'" in result.errors[0]
 
-    def test_trigger_valid_filter_keys(self, scripts_dir: Path) -> None:
+    def test_trigger_valid_filter_keys(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate with valid trigger filter keys."""
 
         @EventRegistry.register("test_event")
@@ -267,12 +273,12 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
 
-    def test_trigger_invalid_filter_keys(self, scripts_dir: Path) -> None:
+    def test_trigger_invalid_filter_keys(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate with invalid trigger filter keys."""
 
         @EventRegistry.register("test_event")
@@ -302,7 +308,7 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -310,7 +316,9 @@ class TestScriptValidator:
         assert "'another_bad'" in result.errors[0]
         assert "'invalid_filter'" in result.errors[0]
 
-    def test_condition_missing_check(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_condition_missing_check(
+        self, scripts_dir: Path, setup_registries: None, context: ValidationContext
+    ) -> None:
         """Test validate with condition missing check key."""
         script_data = {
             "test_script": {
@@ -322,13 +330,15 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': condition 0 missing required 'check' key" in result.errors[0]
 
-    def test_condition_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_condition_unknown_type(
+        self, scripts_dir: Path, setup_registries: None, context: ValidationContext
+    ) -> None:
         """Test validate with unknown condition type."""
         script_data = {
             "test_script": {
@@ -340,13 +350,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': unknown condition 'unknown_condition'" in result.errors[0]
 
-    def test_condition_validation_error(self, scripts_dir: Path) -> None:
+    def test_condition_validation_error(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate with condition parameter validation errors."""
 
         @ActionRegistry.register("test_action")
@@ -376,13 +386,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': condition 0 (test_condition): parameter error" in result.errors[0]
 
-    def test_empty_actions(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_empty_actions(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with empty actions list."""
         script_data = {
             "test_script": {
@@ -394,13 +404,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': 'actions' list is empty" in result.errors[0]
 
-    def test_action_missing_type(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_action_missing_type(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with action missing type key."""
         script_data = {
             "test_script": {
@@ -411,13 +421,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': action 0 missing required 'type' key" in result.errors[0]
 
-    def test_action_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_action_unknown_type(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with unknown action type."""
         script_data = {
             "test_script": {
@@ -428,13 +438,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': unknown action type 'unknown_action'" in result.errors[0]
 
-    def test_action_validation_error(self, scripts_dir: Path) -> None:
+    def test_action_validation_error(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate with action parameter validation errors."""
 
         @ActionRegistry.register("test_action")
@@ -459,13 +469,15 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': action 0 (test_action): parameter error" in result.errors[0]
 
-    def test_on_condition_fail_missing_type(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_on_condition_fail_missing_type(
+        self, scripts_dir: Path, setup_registries: None, context: ValidationContext
+    ) -> None:
         """Test validate with on_condition_fail action missing type."""
         script_data = {
             "test_script": {
@@ -477,13 +489,15 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': on_condition_fail action 0 missing required 'type' key" in result.errors[0]
 
-    def test_on_condition_fail_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_on_condition_fail_unknown_type(
+        self, scripts_dir: Path, setup_registries: None, context: ValidationContext
+    ) -> None:
         """Test validate with on_condition_fail unknown action type."""
         script_data = {
             "test_script": {
@@ -495,13 +509,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': on_condition_fail action 0 has unknown type 'unknown_action'" in result.errors[0]
 
-    def test_on_condition_fail_validation_error(self, scripts_dir: Path) -> None:
+    def test_on_condition_fail_validation_error(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validate with on_condition_fail action validation errors."""
 
         @ActionRegistry.register("test_action")
@@ -529,13 +543,13 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert "Script 'test_script': on_condition_fail action 0 (test_action): parameter error" in result.errors[0]
 
-    def test_multiple_scripts(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_multiple_scripts(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with multiple scripts."""
         script_data = {
             "script1": {
@@ -551,7 +565,7 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -560,7 +574,7 @@ class TestScriptValidator:
         assert result.metadata["Total Conditions"] == 1
         assert result.metadata["Scripts with Triggers"] == 1
 
-    def test_multiple_script_files(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_multiple_script_files(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test validate with multiple script files."""
         script_data1 = {
             "script1": {
@@ -579,13 +593,13 @@ class TestScriptValidator:
         script_file2 = scripts_dir / "npc_scripts.json"
         script_file2.write_text(json.dumps(script_data2))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
         assert result.item_count == 2
 
-    def test_metadata_counts(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_metadata_counts(self, scripts_dir: Path, setup_registries: None, context: ValidationContext) -> None:
         """Test that metadata correctly counts actions, conditions, and triggers."""
         script_data = {
             "script1": {
@@ -613,7 +627,7 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -622,7 +636,9 @@ class TestScriptValidator:
         assert result.metadata["Total Conditions"] == 3
         assert result.metadata["Scripts with Triggers"] == 2
 
-    def test_multiple_errors_in_single_script(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_multiple_errors_in_single_script(
+        self, scripts_dir: Path, setup_registries: None, context: ValidationContext
+    ) -> None:
         """Test that multiple errors in a single script are all reported."""
         script_data = {
             "test_script": {
@@ -636,7 +652,7 @@ class TestScriptValidator:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        validator = ScriptValidator(scripts_dir)
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 4

@@ -171,6 +171,12 @@ class DialogValidator(Validator):
                                 f"(valid keys: {sorted(valid_keys)})"
                             )
 
+                # Populate context with NPC names from this dialog file
+                # Extract scene name from filename (e.g., "village_dialogs.json" -> "village")
+                scene_name = dialog_file.stem.replace("_dialogs", "").replace("_dialog", "")
+                for npc_name in data:
+                    self.context.dialog_npcs.setdefault(scene_name, set()).add(npc_name)
+
             except json.JSONDecodeError as e:
                 errors.append(f"Failed to parse {dialog_file.name}: {e}")
             except OSError as e:
@@ -183,4 +189,30 @@ class DialogValidator(Validator):
                 "Total Conditions": total_conditions,
                 "Total Actions": total_actions,
             },
+        )
+
+    def validate_cross_references(self) -> ValidationResult:
+        """Validate that dialog NPCs exist in corresponding maps.
+
+        Returns:
+            ValidationResult with cross-reference errors and metadata
+        """
+        errors = []
+
+        for scene_name, npc_names in self.context.dialog_npcs.items():
+            # Match dialog scene to map name (e.g., "village" dialog -> "village" map)
+            map_npcs = self.context.get_map_npcs(scene_name)
+
+            errors.extend(
+                f"Dialog '{scene_name}': NPC '{npc_name}' not found in map '{scene_name}.tmx'"
+                for npc_name in npc_names
+                if npc_name not in map_npcs
+            )
+
+        total_npc_refs = sum(len(npcs) for npcs in self.context.dialog_npcs.values())
+
+        return ValidationResult(
+            errors=errors,
+            item_count=len(self.context.dialog_npcs),
+            metadata={"NPC references validated": total_npc_refs},
         )

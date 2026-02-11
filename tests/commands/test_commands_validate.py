@@ -67,6 +67,13 @@ class TestValidateCommand:
         return dialogs_dir
 
     @pytest.fixture
+    def maps_dir(self, tmp_path: Path) -> Path:
+        """Create a temporary maps directory."""
+        maps_dir = tmp_path / "maps"
+        maps_dir.mkdir(parents=True)
+        return maps_dir
+
+    @pytest.fixture
     def setup_registries(self) -> None:
         """Setup basic registries for tests."""
 
@@ -144,7 +151,7 @@ class TestValidateCommand:
 
     # Validator Selection Tests
 
-    def test_validate_type_scripts_only(self, scripts_dir: Path, setup_registries: None) -> None:
+    def test_validate_type_scripts_only(self, scripts_dir: Path, setup_registries: None, maps_dir: Path) -> None:
         """Test --type scripts validates only scripts."""
         script_data = {
             "test_script": {
@@ -156,11 +163,27 @@ class TestValidateCommand:
         script_file.write_text(json.dumps(script_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None, maps_path=maps_dir)
         command.execute(args)
 
-    def test_validate_type_dialogs_only(self, dialogs_dir: Path, setup_registries: None) -> None:
+    def test_validate_type_dialogs_only(self, dialogs_dir: Path, maps_dir: Path, setup_registries: None) -> None:
         """Test --type dialogs validates only dialogs."""
+        # Create a map file with the merchant NPC to satisfy cross-reference validation
+        # Create a simple TMX file
+        tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
+    tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="2">
+  <objectgroup id="1" name="NPCs">
+    <object id="1" name="merchant" x="100" y="100" width="32" height="32">
+      <properties>
+        <property name="sprite_sheet" value="merchant.png"/>
+      </properties>
+    </object>
+  </objectgroup>
+</map>"""
+        map_file = maps_dir / "npc.tmx"
+        map_file.write_text(tmx_content)
+
         dialog_data = {
             "merchant": {
                 "0": {
@@ -173,11 +196,28 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=None, type="dialogs", dialogs_path=dialogs_dir)
+        args = argparse.Namespace(scripts_path=None, type="dialogs", dialogs_path=dialogs_dir, maps_path=maps_dir)
         command.execute(args)
 
-    def test_validate_type_all_with_both(self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None) -> None:
+    def test_validate_type_all_with_both(
+        self, scripts_dir: Path, dialogs_dir: Path, maps_dir: Path, setup_registries: None
+    ) -> None:
         """Test --type all validates both scripts and dialogs."""
+        # Create a map file with the merchant NPC
+        tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
+    tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="2">
+  <objectgroup id="1" name="NPCs">
+    <object id="1" name="merchant" x="100" y="100" width="32" height="32">
+      <properties>
+        <property name="sprite_sheet" value="merchant.png"/>
+      </properties>
+    </object>
+  </objectgroup>
+</map>"""
+        map_file = maps_dir / "npc.tmx"
+        map_file.write_text(tmx_content)
+
         script_data = {
             "test_script": {
                 "actions": [{"type": "test_action"}],
@@ -197,13 +237,30 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=maps_dir)
         command.execute(args)
 
-    def test_validate_with_custom_dialogs_dir(self, scripts_dir: Path, tmp_path: Path, setup_registries: None) -> None:
+    def test_validate_with_custom_dialogs_dir(
+        self, scripts_dir: Path, tmp_path: Path, maps_dir: Path, setup_registries: None
+    ) -> None:
         """Test validate uses custom dialogs directory when provided."""
         dialogs_dir = tmp_path / "custom_dialogs"
         dialogs_dir.mkdir(parents=True)
+
+        # Create a map file with the merchant NPC
+        tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
+    tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="2">
+  <objectgroup id="1" name="NPCs">
+    <object id="1" name="merchant" x="100" y="100" width="32" height="32">
+      <properties>
+        <property name="sprite_sheet" value="merchant.png"/>
+      </properties>
+    </object>
+  </objectgroup>
+</map>"""
+        map_file = maps_dir / "npc.tmx"
+        map_file.write_text(tmx_content)
 
         dialog_data = {
             "merchant": {
@@ -216,7 +273,7 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=maps_dir)
         command.execute(args)
 
     # Error Handling Tests

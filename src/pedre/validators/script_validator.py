@@ -158,6 +158,36 @@ class ScriptValidator(Validator):
                         for err in param_errors
                     )
 
+        # Populate context with entity references from scripts
+        for script_name, script in scripts.items():
+            refs = {"npcs": set(), "waypoints": set()}
+
+            # Scan actions for entity references
+            for action in script.actions + script.on_condition_fail:
+                action_type = action.get("type")
+
+                # Move NPC action
+                if action_type == "move_npc":
+                    if "npcs" in action:
+                        refs["npcs"].update(action["npcs"])
+                    if "waypoint" in action:
+                        refs["waypoints"].add(action["waypoint"])
+
+                # Change scene action (spawn waypoint)
+                elif action_type == "change_scene":
+                    if "spawn_waypoint" in action:
+                        refs["waypoints"].add(action["spawn_waypoint"])
+
+                # Other NPC-related actions
+                elif action_type in ["start_appear_animation", "start_disappear_animation"]:
+                    if "npcs" in action:
+                        refs["npcs"].update(action["npcs"])
+                elif action_type in ["advance_dialog", "set_dialog_level", "set_current_npc"]:
+                    if "npc" in action:
+                        refs["npcs"].add(action["npc"])
+
+            self.context.script_references[script_name] = refs
+
         # Calculate metadata
         total_actions = sum(len(s.actions) for s in scripts.values())
         total_conditions = sum(len(s.conditions) for s in scripts.values())
@@ -170,5 +200,42 @@ class ScriptValidator(Validator):
                 "Total Actions": total_actions,
                 "Total Conditions": total_conditions,
                 "Scripts with Triggers": total_triggers,
+            },
+        )
+
+    def validate_cross_references(self) -> ValidationResult:
+        """Validate that script references to NPCs and waypoints exist in maps.
+
+        Returns:
+            ValidationResult with cross-reference errors and metadata
+        """
+        errors = []
+        all_npcs = self.context.get_all_npcs()
+        all_waypoints = self.context.get_all_waypoints()
+
+        for script_name, refs in self.context.script_references.items():
+            # Validate NPC references
+            errors.extend(
+                f"Script '{script_name}': NPC '{npc_name}' not found in any map"
+                for npc_name in refs.get("npcs", set())
+                if npc_name and npc_name not in all_npcs
+            )
+
+            # Validate waypoint references
+            errors.extend(
+                f"Script '{script_name}': waypoint '{waypoint_name}' not found in any map"
+                for waypoint_name in refs.get("waypoints", set())
+                if waypoint_name and waypoint_name not in all_waypoints
+            )
+
+        total_npc_refs = sum(len(refs.get("npcs", set())) for refs in self.context.script_references.values())
+        total_waypoint_refs = sum(len(refs.get("waypoints", set())) for refs in self.context.script_references.values())
+
+        return ValidationResult(
+            errors=errors,
+            item_count=len(self.context.script_references),
+            metadata={
+                "NPC references validated": total_npc_refs,
+                "Waypoint references validated": total_waypoint_refs,
             },
         )
