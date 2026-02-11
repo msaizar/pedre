@@ -10,6 +10,7 @@ nav = [
     {"Guides" = [
         "guides/tiled-integration.md",
         "guides/configuration.md",
+        "guides/cli.md",
     ]},
     {"API Reference" = [
         "api/index.md",

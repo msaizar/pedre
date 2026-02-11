@@ -69,44 +69,52 @@ Or with uv:
 uv add pedre
 ```
 
-## Quick Start
+## CLI
 
-Project structure example:
+Pedre includes a command-line interface for project management:
 
-```text
-my_game/
-├── main.py
-├── settings.py
-└── assets/
-    ├── audio/
-    │   ├── music/
-    │   └── sfx/
-    ├── data/
-    │   ├── dialogs/
-    │   ├── inventory-items.json
-    │   └── scripts/
-    ├── images/
-    │   └── characters/
-    └── maps/
+```bash
+# Initialize a new project with recommended structure
+pedre init
+
+# Initialize in a specific directory
+pedre init --path ./my-game
+
+# Validate project configuration
+pedre validate
 ```
 
+The CLI is extensible - you can add custom commands in your project's `commands/` directory or via external packages. See the [CLI Guide](https://msaizar.github.io/pedre/guides/cli/) for details.
+
+## Quick Start
+
+Create a new project:
+
+```bash
+pedre init
+```
+
+This creates `main.py`, `settings.py`, and the recommended directory structure. Run your game:
+
 ```python
+# main.py
 from pedre import run_game
 
 if __name__ == "__main__":
     run_game()
 ```
 
-This will start your game with the default configuration. Configure your game using `settings.py` in your project root:
+Customize settings:
 
 ```python
+# settings.py
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 WINDOW_TITLE = "My RPG"
 INITIAL_MAP = "my_map.tmx"
 ```
 
-See the [Getting Started Guide](https://msaizar.github.io/pedre/getting-started/) for a complete step-by-step tutorial covering NPCs, dialogs, scripts, portals, and more.
+See the [Getting Started Guide](https://msaizar.github.io/pedre/getting-started/) for a complete tutorial covering NPCs, dialogs, scripts, portals, and more.
 
 ## Demo Project
 
@@ -165,6 +173,7 @@ Full documentation is available at **[msaizar.github.io/pedre](https://msaizar.g
 Key guides:
 
 - [Getting Started](https://msaizar.github.io/pedre/getting-started/) - Step-by-step tutorial
+- [CLI Guide](https://msaizar.github.io/pedre/guides/cli/) - Command-line interface and custom commands
 - [Configuration](https://msaizar.github.io/pedre/guides/configuration/) - Settings and customization
 - [Tiled Integration](https://msaizar.github.io/pedre/guides/tiled-integration/) - Creating maps in Tiled
 - [Scripting System](https://msaizar.github.io/pedre/scripting/) - Event-driven gameplay
