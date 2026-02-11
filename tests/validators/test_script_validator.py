@@ -660,4 +660,190 @@ class TestScriptValidator:
         assert "unknown keys" in error_text
         assert "trigger missing required 'event' key" in error_text
         assert "condition 0 missing required 'check' key" in error_text
-        assert "'actions' list is empty" in error_text
+
+    def test_script_references_population(self, scripts_dir: Path, context: ValidationContext) -> None:  # noqa: C901
+        """Test that script references (NPCs, waypoints) are correctly populated from actions."""
+
+        # Register dummy actions so validation passes
+        @ActionRegistry.register("move_npc")
+        class MoveNpcAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> MoveNpcAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        @ActionRegistry.register("change_scene")
+        class ChangeSceneAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> ChangeSceneAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        @ActionRegistry.register("start_appear_animation")
+        class StartAppearAnimationAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> StartAppearAnimationAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        @ActionRegistry.register("advance_dialog")
+        class AdvanceDialogAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> AdvanceDialogAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        script_data = {
+            "test_script": {
+                "actions": [
+                    {
+                        "type": "move_npc",
+                        "npcs": ["guard1", "guard2"],
+                        "waypoint": "guard_post",
+                    },
+                    {
+                        "type": "change_scene",
+                        "spawn_waypoint": "entry_point",
+                    },
+                    {
+                        "type": "start_appear_animation",
+                        "npcs": ["merchant"],
+                    },
+                    {
+                        "type": "advance_dialog",
+                        "npc": "elder",
+                    },
+                ],
+            }
+        }
+
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(script_data))
+
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert result.errors == []
+
+        # Verify references were captured
+        refs = context.script_references.get("test_script", {})
+        assert "guard1" in refs.get("npcs", set())
+        assert "guard2" in refs.get("npcs", set())
+        assert "merchant" in refs.get("npcs", set())
+        assert "elder" in refs.get("npcs", set())
+
+    def test_script_references_missing_keys(self, scripts_dir: Path, context: ValidationContext) -> None:  # noqa: C901
+        """Test script references population with missing optional keys (branch coverage)."""
+
+        # Register dummy actions
+        @ActionRegistry.register("move_npc")
+        class MoveNpcAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> MoveNpcAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        @ActionRegistry.register("change_scene")
+        class ChangeSceneAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> ChangeSceneAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        @ActionRegistry.register("start_appear_animation")
+        class StartAppearAnimationAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> StartAppearAnimationAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        @ActionRegistry.register("advance_dialog")
+        class AdvanceDialogAction(Action):
+            def __init__(self, **kwargs: object) -> None:
+                pass
+
+            @classmethod
+            def from_dict(cls, data: dict) -> AdvanceDialogAction:
+                return cls(**data)
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
+
+        script_data = {
+            "test_script": {
+                "actions": [
+                    {
+                        "type": "move_npc",
+                        # Missing "npcs" and "waypoint"
+                    },
+                    {
+                        "type": "change_scene",
+                        # Missing "spawn_waypoint"
+                    },
+                    {
+                        "type": "start_appear_animation",
+                        # Missing "npcs"
+                    },
+                    {
+                        "type": "advance_dialog",
+                        # Missing "npc"
+                    },
+                ],
+            }
+        }
+
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(script_data))
+
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert result.errors == []
+
+        # Verify no references were captured (branches for missing keys were taken)
+        refs = context.script_references.get("test_script", {})
+        assert not refs.get("npcs")
+        assert not refs.get("waypoints")

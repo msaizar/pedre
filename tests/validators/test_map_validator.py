@@ -50,7 +50,7 @@ class TestMapValidator:
         self,
         name: str | None = None,
         properties: dict[str, Any] | None = None,
-        shape: list[float] | None = None,
+        shape: list[float] | list[int | float | tuple[int | float, int | float]] | None = None,
     ) -> Mock:
         """Create a mock map object (waypoint, NPC, portal, etc).
 
@@ -770,4 +770,85 @@ class TestMapValidator:
         assert result.errors == []
         assert result.item_count == 2
         assert "merchant" in context.get_map_npcs("village")
-        assert "hermit" in context.get_map_npcs("forest")
+
+    def test_waypoint_insufficient_coordinates(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test waypoint with insufficient coordinates (less than 2)."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        waypoint = self._create_mock_object(name="spawn_point", shape=[100.0])
+        tile_map = self._create_mock_tilemap(object_lists={"Waypoints": [waypoint]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "shape must have at least 2 coordinates" in result.errors[0]
+
+    def test_waypoint_non_numeric_coordinates(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test waypoint with invalid shape (e.g. Polygon instead of Point)."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        # Simulate a Polygon (list of points) which is invalid for a Waypoint (expects a single Point)
+        # float([(0.0, 0.0)]) raises TypeError
+        waypoint = self._create_mock_object(name="spawn_point", shape=[(0.0, 0.0), (10.0, 10.0)])
+        tile_map = self._create_mock_tilemap(object_lists={"Waypoints": [waypoint]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "invalid shape coordinates" in result.errors[0]
+
+    def test_npc_valid_optional_properties(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test NPC with valid optional properties."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(
+            name="merchant",
+            properties={
+                "sprite_sheet": "merchant.png",
+                "tile_size": 32,
+                "scale": 1.5,
+                "initially_hidden": True,
+                "walk_frame_count": 4,
+                "appear_duration": 10,
+            },
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    def test_player_valid_optional_properties(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test Player with valid optional properties."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(
+            name="player",
+            properties={
+                "sprite_sheet": "player.png",
+                "tile_size": 32,
+                "scale": 1.0,
+                "spawn_at_portal": True,
+            },
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []

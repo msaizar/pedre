@@ -131,6 +131,7 @@ class MapValidator(Validator):
                         f"Map '{map_name}': Waypoints layer: '{name}': "
                         f"shape must have at least 2 coordinates, got {len(waypoint.shape)}"
                     )
+                    continue
                 # Validate coordinates are numeric
                 float(waypoint.shape[0])
                 float(waypoint.shape[1])
