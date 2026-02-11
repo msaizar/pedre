@@ -13,7 +13,6 @@ from pedre.actions.registry import ActionRegistry
 from pedre.commands.validate import ValidateCommand
 from pedre.conditions.registry import ConditionRegistry
 from pedre.events.registry import EventRegistry
-from pedre.plugins.script.base import ScriptValidationError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -94,10 +93,8 @@ class TestValidateCommand:
         """Test validate command when no script files found."""
         command = ValidateCommand()
         args = argparse.Namespace(path=scripts_dir)
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(args)
-
-        assert exc_info.value.code == 0
+        # New behavior: validates both scripts and dialogs, completes successfully without exit
+        command.execute(args)
 
     def test_validate_scripts_unknown_keys(self, scripts_dir: Path, setup_registries: None) -> None:
         """Test validate command with unknown keys in script definition."""
@@ -532,24 +529,21 @@ class TestValidateCommand:
         command.execute(argparse.Namespace(path=scripts_dir))
 
     def test_validate_scripts_script_validation_error(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate command with ScriptValidationError exception."""
+        """Test validate command with validation errors from validators."""
         command = ValidateCommand()
         args = argparse.Namespace(path=scripts_dir)
 
-        # Create a valid script file
-        script_data = {"test_script": {"actions": [{"type": "test_action"}]}}
+        # Create an invalid script file that will trigger validation errors
+        script_data = {"test_script": {"actions": []}}  # Empty actions list is invalid
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
-        # Mock Path.glob to raise ScriptValidationError (covers lines 282-290)
-        # This simulates a ScriptValidationError during the validation process
-        error = ScriptValidationError(["Test validation error"])
+        # New behavior: validators return ValidationResult with errors
+        # Should exit with code 1 due to validation errors
+        with pytest.raises(SystemExit) as exc_info:
+            command.execute(args)
 
-        with patch("pedre.commands.validate.Path.glob", side_effect=error):
-            with pytest.raises(SystemExit) as exc_info:
-                command.execute(args)
-
-            assert exc_info.value.code == 1
+        assert exc_info.value.code == 1
 
     def test_add_arguments_without_path(self) -> None:
         """Test add_arguments method adds path argument with default None."""
