@@ -103,9 +103,9 @@ class TestValidateCommand:
         command.add_arguments(parser)
 
         args = parser.parse_args([])
-        assert args.path is None
+        assert args.scripts_path is None
         assert args.type == "all"
-        assert args.dialogs_dir is None
+        assert args.dialogs_path is None
 
     def test_add_arguments_with_path(self, tmp_path: Path) -> None:
         """Test add_arguments accepts custom path."""
@@ -114,8 +114,8 @@ class TestValidateCommand:
         command.add_arguments(parser)
 
         test_path = tmp_path / "custom"
-        args = parser.parse_args(["--path", str(test_path)])
-        assert args.path == test_path
+        args = parser.parse_args(["--scripts-path", str(test_path)])
+        assert args.scripts_path == test_path
 
     def test_add_arguments_with_type(self) -> None:
         """Test add_arguments accepts validation type."""
@@ -139,8 +139,8 @@ class TestValidateCommand:
         command.add_arguments(parser)
 
         dialogs_path = tmp_path / "custom_dialogs"
-        args = parser.parse_args(["--dialogs-dir", str(dialogs_path)])
-        assert args.dialogs_dir == dialogs_path
+        args = parser.parse_args(["--dialogs-path", str(dialogs_path)])
+        assert args.dialogs_path == dialogs_path
 
     # Validator Selection Tests
 
@@ -156,7 +156,7 @@ class TestValidateCommand:
         script_file.write_text(json.dumps(script_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
         command.execute(args)
 
     def test_validate_type_dialogs_only(self, dialogs_dir: Path, setup_registries: None) -> None:
@@ -173,7 +173,7 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=None, type="dialogs", dialogs_dir=dialogs_dir)
+        args = argparse.Namespace(scripts_path=None, type="dialogs", dialogs_path=dialogs_dir)
         command.execute(args)
 
     def test_validate_type_all_with_both(self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None) -> None:
@@ -197,7 +197,7 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir)
         command.execute(args)
 
     def test_validate_with_custom_dialogs_dir(self, scripts_dir: Path, tmp_path: Path, setup_registries: None) -> None:
@@ -216,7 +216,7 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir)
         command.execute(args)
 
     # Error Handling Tests
@@ -226,7 +226,7 @@ class TestValidateCommand:
         nonexistent_dir = tmp_path / "nonexistent"
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=nonexistent_dir, type="scripts", dialogs_dir=None)
+        args = argparse.Namespace(scripts_path=nonexistent_dir, type="scripts", dialogs_path=None)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 
@@ -237,7 +237,7 @@ class TestValidateCommand:
         nonexistent_dir = tmp_path / "nonexistent"
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=None, type="dialogs", dialogs_dir=nonexistent_dir)
+        args = argparse.Namespace(scripts_path=None, type="dialogs", dialogs_path=nonexistent_dir)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 
@@ -251,7 +251,7 @@ class TestValidateCommand:
         script_file.write_text(json.dumps(script_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 
@@ -268,7 +268,7 @@ class TestValidateCommand:
         script_file.write_text(json.dumps(script_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
         # Should not raise
         command.execute(args)
 
@@ -277,7 +277,7 @@ class TestValidateCommand:
     ) -> None:
         """Test validate succeeds with empty directories (no files to validate)."""
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir)
         # Should not raise
         command.execute(args)
 
@@ -298,7 +298,7 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="all", dialogs_dir=dialogs_dir)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 
@@ -318,7 +318,7 @@ class TestValidateCommand:
         script_file2.write_text(json.dumps(script_data2))
 
         command = ValidateCommand()
-        args = argparse.Namespace(path=scripts_dir, type="scripts", dialogs_dir=None)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)
 

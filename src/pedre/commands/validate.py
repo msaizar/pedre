@@ -37,8 +37,7 @@ class ValidateCommand(Command):
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Add validate-specific arguments."""
         parser.add_argument(
-            "--path",
-            "-p",
+            "--scripts-path",
             type=Path,
             default=None,
             help=f"Path to scripts directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCRIPTS_DIRECTORY})",
@@ -51,7 +50,7 @@ class ValidateCommand(Command):
             help="Type of validation to run (default: all)",
         )
         parser.add_argument(
-            "--dialogs-dir",
+            "--dialogs-path",
             type=Path,
             default=None,
             help=f"Path to dialogs directory (default: {settings.ASSETS_DIRECTORY}/{settings.DIALOGS_DIRECTORY})",
@@ -94,14 +93,15 @@ class ValidateCommand(Command):
         # Determine which validators to run based on args.type
         validators = []
         validation_type = getattr(args, "type", "all")
-        dialogs_dir_arg = getattr(args, "dialogs_dir", None)
+        dialogs_path_arg = getattr(args, "dialogs_path", None)
+        scripts_path_arg = getattr(args, "scripts_path", None)
 
         if validation_type in ["all", "scripts"]:
-            scripts_dir = args.path or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCRIPTS_DIRECTORY
+            scripts_dir = scripts_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCRIPTS_DIRECTORY
             validators.append(ScriptValidator(scripts_dir))
 
         if validation_type in ["all", "dialogs"]:
-            dialogs_dir = dialogs_dir_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.DIALOGS_DIRECTORY
+            dialogs_dir = dialogs_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.DIALOGS_DIRECTORY
             validators.append(DialogValidator(dialogs_dir))
 
         # Run validations
