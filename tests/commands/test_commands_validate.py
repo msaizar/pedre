@@ -330,11 +330,11 @@ class TestValidateCommand:
         command.execute(args)
 
     def test_validate_empty_directories_succeeds(
-        self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None
+        self, scripts_dir: Path, dialogs_dir: Path, maps_dir: Path, setup_registries: None
     ) -> None:
         """Test validate succeeds with empty directories (no files to validate)."""
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir)
+        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=maps_dir)
         # Should not raise
         command.execute(args)
 
