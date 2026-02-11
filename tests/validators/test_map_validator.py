@@ -1,0 +1,788 @@
+"""Tests for MapValidator."""
+
+from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
+from pedre.validators.context import ValidationContext
+from pedre.validators.map_validator import MapValidator
+
+
+class TestMapValidator:
+    """Test MapValidator class."""
+
+    @pytest.fixture
+    def maps_dir(self, tmp_path: Path) -> Path:
+        """Create a temporary maps directory."""
+        maps_dir = tmp_path / "maps"
+        maps_dir.mkdir(parents=True)
+        return maps_dir
+
+    @pytest.fixture
+    def context(self) -> ValidationContext:
+        """Create a validation context for tests."""
+        return ValidationContext()
+
+    def _create_mock_tilemap(
+        self,
+        object_lists: dict[str, list[Any]] | None = None,
+        properties: dict[str, Any] | None = None,
+    ) -> Mock:
+        """Create a mock TileMap object.
+
+        Args:
+            object_lists: Dictionary of layer names to lists of objects
+            properties: Map-level properties
+
+        Returns:
+            Mock TileMap object
+        """
+        tile_map = Mock()
+        tile_map.object_lists = object_lists or {}
+        tile_map.properties = properties or {}
+        return tile_map
+
+    def _create_mock_object(
+        self,
+        name: str | None = None,
+        properties: dict[str, Any] | None = None,
+        shape: list[float] | None = None,
+    ) -> Mock:
+        """Create a mock map object (waypoint, NPC, portal, etc).
+
+        Args:
+            name: Object name
+            properties: Object properties
+            shape: Object shape coordinates
+
+        Returns:
+            Mock object
+        """
+        obj = Mock()
+        obj.name = name
+        obj.properties = properties or {}
+        obj.shape = shape
+        return obj
+
+    def test_validator_name(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test validator name property."""
+        validator = MapValidator(maps_dir, context)
+        assert validator.name == "Maps"
+
+    def test_directory_not_found(self, tmp_path: Path, context: ValidationContext) -> None:
+        """Test validate when directory doesn't exist."""
+        nonexistent_dir = tmp_path / "nonexistent"
+        validator = MapValidator(nonexistent_dir, context)
+        result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert f"Maps directory not found: {nonexistent_dir}" in result.errors
+        assert result.item_count == 0
+        assert result.metadata == {}
+
+    def test_no_map_files(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test validate when no map files found."""
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate()
+
+        assert result.errors == []
+        assert result.item_count == 0
+        assert result.metadata == {}
+
+    def test_map_load_error(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test handling of map load errors."""
+        # Create a dummy TMX file
+        map_file = maps_dir / "broken.tmx"
+        map_file.write_text("invalid tmx content")
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", side_effect=RuntimeError("Failed to load")):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "Failed to load map 'broken.tmx'" in result.errors[0]
+
+    # Waypoint Layer Tests
+
+    def test_waypoint_valid(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test valid waypoint with name and shape."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        waypoint = self._create_mock_object(name="spawn_point", shape=[100.0, 200.0])
+        tile_map = self._create_mock_tilemap(object_lists={"Waypoints": [waypoint]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+        assert "spawn_point" in context.get_map_waypoints("test")
+
+    def test_waypoint_missing_name(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test waypoint without name property."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        waypoint = self._create_mock_object(name=None, shape=[100.0, 200.0])
+        tile_map = self._create_mock_tilemap(object_lists={"Waypoints": [waypoint]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "waypoint missing required 'name' property" in result.errors[0]
+
+    def test_waypoint_missing_shape(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test waypoint without shape."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        waypoint = self._create_mock_object(name="spawn_point", shape=None)
+        tile_map = self._create_mock_tilemap(object_lists={"Waypoints": [waypoint]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "missing shape coordinates" in result.errors[0]
+
+
+    def test_waypoint_non_numeric_coordinates(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test waypoint with non-numeric shape coordinates."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        waypoint = self._create_mock_object(name="spawn_point", shape=["not", "numeric"])
+        tile_map = self._create_mock_tilemap(object_lists={"Waypoints": [waypoint]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "invalid shape coordinates" in result.errors[0]
+
+    def test_waypoint_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that map without Waypoints layer is valid."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(object_lists={})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    # NPC Layer Tests
+
+    def test_npc_valid(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test valid NPC with required properties."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(name="merchant", properties={"sprite_sheet": "merchant.png"})
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+        assert "merchant" in context.get_map_npcs("test")
+
+    def test_npc_missing_name(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test NPC without name property."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(name=None, properties={"sprite_sheet": "merchant.png"})
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "NPC missing required 'name' property" in result.errors[0]
+
+    def test_npc_missing_sprite_sheet(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test NPC without sprite_sheet property."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(name="merchant", properties={})
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "missing required 'sprite_sheet' property" in result.errors[0]
+
+    def test_npc_invalid_tile_size_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test NPC with tile_size that is not an int."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(
+            name="merchant",
+            properties={"sprite_sheet": "merchant.png", "tile_size": "not_an_int"},
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'tile_size' must be int" in result.errors[0]
+
+    def test_npc_invalid_scale_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test NPC with scale that is not int or float."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(
+            name="merchant",
+            properties={"sprite_sheet": "merchant.png", "scale": "not_numeric"},
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'scale' must be int or float" in result.errors[0]
+
+    def test_npc_invalid_initially_hidden_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test NPC with initially_hidden that is not bool."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(
+            name="merchant",
+            properties={"sprite_sheet": "merchant.png", "initially_hidden": "not_bool"},
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'initially_hidden' must be bool" in result.errors[0]
+
+    def test_npc_invalid_animation_property_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test NPC with animation properties that are not ints."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc = self._create_mock_object(
+            name="merchant",
+            properties={
+                "sprite_sheet": "merchant.png",
+                "appear_duration": "not_int",
+                "walk_frame_count": 3.5,  # Should be int, not float
+            },
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 2
+        assert any("'appear_duration' must be int" in err for err in result.errors)
+        assert any("'walk_frame_count' must be int" in err for err in result.errors)
+
+    def test_npc_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that map without NPCs layer is valid."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(object_lists={})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    # Portal Layer Tests
+
+    def test_portal_valid(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test valid portal with name, properties, and shape."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        portal = self._create_mock_object(
+            name="exit_portal",
+            properties={"destination_map": "village"},
+            shape=[100.0, 200.0],
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"Portals": [portal]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    def test_portal_missing_name(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test portal without name property."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        portal = self._create_mock_object(
+            name=None,
+            properties={"destination_map": "village"},
+            shape=[100.0, 200.0],
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"Portals": [portal]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "portal missing required 'name' property" in result.errors[0]
+
+    def test_portal_missing_properties(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test portal without properties."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        portal = Mock()
+        portal.name = "exit_portal"
+        portal.properties = None
+        portal.shape = [100.0, 200.0]
+
+        tile_map = self._create_mock_tilemap(object_lists={"Portals": [portal]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "missing required properties" in result.errors[0]
+
+    def test_portal_missing_shape(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test portal without shape."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        portal = Mock()
+        portal.name = "exit_portal"
+        portal.properties = {"destination_map": "village"}
+        portal.shape = None
+
+        tile_map = self._create_mock_tilemap(object_lists={"Portals": [portal]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "missing shape" in result.errors[0]
+
+    def test_portal_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that map without Portals layer is valid."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(object_lists={})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    # Interactive Layer Tests
+
+    def test_interactive_valid(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test valid interactive object."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        interactive = self._create_mock_object(name="treasure_chest", shape=[100.0, 200.0])
+        tile_map = self._create_mock_tilemap(object_lists={"Interactive": [interactive]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    def test_interactive_missing_name(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test interactive object without name."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        interactive = self._create_mock_object(name=None, shape=[100.0, 200.0])
+        tile_map = self._create_mock_tilemap(object_lists={"Interactive": [interactive]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "object missing required 'name' property" in result.errors[0]
+
+    def test_interactive_missing_shape(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test interactive object without shape."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        interactive = self._create_mock_object(name="treasure_chest", shape=None)
+        tile_map = self._create_mock_tilemap(object_lists={"Interactive": [interactive]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "missing shape" in result.errors[0]
+
+    def test_interactive_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that map without Interactive layer is valid."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(object_lists={})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    # Player Layer Tests
+
+    def test_player_valid(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test valid player with sprite_sheet."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(name="player", properties={"sprite_sheet": "player.png"})
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    def test_player_missing_sprite_sheet(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test player without sprite_sheet property."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(name="player", properties={})
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "missing required 'sprite_sheet' property" in result.errors[0]
+
+    def test_player_invalid_tile_size_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test player with tile_size that is not an int."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(
+            name="player",
+            properties={"sprite_sheet": "player.png", "tile_size": "not_int"},
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'tile_size' must be int" in result.errors[0]
+
+    def test_player_invalid_scale_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test player with scale that is not int or float."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(
+            name="player",
+            properties={"sprite_sheet": "player.png", "scale": "not_numeric"},
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'scale' must be int or float" in result.errors[0]
+
+    def test_player_invalid_spawn_at_portal_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test player with spawn_at_portal that is not bool."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        player = self._create_mock_object(
+            name="player",
+            properties={"sprite_sheet": "player.png", "spawn_at_portal": "not_bool"},
+        )
+        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'spawn_at_portal' must be bool" in result.errors[0]
+
+    def test_player_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that map without Player layer is valid."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(object_lists={})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    # Map Properties Tests
+
+    def test_map_properties_valid(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test valid map properties."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(
+            properties={
+                "music": "village_theme.mp3",
+                "camera_follow": "player",
+                "camera_smooth": True,
+            }
+        )
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    def test_map_properties_invalid_music_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test map with music that is not a string."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(properties={"music": 123})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'music' must be str" in result.errors[0]
+
+    def test_map_properties_invalid_camera_follow_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test map with camera_follow that is not a string."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(properties={"camera_follow": 123})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'camera_follow' must be str" in result.errors[0]
+
+    def test_map_properties_invalid_camera_smooth_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test map with camera_smooth that is not a bool."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(properties={"camera_smooth": "not_bool"})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert len(result.errors) == 1
+        assert "'camera_smooth' must be bool" in result.errors[0]
+
+    def test_map_properties_optional(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that map without properties is valid."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        tile_map = self._create_mock_tilemap(properties={})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+
+    # Property Type Validation Helper Tests
+
+    def test_validate_property_type_valid_single(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test _validate_property_type with valid single type."""
+        validator = MapValidator(maps_dir, context)
+
+        error = validator._validate_property_type(42, int, "test_prop", "TestEntity")
+
+        assert error is None
+
+    def test_validate_property_type_valid_tuple(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test _validate_property_type with valid tuple of types."""
+        validator = MapValidator(maps_dir, context)
+
+        error_int = validator._validate_property_type(42, (int, float), "test_prop", "TestEntity")
+        error_float = validator._validate_property_type(3.14, (int, float), "test_prop", "TestEntity")
+
+        assert error_int is None
+        assert error_float is None
+
+    def test_validate_property_type_invalid_single(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test _validate_property_type with invalid single type."""
+        validator = MapValidator(maps_dir, context)
+
+        error = validator._validate_property_type("not_int", int, "test_prop", "TestEntity")
+
+        assert error is not None
+        assert "'test_prop' must be int" in error
+        assert "got str" in error
+
+    def test_validate_property_type_invalid_tuple(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test _validate_property_type with invalid tuple of types."""
+        validator = MapValidator(maps_dir, context)
+
+        error = validator._validate_property_type("not_numeric", (int, float), "test_prop", "TestEntity")
+
+        assert error is not None
+        assert "'test_prop' must be int or float" in error
+        assert "got str" in error
+
+    # Cross-Reference Validation Tests
+
+    def test_validate_cross_references_empty(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that maps don't validate cross-references."""
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert result.errors == []
+        assert result.item_count == 0
+        assert result.metadata == {}
+
+    # Metadata and Multiple Maps Tests
+
+    def test_metadata_counts(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test that metadata correctly counts entities."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        npc1 = self._create_mock_object(name="merchant", properties={"sprite_sheet": "merchant.png"})
+        npc2 = self._create_mock_object(name="guard", properties={"sprite_sheet": "guard.png"})
+        waypoint1 = self._create_mock_object(name="spawn", shape=[100.0, 200.0])
+        waypoint2 = self._create_mock_object(name="exit", shape=[300.0, 400.0])
+        portal = self._create_mock_object(name="portal", properties={"dest": "village"}, shape=[150.0, 250.0])
+        interactive = self._create_mock_object(name="chest", shape=[200.0, 300.0])
+
+        tile_map = self._create_mock_tilemap(
+            object_lists={
+                "NPCs": [npc1, npc2],
+                "Waypoints": [waypoint1, waypoint2],
+                "Portals": [portal],
+                "Interactive": [interactive],
+            }
+        )
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+        assert result.metadata["Total NPCs"] == 2
+        assert result.metadata["Total Waypoints"] == 2
+        assert result.metadata["Total Portals"] == 1
+        assert result.metadata["Total Interactive Objects"] == 1
+
+    def test_multiple_maps(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test validating multiple TMX files."""
+        map_file1 = maps_dir / "village.tmx"
+        map_file1.write_text("")
+        map_file2 = maps_dir / "forest.tmx"
+        map_file2.write_text("")
+
+        npc1 = self._create_mock_object(name="merchant", properties={"sprite_sheet": "merchant.png"})
+        npc2 = self._create_mock_object(name="hermit", properties={"sprite_sheet": "hermit.png"})
+
+        tile_map1 = self._create_mock_tilemap(object_lists={"NPCs": [npc1]})
+        tile_map2 = self._create_mock_tilemap(object_lists={"NPCs": [npc2]})
+
+        validator = MapValidator(maps_dir, context)
+
+        def mock_load_tilemap(path: str) -> Mock:
+            if "village" in path:
+                return tile_map1
+            return tile_map2
+
+        with patch("arcade.load_tilemap", side_effect=mock_load_tilemap):
+            result = validator.validate()
+
+        assert result.errors == []
+        assert result.item_count == 2
+        assert "merchant" in context.get_map_npcs("village")
+        assert "hermit" in context.get_map_npcs("forest")
