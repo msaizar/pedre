@@ -36,6 +36,6 @@ Alternative usage:
 
 __version__ = "0.1.0"
 
-from pedre.helpers import run_game
+from pedre.main import run_game
 
 __all__ = ["__version__", "run_game"]
