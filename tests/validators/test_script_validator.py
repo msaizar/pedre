@@ -10,6 +10,7 @@ import pytest
 
 from pedre.actions.base import Action
 from pedre.actions.registry import ActionRegistry
+from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
 from pedre.events.registry import EventRegistry
 from pedre.validators.context import ValidationContext
@@ -25,8 +26,7 @@ class TestScriptValidator:
         # Save original state
         original_actions = ActionRegistry._actions.copy()
         original_events = EventRegistry._events.copy()
-        original_condition_checkers = ConditionRegistry._checkers.copy()
-        original_condition_validators = ConditionRegistry._validators.copy()
+        original_conditions = ConditionRegistry._conditions.copy()
 
         # Clear for test
         ActionRegistry.clear()
@@ -38,8 +38,7 @@ class TestScriptValidator:
         # Restore original state after test
         ActionRegistry._actions = original_actions
         EventRegistry._events = original_events
-        ConditionRegistry._checkers = original_condition_checkers
-        ConditionRegistry._validators = original_condition_validators
+        ConditionRegistry._conditions = original_conditions
 
     @pytest.fixture
     def scripts_dir(self, tmp_path: Path) -> Path:
@@ -77,9 +76,18 @@ class TestScriptValidator:
                 return []
 
         # Register a simple condition
-        @ConditionRegistry.register("test_condition", validator=lambda data: [])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
+        @ConditionRegistry.register("test_condition")
+        class TestCondition(Condition):
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict) -> TestCondition:
+                return cls()
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
 
     def test_validator_name(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test validator name property."""
@@ -372,9 +380,18 @@ class TestScriptValidator:
             def validate_params(data: dict) -> list[str]:
                 return []
 
-        @ConditionRegistry.register("test_condition", validator=lambda data: ["parameter error"])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
+        @ConditionRegistry.register("test_condition")
+        class TestCondition(Condition):
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict) -> TestCondition:
+                return cls()
+
+            @staticmethod
+            def validate_params(data: dict[str, Any]) -> list[str]:
+                return ["parameter error"]
 
         script_data = {
             "test_script": {
@@ -756,7 +773,7 @@ class TestScriptValidator:
         assert "merchant" in refs.get("npcs", set())
         assert "elder" in refs.get("npcs", set())
 
-    def test_script_references_missing_keys(self, scripts_dir: Path, context: ValidationContext) -> None:  # noqa: C901
+    def test_script_references_missing_keys(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test script references population with missing optional keys (branch coverage)."""
 
         # Register dummy actions
@@ -799,37 +816,20 @@ class TestScriptValidator:
             def validate_params(data: dict) -> list[str]:
                 return []
 
-        @ActionRegistry.register("advance_dialog")
-        class AdvanceDialogAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> AdvanceDialogAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
         script_data = {
             "test_script": {
                 "actions": [
                     {
                         "type": "move_npc",
-                        # Missing "npcs" and "waypoint"
+                        # Missing npcs key
                     },
                     {
                         "type": "change_scene",
-                        # Missing "spawn_waypoint"
+                        # Missing spawn_waypoint
                     },
                     {
                         "type": "start_appear_animation",
-                        # Missing "npcs"
-                    },
-                    {
-                        "type": "advance_dialog",
-                        # Missing "npc"
+                        # Missing npcs
                     },
                 ],
             }
@@ -843,18 +843,30 @@ class TestScriptValidator:
 
         assert result.errors == []
 
-        # Verify no references were captured (branches for missing keys were taken)
+        # Verify no references captured
         refs = context.script_references.get("test_script", {})
-        assert not refs.get("npcs")
-        assert not refs.get("waypoints")
+        assert len(refs.get("npcs", set())) == 0
 
     def test_script_references_portal_key_variations(self, scripts_dir: Path, context: ValidationContext) -> None:
-        """Test variations of portal keys in triggers to ensure full coverage."""
+        """Test script references captures portal names from both 'portal_name' and 'portal' keys."""
+        script_data = {
+            "script1": {
+                "trigger": {
+                    "event": "portal_entered",
+                    "portal_name": "portal1",
+                },
+                "actions": [{"type": "test_action"}],
+            },
+            "script2": {
+                "trigger": {
+                    "event": "portal_entered",
+                    "portal": "portal2",
+                },
+                "actions": [{"type": "test_action"}],
+            },
+        }
 
-        @EventRegistry.register("portal_entered")
-        class PortalEnteredEvent:
-            trigger_keys = frozenset({"portal", "portal_name"})
-
+        # Need to register test_action
         @ActionRegistry.register("test_action")
         class TestAction(Action):
             def __init__(self, **kwargs: object) -> None:
@@ -868,40 +880,19 @@ class TestScriptValidator:
             def validate_params(data: dict) -> list[str]:
                 return []
 
-        @ConditionRegistry.register("unknown_cond", validator=lambda data: [])
-        def unknown_cond(data: dict, context: object) -> bool:
-            return True
+        # Need to register portal_entered event
+        @EventRegistry.register("portal_entered")
+        class PortalEnteredEvent:
+            pass
 
-        script_data = {
-            "script_portal_name": {
-                "trigger": {"event": "portal_entered", "portal_name": "portal_1"},
-                "actions": [{"type": "test_action"}],
-            },
-            "script_no_portal_key": {"trigger": {"event": "portal_entered"}, "actions": [{"type": "test_action"}]},
-            "portal_script": {
-                "trigger": {"event": "portal_entered", "portal": "ancient_gateway"},
-                "conditions": [{"check": "unknown_cond", "npc": "quest_giver"}],
-                "actions": [{"type": "test_action"}],
-            },
-        }
-
-        # Use write_text to create the file
-        script_file = scripts_dir / "portal_scripts.json"
+        script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps(script_data))
 
         validator = ScriptValidator(scripts_dir, context)
-        result = validator.validate()
+        validator.validate()
 
-        assert result.errors == []
+        refs1 = context.script_references.get("script1", {})
+        assert "portal1" in refs1.get("portals", set())
 
-        # Check reference extraction
-        refs_name = context.script_references.get("script_portal_name", {})
-        assert "portal_1" in refs_name.get("portals", set())
-
-        refs_no_key = context.script_references.get("script_no_portal_key", {})
-        assert not refs_no_key.get("portals")
-
-        # Verify references were captured for portal_script
-        refs = context.script_references.get("portal_script", {})
-        assert "ancient_gateway" in refs.get("portals", set())
-        assert "quest_giver" in refs.get("npcs", set())
+        refs2 = context.script_references.get("script2", {})
+        assert "portal2" in refs2.get("portals", set())

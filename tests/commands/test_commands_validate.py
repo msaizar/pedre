@@ -11,15 +11,18 @@ For validator-specific tests, see:
 - tests/validators/test_dialog_validator.py
 """
 
+from __future__ import annotations
+
 import argparse
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
 from pedre.actions.base import Action
 from pedre.actions.registry import ActionRegistry
 from pedre.commands.validate import ValidateCommand
+from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
 from pedre.events.registry import EventRegistry
 
@@ -36,8 +39,7 @@ class TestValidateCommand:
         # Save original state
         original_actions = ActionRegistry._actions.copy()
         original_events = EventRegistry._events.copy()
-        original_condition_checkers = ConditionRegistry._checkers.copy()
-        original_condition_validators = ConditionRegistry._validators.copy()
+        original_conditions = ConditionRegistry._conditions.copy()
 
         # Clear for test
         ActionRegistry.clear()
@@ -49,8 +51,7 @@ class TestValidateCommand:
         # Restore original state after test
         ActionRegistry._actions = original_actions
         EventRegistry._events = original_events
-        ConditionRegistry._checkers = original_condition_checkers
-        ConditionRegistry._validators = original_condition_validators
+        ConditionRegistry._conditions = original_conditions
 
     @pytest.fixture
     def scripts_dir(self, tmp_path: Path) -> Path:
@@ -89,17 +90,26 @@ class TestValidateCommand:
                 pass
 
             @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
+            def from_dict(cls, data: dict) -> TestCondition:
+                return cast("TestCondition", cls(**data))
 
             @staticmethod
             def validate_params(data: dict) -> list[str]:
                 return []
 
         # Register a simple condition
-        @ConditionRegistry.register("test_condition", validator=lambda data: [])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
+        @ConditionRegistry.register("test_condition")
+        class TestCondition(Condition):
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
+
+            @staticmethod
+            def validate_params(data: dict[str, Any]) -> list[str]:
+                return []
 
     # Argument Parsing Tests
 
@@ -163,7 +173,12 @@ class TestValidateCommand:
         script_file.write_text(json.dumps(script_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None, maps_path=maps_dir)
+        args = argparse.Namespace(
+            scripts_path=scripts_dir,
+            type="scripts",
+            dialogs_path=None,
+            maps_path=maps_dir,
+        )
         command.execute(args)
 
     def test_validate_type_dialogs_only(self, dialogs_dir: Path, maps_dir: Path, setup_registries: None) -> None:
@@ -237,7 +252,12 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=maps_dir)
+        args = argparse.Namespace(
+            scripts_path=scripts_dir,
+            type="all",
+            dialogs_path=dialogs_dir,
+            maps_path=maps_dir,
+        )
         command.execute(args)
 
     def test_validate_with_custom_dialogs_dir(
@@ -273,7 +293,12 @@ class TestValidateCommand:
         dialog_file.write_text(json.dumps(dialog_data))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=maps_dir)
+        args = argparse.Namespace(
+            scripts_path=scripts_dir,
+            type="all",
+            dialogs_path=dialogs_dir,
+            maps_path=maps_dir,
+        )
         command.execute(args)
 
     # Error Handling Tests
@@ -330,11 +355,20 @@ class TestValidateCommand:
         command.execute(args)
 
     def test_validate_empty_directories_succeeds(
-        self, scripts_dir: Path, dialogs_dir: Path, maps_dir: Path, setup_registries: None
+        self,
+        scripts_dir: Path,
+        dialogs_dir: Path,
+        maps_dir: Path,
+        setup_registries: None,
     ) -> None:
         """Test validate succeeds with empty directories (no files to validate)."""
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=maps_dir)
+        args = argparse.Namespace(
+            scripts_path=scripts_dir,
+            type="all",
+            dialogs_path=dialogs_dir,
+            maps_path=maps_dir,
+        )
         # Should not raise
         command.execute(args)
 

@@ -9,6 +9,7 @@ import pytest
 
 from pedre.actions.base import Action
 from pedre.actions.registry import ActionRegistry
+from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
 from pedre.validators.context import ValidationContext
 from pedre.validators.dialog_validator import DialogValidator
@@ -25,8 +26,7 @@ class TestDialogValidator:
         """Clear all registries before and after each test to ensure isolation."""
         # Save original state
         original_actions = ActionRegistry._actions.copy()
-        original_condition_checkers = ConditionRegistry._checkers.copy()
-        original_condition_validators = ConditionRegistry._validators.copy()
+        original_conditions = ConditionRegistry._conditions.copy()
 
         # Clear for test
         ActionRegistry.clear()
@@ -36,8 +36,7 @@ class TestDialogValidator:
 
         # Restore original state after test
         ActionRegistry._actions = original_actions
-        ConditionRegistry._checkers = original_condition_checkers
-        ConditionRegistry._validators = original_condition_validators
+        ConditionRegistry._conditions = original_conditions
 
     @pytest.fixture
     def dialogs_dir(self, tmp_path: Path) -> Path:
@@ -70,9 +69,18 @@ class TestDialogValidator:
                 return []
 
         # Register a simple condition
-        @ConditionRegistry.register("test_condition", validator=lambda data: [])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
+        @ConditionRegistry.register("test_condition")
+        class TestCondition(Condition):
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict) -> TestCondition:
+                return cls()
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return []
 
     def test_validator_name(self, dialogs_dir: Path, context: ValidationContext) -> None:
         """Test validator name property."""
@@ -300,9 +308,18 @@ class TestDialogValidator:
     def test_condition_validation_error(self, dialogs_dir: Path, context: ValidationContext) -> None:
         """Test validate when condition parameter validation fails."""
 
-        @ConditionRegistry.register("test_condition", validator=lambda data: ["parameter error"])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
+        @ConditionRegistry.register("test_condition")
+        class TestCondition(Condition):
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict) -> TestCondition:
+                return cls()
+
+            @staticmethod
+            def validate_params(data: dict) -> list[str]:
+                return ["parameter error"]
 
         dialog_data = {"merchant": {"0": {"text": ["Hello"], "conditions": [{"check": "test_condition"}]}}}
 

@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from pedre.conf import settings
 from pedre.validators.context import ValidationContext
 from pedre.validators.map_validator import MapValidator
 
@@ -488,7 +489,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=True),
+            patch("pedre.validators.map_validator.asset_exists", return_value=True),
         ):
             result = validator.validate()
 
@@ -525,7 +526,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=True),
+            patch("pedre.validators.map_validator.asset_exists", return_value=True),
         ):
             result = validator.validate()
 
@@ -547,7 +548,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=True),
+            patch("pedre.validators.map_validator.asset_exists", return_value=True),
         ):
             result = validator.validate()
 
@@ -569,7 +570,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=True),
+            patch("pedre.validators.map_validator.asset_exists", return_value=True),
         ):
             result = validator.validate()
 
@@ -609,7 +610,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=True),
+            patch("pedre.validators.map_validator.asset_exists", return_value=True),
         ):
             result = validator.validate()
 
@@ -626,7 +627,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=True),
+            patch("pedre.validators.map_validator.asset_exists", return_value=True),
         ):
             result = validator.validate()
 
@@ -868,7 +869,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=True),
+            patch("pedre.validators.map_validator.asset_exists", return_value=True),
         ):
             result = validator.validate()
 
@@ -902,7 +903,7 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=False),
+            patch("pedre.validators.map_validator.asset_exists", return_value=False),
         ):
             result = validator.validate()
 
@@ -920,32 +921,9 @@ class TestMapValidator:
 
         with (
             patch("arcade.load_tilemap", return_value=tile_map),
-            patch.object(validator, "_asset_exists", return_value=False),
+            patch("pedre.validators.map_validator.asset_exists", return_value=False),
         ):
             result = validator.validate()
 
         assert len(result.errors) == 1
-        assert "music file 'missing.mp3' not found" in result.errors[0]
-
-    def test_asset_exists_success_and_failure(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test _asset_exists method branches (lines 403-408)."""
-        validator = MapValidator(maps_dir, context)
-
-        # Test success (file exists)
-        with (
-            patch("pedre.validators.map_validator.asset_path", return_value="/mock/assets/exists.png"),
-            patch("pathlib.Path.exists", return_value=True),
-            patch("pathlib.Path.is_file", return_value=True),
-        ):
-            assert validator._asset_exists("exists.png") is True
-
-        # Test failure (file does not exist)
-        with (
-            patch("pedre.validators.map_validator.asset_path", return_value="/mock/assets/missing.png"),
-            patch("pathlib.Path.exists", return_value=False),
-        ):
-            assert validator._asset_exists("missing.png") is False
-
-        # Test exception (line 407-408)
-        with patch("pedre.validators.map_validator.asset_path", side_effect=ValueError("Invalid path")):
-            assert validator._asset_exists("trigger_exception") is False
+        assert f"music file '{settings.AUDIO_MUSIC_DIRECTORY}/missing.mp3' not found" in result.errors[0]

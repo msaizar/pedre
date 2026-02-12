@@ -1,7 +1,7 @@
 """Unit tests for audio action classes."""
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from pedre.plugins.audio.actions import PlayMusicAction, PlaySFXAction
 
@@ -272,8 +272,10 @@ class TestPlayMusicAction(unittest.TestCase):
 class TestPlaySFXActionValidation(unittest.TestCase):
     """Test PlaySFXAction validation."""
 
-    def test_validate_params_success(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_success(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params with valid data."""
+        mock_asset_exists.return_value = True
         data = {"file": "sound.wav"}
         errors = PlaySFXAction.validate_params(data)
         assert errors == []
@@ -303,8 +305,10 @@ class TestPlaySFXActionValidation(unittest.TestCase):
 class TestPlayMusicActionValidation(unittest.TestCase):
     """Test PlayMusicAction validation."""
 
-    def test_validate_params_success(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_success(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params with valid data."""
+        mock_asset_exists.return_value = True
         data = {"file": "music.ogg"}
         errors = PlayMusicAction.validate_params(data)
         assert errors == []
@@ -330,41 +334,53 @@ class TestPlayMusicActionValidation(unittest.TestCase):
         assert len(errors) == 1
         assert "'file' must be a string" in errors[0]
 
-    def test_validate_params_loop_not_bool(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_loop_not_bool(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params detects non-bool loop field."""
+        mock_asset_exists.return_value = True
         data = {"file": "music.ogg", "loop": "yes"}
         errors = PlayMusicAction.validate_params(data)
         assert len(errors) == 1
         assert "'loop' must be a bool" in errors[0]
 
-    def test_validate_params_volume_not_number(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_volume_not_number(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params detects non-number volume field."""
+        mock_asset_exists.return_value = True
         data = {"file": "music.ogg", "volume": "loud"}
         errors = PlayMusicAction.validate_params(data)
         assert len(errors) == 1
         assert "'volume' must be a number" in errors[0]
 
-    def test_validate_params_volume_bool(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_volume_bool(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params detects bool volume field."""
+        mock_asset_exists.return_value = True
         data = {"file": "music.ogg", "volume": True}
         errors = PlayMusicAction.validate_params(data)
         assert len(errors) == 1
         assert "'volume' must be a number" in errors[0]
 
-    def test_validate_params_volume_none(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_volume_none(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params accepts None volume field (skips validation)."""
+        mock_asset_exists.return_value = True
         data = {"file": "music.ogg", "volume": None}
         errors = PlayMusicAction.validate_params(data)
         assert errors == []
 
-    def test_validate_params_volume_valid_float(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_volume_valid_float(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params accepts valid float volume."""
         data = {"file": "music.ogg", "volume": 0.5}
+        mock_asset_exists.return_value = True
         errors = PlayMusicAction.validate_params(data)
         assert errors == []
 
-    def test_validate_params_volume_valid_int(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_validate_params_volume_valid_int(self, mock_asset_exists: MagicMock) -> None:
         """Test validate_params accepts valid int volume."""
+        mock_asset_exists.return_value = True
         data = {"file": "music.ogg", "volume": 1}
         errors = PlayMusicAction.validate_params(data)
         assert errors == []

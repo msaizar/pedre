@@ -25,8 +25,7 @@ class TestAutodiscoverFrameworkCommands:
         original_commands = CommandRegistry._commands.copy()
         original_actions = ActionRegistry._actions.copy()
         original_events = EventRegistry._events.copy()
-        original_condition_checkers = ConditionRegistry._checkers.copy()
-        original_condition_validators = ConditionRegistry._validators.copy()
+        original_conditions = ConditionRegistry._conditions.copy()
 
         # Track which command modules we import so we can clean them up
         modules_before = set(sys.modules.keys())
@@ -57,8 +56,7 @@ class TestAutodiscoverFrameworkCommands:
             CommandRegistry._commands = original_commands
             ActionRegistry._actions = original_actions
             EventRegistry._events = original_events
-            ConditionRegistry._checkers = original_condition_checkers
-            ConditionRegistry._validators = original_condition_validators
+            ConditionRegistry._conditions = original_conditions
 
             # Clean up any modules we imported during the test
             modules_after = set(sys.modules.keys())
@@ -452,8 +450,7 @@ class TestCommandLoaderIntegration:
         original_commands = CommandRegistry._commands.copy()
         original_actions = ActionRegistry._actions.copy()
         original_events = EventRegistry._events.copy()
-        original_condition_checkers = ConditionRegistry._checkers.copy()
-        original_condition_validators = ConditionRegistry._validators.copy()
+        original_conditions = ConditionRegistry._conditions.copy()
 
         # Track which modules we import so we can clean them up
         modules_before = set(sys.modules.keys())
@@ -483,8 +480,7 @@ class TestCommandLoaderIntegration:
             CommandRegistry._commands = original_commands
             ActionRegistry._actions = original_actions
             EventRegistry._events = original_events
-            ConditionRegistry._checkers = original_condition_checkers
-            ConditionRegistry._validators = original_condition_validators
+            ConditionRegistry._conditions = original_conditions
 
             # Clean up any modules we imported during the test
             modules_after = set(sys.modules.keys())

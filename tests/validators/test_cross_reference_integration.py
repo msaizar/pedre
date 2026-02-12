@@ -28,8 +28,7 @@ class TestCrossReferenceIntegration:
         # Save original state
         original_actions = ActionRegistry._actions.copy()
         original_events = EventRegistry._events.copy()
-        original_condition_checkers = ConditionRegistry._checkers.copy()
-        original_condition_validators = ConditionRegistry._validators.copy()
+        original_conditions = ConditionRegistry._conditions.copy()
 
         # Clear for test
         ActionRegistry.clear()
@@ -41,8 +40,7 @@ class TestCrossReferenceIntegration:
         # Restore original state after test
         ActionRegistry._actions = original_actions
         EventRegistry._events = original_events
-        ConditionRegistry._checkers = original_condition_checkers
-        ConditionRegistry._validators = original_condition_validators
+        ConditionRegistry._conditions = original_conditions
 
     @pytest.fixture
     def setup_registries(self) -> None:
@@ -328,11 +326,11 @@ class TestCrossReferenceIntegration:
 
         tile_map = self._create_mock_tilemap(waypoints=["spawn_point"])
 
-        # Create script referencing that waypoint
+        # Create script referencing that waypoint via change_scene
         script_file = temp_dirs["scripts"] / "teleport_scripts.json"
         script_data = {
             "teleport_script": {
-                "actions": [{"type": "change_scene", "spawn_waypoint": "spawn_point"}],
+                "actions": [{"type": "change_scene", "target_map": "village", "spawn_waypoint": "spawn_point"}],
             }
         }
         script_file.write_text(json.dumps(script_data))
@@ -359,18 +357,18 @@ class TestCrossReferenceIntegration:
         context: ValidationContext,
         setup_registries: None,
     ) -> None:
-        """Test script referencing a waypoint that doesn't exist in any map."""
+        """Test script referencing a spawn waypoint that doesn't exist in the target map."""
         # Create map WITHOUT the waypoint
         map_file = temp_dirs["maps"] / "village.tmx"
         map_file.write_text("")
 
         tile_map = self._create_mock_tilemap(waypoints=[])
 
-        # Create script referencing non-existent waypoint
+        # Create script referencing non-existent waypoint in target map
         script_file = temp_dirs["scripts"] / "teleport_scripts.json"
         script_data = {
             "teleport_script": {
-                "actions": [{"type": "change_scene", "spawn_waypoint": "spawn_point"}],
+                "actions": [{"type": "change_scene", "target_map": "village", "spawn_waypoint": "spawn_point"}],
             }
         }
         script_file.write_text(json.dumps(script_data))
@@ -390,7 +388,7 @@ class TestCrossReferenceIntegration:
         script_xref_result = script_validator.validate_cross_references()
 
         assert len(script_xref_result.errors) == 1
-        assert "waypoint 'spawn_point' not found in any map" in script_xref_result.errors[0]
+        assert "spawn_waypoint 'spawn_point' not found in target map 'village'" in script_xref_result.errors[0]
 
     # Multi-File Integration Tests
 
