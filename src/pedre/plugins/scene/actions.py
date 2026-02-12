@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -109,3 +110,33 @@ class ChangeSceneAction(Action):
             errors.append("'spawn_waypoint' must be a string")
 
         return errors
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        target_map = _data.get("target_map")
+        if isinstance(target_map, str):
+            map_name = target_map.removesuffix(".tmx")
+
+            # Map reference
+            refs.append(
+                EntityReference(
+                    type="map",
+                    name=map_name,
+                )
+            )
+
+            spawn_waypoint = _data.get("spawn_waypoint")
+            if isinstance(spawn_waypoint, str):
+                refs.append(
+                    EntityReference(
+                        type="waypoint",
+                        name=spawn_waypoint,
+                        scope="map",
+                        target_map=map_name,
+                    )
+                )
+
+        return refs

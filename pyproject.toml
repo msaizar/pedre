@@ -118,7 +118,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "SLF001", "ARG"]  # Allow assert and private member access in tests
+"tests/**" = ["S101", "SLF001", "ARG", "C901"]  # Allow assert and private member access in tests
 "src/pedre/**.py" = [
     "ARG002",   # Allow unused args in view method overrides
     "C901",     # Allow complex functions (mccabe complexity)

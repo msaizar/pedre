@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Self, cast
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -248,3 +249,18 @@ class EmitParticlesAction(Action):
                 errors.append("'color' must be a list of 3 integers")
 
         return errors
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        npc = _data.get("npc")
+        if isinstance(npc, str):
+            refs.append(EntityReference(type="npc", name=npc))
+
+        interactive_object = _data.get("interactive_object")
+        if isinstance(interactive_object, str):
+            refs.append(EntityReference(type="interactive_object", name=interactive_object))
+
+        return refs

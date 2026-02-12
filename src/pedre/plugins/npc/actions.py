@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Self
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionRegistry
 from pedre.plugins.npc.sprites import AnimatedNPC
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -123,6 +124,19 @@ class MoveNPCAction(Action):
 
         return errors
 
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
+
+        waypoint = _data.get("waypoint")
+        if isinstance(waypoint, str):
+            refs.append(EntityReference(type="waypoint", name=waypoint))
+
+        return refs
+
 
 @ActionRegistry.register("start_appear_animation")
 class StartAppearAnimationAction(Action):
@@ -187,6 +201,19 @@ class StartAppearAnimationAction(Action):
             errors.append("'npcs' items must be strings")
         return errors
 
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
+
+        waypoint = _data.get("waypoint")
+        if isinstance(waypoint, str):
+            refs.append(EntityReference(type="waypoint", name=waypoint))
+
+        return refs
+
 
 @ActionRegistry.register("advance_dialog")
 class AdvanceDialogAction(Action):
@@ -248,6 +275,17 @@ class AdvanceDialogAction(Action):
         elif not isinstance(npc, str):
             errors.append("'npc' must be a string")
         return errors
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        npc = _data.get("npc")
+        if isinstance(npc, str):
+            refs.append(EntityReference(type="npc", name=npc))
+
+        return refs
 
 
 @ActionRegistry.register("set_dialog_level")
@@ -341,6 +379,17 @@ class SetDialogLevelAction(Action):
 
         return errors
 
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        npc = _data.get("npc")
+        if isinstance(npc, str):
+            refs.append(EntityReference(type="npc", name=npc))
+
+        return refs
+
 
 @ActionRegistry.register("set_current_npc")
 class SetCurrentNPCAction(Action):
@@ -426,6 +475,17 @@ class SetCurrentNPCAction(Action):
             errors.append("'npc' must be a string")
         return errors
 
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        npc = _data.get("npc")
+        if isinstance(npc, str):
+            refs.append(EntityReference(type="npc", name=npc))
+
+        return refs
+
 
 @ActionRegistry.register("wait_for_movement")
 class WaitForNPCMovementAction(WaitForConditionAction):
@@ -486,6 +546,17 @@ class WaitForNPCMovementAction(WaitForConditionAction):
         elif not isinstance(npc, str):
             errors.append("'npc' must be a string")
         return errors
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        npc = _data.get("npc")
+        if isinstance(npc, str):
+            refs.append(EntityReference(type="npc", name=npc))
+
+        return refs
 
 
 @ActionRegistry.register("wait_npcs_appear")
@@ -556,6 +627,19 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
             errors.append("'npcs' items must be strings")
         return errors
 
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
+
+        waypoint = _data.get("waypoint")
+        if isinstance(waypoint, str):
+            refs.append(EntityReference(type="waypoint", name=waypoint))
+
+        return refs
+
 
 @ActionRegistry.register("wait_for_npcs_disappear")
 class WaitForNPCsDisappearAction(WaitForConditionAction):
@@ -624,6 +708,19 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
         elif not all(isinstance(item, str) for item in npcs):
             errors.append("'npcs' items must be strings")
         return errors
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
+
+        waypoint = _data.get("waypoint")
+        if isinstance(waypoint, str):
+            refs.append(EntityReference(type="waypoint", name=waypoint))
+
+        return refs
 
 
 @ActionRegistry.register("start_disappear_animation")
@@ -727,3 +824,16 @@ class StartDisappearAnimationAction(Action):
         elif not all(isinstance(item, str) for item in npcs):
             errors.append("'npcs' items must be strings")
         return errors
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
+
+        waypoint = _data.get("waypoint")
+        if isinstance(waypoint, str):
+            refs.append(EntityReference(type="waypoint", name=waypoint))
+
+        return refs

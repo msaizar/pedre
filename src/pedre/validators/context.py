@@ -1,133 +1,122 @@
 """Validation context for cross-referencing between asset types."""
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pedre.types import EntityReference
 
 
 @dataclass
 class ValidationContext:
-    """Shared context for cross-referencing validation between asset types.
+    """Shared context used during multi-phase validation.
 
-    This context is populated during Phase 1 (structural validation) by each validator
-    and then used during Phase 2 (cross-reference validation) to verify that references
+    This context is populated during structural validation (Phase 1) by
+    individual validators (maps, dialogs, scripts, etc.). It is then used
+    during cross-reference validation (Phase 2) to verify that references
     between different asset types are valid.
 
-    For example:
-    - Dialog files reference NPC names that should exist in maps
-    - Scripts reference waypoints and NPCs that should exist in maps
+    Example cross-references:
+        - Dialog files referencing NPCs defined in maps
+        - Scripts referencing waypoints, portals, or interactive objects
+        - Scripts referencing NPCs defined in maps
+
+    Attributes:
+        map_entities:
+            Nested mapping of:
+                map_name -> entity_type -> set(entity_name)
+
+    Example:
+                {
+                    "town": {
+                        "npcs": {"bob", "alice"},
+                        "waypoints": {"center"},
+                    }
+                }
+
+        dialog_npcs:
+            Mapping of dialog file name -> set of referenced NPC names.
+
+        script_references:
+            Mapping of script file name -> set of extracted EntityReference
+            instances used during validation.
     """
 
     map_entities: dict[str, dict[str, set[str]]] = field(default_factory=dict)
-
     dialog_npcs: dict[str, set[str]] = field(default_factory=dict)
+    script_references: dict[str, set[EntityReference]] = field(default_factory=dict)
 
-    script_references: dict[str, dict[str, set[str]]] = field(default_factory=dict)
-
-    def add_map_entity(self, map_name: str, entity_type: str, entity_name: str) -> None:
-        """Register an entity found in a map.
+    def add_map_entity(
+        self,
+        map_name: str,
+        entity_type: str,
+        entity_name: str,
+    ) -> None:
+        """Register an entity discovered in a map.
 
         Args:
-            map_name: Name of the map (without .tmx extension)
-            entity_type: Type of entity (e.g., "npcs", "waypoints", "portals")
-            entity_name: Name of the entity
+            map_name: Name of the map (without file extension).
+            entity_type: Type of entity (e.g. "npcs", "waypoints",
+                "portals", "interactive_objects").
+            entity_name: Name of the entity within the map.
         """
-        if map_name not in self.map_entities:
-            self.map_entities[map_name] = {}
-        if entity_type not in self.map_entities[map_name]:
-            self.map_entities[map_name][entity_type] = set()
-        self.map_entities[map_name][entity_type].add(entity_name)
+        self.map_entities.setdefault(map_name, {}).setdefault(entity_type, set()).add(entity_name)
+
+    def _get_map_entities(self, map_name: str, entity_type: str) -> set[str]:
+        """Return entities of a specific type for a given map.
+
+        Args:
+            map_name: Name of the map.
+            entity_type: Type of entity to retrieve.
+
+        Returns:
+            Set of entity names, or an empty set if none exist.
+        """
+        return self.map_entities.get(map_name, {}).get(entity_type, set())
 
     def get_map_npcs(self, map_name: str) -> set[str]:
-        """Get all NPC names in a specific map.
-
-        Args:
-            map_name: Name of the map (without .tmx extension)
-
-        Returns:
-            Set of NPC names in the map, or empty set if map not found
-        """
-        return self.map_entities.get(map_name, {}).get("npcs", set())
+        """Return all NPC names defined in a specific map."""
+        return self._get_map_entities(map_name, "npcs")
 
     def get_map_waypoints(self, map_name: str) -> set[str]:
-        """Get all waypoint names in a specific map.
-
-        Args:
-            map_name: Name of the map (without .tmx extension)
-
-        Returns:
-            Set of waypoint names in the map, or empty set if map not found
-        """
-        return self.map_entities.get(map_name, {}).get("waypoints", set())
+        """Return all waypoint names defined in a specific map."""
+        return self._get_map_entities(map_name, "waypoints")
 
     def get_map_portals(self, map_name: str) -> set[str]:
-        """Get all portal names in a specific map.
-
-        Args:
-            map_name: Name of the map (without .tmx extension)
-
-        Returns:
-            Set of portal names in the map, or empty set if map not found
-        """
-        return self.map_entities.get(map_name, {}).get("portals", set())
-
-    def get_all_npcs(self) -> set[str]:
-        """Get all NPC names across all maps.
-
-        Returns:
-            Set of all NPC names found in any map
-        """
-        all_npcs = set()
-        for map_data in self.map_entities.values():
-            all_npcs.update(map_data.get("npcs", set()))
-        return all_npcs
-
-    def get_all_waypoints(self) -> set[str]:
-        """Get all waypoint names across all maps.
-
-        Returns:
-            Set of all waypoint names found in any map
-        """
-        all_waypoints = set()
-        for map_data in self.map_entities.values():
-            all_waypoints.update(map_data.get("waypoints", set()))
-        return all_waypoints
-
-    def get_all_portals(self) -> set[str]:
-        """Get all portal names across all maps.
-
-        Returns:
-            Set of all portal names found in any map
-        """
-        all_portals = set()
-        for map_data in self.map_entities.values():
-            all_portals.update(map_data.get("portals", set()))
-        return all_portals
-
-    def get_all_maps(self) -> set[str]:
-        """Get all known map names.
-
-        Returns:
-            Set of all map names (without .tmx extension)
-        """
-        return set(self.map_entities.keys())
+        """Return all portal names defined in a specific map."""
+        return self._get_map_entities(map_name, "portals")
 
     def get_map_interactive_objects(self, map_name: str) -> set[str]:
-        """Get all interactive object names in a specific map.
+        """Return all interactive object names defined in a specific map."""
+        return self._get_map_entities(map_name, "interactive_objects")
+
+    def _get_all_entities(self, entity_type: str) -> set[str]:
+        """Aggregate entities of a given type across all maps.
 
         Args:
-            map_name: Name of the map (without .tmx extension)
+            entity_type: Type of entity to aggregate.
 
         Returns:
-            Set of interactive object names in the map, or empty set if map not found
+            Set of unique entity names found in any map.
         """
-        return self.map_entities.get(map_name, {}).get("interactive_objects", set())
+        return {name for map_data in self.map_entities.values() for name in map_data.get(entity_type, set())}
+
+    def get_all_npcs(self) -> set[str]:
+        """Return all NPC names defined across all maps."""
+        return self._get_all_entities("npcs")
+
+    def get_all_waypoints(self) -> set[str]:
+        """Return all waypoint names defined across all maps."""
+        return self._get_all_entities("waypoints")
+
+    def get_all_portals(self) -> set[str]:
+        """Return all portal names defined across all maps."""
+        return self._get_all_entities("portals")
 
     def get_all_interactive_objects(self) -> set[str]:
-        """Get all interactive object names across all maps.
+        """Return all interactive object names defined across all maps."""
+        return self._get_all_entities("interactive_objects")
 
-        Returns:
-            Set of all interactive object names found in any map
-        """
-        all_objects = set()
-        for map_data in self.map_entities.values():
-            all_objects.update(map_data.get("interactive_objects", set()))
-        return all_objects
+    def get_all_maps(self) -> set[str]:
+        """Return all known map names registered in the context."""
+        return set(self.map_entities)

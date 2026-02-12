@@ -1,7 +1,7 @@
 """Integration tests for cross-reference validation between validators."""
 
 import json
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -10,6 +10,7 @@ from pedre.actions.base import Action
 from pedre.actions.registry import ActionRegistry
 from pedre.conditions.registry import ConditionRegistry
 from pedre.events.registry import EventRegistry
+from pedre.types import EntityReference
 from pedre.validators.context import ValidationContext
 from pedre.validators.dialog_validator import DialogValidator
 from pedre.validators.map_validator import MapValidator
@@ -60,6 +61,19 @@ class TestCrossReferenceIntegration:
             def validate_params(data: dict) -> list[str]:
                 return []
 
+            @classmethod
+            def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+                """Extract references for validation."""
+                refs: list[EntityReference] = []
+
+                refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
+
+                waypoint = _data.get("waypoint")
+                if isinstance(waypoint, str):
+                    refs.append(EntityReference(type="waypoint", name=waypoint))
+
+                return refs
+
         @ActionRegistry.register("change_scene")
         class ChangeSceneAction(Action):
             def __init__(self, **kwargs: object) -> None:
@@ -72,6 +86,36 @@ class TestCrossReferenceIntegration:
             @staticmethod
             def validate_params(data: dict) -> list[str]:
                 return []
+
+            @classmethod
+            def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+                """Extract references for validation."""
+                refs: list[EntityReference] = []
+
+                target_map = _data.get("target_map")
+                if isinstance(target_map, str):
+                    map_name = target_map.removesuffix(".tmx")
+
+                    # Map reference
+                    refs.append(
+                        EntityReference(
+                            type="map",
+                            name=map_name,
+                        )
+                    )
+
+                    spawn_waypoint = _data.get("spawn_waypoint")
+                    if isinstance(spawn_waypoint, str):
+                        refs.append(
+                            EntityReference(
+                                type="waypoint",
+                                name=spawn_waypoint,
+                                scope="map",
+                                target_map=map_name,
+                            )
+                        )
+
+                return refs
 
     @pytest.fixture
     def temp_dirs(self, tmp_path: Path) -> dict[str, Path]:
@@ -388,7 +432,7 @@ class TestCrossReferenceIntegration:
         script_xref_result = script_validator.validate_cross_references()
 
         assert len(script_xref_result.errors) == 1
-        assert "spawn_waypoint 'spawn_point' not found in target map 'village'" in script_xref_result.errors[0]
+        assert "waypoint 'spawn_point' not found in any map" in script_xref_result.errors[0]
 
     # Multi-File Integration Tests
 

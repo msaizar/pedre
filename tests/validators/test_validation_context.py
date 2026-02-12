@@ -2,6 +2,7 @@
 
 import pytest
 
+from pedre.types import EntityReference
 from pedre.validators.context import ValidationContext
 
 
@@ -220,18 +221,30 @@ class TestValidationContext:
     def test_script_references_tracking(self, context: ValidationContext) -> None:
         """Test script reference tracking."""
         context.script_references["quest_start"] = {
-            "npcs": {"merchant", "guard"},
-            "waypoints": {"spawn_point"},
+            EntityReference(type="npc", name="merchant"),
+            EntityReference(type="npc", name="guard"),
+            EntityReference(type="waypoint", name="spawn_point"),
         }
+
         context.script_references["quest_end"] = {
-            "npcs": {"king"},
-            "waypoints": {"throne_room", "exit"},
+            EntityReference(type="npc", name="king"),
+            EntityReference(type="waypoint", name="throne_room"),
+            EntityReference(type="waypoint", name="exit"),
         }
 
         assert len(context.script_references) == 2
-        assert "merchant" in context.script_references["quest_start"]["npcs"]
-        assert "spawn_point" in context.script_references["quest_start"]["waypoints"]
-        assert "king" in context.script_references["quest_end"]["npcs"]
+
+        quest_start_refs = context.script_references["quest_start"]
+        quest_end_refs = context.script_references["quest_end"]
+
+        quest_start_npcs = {r.name for r in quest_start_refs if r.type == "npc"}
+        quest_start_waypoints = {r.name for r in quest_start_refs if r.type == "waypoint"}
+
+        quest_end_npcs = {r.name for r in quest_end_refs if r.type == "npc"}
+
+        assert "merchant" in quest_start_npcs
+        assert "spawn_point" in quest_start_waypoints
+        assert "king" in quest_end_npcs
 
     def test_default_factory_independence(self, context: ValidationContext) -> None:
         """Test that default factory creates independent instances."""

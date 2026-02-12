@@ -13,6 +13,7 @@ from pedre.actions.registry import ActionRegistry
 from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
 from pedre.events.registry import EventRegistry
+from pedre.types import EntityReference
 from pedre.validators.context import ValidationContext
 from pedre.validators.script_validator import ScriptValidator
 
@@ -678,10 +679,13 @@ class TestScriptValidator:
         assert "trigger missing required 'event' key" in error_text
         assert "condition 0 missing required 'check' key" in error_text
 
-    def test_script_references_population(self, scripts_dir: Path, context: ValidationContext) -> None:  # noqa: C901
-        """Test that script references (NPCs, waypoints) are correctly populated from actions."""
+    def test_script_references_population(
+        self,
+        scripts_dir: Path,
+        context: ValidationContext,
+    ) -> None:
+        """Test that script references are correctly populated from actions."""
 
-        # Register dummy actions so validation passes
         @ActionRegistry.register("move_npc")
         class MoveNpcAction(Action):
             def __init__(self, **kwargs: object) -> None:
@@ -694,6 +698,18 @@ class TestScriptValidator:
             @staticmethod
             def validate_params(data: dict) -> list[str]:
                 return []
+
+            @classmethod
+            def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+                refs: list[EntityReference] = []
+
+                refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
+
+                waypoint = _data.get("waypoint")
+                if isinstance(waypoint, str):
+                    refs.append(EntityReference(type="waypoint", name=waypoint))
+
+                return refs
 
         @ActionRegistry.register("change_scene")
         class ChangeSceneAction(Action):
@@ -708,6 +724,16 @@ class TestScriptValidator:
             def validate_params(data: dict) -> list[str]:
                 return []
 
+            @classmethod
+            def extract_references(cls, _data: dict[str, object]) -> list[EntityReference]:
+                refs: list[EntityReference] = []
+
+                spawn_waypoint = _data.get("spawn_waypoint")
+                if isinstance(spawn_waypoint, str):
+                    refs.append(EntityReference(type="waypoint", name=spawn_waypoint))
+
+                return refs
+
         @ActionRegistry.register("start_appear_animation")
         class StartAppearAnimationAction(Action):
             def __init__(self, **kwargs: object) -> None:
@@ -721,6 +747,10 @@ class TestScriptValidator:
             def validate_params(data: dict) -> list[str]:
                 return []
 
+            @classmethod
+            def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+                return [EntityReference(type="npc", name=npc) for npc in _data.get("npcs", [])]
+
         @ActionRegistry.register("advance_dialog")
         class AdvanceDialogAction(Action):
             def __init__(self, **kwargs: object) -> None:
@@ -732,6 +762,13 @@ class TestScriptValidator:
 
             @staticmethod
             def validate_params(data: dict) -> list[str]:
+                return []
+
+            @classmethod
+            def extract_references(cls, _data: dict[str, object]) -> list[EntityReference]:
+                npc = _data.get("npc")
+                if isinstance(npc, str):
+                    return [EntityReference(type="npc", name=npc)]
                 return []
 
         script_data = {
@@ -766,12 +803,14 @@ class TestScriptValidator:
 
         assert result.errors == []
 
-        # Verify references were captured
-        refs = context.script_references.get("test_script", {})
-        assert "guard1" in refs.get("npcs", set())
-        assert "guard2" in refs.get("npcs", set())
-        assert "merchant" in refs.get("npcs", set())
-        assert "elder" in refs.get("npcs", set())
+        refs = context.script_references.get("test_script")
+        assert refs is not None
+
+        npc_names = {r.name for r in refs if r.type == "npc"}
+        waypoint_names = {r.name for r in refs if r.type == "waypoint"}
+
+        assert npc_names == {"guard1", "guard2", "merchant", "elder"}
+        assert waypoint_names == {"guard_post", "entry_point"}
 
     def test_script_references_missing_keys(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test script references population with missing optional keys (branch coverage)."""
@@ -843,9 +882,10 @@ class TestScriptValidator:
 
         assert result.errors == []
 
-        # Verify no references captured
-        refs = context.script_references.get("test_script", {})
-        assert len(refs.get("npcs", set())) == 0
+        refs = context.script_references.get("test_script", set())
+
+        npc_refs = {r for r in refs if r.type == "npc"}
+        assert len(npc_refs) == 0
 
     def test_script_references_portal_key_variations(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test script references captures portal names from both 'portal_name' and 'portal' keys."""
@@ -892,7 +932,9 @@ class TestScriptValidator:
         validator.validate()
 
         refs1 = context.script_references.get("script1", {})
-        assert "portal1" in refs1.get("portals", set())
+        portal_refs = {r.name for r in refs1 if r.type == "portal"}
+        assert "portal1" in portal_refs
 
         refs2 = context.script_references.get("script2", {})
-        assert "portal2" in refs2.get("portals", set())
+        portal_refs = {r.name for r in refs2 if r.type == "portal"}
+        assert "portal2" in portal_refs

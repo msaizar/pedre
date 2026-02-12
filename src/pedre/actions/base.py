@@ -2,12 +2,13 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from pedre.plugins.game_context import GameContext
+    from pedre.types import EntityReference
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,14 @@ class Action(ABC):
     @abstractmethod
     def reset(self) -> None:
         """Reset action state for reuse."""
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Return entity references used by this action.
+
+        Default: no references.
+        """
+        return []
 
 
 class WaitForConditionAction(Action):

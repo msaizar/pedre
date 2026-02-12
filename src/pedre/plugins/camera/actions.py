@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
-
 logger = logging.getLogger(__name__)
 
 
@@ -186,6 +186,17 @@ class FollowNPCAction(Action):
             errors.append("'smooth' must be a bool")
 
         return errors
+
+    @classmethod
+    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        """Extract references for validation."""
+        refs: list[EntityReference] = []
+
+        npc = _data.get("npc")
+        if isinstance(npc, str):
+            refs.append(EntityReference(type="npc", name=npc))
+
+        return refs
 
 
 @ActionRegistry.register("stop_camera_follow")
