@@ -160,45 +160,98 @@ class ScriptValidator(Validator):
 
         # Populate context with entity references from scripts
         for script_name, script in scripts.items():
-            refs = {"npcs": set(), "waypoints": set(), "portals": set()}
+            refs: dict[str, set[str]] = {
+                "npcs": set(),
+                "waypoints": set(),
+                "portals": set(),
+                "interactive_objects": set(),
+                "target_maps": set(),
+            }
+            # Store scene-scoped spawn waypoints: list of (target_map, waypoint) pairs
+            spawn_waypoints: list[tuple[str, str]] = []
 
-            # Scan trigger for portal references
-            if script.trigger and script.trigger.get("event") == "portal_entered":
-                if "portal_name" in script.trigger:
-                    refs["portals"].add(script.trigger["portal_name"])
-                elif "portal" in script.trigger:  # Handle possible legacy/alternative key
-                    refs["portals"].add(script.trigger["portal"])
+            # Store script scene for scoped validation
+            if script.scene:
+                refs["scene"] = {script.scene}
 
-            # Scan conditions for NPC references
+            # Scan trigger for entity references
+            if script.trigger:
+                event_name = script.trigger.get("event", "")
+
+                # Portal triggers
+                if event_name == "portal_entered":
+                    if "portal_name" in script.trigger:
+                        refs["portals"].add(script.trigger["portal_name"])
+                    elif "portal" in script.trigger:
+                        refs["portals"].add(script.trigger["portal"])
+
+                # NPC-related event triggers
+                if "npc" in script.trigger:
+                    refs["npcs"].add(script.trigger["npc"])
+
+                # Object interaction triggers
+                if "object_name" in script.trigger:
+                    refs["interactive_objects"].add(script.trigger["object_name"])
+
+            # Scan conditions for entity references
             for condition in script.conditions:
                 if "npc" in condition:
                     refs["npcs"].add(condition["npc"])
+                if "object" in condition:
+                    refs["interactive_objects"].add(condition["object"])
+                if condition.get("check") == "npc_interacted" and "scene" in condition:
+                    refs["target_maps"].add(condition["scene"])
 
             # Scan actions for entity references
             for action in script.actions + script.on_condition_fail:
                 action_type = action.get("type")
 
-                # Move NPC action
-                if action_type == "move_npc":
+                # NPC list actions
+                if action_type in [
+                    "move_npc",
+                    "start_appear_animation",
+                    "start_disappear_animation",
+                    "wait_npcs_appear",
+                    "wait_for_npcs_disappear",
+                ]:
                     if "npcs" in action:
                         refs["npcs"].update(action["npcs"])
                     if "waypoint" in action:
                         refs["waypoints"].add(action["waypoint"])
 
-                # Change scene action (spawn waypoint)
-                elif action_type == "change_scene":
-                    if "spawn_waypoint" in action:
-                        refs["waypoints"].add(action["spawn_waypoint"])
-
-                # Other NPC-related actions
-                elif action_type in ["start_appear_animation", "start_disappear_animation"]:
-                    if "npcs" in action:
-                        refs["npcs"].update(action["npcs"])
-                elif action_type in ["advance_dialog", "set_dialog_level", "set_current_npc"]:
+                # Single NPC actions
+                elif action_type in [
+                    "advance_dialog",
+                    "set_dialog_level",
+                    "set_current_npc",
+                    "follow_npc",
+                    "wait_for_movement",
+                ]:
                     if "npc" in action:
                         refs["npcs"].add(action["npc"])
 
+                # Change scene action
+                elif action_type == "change_scene":
+                    target_map = action.get("target_map")
+                    if target_map:
+                        # Strip .tmx extension for consistency with map_entities keys
+                        map_name = target_map.removesuffix(".tmx")
+                        refs["target_maps"].add(map_name)
+                        if "spawn_waypoint" in action:
+                            spawn_waypoints.append((map_name, action["spawn_waypoint"]))
+
+                # Emit particles action
+                elif action_type == "emit_particles":
+                    if "npc" in action:
+                        refs["npcs"].add(action["npc"])
+                    if "interactive_object" in action:
+                        refs["interactive_objects"].add(action["interactive_object"])
+
             self.context.script_references[script_name] = refs
+            # Store spawn waypoint pairs separately for target-map-scoped validation
+            if spawn_waypoints:
+                self.context.script_references[script_name]["_spawn_waypoints"] = set()
+                self.context.script_references[script_name]["_spawn_waypoint_pairs"] = spawn_waypoints  # type: ignore[assignment]
 
         # Calculate metadata
         total_actions = sum(len(s.actions) for s in scripts.values())
@@ -216,25 +269,37 @@ class ScriptValidator(Validator):
         )
 
     def validate_cross_references(self) -> ValidationResult:
-        """Validate that script references to NPCs, waypoints, and portals exist in maps.
+        """Validate that script references to NPCs, waypoints, portals, etc. exist in maps.
 
         Returns:
             ValidationResult with cross-reference errors and metadata
         """
-        errors = []
+        errors: list[str] = []
         all_npcs = self.context.get_all_npcs()
         all_waypoints = self.context.get_all_waypoints()
         all_portals = self.context.get_all_portals()
+        all_maps = self.context.get_all_maps()
+        all_interactive = self.context.get_all_interactive_objects()
 
         for script_name, refs in self.context.script_references.items():
+            # Determine NPC validation scope
+            scene_set = refs.get("scene", set())
+            if scene_set:
+                scene_name = next(iter(scene_set))
+                valid_npcs = self.context.get_map_npcs(scene_name)
+                npc_scope_msg = f"map '{scene_name}'"
+            else:
+                valid_npcs = all_npcs
+                npc_scope_msg = "any map"
+
             # Validate NPC references
             errors.extend(
-                f"Script '{script_name}': NPC '{npc_name}' not found in any map"
+                f"Script '{script_name}': NPC '{npc_name}' not found in {npc_scope_msg}"
                 for npc_name in refs.get("npcs", set())
-                if npc_name and npc_name not in all_npcs
+                if npc_name and npc_name not in valid_npcs
             )
 
-            # Validate waypoint references
+            # Validate waypoint references (non-spawn waypoints, global check)
             errors.extend(
                 f"Script '{script_name}': waypoint '{waypoint_name}' not found in any map"
                 for waypoint_name in refs.get("waypoints", set())
@@ -247,6 +312,31 @@ class ScriptValidator(Validator):
                 for portal_name in refs.get("portals", set())
                 if portal_name and portal_name not in all_portals
             )
+
+            # Validate interactive object references
+            errors.extend(
+                f"Script '{script_name}': interactive object '{obj_name}' not found in any map"
+                for obj_name in refs.get("interactive_objects", set())
+                if obj_name and obj_name not in all_interactive
+            )
+
+            # Validate target map references
+            errors.extend(
+                f"Script '{script_name}': target map '{map_name}' not found"
+                for map_name in refs.get("target_maps", set())
+                if map_name and map_name not in all_maps
+            )
+
+            # Validate spawn waypoints exist in their target maps
+            spawn_pairs = refs.get("_spawn_waypoint_pairs", [])
+            for target_map, waypoint in spawn_pairs:
+                if target_map in all_maps:
+                    target_waypoints = self.context.get_map_waypoints(target_map)
+                    if waypoint not in target_waypoints:
+                        errors.append(
+                            f"Script '{script_name}': spawn_waypoint '{waypoint}' "
+                            f"not found in target map '{target_map}'"
+                        )
 
         total_npc_refs = sum(len(refs.get("npcs", set())) for refs in self.context.script_references.values())
         total_waypoint_refs = sum(len(refs.get("waypoints", set())) for refs in self.context.script_references.values())
