@@ -101,3 +101,33 @@ class ValidationContext:
         for map_data in self.map_entities.values():
             all_portals.update(map_data.get("portals", set()))
         return all_portals
+
+    def get_all_maps(self) -> set[str]:
+        """Get all known map names.
+
+        Returns:
+            Set of all map names (without .tmx extension)
+        """
+        return set(self.map_entities.keys())
+
+    def get_map_interactive_objects(self, map_name: str) -> set[str]:
+        """Get all interactive object names in a specific map.
+
+        Args:
+            map_name: Name of the map (without .tmx extension)
+
+        Returns:
+            Set of interactive object names in the map, or empty set if map not found
+        """
+        return self.map_entities.get(map_name, {}).get("interactive_objects", set())
+
+    def get_all_interactive_objects(self) -> set[str]:
+        """Get all interactive object names across all maps.
+
+        Returns:
+            Set of all interactive object names found in any map
+        """
+        all_objects = set()
+        for map_data in self.map_entities.values():
+            all_objects.update(map_data.get("interactive_objects", set()))
+        return all_objects
