@@ -1,7 +1,8 @@
 """Conditions module for inventory."""
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
+from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
 
 if TYPE_CHECKING:
@@ -9,27 +10,52 @@ if TYPE_CHECKING:
 
 
 @ConditionRegistry.register("inventory_accessed")
-def check_inventory_accessed(_condition_data: dict[str, Any], context: GameContext) -> bool:
+class InventoryAccessedCondition(Condition):
     """Check if inventory has been accessed."""
-    inventory = context.inventory_plugin
-    return inventory.has_been_accessed()
+
+    def check(self, context: GameContext) -> bool:
+        """Check if inventory accessed."""
+        inventory = context.inventory_plugin
+        return inventory.has_been_accessed()
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:  # noqa: ARG003
+        """Create from dictionary."""
+        return cls()
+
+    @staticmethod
+    def validate_params(data: dict[str, Any]) -> list[str]:  # noqa: ARG004
+        """Validate parameters (none required)."""
+        return []
 
 
-def _validate_item_acquired(data: dict[str, Any]) -> list[str]:
-    errors = []
-    item_id = data.get("item_id")
-    if not item_id:
-        errors.append("missing required 'item_id' field")
-    elif not isinstance(item_id, str):
-        errors.append("'item_id' must be a string")
-    return errors
+@ConditionRegistry.register("item_acquired")
+class ItemAcquiredCondition(Condition):
+    """Check if an item has been acquired."""
 
+    def __init__(self, item_id: str) -> None:
+        """Initialize condition with item ID."""
+        self.item_id = item_id
 
-@ConditionRegistry.register("item_acquired", validator=_validate_item_acquired)
-def check_item_acquired(condition_data: dict[str, Any], context: GameContext) -> bool:
-    """Check if we've acquired an item."""
-    inventory = context.inventory_plugin
-    item_id = condition_data.get("item_id")
-    if not item_id:
-        return False
-    return inventory.has_item(item_id)
+    def check(self, context: GameContext) -> bool:
+        """Check if item is in inventory."""
+        inventory = context.inventory_plugin
+        if not self.item_id:
+            return False
+        return inventory.has_item(self.item_id)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create from dictionary."""
+        return cls(item_id=data.get("item_id", ""))
+
+    @staticmethod
+    def validate_params(data: dict[str, Any]) -> list[str]:
+        """Validate parameters."""
+        errors = []
+        item_id = data.get("item_id")
+        if not item_id:
+            errors.append("missing required 'item_id' field")
+        elif not isinstance(item_id, str):
+            errors.append("'item_id' must be a string")
+        return errors

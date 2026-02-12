@@ -1,12 +1,13 @@
 """Registry for pluggable script conditions.
 
 This module provides the ConditionRegistry class which tracks all available
-condition checkers for the scripting plugin. Plugins register their own
-condition logic, enabling the script plugin to remain decoupled.
+condition classes for the scripting plugin.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
+
+from pedre.conditions.base import Condition
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -15,70 +16,59 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T", bound=type[Condition])
+
 
 class ConditionRegistry:
-    """Central registry for all available script conditions.
+    """Central registry for all available script condition classes."""
 
-    The ConditionRegistry maintains a mapping of condition names (e.g., "npc_interacted")
-    to checker functions. This allows any plugin to provide its own logic for
-    evaluating script conditions.
-    """
-
-    _checkers: ClassVar[dict[str, Callable[[dict[str, Any], GameContext], bool]]] = {}
-    _validators: ClassVar[dict[str, Callable[[dict[str, Any]], list[str]]]] = {}
+    _conditions: ClassVar[dict[str, type[Condition]]] = {}
 
     @classmethod
-    def register(
-        cls,
-        name: str,
-        *,
-        validator: Callable[[dict[str, Any]], list[str]] | None = None,
-    ) -> Callable[
-        [Callable[[dict[str, Any], GameContext], bool]],
-        Callable[[dict[str, Any], GameContext], bool],
-    ]:
-        """Decorator to register a condition checker function.
+    def register(cls, name: str) -> Callable[[T], T]:
+        """Decorator to register a condition class.
 
         Args:
-            name: The name used in JSON scripts to identify this condition
-                 (e.g., "inventory_accessed").
-            validator: Optional parameter validation function that takes condition
-                 data and returns a list of error strings.
+            name: The name used to identify this condition (e.g., "npc_interacted").
 
         Returns:
-            Decorator function that registers the checker.
-
-        Example:
-            Registering a condition with validator::
-
-                def _validate_npc_interacted(data: dict[str, Any]) -> list[str]:
-                    errors = []
-                    if not data.get("npc"):
-                        errors.append("npc_interacted: missing required 'npc' field")
-                    return errors
-
-                @ConditionRegistry.register("npc_interacted", validator=_validate_npc_interacted)
-                def check_npc_interacted(condition_data: dict[str, Any], context: GameContext) -> bool:
-                    ...
+            Decorator function that registers the class.
         """
 
-        def decorator(
-            checker_func: Callable[[dict[str, Any], GameContext], bool],
-        ) -> Callable[[dict[str, Any], GameContext], bool]:
-            cls._checkers[name] = checker_func
-            logger.debug("Registered condition checker: %s", name)
-
-            if validator is not None:
-                cls._validators[name] = validator
-                logger.debug("Registered condition validator: %s", name)
-
-            return checker_func
+        def decorator(condition_cls: T) -> T:
+            cls._conditions[name] = condition_cls
+            logger.debug("Registered condition class: %s", name)
+            return condition_cls
 
         return decorator
 
     @classmethod
+    def create(cls, name: str, data: dict[str, Any]) -> Condition | None:
+        """Create a condition instance from a dictionary.
+
+        Args:
+            name: Name of the condition type.
+            data: Dictionary of parameters.
+
+        Returns:
+            Instance of the condition class, or None if unknown.
+        """
+        condition_cls = cls._conditions.get(name)
+        if not condition_cls:
+            logger.warning("ConditionRegistry: Unknown condition type: %s", name)
+            return None
+
+        try:
+            return condition_cls.from_dict(data)
+        except Exception:
+            logger.exception("ConditionRegistry: Error creating condition '%s'", name)
+            return None
+
+    @classmethod
     def check(cls, name: str, condition_data: dict[str, Any], context: GameContext) -> bool:
-        """Evaluate a condition by name using its registered checker.
+        """Evaluate a condition by name.
+
+        Convenience method that instantiates and checks the condition in one step.
 
         Args:
             name: Name of the condition to check.
@@ -88,67 +78,44 @@ class ConditionRegistry:
         Returns:
             True if the condition is met, False otherwise.
         """
-        checker = cls._checkers.get(name)
-        if not checker:
-            logger.warning("ConditionRegistry: Unknown condition type: %s", name)
+        condition = cls.create(name, condition_data)
+        if not condition:
             return False
 
         try:
-            return checker(condition_data, context)
+            return condition.check(context)
         except Exception:
             logger.exception("ConditionRegistry: Error evaluating condition '%s'", name)
             return False
 
     @classmethod
     def is_registered(cls, name: str) -> bool:
-        """Check if a condition type is registered.
-
-        Args:
-            name: The condition type name to check.
-
-        Returns:
-            True if the condition type has a checker registered, False otherwise.
-        """
-        return name in cls._checkers
+        """Check if a condition type is registered."""
+        return name in cls._conditions
 
     @classmethod
     def get_all_types(cls) -> list[str]:
-        """Get all registered condition type names.
-
-        Returns:
-            List of condition type strings that have checkers registered.
-        """
-        return list(cls._checkers.keys())
+        """Get all registered condition type names."""
+        return list(cls._conditions.keys())
 
     @classmethod
     def validate(cls, name: str, condition_data: dict[str, Any]) -> list[str]:
-        """Validate condition parameters.
+        """Validate condition parameters using the registered class.
 
         Args:
             name: The condition type name.
-            condition_data: Dictionary of condition parameters from the script.
+            condition_data: Dictionary of condition parameters.
 
         Returns:
-            List of error message strings. Empty list means validation passed.
-
-        Example:
-            Validating a condition::
-
-                errors = ConditionRegistry.validate("npc_interacted", {
-                    "check": "npc_interacted",
-                    "scene": "village"
-                    # Missing required "npc" field
-                })
-                # Returns: ["npc_interacted: missing required 'npc' field"]
+            List of error message strings.
         """
-        validator = cls._validators.get(name)
-        if validator:
-            return validator(condition_data)
+        condition_cls = cls._conditions.get(name)
+        if condition_cls:
+            return condition_cls.validate_params(condition_data)
         return []
 
     @classmethod
     def clear(cls) -> None:
-        """Clear the registry (primarily for testing)."""
-        cls._checkers.clear()
-        cls._validators.clear()
+        """Clear the registry."""
+        cls._conditions.clear()
         logger.debug("Condition registry cleared")
