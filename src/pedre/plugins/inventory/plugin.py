@@ -56,8 +56,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.constants import asset_path
-from pedre.helpers import compute_ui_scale, matches_key, scale, scale_font
+from pedre.helpers import asset_path, compute_ui_scale, matches_key, scale, scale_font
 from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
 from pedre.plugins.inventory.events import (
     InventoryClosedEvent,
@@ -236,7 +235,7 @@ class InventoryPlugin(InventoryBasePlugin):
 
         # Load background image if not already loaded
         if self.background_texture is None and settings.INVENTORY_BACKGROUND_IMAGE:
-            background_path = asset_path(settings.INVENTORY_BACKGROUND_IMAGE, settings.ASSETS_HANDLE)
+            background_path = asset_path(settings.INVENTORY_BACKGROUND_IMAGE)
             try:
                 self.background_texture = arcade.load_texture(background_path)
                 logger.info("Loaded inventory background: %s", background_path)

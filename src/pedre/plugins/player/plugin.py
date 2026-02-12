@@ -10,8 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
-from pedre.conf import settings
-from pedre.constants import asset_path
+from pedre.helpers import asset_path
 from pedre.plugins.player.base import PlayerBasePlugin
 from pedre.plugins.player.sprites import AnimatedPlayer
 from pedre.plugins.registry import PluginRegistry
@@ -102,7 +101,7 @@ class PlayerPlugin(PlayerBasePlugin):
             logger.error("Player object missing required 'sprite_sheet' property")
             return
 
-        sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
+        sprite_sheet_path = asset_path(sprite_sheet)
 
         # Validate tile_size if present (optional)
         tile_size = player_obj.properties.get("tile_size")

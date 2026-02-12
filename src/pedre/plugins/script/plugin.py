@@ -61,8 +61,8 @@ from pedre.actions import ActionSequence
 from pedre.actions.registry import ActionRegistry
 from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
-from pedre.constants import asset_path
 from pedre.events.registry import EventRegistry
+from pedre.helpers import asset_path
 from pedre.plugins.registry import PluginRegistry
 from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptEvent, ScriptValidationError
 from pedre.plugins.script.events import ScriptCompleteEvent
@@ -310,7 +310,7 @@ class ScriptPlugin(ScriptBasePlugin):
             ScriptValidationError: If any validation errors are found after loading scripts.
         """
         try:
-            scripts_dir = Path(asset_path(settings.SCRIPTS_DIRECTORY, settings.ASSETS_HANDLE))
+            scripts_dir = Path(asset_path(settings.SCRIPTS_DIRECTORY))
             if not scripts_dir.exists():
                 logger.warning("Scripts directory not found: %s", scripts_dir)
                 return

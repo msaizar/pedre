@@ -76,7 +76,7 @@ SCENE_TRANSITION_ALPHA = 0.0
 SCENE_TRANSITION_SPEED = 3.0
 """Alpha change per second during scene transitions."""
 
-SCENE_MAPS_FOLDER = "maps"
+SCENE_MAPS_DIRECTORY = "maps"
 """Folder where map files are stored (relative to assets directory)."""
 
 SCENE_TILEMAP_SCALING = 1.0
@@ -247,6 +247,12 @@ AUDIO_SFX_VOLUME = 0.7
 
 AUDIO_SFX_ENABLED = True
 """Whether sound effects are enabled by default."""
+
+AUDIO_MUSIC_DIRECTORY = "audio/music"
+"""Where music files are located."""
+
+AUDIO_SFX_DIRECTORY = "audio/sfx"
+"""Where sfx files are located."""
 
 # Camera settings
 CAMERA_LERP_SPEED = 0.1

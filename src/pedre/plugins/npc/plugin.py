@@ -63,8 +63,7 @@ import arcade
 
 from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
-from pedre.constants import asset_path
-from pedre.helpers import matches_key
+from pedre.helpers import asset_path, matches_key
 from pedre.plugins.npc.base import NPCBasePlugin, NPCDialogConfig, NPCState
 from pedre.plugins.npc.constants import ALL_ANIMATION_PROPERTIES
 from pedre.plugins.npc.events import (
@@ -194,9 +193,7 @@ class NPCPlugin(NPCBasePlugin):
         else:
             try:
                 dialog_filename = f"{scene_name}_dialogs.json"
-                scene_dialog_file = asset_path(
-                    f"{settings.DIALOGS_DIRECTORY}/{dialog_filename}", settings.ASSETS_HANDLE
-                )
+                scene_dialog_file = asset_path(f"{settings.DIALOGS_DIRECTORY}/{dialog_filename}")
                 if self.load_dialogs_from_json(scene_dialog_file) and scene_name in self.dialogs:
                     self._dialog_cache[scene_name] = self.dialogs[scene_name]
                 else:
@@ -841,7 +838,7 @@ class NPCPlugin(NPCBasePlugin):
                 logger.error("NPC '%s' missing required 'sprite_sheet' property, skipping", npc_name)
                 continue
 
-            sprite_sheet_path = asset_path(sprite_sheet, settings.ASSETS_HANDLE)
+            sprite_sheet_path = asset_path(sprite_sheet)
 
             # Validate tile_size if present (optional)
             tile_size = npc_obj.properties.get("tile_size")
