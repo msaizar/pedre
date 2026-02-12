@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from pedre.plugins.audio.actions import PlayMusicAction, PlaySFXAction
 
 
-class TestPlaySFXAction(unittest.TestCase):
+class TestPlaySFXAction:
     """Unit test class for PlaySFXAction."""
 
     def test_init(self) -> None:
@@ -384,7 +384,3 @@ class TestPlayMusicActionValidation(unittest.TestCase):
         data = {"file": "music.ogg", "volume": 1}
         errors = PlayMusicAction.validate_params(data)
         assert errors == []
-
-
-if __name__ == "__main__":
-    unittest.main()
