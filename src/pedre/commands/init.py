@@ -47,7 +47,7 @@ class InitCommand(Command):
             - dialogs/ (DIALOGS_DIRECTORY)
             - scripts/ (SCRIPTS_DIRECTORY)
           - images/
-          - maps/ (SCENE_MAPS_FOLDER)
+          - maps/ (SCENE_MAPS_DIRECTORY)
         - main.py (basic game entry point)
         - settings.py (project configuration)
 
@@ -84,9 +84,8 @@ class InitCommand(Command):
             # Assets directory
             settings.ASSETS_DIRECTORY,
             # Audio folders
-            f"{settings.ASSETS_DIRECTORY}/audio",
-            f"{settings.ASSETS_DIRECTORY}/audio/music",
-            f"{settings.ASSETS_DIRECTORY}/audio/sfx",
+            f"{settings.ASSETS_DIRECTORY}/{settings.AUDIO_MUSIC_DIRECTORY}",
+            f"{settings.ASSETS_DIRECTORY}/{settings.AUDIO_SFX_DIRECTORY}",
             # Data folders
             f"{settings.ASSETS_DIRECTORY}/data",
             f"{settings.ASSETS_DIRECTORY}/{settings.DIALOGS_DIRECTORY}",
@@ -94,7 +93,7 @@ class InitCommand(Command):
             # Images folder
             f"{settings.ASSETS_DIRECTORY}/images",
             # Maps folder
-            f"{settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_FOLDER}",
+            f"{settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_DIRECTORY}",
         ]
 
         created_folders = []
@@ -154,6 +153,6 @@ See: https://msaizar.github.io/pedre/guides/configuration/
         # Next steps
         console.print("\n[bold]Next steps:[/bold]\n")
         console.print("1. Create your first map in Tiled Map Editor")
-        console.print(f"2. Save it as [cyan]{settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_FOLDER}/map.tmx[/cyan]")
+        console.print(f"2. Save it as [cyan]{settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_DIRECTORY}/map.tmx[/cyan]")
         console.print("3. Run your game with [green]python main.py[/green]")
         console.print("\n[dim]See the documentation: https://msaizar.github.io/pedre/getting-started/[/dim]\n")
