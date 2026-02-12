@@ -33,7 +33,7 @@ nav = [
         "plugins/npc.md",
         "plugins/particle.md",
         "plugins/pathfinding.md",
-        "plugins/pause_menu.md",
+        "plugins/pause-menu.md",
         "plugins/physics.md",
         "plugins/player.md",
         "plugins/portal.md",
