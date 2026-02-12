@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
+from pedre.conf import settings
+from pedre.helpers import asset_exists
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -71,6 +73,8 @@ class PlaySFXAction(Action):
             errors.append("missing required 'file' field")
         elif not isinstance(file, str):
             errors.append("'file' must be a string")
+        elif not asset_exists(f"{settings.AUDIO_SFX_DIRECTORY}/{file}"):
+            errors.append(f"{settings.AUDIO_SFX_DIRECTORY}/{file} does not exist")
         return errors
 
 
@@ -151,7 +155,8 @@ class PlayMusicAction(Action):
             errors.append("missing required 'file' field")
         elif not isinstance(file, str):
             errors.append("'file' must be a string")
-
+        elif not asset_exists(f"{settings.AUDIO_MUSIC_DIRECTORY}/{file}"):
+            errors.append(f"{settings.AUDIO_MUSIC_DIRECTORY}/{file} does not exist")
         if "loop" in data and not isinstance(data["loop"], bool):
             errors.append("'loop' must be a bool")
 
