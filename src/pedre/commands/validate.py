@@ -17,6 +17,7 @@ from pedre.conditions.registry import ConditionRegistry
 from pedre.conf import settings
 from pedre.events.loader import EventLoader
 from pedre.events.registry import EventRegistry
+from pedre.main import setup_resources
 from pedre.validators.context import ValidationContext
 from pedre.validators.dialog_validator import DialogValidator
 from pedre.validators.map_validator import MapValidator
@@ -61,7 +62,7 @@ class ValidateCommand(Command):
             "--maps-path",
             type=Path,
             default=None,
-            help=f"Path to maps directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_FOLDER})",
+            help=f"Path to maps directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_DIRECTORY})",
         )
 
     def execute(self, args: argparse.Namespace) -> None:
@@ -77,6 +78,7 @@ class ValidateCommand(Command):
         Args:
             args: Parsed command-line arguments containing optional path parameters.
         """
+        setup_resources(settings.ASSETS_HANDLE)
         console.print("\n[bold cyan]Pedre Validator[/bold cyan]")
         console.print("=" * 60)
 
@@ -108,11 +110,14 @@ class ValidateCommand(Command):
         maps_path_arg = getattr(args, "maps_path", None)
 
         # Always create MapValidator to populate context, but only add to validators list if needed for validation
-        maps_dir = maps_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCENE_MAPS_FOLDER
+        maps_dir = maps_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCENE_MAPS_DIRECTORY
         map_validator = MapValidator(maps_dir, context)
 
         # Determine which validators to run
         validators = []
+
+        if validation_type in ["all", "maps"]:
+            validators.append(map_validator)
 
         if validation_type in ["all", "scripts"]:
             scripts_dir = scripts_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCRIPTS_DIRECTORY
@@ -121,9 +126,6 @@ class ValidateCommand(Command):
         if validation_type in ["all", "dialogs"]:
             dialogs_dir = dialogs_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.DIALOGS_DIRECTORY
             validators.append(DialogValidator(dialogs_dir, context))
-
-        if validation_type in ["all", "maps"]:
-            validators.append(map_validator)
 
         # Always populate context from maps (needed for cross-reference validation)
         # Run map validation silently if it's not in the validators list
