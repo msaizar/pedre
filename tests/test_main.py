@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import arcade
 
+from pedre.conf import settings
 from pedre.main import create_game, run_game, setup_logging, setup_resources
 
 
@@ -112,10 +113,10 @@ class TestSetupResources(unittest.TestCase):
         mock_settings.ASSETS_DIRECTORY = "assets"
         mock_cwd.return_value = Path("/path/to/project")
 
-        setup_resources("game_assets")
+        setup_resources(settings.ASSETS_HANDLE)
 
         expected_path = Path("/path/to/project/assets").resolve()
-        mock_add_resource_handle.assert_called_once_with("game_assets", expected_path)
+        mock_add_resource_handle.assert_called_once_with(settings.ASSETS_HANDLE, expected_path)
 
     @patch("pedre.main.arcade.resources.add_resource_handle")
     @patch("pedre.main.settings")
@@ -125,10 +126,10 @@ class TestSetupResources(unittest.TestCase):
         """Test setup_resources when running from PyInstaller bundle."""
         mock_settings.ASSETS_DIRECTORY = "assets"
 
-        setup_resources("game_assets")
+        setup_resources(settings.ASSETS_HANDLE)
 
         expected_path = Path("/var/app/_MEI12345/assets").resolve()
-        mock_add_resource_handle.assert_called_once_with("game_assets", expected_path)
+        mock_add_resource_handle.assert_called_once_with(settings.ASSETS_HANDLE, expected_path)
 
 
 class TestCreateGame(unittest.TestCase):
@@ -151,7 +152,7 @@ class TestCreateGame(unittest.TestCase):
         mock_settings.SCREEN_WIDTH = 1920
         mock_settings.SCREEN_HEIGHT = 1080
         mock_settings.WINDOW_TITLE = "Test Game"
-        mock_settings.ASSETS_HANDLE = "game_assets"
+        mock_settings.ASSETS_HANDLE = "assets"
 
         mock_window = MagicMock()
         mock_window_class.return_value = mock_window
@@ -163,7 +164,7 @@ class TestCreateGame(unittest.TestCase):
 
         # Verify setup functions were called
         mock_setup_logging.assert_called_once()
-        mock_setup_resources.assert_called_once_with("game_assets")
+        mock_setup_resources.assert_called_once_with("assets")
 
         # Verify window was created with correct settings
         mock_window_class.assert_called_once_with(1920, 1080, "Test Game")
