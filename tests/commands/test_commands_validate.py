@@ -11,14 +11,13 @@ For validator-specific tests, see:
 - tests/validators/test_dialog_validator.py
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
+import pedre.commands.validate as validate_module
 from pedre.actions.base import Action
 from pedre.actions.registry import ActionRegistry
 from pedre.commands.validate import ValidateCommand
@@ -28,6 +27,14 @@ from pedre.events.registry import EventRegistry
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from _pytest.monkeypatch import MonkeyPatch
+
+
+@pytest.fixture(autouse=True)
+def mock_setup_resources(monkeypatch: MonkeyPatch) -> None:
+    """Mock setup_resources."""
+    monkeypatch.setattr(validate_module, "setup_resources", lambda *a, **k: None)
 
 
 class TestValidateCommand:
