@@ -12,6 +12,7 @@ from pedre.plugins.inventory.actions import (
     ConsumeItemAction,
     WaitForInventoryAccessAction,
 )
+from pedre.types import EntityReference
 
 
 class TestWaitForInventoryAccessAction:
@@ -455,3 +456,31 @@ class TestConsumeItemAction:
 
         action.reset()
         assert action.started is False
+
+
+class TestGetReferences:
+    """Test get_references() on inventory actions."""
+
+    def test_acquire_item_action_returns_inventory_item_reference(self) -> None:
+        """Test that AcquireItemAction.get_references returns an inventory_item reference."""
+        action = AcquireItemAction("rusty_key")
+        refs = action.get_references()
+        assert refs == {EntityReference(type="inventory_item", name="rusty_key")}
+
+    def test_consume_item_action_returns_inventory_item_reference(self) -> None:
+        """Test that ConsumeItemAction.get_references returns an inventory_item reference."""
+        action = ConsumeItemAction("health_potion")
+        refs = action.get_references()
+        assert refs == {EntityReference(type="inventory_item", name="health_potion")}
+
+    def test_add_item_action_returns_empty_set(self) -> None:
+        """Test that AddItemAction.get_references returns empty set (creates dynamic items)."""
+        action = AddItemAction(item_name="Item", description="Desc", item_id="some_id")
+        refs = action.get_references()
+        assert refs == set()
+
+    def test_wait_for_inventory_access_action_returns_empty_set(self) -> None:
+        """Test that WaitForInventoryAccessAction.get_references returns empty set."""
+        action = WaitForInventoryAccessAction()
+        refs = action.get_references()
+        assert refs == set()

@@ -245,3 +245,51 @@ class TestValidationContext:
         assert len(all_portals) == 2
         assert "dungeon" in all_portals
         assert "cave" in all_portals
+
+
+class TestValidationContextInventoryItems:
+    """Test inventory item methods on ValidationContext."""
+
+    @pytest.fixture
+    def context(self) -> ValidationContext:
+        """Create a fresh ValidationContext for each test."""
+        return ValidationContext()
+
+    def test_inventory_items_defaults_to_empty_set(self, context: ValidationContext) -> None:
+        """Test that inventory_items defaults to empty set."""
+        assert context.inventory_items == set()
+
+    def test_add_inventory_item_single(self, context: ValidationContext) -> None:
+        """Test adding a single inventory item."""
+        context.add_inventory_item("rusty_key")
+        assert "rusty_key" in context.inventory_items
+
+    def test_add_inventory_item_multiple(self, context: ValidationContext) -> None:
+        """Test adding multiple inventory items."""
+        context.add_inventory_item("rusty_key")
+        context.add_inventory_item("health_potion")
+        context.add_inventory_item("ancient_scroll")
+        assert len(context.inventory_items) == 3
+
+    def test_add_inventory_item_duplicate_is_idempotent(self, context: ValidationContext) -> None:
+        """Test adding the same item twice results in one entry."""
+        context.add_inventory_item("rusty_key")
+        context.add_inventory_item("rusty_key")
+        assert len(context.inventory_items) == 1
+
+    def test_get_inventory_items_empty(self, context: ValidationContext) -> None:
+        """Test get_inventory_items returns empty set when no items added."""
+        assert context.get_inventory_items() == set()
+
+    def test_get_inventory_items_returns_all_items(self, context: ValidationContext) -> None:
+        """Test get_inventory_items returns all registered items."""
+        context.add_inventory_item("key_1")
+        context.add_inventory_item("key_2")
+        assert context.get_inventory_items() == {"key_1", "key_2"}
+
+    def test_inventory_items_independent_between_contexts(self) -> None:
+        """Test that two contexts do not share inventory items."""
+        ctx1 = ValidationContext()
+        ctx2 = ValidationContext()
+        ctx1.add_inventory_item("key")
+        assert "key" not in ctx2.inventory_items

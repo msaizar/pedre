@@ -10,6 +10,7 @@ from pedre.plugins.inventory.conditions import (
     InventoryAccessedCondition,
     ItemAcquiredCondition,
 )
+from pedre.types import EntityReference
 
 
 class TestInventoryAccessedCondition(unittest.TestCase):
@@ -106,3 +107,19 @@ class TestItemAcquiredCondition(unittest.TestCase):
         data = {"item_id": 123}
         with pytest.raises(ConditionParseError):
             ItemAcquiredCondition.from_dict(data)
+
+
+class TestGetReferences(unittest.TestCase):
+    """Test get_references() on inventory conditions."""
+
+    def test_item_acquired_condition_returns_inventory_item_reference(self) -> None:
+        """Test that ItemAcquiredCondition.get_references returns an inventory_item reference."""
+        condition = ItemAcquiredCondition(item_id="test_item")
+        refs = condition.get_references()
+        assert refs == {EntityReference(type="inventory_item", name="test_item")}
+
+    def test_inventory_accessed_condition_returns_empty_set(self) -> None:
+        """Test that InventoryAccessedCondition.get_references returns empty set."""
+        condition = InventoryAccessedCondition()
+        refs = condition.get_references()
+        assert refs == set()

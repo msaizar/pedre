@@ -1,16 +1,15 @@
 """Unit tests for inventory events in src/pedre/plugins/inventory/events.py."""
 
-import unittest
-
 from pedre.plugins.inventory.events import (
     InventoryClosedEvent,
     ItemAcquiredEvent,
     ItemAcquisitionFailedEvent,
     ItemConsumedEvent,
 )
+from pedre.types import EntityReference
 
 
-class TestInventoryClosedEvent(unittest.TestCase):
+class TestInventoryClosedEvent:
     """Test suite for InventoryClosedEvent."""
 
     def test_initialization(self) -> None:
@@ -43,7 +42,7 @@ class TestInventoryClosedEvent(unittest.TestCase):
         assert script_data["inventory_accessed"] is False
 
 
-class TestItemAcquiredEvent(unittest.TestCase):
+class TestItemAcquiredEvent:
     """Test suite for ItemAcquiredEvent."""
 
     def test_initialization(self) -> None:
@@ -74,7 +73,7 @@ class TestItemAcquiredEvent(unittest.TestCase):
         assert event1.item_name != event2.item_name
 
 
-class TestItemAcquisitionFailedEvent(unittest.TestCase):
+class TestItemAcquisitionFailedEvent:
     """Test suite for ItemAcquisitionFailedEvent."""
 
     def test_initialization_capacity(self) -> None:
@@ -119,7 +118,7 @@ class TestItemAcquisitionFailedEvent(unittest.TestCase):
             assert event.get_script_data()["reason"] == reason
 
 
-class TestItemConsumedEvent(unittest.TestCase):
+class TestItemConsumedEvent:
     """Test suite for ItemConsumedEvent."""
 
     def test_initialization(self) -> None:
@@ -164,7 +163,7 @@ class TestItemConsumedEvent(unittest.TestCase):
         assert script_data["category"] == "food"
 
 
-class TestInventoryEventsIntegration(unittest.TestCase):
+class TestInventoryEventsIntegration:
     """Integration tests for inventory events."""
 
     def test_events_are_dataclasses(self) -> None:
@@ -195,5 +194,40 @@ class TestInventoryEventsIntegration(unittest.TestCase):
             assert len(script_data) > 0
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestInventoryEventReferences:
+    """Test get_references() on inventory events using reference_fields."""
+
+    def test_item_acquired_event_with_item_id_filter(self) -> None:
+        """Test ItemAcquiredEvent.get_references returns inventory_item ref when item_id set."""
+        refs = ItemAcquiredEvent.get_references({"item_id": "rusty_key"})
+        assert refs == {EntityReference(type="inventory_item", name="rusty_key")}
+
+    def test_item_acquired_event_without_item_id_filter(self) -> None:
+        """Test ItemAcquiredEvent.get_references returns empty set when no item_id filter."""
+        refs = ItemAcquiredEvent.get_references({})
+        assert refs == set()
+
+    def test_item_acquisition_failed_event_with_item_id_filter(self) -> None:
+        """Test ItemAcquisitionFailedEvent.get_references returns inventory_item ref."""
+        refs = ItemAcquisitionFailedEvent.get_references({"item_id": "rusty_key", "reason": "capacity"})
+        assert refs == {EntityReference(type="inventory_item", name="rusty_key")}
+
+    def test_item_acquisition_failed_event_with_reason_only(self) -> None:
+        """Test ItemAcquisitionFailedEvent.get_references returns empty set when no item_id."""
+        refs = ItemAcquisitionFailedEvent.get_references({"reason": "capacity"})
+        assert refs == set()
+
+    def test_item_consumed_event_with_item_id_filter(self) -> None:
+        """Test ItemConsumedEvent.get_references returns inventory_item ref when item_id set."""
+        refs = ItemConsumedEvent.get_references({"item_id": "health_potion"})
+        assert refs == {EntityReference(type="inventory_item", name="health_potion")}
+
+    def test_item_consumed_event_with_category_only(self) -> None:
+        """Test ItemConsumedEvent.get_references returns empty set when only category filter."""
+        refs = ItemConsumedEvent.get_references({"category": "consumable"})
+        assert refs == set()
+
+    def test_inventory_closed_event_returns_empty_set(self) -> None:
+        """Test InventoryClosedEvent.get_references returns empty set (no item reference)."""
+        refs = InventoryClosedEvent.get_references({"inventory_accessed": True})
+        assert refs == set()

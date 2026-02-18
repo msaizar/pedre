@@ -154,13 +154,23 @@ class DialogValidator(Validator):
         """
         errors: list[str] = []
 
-        for scene_name, npc_name, level in self.context.dialog_references:
+        all_inventory_items = self.context.get_inventory_items()
+
+        for (scene_name, npc_name, level), refs in self.context.dialog_references.items():
             map_npcs = self.context.get_map_npcs(scene_name)
 
             if npc_name not in map_npcs:
                 errors.append(
                     f"Dialog '{scene_name}' NPC '{npc_name}' (level {level}) not found in map '{scene_name}.tmx'"
                 )
+
+            inventory_item_refs = {r.name for r in refs if r.type == "inventory_item"}
+            errors.extend(
+                f"Dialog '{scene_name}' NPC '{npc_name}' level {level}: "
+                f"inventory item '{item_id}' not found in inventory_items.json"
+                for item_id in inventory_item_refs
+                if item_id not in all_inventory_items
+            )
 
         return ValidationResult(
             errors=errors,

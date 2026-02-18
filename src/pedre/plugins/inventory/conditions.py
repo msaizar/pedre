@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionParseError, ConditionRegistry
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -42,6 +43,10 @@ class ItemAcquiredCondition(Condition):
         if not self.item_id:
             return False
         return inventory.has_item(self.item_id)
+
+    def get_references(self) -> set[EntityReference]:
+        """Return entity references used by this condition."""
+        return {EntityReference(type="inventory_item", name=self.item_id)}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:

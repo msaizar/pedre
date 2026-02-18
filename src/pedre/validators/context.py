@@ -45,6 +45,7 @@ class ValidationContext:
     map_entities: dict[str, dict[str, set[str]]] = field(default_factory=dict)
     script_references: dict[str, set[EntityReference]] = field(default_factory=dict)
     dialog_references: dict[tuple[str, str, str], set[EntityReference]] = field(default_factory=dict)
+    inventory_items: set[str] = field(default_factory=set)
 
     def add_map_entity(
         self,
@@ -120,3 +121,15 @@ class ValidationContext:
     def get_all_maps(self) -> set[str]:
         """Return all known map names registered in the context."""
         return set(self.map_entities)
+
+    def add_inventory_item(self, item_id: str) -> None:
+        """Register an inventory item discovered in the items file.
+
+        Args:
+            item_id: Unique identifier of the inventory item.
+        """
+        self.inventory_items.add(item_id)
+
+    def get_inventory_items(self) -> set[str]:
+        """Return all known inventory item IDs registered in the context."""
+        return self.inventory_items

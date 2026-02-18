@@ -9,6 +9,7 @@ ReferenceType = Literal[
     "portal",
     "interactive_object",
     "map",
+    "inventory_item",
 ]
 
 ScopeType = Literal["global", "map"]

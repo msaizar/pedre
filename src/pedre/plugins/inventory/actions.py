@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionParseError, ActionRegistry
 from pedre.plugins.inventory.base import InventoryItem
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -124,6 +125,10 @@ class AcquireItemAction(Action):
                 logger.debug("AcquireItemAction: Failed to acquire item %s", self.item_id)
 
         return self.success
+
+    def get_references(self) -> set[EntityReference]:
+        """Return entity references used by this action."""
+        return {EntityReference(type="inventory_item", name=self.item_id)}
 
     def reset(self) -> None:
         """Reset the action."""
@@ -388,6 +393,10 @@ class ConsumeItemAction(Action):
 
         # Action completes immediately
         return True
+
+    def get_references(self) -> set[EntityReference]:
+        """Return entity references used by this action."""
+        return {EntityReference(type="inventory_item", name=self.item_id)}
 
     def reset(self) -> None:
         """Reset the action."""

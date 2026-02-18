@@ -177,10 +177,12 @@ class ScriptValidator(Validator):
         all_portals = self.context.get_all_portals()
         all_maps = self.context.get_all_maps()
         all_interactive = self.context.get_all_interactive_objects()
+        all_inventory_items = self.context.get_inventory_items()
 
         total_npc_refs = 0
         total_waypoint_refs = 0
         total_portal_refs = 0
+        total_inventory_item_refs = 0
 
         for script_name, refs in self.context.script_references.items():
             npc_refs = {r.name for r in refs if r.type == "npc"}
@@ -188,10 +190,12 @@ class ScriptValidator(Validator):
             portal_refs = {r.name for r in refs if r.type == "portal"}
             interactive_refs = {r.name for r in refs if r.type == "interactive_object"}
             map_refs = {r.name for r in refs if r.type == "map"}
+            inventory_item_refs = {r.name for r in refs if r.type == "inventory_item"}
 
             total_npc_refs += len(npc_refs)
             total_waypoint_refs += len(waypoint_refs)
             total_portal_refs += len(portal_refs)
+            total_inventory_item_refs += len(inventory_item_refs)
 
             # Map-scoped NPC validation
             if map_refs:
@@ -232,6 +236,12 @@ class ScriptValidator(Validator):
                 if map_name not in all_maps
             )
 
+            errors.extend(
+                f"Script '{script_name}': inventory item '{item_id}' not found in inventory_items.json"
+                for item_id in inventory_item_refs
+                if item_id not in all_inventory_items
+            )
+
         return ValidationResult(
             errors=errors,
             item_count=len(self.context.script_references),
@@ -239,5 +249,6 @@ class ScriptValidator(Validator):
                 "NPC references validated": total_npc_refs,
                 "Waypoint references validated": total_waypoint_refs,
                 "Portal references validated": total_portal_refs,
+                "Inventory item references validated": total_inventory_item_refs,
             },
         )

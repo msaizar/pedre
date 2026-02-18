@@ -73,6 +73,7 @@ class ItemAcquiredEvent(Event):
     name: ClassVar[str] = "item_acquired"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id"})
+    reference_fields: ClassVar[dict[str, str]] = {"item_id": "inventory_item"}
     item_id: str
     item_name: str
 
@@ -111,6 +112,7 @@ class ItemAcquisitionFailedEvent(Event):
     name: ClassVar[str] = "item_acquisition_failed"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id", "reason"})
+    reference_fields: ClassVar[dict[str, str]] = {"item_id": "inventory_item"}
     item_id: str
     reason: str
 
@@ -163,6 +165,7 @@ class ItemConsumedEvent(Event):
     name: ClassVar[str] = "item_consumed"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id", "category"})
+    reference_fields: ClassVar[dict[str, str]] = {"item_id": "inventory_item"}
     item_id: str
     item_name: str
     category: str
