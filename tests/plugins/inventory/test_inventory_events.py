@@ -47,30 +47,26 @@ class TestItemAcquiredEvent:
 
     def test_initialization(self) -> None:
         """Test event initialization with attributes."""
-        event = ItemAcquiredEvent(item_id="test_item", item_name="Test Item")
+        event = ItemAcquiredEvent(item_id="test_item")
 
         assert event.item_id == "test_item"
-        assert event.item_name == "Test Item"
 
     def test_get_script_data(self) -> None:
         """Test get_script_data returns correct data."""
-        event = ItemAcquiredEvent(item_id="rusty_key", item_name="Rusty Key")
+        event = ItemAcquiredEvent(item_id="rusty_key")
 
         script_data = event.get_script_data()
 
         assert "item_id" in script_data
         assert script_data["item_id"] == "rusty_key"
-        # item_name should not be in script data
-        assert "item_name" not in script_data
 
     def test_different_items(self) -> None:
         """Test creating events for different items."""
-        event1 = ItemAcquiredEvent(item_id="photo_01", item_name="First Photo")
-        event2 = ItemAcquiredEvent(item_id="note_01", item_name="Mysterious Note")
+        event1 = ItemAcquiredEvent(item_id="photo_01")
+        event2 = ItemAcquiredEvent(item_id="note_01")
 
         assert event1.item_id == "photo_01"
         assert event2.item_id == "note_01"
-        assert event1.item_name != event2.item_name
 
 
 class TestItemAcquisitionFailedEvent:
@@ -82,13 +78,6 @@ class TestItemAcquisitionFailedEvent:
 
         assert event.item_id == "test_item"
         assert event.reason == "capacity"
-
-    def test_initialization_unknown_item(self) -> None:
-        """Test event initialization with unknown_item reason."""
-        event = ItemAcquisitionFailedEvent(item_id="missing_item", reason="unknown_item")
-
-        assert event.item_id == "missing_item"
-        assert event.reason == "unknown_item"
 
     def test_initialization_already_owned(self) -> None:
         """Test event initialization with already_owned reason."""
@@ -123,15 +112,14 @@ class TestItemConsumedEvent:
 
     def test_initialization(self) -> None:
         """Test event initialization with attributes."""
-        event = ItemConsumedEvent(item_id="potion_01", item_name="Health Potion", category="consumable")
+        event = ItemConsumedEvent(item_id="potion_01", category="consumable")
 
         assert event.item_id == "potion_01"
-        assert event.item_name == "Health Potion"
         assert event.category == "consumable"
 
     def test_get_script_data(self) -> None:
         """Test get_script_data returns correct data."""
-        event = ItemConsumedEvent(item_id="potion_01", item_name="Health Potion", category="consumable")
+        event = ItemConsumedEvent(item_id="potion_01", category="consumable")
 
         script_data = event.get_script_data()
 
@@ -144,9 +132,9 @@ class TestItemConsumedEvent:
 
     def test_different_categories(self) -> None:
         """Test creating events with different categories."""
-        event1 = ItemConsumedEvent(item_id="item1", item_name="Item 1", category="consumable")
-        event2 = ItemConsumedEvent(item_id="item2", item_name="Item 2", category="food")
-        event3 = ItemConsumedEvent(item_id="item3", item_name="Item 3", category="general")
+        event1 = ItemConsumedEvent(item_id="item1", category="consumable")
+        event2 = ItemConsumedEvent(item_id="item2", category="food")
+        event3 = ItemConsumedEvent(item_id="item3", category="general")
 
         assert event1.category == "consumable"
         assert event2.category == "food"
@@ -154,7 +142,7 @@ class TestItemConsumedEvent:
 
     def test_script_data_includes_category(self) -> None:
         """Test that script data includes category for filtering."""
-        event = ItemConsumedEvent(item_id="apple", item_name="Red Apple", category="food")
+        event = ItemConsumedEvent(item_id="apple", category="food")
 
         script_data = event.get_script_data()
 
@@ -183,9 +171,9 @@ class TestInventoryEventsIntegration:
         """Test that all events return dict from get_script_data."""
         events = [
             InventoryClosedEvent(has_been_accessed=True),
-            ItemAcquiredEvent(item_id="test", item_name="Test"),
+            ItemAcquiredEvent(item_id="test"),
             ItemAcquisitionFailedEvent(item_id="test", reason="capacity"),
-            ItemConsumedEvent(item_id="test", item_name="Test", category="general"),
+            ItemConsumedEvent(item_id="test", category="general"),
         ]
 
         for event in events:

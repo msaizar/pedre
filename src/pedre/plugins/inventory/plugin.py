@@ -287,13 +287,10 @@ class InventoryPlugin(InventoryBasePlugin):
         if self.consume_item(item.id):
             logger.info("Consumed item from inventory overlay: %s", item.name)
 
-            self.context.event_bus.publish(
-                ItemConsumedEvent(item_id=item.id, item_name=item.name, category=item.category)
-            )
+            self.context.event_bus.publish(ItemConsumedEvent(item_id=item.id, category=item.category))
             logger.info(
-                "Published ItemConsumedEvent (item_id=%s, item_name=%s, category=%s)",
+                "Published ItemConsumedEvent (item_id=%s, category=%s)",
                 item.id,
-                item.name,
                 item.category,
             )
 
@@ -792,8 +789,8 @@ class InventoryPlugin(InventoryBasePlugin):
                 del self.items[item.id]
                 return False
 
-            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item.id, item_name=item.name))
-            logger.info("Published ItemAcquiredEvent (item_id=%s, item_name=%s)", item.id, item.name)
+            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item.id))
+            logger.info("Published ItemAcquiredEvent (item_id=%s)", item.id)
 
         return True
 
@@ -866,8 +863,8 @@ class InventoryPlugin(InventoryBasePlugin):
             logger.info("Player acquired item: %s (%s)", item_id, item.name)
 
             # Publish event if event bus is available
-            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
-            logger.info("Published ItemAcquiredEvent (item_id=%s, item_name=%s)", item_id, item.name)
+            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id))
+            logger.info("Published ItemAcquiredEvent (item_id=%s)", item_id)
 
             return True
 
