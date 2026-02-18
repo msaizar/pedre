@@ -1,9 +1,11 @@
 """Unit tests for inventory actions."""
 
-import unittest
 import uuid
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
 from pedre.plugins.inventory.actions import (
     AcquireItemAction,
     AddItemAction,
@@ -12,7 +14,7 @@ from pedre.plugins.inventory.actions import (
 )
 
 
-class TestWaitForInventoryAccessAction(unittest.TestCase):
+class TestWaitForInventoryAccessAction:
     """Test WaitForInventoryAccessAction."""
 
     def test_init(self) -> None:
@@ -46,38 +48,7 @@ class TestWaitForInventoryAccessAction(unittest.TestCase):
         assert result is True
 
 
-class TestAcquireItemActionValidation(unittest.TestCase):
-    """Test AcquireItemAction validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"item_id": "test_item"}
-        errors = AcquireItemAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_missing_item_id(self) -> None:
-        """Test validate_params detects missing item_id field."""
-        data = {}
-        errors = AcquireItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'item_id' field" in errors[0]
-
-    def test_validate_params_empty_item_id(self) -> None:
-        """Test validate_params detects empty item_id field."""
-        data = {"item_id": ""}
-        errors = AcquireItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'item_id' field" in errors[0]
-
-    def test_validate_params_item_id_not_string(self) -> None:
-        """Test validate_params detects non-string item_id field."""
-        data = {"item_id": 123}
-        errors = AcquireItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'item_id' must be a string" in errors[0]
-
-
-class TestAcquireItemAction(unittest.TestCase):
+class TestAcquireItemAction:
     """Test AcquireItemAction."""
 
     def test_init(self) -> None:
@@ -100,9 +71,8 @@ class TestAcquireItemAction(unittest.TestCase):
     def test_from_dict_with_empty_item_id(self) -> None:
         """Test creating AcquireItemAction from dict without item_id."""
         data = {}
-        action = AcquireItemAction.from_dict(data)
-
-        assert action.item_id == ""
+        with pytest.raises(ActionParseError):
+            AcquireItemAction.from_dict(data)
 
     def test_execute_successful_acquisition(self) -> None:
         """Test execute successfully acquires an item."""
@@ -163,93 +133,13 @@ class TestAcquireItemAction(unittest.TestCase):
         assert action.success is False
 
 
-class TestAddItemActionValidation(unittest.TestCase):
-    """Test AddItemAction validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"name": "Test Item", "description": "A test item"}
-        errors = AddItemAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_missing_name(self) -> None:
-        """Test validate_params detects missing name field."""
-        data = {"description": "A test item"}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'name' field" in errors[0]
-
-    def test_validate_params_empty_name(self) -> None:
-        """Test validate_params detects empty name field."""
-        data = {"name": "", "description": "A test item"}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'name' field" in errors[0]
-
-    def test_validate_params_name_not_string(self) -> None:
-        """Test validate_params detects non-string name field."""
-        data = {"name": 123}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'name' must be a string" in errors[0]
-
-    def test_validate_params_description_not_string(self) -> None:
-        """Test validate_params detects non-string description field."""
-        data = {"name": "Item", "description": 123}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'description' must be a string" in errors[0]
-
-    def test_validate_params_item_id_not_string(self) -> None:
-        """Test validate_params detects non-string item_id field."""
-        data = {"name": "Item", "item_id": 123}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'item_id' must be a string" in errors[0]
-
-    def test_validate_params_image_path_not_string(self) -> None:
-        """Test validate_params detects non-string image_path field."""
-        data = {"name": "Item", "image_path": 123}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'image_path' must be a string" in errors[0]
-
-    def test_validate_params_icon_path_not_string(self) -> None:
-        """Test validate_params detects non-string icon_path field."""
-        data = {"name": "Item", "icon_path": 123}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'icon_path' must be a string" in errors[0]
-
-    def test_validate_params_category_not_string(self) -> None:
-        """Test validate_params detects non-string category field."""
-        data = {"name": "Item", "category": 123}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'category' must be a string" in errors[0]
-
-    def test_validate_params_acquired_not_bool(self) -> None:
-        """Test validate_params detects non-bool acquired field."""
-        data = {"name": "Item", "acquired": "yes"}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'acquired' must be a bool" in errors[0]
-
-    def test_validate_params_consumable_not_bool(self) -> None:
-        """Test validate_params detects non-bool consumable field."""
-        data = {"name": "Item", "consumable": "yes"}
-        errors = AddItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'consumable' must be a bool" in errors[0]
-
-
-class TestAddItemAction(unittest.TestCase):
+class TestAddItemAction:
     """Test AddItemAction."""
 
     def test_init_with_all_parameters(self) -> None:
         """Test AddItemAction initialization with all parameters."""
         action = AddItemAction(
-            name="Test Potion",
+            item_name="Test Potion",
             description="Restores health",
             item_id="test_potion",
             image_path="items/potion.png",
@@ -259,7 +149,7 @@ class TestAddItemAction(unittest.TestCase):
             consumable=True,
         )
 
-        assert action.name == "Test Potion"
+        assert action.item_name == "Test Potion"
         assert action.description == "Restores health"
         assert action.item_id == "test_potion"
         assert action.image_path == "items/potion.png"
@@ -272,9 +162,9 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_init_with_defaults(self) -> None:
         """Test AddItemAction initialization with default values."""
-        action = AddItemAction(name="Basic Item", description="A simple item")
+        action = AddItemAction(item_name="Basic Item", description="A simple item")
 
-        assert action.name == "Basic Item"
+        assert action.item_name == "Basic Item"
         assert action.description == "A simple item"
         assert action.image_path is None
         assert action.icon_path is None
@@ -284,7 +174,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_init_generates_uuid_when_no_item_id(self) -> None:
         """Test that UUID is generated when item_id is not provided."""
-        action = AddItemAction(name="Item", description="Desc")
+        action = AddItemAction(item_name="Item", description="Desc")
 
         # Should be a valid UUID string
         assert action.item_id is not None
@@ -294,7 +184,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_init_generates_uuid_when_empty_item_id(self) -> None:
         """Test that UUID is generated when item_id is empty string."""
-        action = AddItemAction(name="Item", description="Desc", item_id="")
+        action = AddItemAction(item_name="Item", description="Desc", item_id="")
 
         # Should be a valid UUID string
         assert action.item_id is not None
@@ -303,14 +193,14 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_init_uses_provided_item_id(self) -> None:
         """Test that provided item_id is used when given."""
-        action = AddItemAction(name="Item", description="Desc", item_id="custom_id")
+        action = AddItemAction(item_name="Item", description="Desc", item_id="custom_id")
 
         assert action.item_id == "custom_id"
 
     def test_from_dict_with_all_fields(self) -> None:
         """Test creating AddItemAction from dictionary with all fields."""
         data = {
-            "name": "Health Potion",
+            "item_name": "Health Potion",
             "description": "Restores 50 HP",
             "item_id": "health_potion_1",
             "image_path": "items/potion.png",
@@ -321,7 +211,7 @@ class TestAddItemAction(unittest.TestCase):
         }
         action = AddItemAction.from_dict(data)
 
-        assert action.name == "Health Potion"
+        assert action.item_name == "Health Potion"
         assert action.description == "Restores 50 HP"
         assert action.item_id == "health_potion_1"
         assert action.image_path == "items/potion.png"
@@ -332,10 +222,10 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_from_dict_with_defaults(self) -> None:
         """Test creating AddItemAction from dict with missing optional fields."""
-        data = {"name": "Key", "description": "Opens door"}
+        data = {"item_name": "Key", "description": "Opens door"}
         action = AddItemAction.from_dict(data)
 
-        assert action.name == "Key"
+        assert action.item_name == "Key"
         assert action.description == "Opens door"
         assert action.image_path is None
         assert action.icon_path is None
@@ -345,7 +235,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_from_dict_generates_uuid_when_no_item_id(self) -> None:
         """Test UUID generation from dict when item_id not provided."""
-        data = {"name": "Item", "description": "Desc"}
+        data = {"item_name": "Item", "description": "Desc"}
         action = AddItemAction.from_dict(data)
 
         # Should have a valid UUID
@@ -354,7 +244,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_from_dict_generates_uuid_when_empty_item_id(self) -> None:
         """Test UUID generation from dict when item_id is empty."""
-        data = {"name": "Item", "description": "Desc", "item_id": ""}
+        data = {"item_name": "Item", "description": "Desc", "item_id": ""}
         action = AddItemAction.from_dict(data)
 
         # Should have a valid UUID
@@ -363,7 +253,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_from_dict_with_acquired_false(self) -> None:
         """Test creating AddItemAction from dict with acquired=false."""
-        data = {"name": "Item", "description": "Desc", "acquired": False}
+        data = {"item_name": "Item", "description": "Desc", "acquired": False}
         action = AddItemAction.from_dict(data)
 
         assert action.acquired is False
@@ -371,7 +261,7 @@ class TestAddItemAction(unittest.TestCase):
     def test_execute_successful_add(self) -> None:
         """Test execute successfully adds an item."""
         action = AddItemAction(
-            name="Test Item",
+            item_name="Test Item",
             description="Test desc",
             item_id="test_id",
             category="test",
@@ -400,7 +290,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_execute_failed_add(self) -> None:
         """Test execute returns False when add fails."""
-        action = AddItemAction(name="Item", description="Desc", item_id="duplicate")
+        action = AddItemAction(item_name="Item", description="Desc", item_id="duplicate")
         context = MagicMock()
         inventory_plugin = MagicMock()
         inventory_plugin.add_item.return_value = False
@@ -414,7 +304,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_execute_only_once(self) -> None:
         """Test that add is only attempted once even if execute called multiple times."""
-        action = AddItemAction(name="Item", description="Desc")
+        action = AddItemAction(item_name="Item", description="Desc")
         context = MagicMock()
         inventory_plugin = MagicMock()
         inventory_plugin.add_item.return_value = True
@@ -427,7 +317,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_execute_creates_consumable_item(self) -> None:
         """Test execute creates item with consumable flag."""
-        action = AddItemAction(name="Potion", description="Heal", consumable=True)
+        action = AddItemAction(item_name="Potion", description="Heal", consumable=True)
         context = MagicMock()
         inventory_plugin = MagicMock()
         inventory_plugin.add_item.return_value = True
@@ -441,7 +331,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_execute_creates_non_acquired_item(self) -> None:
         """Test execute creates item with acquired=False."""
-        action = AddItemAction(name="Item", description="Desc", acquired=False)
+        action = AddItemAction(item_name="Item", description="Desc", acquired=False)
         context = MagicMock()
         inventory_plugin = MagicMock()
         inventory_plugin.add_item.return_value = True
@@ -456,7 +346,7 @@ class TestAddItemAction(unittest.TestCase):
     def test_execute_with_image_paths(self) -> None:
         """Test execute creates item with image and icon paths."""
         action = AddItemAction(
-            name="Photo",
+            item_name="Photo",
             description="A picture",
             image_path="photos/pic.png",
             icon_path="photos/icons/pic.png",
@@ -475,7 +365,7 @@ class TestAddItemAction(unittest.TestCase):
 
     def test_reset(self) -> None:
         """Test reset clears started and success flags."""
-        action = AddItemAction(name="Item", description="Desc")
+        action = AddItemAction(item_name="Item", description="Desc")
         context = MagicMock()
         inventory_plugin = MagicMock()
         inventory_plugin.add_item.return_value = True
@@ -490,38 +380,7 @@ class TestAddItemAction(unittest.TestCase):
         assert action.success is False
 
 
-class TestConsumeItemActionValidation(unittest.TestCase):
-    """Test ConsumeItemAction validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"item_id": "test_item"}
-        errors = ConsumeItemAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_missing_item_id(self) -> None:
-        """Test validate_params detects missing item_id field."""
-        data = {}
-        errors = ConsumeItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'item_id' field" in errors[0]
-
-    def test_validate_params_empty_item_id(self) -> None:
-        """Test validate_params detects empty item_id field."""
-        data = {"item_id": ""}
-        errors = ConsumeItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'item_id' field" in errors[0]
-
-    def test_validate_params_item_id_not_string(self) -> None:
-        """Test validate_params detects non-string item_id field."""
-        data = {"item_id": 123}
-        errors = ConsumeItemAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'item_id' must be a string" in errors[0]
-
-
-class TestConsumeItemAction(unittest.TestCase):
+class TestConsumeItemAction:
     """Test ConsumeItemAction."""
 
     def test_init(self) -> None:
@@ -542,9 +401,8 @@ class TestConsumeItemAction(unittest.TestCase):
     def test_from_dict_with_empty_item_id(self) -> None:
         """Test creating ConsumeItemAction from dict without item_id."""
         data = {}
-        action = ConsumeItemAction.from_dict(data)
-
-        assert action.item_id == ""
+        with pytest.raises(ActionParseError):
+            ConsumeItemAction.from_dict(data)
 
     def test_execute_consumes_item(self) -> None:
         """Test execute consumes an item."""
@@ -597,7 +455,3 @@ class TestConsumeItemAction(unittest.TestCase):
 
         action.reset()
         assert action.started is False
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -95,9 +95,9 @@ class ValidateCommand(Command):
         condition_loader.load_modules()
 
         console.print(
-            f"[dim]Loaded {len(ActionRegistry.get_all_types())} actions, "
-            f"{len(EventRegistry.get_all_types())} events, "
-            f"{len(ConditionRegistry.get_all_types())} conditions[/dim]"
+            f"[dim]Loaded {len(ActionRegistry.get_all_names())} actions, "
+            f"{len(EventRegistry.get_all_names())} events, "
+            f"{len(ConditionRegistry.get_all_names())} conditions[/dim]"
         )
 
         # Create shared validation context

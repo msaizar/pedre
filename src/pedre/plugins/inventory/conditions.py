@@ -3,15 +3,17 @@
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.conditions.base import Condition
-from pedre.conditions.registry import ConditionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
 
 
-@ConditionRegistry.register("inventory_accessed")
+@ConditionRegistry.register
 class InventoryAccessedCondition(Condition):
     """Check if inventory has been accessed."""
+
+    name = "inventory_accessed"
 
     def check(self, context: GameContext) -> bool:
         """Check if inventory accessed."""
@@ -23,15 +25,12 @@ class InventoryAccessedCondition(Condition):
         """Create from dictionary."""
         return cls()
 
-    @staticmethod
-    def validate_params(data: dict[str, Any]) -> list[str]:  # noqa: ARG004
-        """Validate parameters (none required)."""
-        return []
 
-
-@ConditionRegistry.register("item_acquired")
+@ConditionRegistry.register
 class ItemAcquiredCondition(Condition):
     """Check if an item has been acquired."""
+
+    name = "item_acquired"
 
     def __init__(self, item_id: str) -> None:
         """Initialize condition with item ID."""
@@ -47,15 +46,12 @@ class ItemAcquiredCondition(Condition):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create from dictionary."""
-        return cls(item_id=data.get("item_id", ""))
-
-    @staticmethod
-    def validate_params(data: dict[str, Any]) -> list[str]:
-        """Validate parameters."""
-        errors = []
         item_id = data.get("item_id")
         if not item_id:
-            errors.append("missing required 'item_id' field")
-        elif not isinstance(item_id, str):
-            errors.append("'item_id' must be a string")
-        return errors
+            msg = "missing required 'item_id' field"
+            raise ConditionParseError(msg)
+        if not isinstance(item_id, str):
+            msg = "'item_id' must be a string"
+            raise ConditionParseError(msg)
+
+        return cls(item_id=item_id)

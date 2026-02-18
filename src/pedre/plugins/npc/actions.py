@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action, WaitForConditionAction
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
 from pedre.plugins.npc.sprites import AnimatedNPC
 from pedre.types import EntityReference
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("move_npc")
+@ActionRegistry.register
 class MoveNPCAction(Action):
     """Move one or more NPCs to a waypoint.
 
@@ -45,6 +45,8 @@ class MoveNPCAction(Action):
             "waypoint": "forest_entrance"
         }
     """
+
+    name = "move_npc"
 
     def __init__(
         self,
@@ -96,49 +98,39 @@ class MoveNPCAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create MoveNPCAction from a dictionary."""
-        npcs = data.get("npcs", [])
-        waypoint = data.get("waypoint", "")
+        npcs = data.get("npcs")
+        waypoint = data.get("waypoint")
+
+        if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
+            msg = "missing required 'npcs' field (non-empty list)"
+            raise ActionParseError(msg)
+        if not isinstance(npcs, list):
+            msg = "'npcs' must be a list"
+            raise ActionParseError(msg)
+        if not all(isinstance(item, str) for item in npcs):
+            msg = "'npcs' items must be strings"
+            raise ActionParseError(msg)
+
+        if not waypoint:
+            msg = "missing required 'waypoint' field"
+            raise ActionParseError(msg)
+        if not isinstance(waypoint, str):
+            msg = "'waypoint' must be a string"
+            raise ActionParseError(msg)
+
         return cls(npc_names=npcs, waypoint=waypoint)
 
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate move_npc action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
-        npcs = data.get("npcs")
-        if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
-            errors.append("missing required 'npcs' field (non-empty list)")
-        elif not isinstance(npcs, list):
-            errors.append("'npcs' must be a list")
-        elif not all(isinstance(item, str) for item in npcs):
-            errors.append("'npcs' items must be strings")
-
-        waypoint = data.get("waypoint")
-        if not waypoint:
-            errors.append("missing required 'waypoint' field")
-        elif not isinstance(waypoint, str):
-            errors.append("'waypoint' must be a string")
-
-        return errors
-
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
+        refs = set()
 
-        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
-
-        waypoint = _data.get("waypoint")
-        if isinstance(waypoint, str):
-            refs.append(EntityReference(type="waypoint", name=waypoint))
+        refs.update([EntityReference(type="npc", name=npc) for npc in self.npc_names])
+        refs.add(EntityReference(type="waypoint", name=self.waypoint))
 
         return refs
 
 
-@ActionRegistry.register("start_appear_animation")
+@ActionRegistry.register
 class StartAppearAnimationAction(Action):
     """Start the appear animation for one or more NPCs.
 
@@ -155,6 +147,8 @@ class StartAppearAnimationAction(Action):
             "npcs": ["martin", "yema", "romi"]
         }
     """
+
+    name = "start_appear_animation"
 
     def __init__(self, npc_names: list[str]) -> None:
         """Initialize NPC appear animation action.
@@ -182,40 +176,28 @@ class StartAppearAnimationAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create StartAppearAnimationAction from a dictionary."""
-        return cls(npc_names=data.get("npcs", []))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate start_appear_animation action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
-            errors.append("missing required 'npcs' field (non-empty list)")
-        elif not isinstance(npcs, list):
-            errors.append("'npcs' must be a list")
-        elif not all(isinstance(item, str) for item in npcs):
-            errors.append("'npcs' items must be strings")
-        return errors
+            msg = "missing required 'npcs' field (non-empty list)"
+            raise ActionParseError(msg)
+        if not isinstance(npcs, list):
+            msg = "'npcs' must be a list"
+            raise ActionParseError(msg)
+        if not all(isinstance(item, str) for item in npcs):
+            msg = "'npcs' items must be strings"
+            raise ActionParseError(msg)
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        return cls(npc_names=npcs)
+
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
+        refs = set()
 
-        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
-
-        waypoint = _data.get("waypoint")
-        if isinstance(waypoint, str):
-            refs.append(EntityReference(type="waypoint", name=waypoint))
-
+        refs.update([EntityReference(type="npc", name=npc) for npc in self.npc_names])
         return refs
 
 
-@ActionRegistry.register("advance_dialog")
+@ActionRegistry.register
 class AdvanceDialogAction(Action):
     """Advance an NPC's dialog level.
 
@@ -232,6 +214,8 @@ class AdvanceDialogAction(Action):
             "npc": "martin"
         }
     """
+
+    name = "advance_dialog"
 
     def __init__(self, npc_name: str) -> None:
         """Initialize dialog advance action.
@@ -259,36 +243,24 @@ class AdvanceDialogAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create AdvanceDialogAction from a dictionary."""
-        return cls(npc_name=data.get("npc", ""))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate advance_dialog action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npc = data.get("npc")
         if not npc:
-            errors.append("missing required 'npc' field")
-        elif not isinstance(npc, str):
-            errors.append("'npc' must be a string")
-        return errors
+            msg = "missing required 'npc' field"
+            raise ActionParseError(msg)
+        if not isinstance(npc, str):
+            msg = "'npc' must be a string"
+            raise ActionParseError(msg)
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        return cls(npc_name=npc)
+
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
-
-        npc = _data.get("npc")
-        if isinstance(npc, str):
-            refs.append(EntityReference(type="npc", name=npc))
-
+        refs = set()
+        refs.update([EntityReference(type="npc", name=self.npc_name)])
         return refs
 
 
-@ActionRegistry.register("set_dialog_level")
+@ActionRegistry.register
 class SetDialogLevelAction(Action):
     """Set an NPC's dialog level to a specific value.
 
@@ -314,6 +286,8 @@ class SetDialogLevelAction(Action):
             "dialog_level": 0
         }
     """
+
+    name = "set_dialog_level"
 
     def __init__(self, npc_name: str, level: int) -> None:
         """Initialize set dialog level action.
@@ -353,45 +327,35 @@ class SetDialogLevelAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create SetDialogLevelAction from a dictionary."""
-        return cls(
-            npc_name=data.get("npc", ""),
-            level=data.get("dialog_level", 0),
-        )
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate set_dialog_level action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npc = data.get("npc")
         if not npc:
-            errors.append("missing required 'npc' field")
-        elif not isinstance(npc, str):
-            errors.append("'npc' must be a string")
+            msg = "missing required 'npc' field"
+            raise ActionParseError(msg)
+        if not isinstance(npc, str):
+            msg = "'npc' must be a string"
+            raise ActionParseError(msg)
+        dialog_level = data.get("dialog_level")
+        if not dialog_level:
+            msg = "missing required 'dialog_level' field"
+            raise ActionParseError(msg)
 
-        if "dialog_level" not in data:
-            errors.append("missing required 'dialog_level' field")
-        elif not isinstance(data["dialog_level"], int) or isinstance(data["dialog_level"], bool):
-            errors.append("'dialog_level' must be an int")
+        if not isinstance(dialog_level, int) or isinstance(dialog_level, bool):
+            msg = "'dialog_level' must be an int"
+            raise ActionParseError(msg)
 
-        return errors
+        return cls(
+            npc_name=npc,
+            level=dialog_level,
+        )
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
-
-        npc = _data.get("npc")
-        if isinstance(npc, str):
-            refs.append(EntityReference(type="npc", name=npc))
-
+        refs = set()
+        refs.update([EntityReference(type="npc", name=self.npc_name)])
         return refs
 
 
-@ActionRegistry.register("set_current_npc")
+@ActionRegistry.register
 class SetCurrentNPCAction(Action):
     """Set the current NPC tracking for dialog event attribution.
 
@@ -417,6 +381,8 @@ class SetCurrentNPCAction(Action):
 
     This should be used before any scripted dialog action to ensure proper event tracking.
     """
+
+    name = "set_current_npc"
 
     def __init__(self, npc_name: str) -> None:
         """Initialize set current NPC action.
@@ -458,36 +424,23 @@ class SetCurrentNPCAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create SetCurrentNPCAction from a dictionary."""
-        return cls(npc_name=data.get("npc", ""))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate set_current_npc action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npc = data.get("npc")
         if not npc:
-            errors.append("missing required 'npc' field")
-        elif not isinstance(npc, str):
-            errors.append("'npc' must be a string")
-        return errors
+            msg = "missing required 'npc' field"
+            raise ActionParseError(msg)
+        if not isinstance(npc, str):
+            msg = "'npc' must be a string"
+            raise ActionParseError(msg)
+        return cls(npc_name=npc)
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
-
-        npc = _data.get("npc")
-        if isinstance(npc, str):
-            refs.append(EntityReference(type="npc", name=npc))
-
+        refs = set()
+        refs.update([EntityReference(type="npc", name=self.npc_name)])
         return refs
 
 
-@ActionRegistry.register("wait_for_movement")
+@ActionRegistry.register
 class WaitForNPCMovementAction(WaitForConditionAction):
     """Wait for NPC to complete movement.
 
@@ -508,6 +461,8 @@ class WaitForNPCMovementAction(WaitForConditionAction):
             {"type": "dialog", "speaker": "martin", "text": ["I made it!"]}
         ]
     """
+
+    name = "wait_for_movement"
 
     def __init__(self, npc_name: str) -> None:
         """Initialize NPC movement wait action.
@@ -530,36 +485,23 @@ class WaitForNPCMovementAction(WaitForConditionAction):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create WaitForNPCMovementAction from a dictionary."""
-        return cls(npc_name=data.get("npc", ""))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate wait_for_movement action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npc = data.get("npc")
         if not npc:
-            errors.append("missing required 'npc' field")
-        elif not isinstance(npc, str):
-            errors.append("'npc' must be a string")
-        return errors
+            msg = "missing required 'npc' field"
+            raise ActionParseError(msg)
+        if not isinstance(npc, str):
+            msg = "'npc' must be a string"
+            raise ActionParseError(msg)
+        return cls(npc_name=npc)
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
-
-        npc = _data.get("npc")
-        if isinstance(npc, str):
-            refs.append(EntityReference(type="npc", name=npc))
-
+        refs = set()
+        refs.update([EntityReference(type="npc", name=self.npc_name)])
         return refs
 
 
-@ActionRegistry.register("wait_npcs_appear")
+@ActionRegistry.register
 class WaitForNPCsAppearAction(WaitForConditionAction):
     """Wait for multiple NPCs to complete their appear animations.
 
@@ -582,6 +524,8 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
             {"type": "dialog", "speaker": "martin", "text": ["We're here!"]}
         ]
     """
+
+    name = "wait_npcs_appear"
 
     def __init__(self, npc_names: list[str]) -> None:
         """Initialize NPC appear wait action.
@@ -608,40 +552,26 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create WaitForNPCsAppearAction from a dictionary."""
-        return cls(npc_names=data.get("npcs", []))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate wait_npcs_appear action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
-            errors.append("missing required 'npcs' field (non-empty list)")
-        elif not isinstance(npcs, list):
-            errors.append("'npcs' must be a list")
-        elif not all(isinstance(item, str) for item in npcs):
-            errors.append("'npcs' items must be strings")
-        return errors
+            msg = "missing required 'npcs' field (non-empty list)"
+            raise ActionParseError(msg)
+        if not isinstance(npcs, list):
+            msg = "'npcs' must be a list"
+            raise ActionParseError(msg)
+        if not all(isinstance(item, str) for item in npcs):
+            msg = "'npcs' items must be strings"
+            raise ActionParseError(msg)
+        return cls(npc_names=npcs)
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
-
-        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
-
-        waypoint = _data.get("waypoint")
-        if isinstance(waypoint, str):
-            refs.append(EntityReference(type="waypoint", name=waypoint))
-
+        refs = set()
+        refs.update([EntityReference(type="npc", name=npc) for npc in self.npc_names])
         return refs
 
 
-@ActionRegistry.register("wait_for_npcs_disappear")
+@ActionRegistry.register
 class WaitForNPCsDisappearAction(WaitForConditionAction):
     """Wait for multiple NPCs to complete their disappear animations.
 
@@ -664,6 +594,8 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
             {"type": "change_scene", "target_map": "Forest.tmx"}
         ]
     """
+
+    name = "wait_for_npcs_disappear"
 
     def __init__(self, npc_names: list[str]) -> None:
         """Initialize NPC disappear wait action.
@@ -690,40 +622,27 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create WaitForNPCsDisappearAction from a dictionary."""
-        return cls(npc_names=data.get("npcs", []))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate wait_for_npcs_disappear action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
-            errors.append("missing required 'npcs' field (non-empty list)")
-        elif not isinstance(npcs, list):
-            errors.append("'npcs' must be a list")
-        elif not all(isinstance(item, str) for item in npcs):
-            errors.append("'npcs' items must be strings")
-        return errors
+            msg = "missing required 'npcs' field (non-empty list)"
+            raise ActionParseError(msg)
+        if not isinstance(npcs, list):
+            msg = "'npcs' must be a list"
+            raise ActionParseError(msg)
+        if not all(isinstance(item, str) for item in npcs):
+            msg = "'npcs' items must be strings"
+            raise ActionParseError(msg)
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+        return cls(npc_names=npcs)
+
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
-
-        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
-
-        waypoint = _data.get("waypoint")
-        if isinstance(waypoint, str):
-            refs.append(EntityReference(type="waypoint", name=waypoint))
-
+        refs = set()
+        refs.update([EntityReference(type="npc", name=npc) for npc in self.npc_names])
         return refs
 
 
-@ActionRegistry.register("start_disappear_animation")
+@ActionRegistry.register
 class StartDisappearAnimationAction(Action):
     """Start the disappear animation for one or more NPCs.
 
@@ -751,6 +670,8 @@ class StartDisappearAnimationAction(Action):
             "npcs": ["martin", "yema"]
         }
     """
+
+    name = "start_disappear_animation"
 
     def __init__(self, npc_names: list[str]) -> None:
         """Initialize disappear animation action.
@@ -806,34 +727,20 @@ class StartDisappearAnimationAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create StartDisappearAnimationAction from a dictionary."""
-        return cls(npc_names=data.get("npcs", []))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate start_disappear_animation action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         npcs = data.get("npcs")
         if not npcs or (isinstance(npcs, list) and len(npcs) == 0):
-            errors.append("missing required 'npcs' field (non-empty list)")
-        elif not isinstance(npcs, list):
-            errors.append("'npcs' must be a list")
-        elif not all(isinstance(item, str) for item in npcs):
-            errors.append("'npcs' items must be strings")
-        return errors
+            msg = "missing required 'npcs' field (non-empty list)"
+            raise ActionParseError(msg)
+        if not isinstance(npcs, list):
+            msg = "'npcs' must be a list"
+            raise ActionParseError(msg)
+        if not all(isinstance(item, str) for item in npcs):
+            msg = "'npcs' items must be strings"
+            raise ActionParseError(msg)
+        return cls(npc_names=npcs)
 
-    @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+    def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs: list[EntityReference] = []
-
-        refs.extend(EntityReference(type="npc", name=npc) for npc in _data.get("npcs", []))
-
-        waypoint = _data.get("waypoint")
-        if isinstance(waypoint, str):
-            refs.append(EntityReference(type="waypoint", name=waypoint))
-
+        refs = set()
+        refs.update([EntityReference(type="npc", name=npc) for npc in self.npc_names])
         return refs

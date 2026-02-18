@@ -3,15 +3,17 @@
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.conditions.base import Condition
-from pedre.conditions.registry import ConditionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
 
 
-@ConditionRegistry.register("object_interacted")
+@ConditionRegistry.register
 class ObjectInteractedCondition(Condition):
     """Check if an object has been interacted with."""
+
+    name = "object_interacted"
 
     def __init__(self, object_name: str, *, expected: bool = True) -> None:
         """Initialize condition with object name and expected state."""
@@ -28,22 +30,18 @@ class ObjectInteractedCondition(Condition):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create from dictionary."""
+        obj = data.get("object")
+        if not obj:
+            msg = "missing required 'object' field"
+            raise ConditionParseError(msg)
+        if not isinstance(obj, str):
+            msg = "'object' must be a string"
+            raise ConditionParseError(msg)
+        if "equals" in data and not isinstance(data["equals"], bool):
+            msg = "'equals' must be a bool"
+            raise ConditionParseError(msg)
+
         return cls(
             object_name=data.get("object", ""),
             expected=data.get("equals", True),
         )
-
-    @staticmethod
-    def validate_params(data: dict[str, Any]) -> list[str]:
-        """Validate parameters."""
-        errors = []
-        obj = data.get("object")
-        if not obj:
-            errors.append("missing required 'object' field")
-        elif not isinstance(obj, str):
-            errors.append("'object' must be a string")
-
-        if "equals" in data and not isinstance(data["equals"], bool):
-            errors.append("'equals' must be a bool")
-
-        return errors

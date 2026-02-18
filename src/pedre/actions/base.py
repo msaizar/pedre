@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -16,6 +16,20 @@ logger = logging.getLogger(__name__)
 class Action(ABC):
     """Base class for all actions."""
 
+    name: ClassVar[str]
+
+    def __init_subclass__(cls, **kwargs: dict[str, Any]) -> None:
+        """Init for subclasses of Action."""
+        super().__init_subclass__(**kwargs)
+
+        # Only enforce if class explicitly declares it wants registration
+        if "name" not in cls.__dict__:
+            return  # treat as non-registrable base class
+
+        if not isinstance(cls.name, str):
+            msg = f"{cls.__name__}.name must be a string"
+            raise TypeError(msg)
+
     @abstractmethod
     def execute(self, context: GameContext) -> bool:
         """Execute the action.
@@ -27,17 +41,21 @@ class Action(ABC):
             True if action is complete, False if still executing.
         """
 
-    @abstractmethod
-    def reset(self) -> None:
-        """Reset action state for reuse."""
-
     @classmethod
-    def extract_references(cls, _data: dict[str, Any]) -> list[EntityReference]:
+    @abstractmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create Action from a dictionary."""
+
+    def get_references(self) -> set[EntityReference]:
         """Return entity references used by this action.
 
         Default: no references.
         """
-        return []
+        return set()
+
+    @abstractmethod
+    def reset(self) -> None:
+        """Reset action state for reuse."""
 
 
 class WaitForConditionAction(Action):
@@ -140,3 +158,8 @@ class ActionSequence(Action):
         self.current_index = 0
         for action in self.actions:
             action.reset()
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create ActionSequence from a dictionary."""
+        return cls(**data)

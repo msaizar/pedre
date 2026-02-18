@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.conditions.base import Condition
-from pedre.conditions.registry import ConditionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -12,9 +12,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ConditionRegistry.register("script_completed")
+@ConditionRegistry.register
 class ScriptCompletedCondition(Condition):
     """Check if a specific script has fully completed all its actions."""
+
+    name = "script_completed"
 
     def __init__(self, script_name: str) -> None:
         """Initialize condition with script name."""
@@ -39,15 +41,11 @@ class ScriptCompletedCondition(Condition):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create from dictionary."""
-        return cls(script_name=data.get("script", ""))
-
-    @staticmethod
-    def validate_params(data: dict[str, Any]) -> list[str]:
-        """Validate parameters."""
-        errors = []
         script = data.get("script")
         if not script:
-            errors.append("missing required 'script' field")
-        elif not isinstance(script, str):
-            errors.append("'script' must be a string")
-        return errors
+            msg = "missing required 'script' field"
+            raise ConditionParseError(msg)
+        if not isinstance(script, str):
+            msg = "'script' must be a string"
+            raise ConditionParseError(msg)
+        return cls(script_name=script)

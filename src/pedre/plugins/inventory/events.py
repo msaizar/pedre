@@ -12,7 +12,7 @@ from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
 
-@EventRegistry.register("inventory_closed")
+@EventRegistry.register
 @dataclass
 class InventoryClosedEvent(Event):
     """Fired when the inventory view is closed by the player.
@@ -32,6 +32,8 @@ class InventoryClosedEvent(Event):
         has_been_accessed: Whether inventory has been accessed before.
     """
 
+    name: ClassVar[str] = "inventory_closed"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"inventory_accessed"})
     has_been_accessed: bool
 
@@ -40,7 +42,7 @@ class InventoryClosedEvent(Event):
         return {"inventory_accessed": self.has_been_accessed}
 
 
-@EventRegistry.register("item_acquired")
+@EventRegistry.register
 @dataclass
 class ItemAcquiredEvent(Event):
     """Fired when player acquires an inventory item.
@@ -68,6 +70,8 @@ class ItemAcquiredEvent(Event):
         item_name: Display name of the item (for logging/debugging).
     """
 
+    name: ClassVar[str] = "item_acquired"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id"})
     item_id: str
     item_name: str
@@ -77,7 +81,7 @@ class ItemAcquiredEvent(Event):
         return {"item_id": self.item_id}
 
 
-@EventRegistry.register("item_acquisition_failed")
+@EventRegistry.register
 @dataclass
 class ItemAcquisitionFailedEvent(Event):
     """Fired when an attempt to acquire an item fails.
@@ -104,6 +108,8 @@ class ItemAcquisitionFailedEvent(Event):
         reason: Reason for failure ("capacity", "unknown_item", or "already_owned").
     """
 
+    name: ClassVar[str] = "item_acquisition_failed"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id", "reason"})
     item_id: str
     reason: str
@@ -113,7 +119,7 @@ class ItemAcquisitionFailedEvent(Event):
         return {"item_id": self.item_id, "reason": self.reason}
 
 
-@EventRegistry.register("item_consumed")
+@EventRegistry.register
 @dataclass
 class ItemConsumedEvent(Event):
     """Fired when player consumes an inventory item.
@@ -153,6 +159,8 @@ class ItemConsumedEvent(Event):
         item_name: Display name of the item (for logging/debugging).
         category: Category of the consumed item (e.g., "consumable").
     """
+
+    name: ClassVar[str] = "item_consumed"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id", "category"})
     item_id: str

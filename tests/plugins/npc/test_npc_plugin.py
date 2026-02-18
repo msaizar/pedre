@@ -657,24 +657,6 @@ class TestNPCPlugin(unittest.TestCase):
 
         assert result is True
 
-    def test_check_dialog_conditions_all_pass(self) -> None:
-        """Test dialog conditions when all pass."""
-        conditions = [{"check": "has_item", "item": "key"}]
-
-        with patch("pedre.plugins.npc.plugin.ConditionRegistry.check", return_value=True):
-            result = self.plugin._check_dialog_conditions(conditions)
-
-            assert result is True
-
-    def test_check_dialog_conditions_one_fails(self) -> None:
-        """Test dialog conditions when one fails."""
-        conditions = [{"check": "has_item", "item": "key"}, {"check": "quest_complete", "quest": "main"}]
-
-        with patch("pedre.plugins.npc.plugin.ConditionRegistry.check", side_effect=[True, False]):
-            result = self.plugin._check_dialog_conditions(conditions)
-
-            assert result is False
-
     def test_check_dialog_conditions_missing_check_field(self) -> None:
         """Test dialog conditions with missing check field."""
         conditions = [{"item": "key"}]  # Missing 'check' field

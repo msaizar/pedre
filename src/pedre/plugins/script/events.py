@@ -7,7 +7,7 @@ from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
 
-@EventRegistry.register("script_complete")
+@EventRegistry.register
 @dataclass
 class ScriptCompleteEvent(Event):
     """Fired when a script completes execution.
@@ -34,7 +34,9 @@ class ScriptCompleteEvent(Event):
         script_name: Name of the script that completed.
     """
 
+    name: ClassVar[str] = "script_complete"
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"script"})
+    reference_fields: ClassVar[dict[str, str]] = {"script_name": "script"}
     script_name: str
 
     def get_script_data(self) -> dict[str, Any]:

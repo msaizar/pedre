@@ -3,6 +3,9 @@
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.inventory.conditions import (
     InventoryAccessedCondition,
     ItemAcquiredCondition,
@@ -41,8 +44,7 @@ class TestInventoryAccessedCondition(unittest.TestCase):
     def test_validate_success(self) -> None:
         """Test validator always passes (no params)."""
         data = {"random_key": "val"}
-        errors = InventoryAccessedCondition.validate_params(data)
-        assert errors == []
+        InventoryAccessedCondition.from_dict(data)
 
 
 class TestItemAcquiredCondition(unittest.TestCase):
@@ -85,30 +87,22 @@ class TestItemAcquiredCondition(unittest.TestCase):
     def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
         data = {"item_id": "test_item"}
-        errors = ItemAcquiredCondition.validate_params(data)
-        assert errors == []
+        ItemAcquiredCondition.from_dict(data)
 
     def test_validate_missing_item_id(self) -> None:
         """Test validator detects missing item_id field."""
         data = {}
-        errors = ItemAcquiredCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'item_id' field" in errors[0]
+        with pytest.raises(ConditionParseError):
+            ItemAcquiredCondition.from_dict(data)
 
     def test_validate_empty_item_id(self) -> None:
         """Test validator detects empty item_id field."""
         data = {"item_id": ""}
-        errors = ItemAcquiredCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'item_id' field" in errors[0]
+        with pytest.raises(ConditionParseError):
+            ItemAcquiredCondition.from_dict(data)
 
     def test_validate_item_id_not_string(self) -> None:
         """Test validator detects non-string item_id field."""
         data = {"item_id": 123}
-        errors = ItemAcquiredCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'item_id' must be a string" in errors[0]
-
-
-if __name__ == "__main__":
-    unittest.main()
+        with pytest.raises(ConditionParseError):
+            ItemAcquiredCondition.from_dict(data)

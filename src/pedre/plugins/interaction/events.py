@@ -7,7 +7,7 @@ from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
 
-@EventRegistry.register("object_interacted")
+@EventRegistry.register
 @dataclass
 class ObjectInteractedEvent(Event):
     """Fired when player interacts with an interactive object.
@@ -34,7 +34,10 @@ class ObjectInteractedEvent(Event):
         object_name: Name of the object that was interacted with.
     """
 
+    name: ClassVar[str] = "object_interacted"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"object_name"})
+    reference_fields: ClassVar[dict[str, str]] = {"object_name": "interactive_object"}
     object_name: str
 
     def get_script_data(self) -> dict[str, Any]:

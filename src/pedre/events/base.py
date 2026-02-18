@@ -31,10 +31,13 @@ Example usage:
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar
+
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
 
 E = TypeVar("E", bound="Event")
 
@@ -42,6 +45,24 @@ E = TypeVar("E", bound="Event")
 @dataclass
 class Event:
     """Base event class."""
+
+    name: ClassVar[str]
+    trigger_keys: ClassVar[frozenset[str]]
+    reference_fields: ClassVar[dict[str, str]]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Create an event from a dictionary."""
+        return cls(**data)
+
+    @classmethod
+    def get_references(cls, filters: dict[str, Any]) -> set[EntityReference]:
+        """Return references used in event."""
+        refs = set()
+        for field, entity_type in getattr(cls, "reference_fields", {}).items():
+            if value := filters.get(field):
+                refs.add(EntityReference(type=entity_type, name=value))
+        return refs
 
 
 class EventBus:

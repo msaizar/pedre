@@ -3,6 +3,9 @@
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.script.base import Script
 from pedre.plugins.script.conditions import ScriptCompletedCondition
 
@@ -83,13 +86,24 @@ class TestScriptCompletedCondition(unittest.TestCase):
     def test_check_with_real_script_object(self) -> None:
         """Test with actual Script dataclass instance."""
         # Create a real Script instance
+        mock_action = MagicMock()
         completed_script = Script(
-            actions=[{"type": "wait", "duration": 1.0}],
+            trigger=None,
+            conditions=[],
+            scene=None,
+            run_once=False,
+            actions=[mock_action],
+            on_condition_fail=[],
             completed=True,
         )
 
         not_completed_script = Script(
-            actions=[{"type": "wait", "duration": 1.0}],
+            trigger=None,
+            conditions=[],
+            scene=None,
+            run_once=False,
+            actions=[mock_action],
+            on_condition_fail=[],
             completed=False,
         )
 
@@ -111,29 +125,25 @@ class TestScriptCompletedCondition(unittest.TestCase):
     def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
         data = {"script": "test_script"}
-        errors = ScriptCompletedCondition.validate_params(data)
-        assert errors == []
+        ScriptCompletedCondition.from_dict(data)
 
     def test_validate_missing_script(self) -> None:
         """Test validator detects missing script field."""
         data = {}
-        errors = ScriptCompletedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'script' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'script' field"):
+            ScriptCompletedCondition.from_dict(data)
 
     def test_validate_empty_script(self) -> None:
         """Test validator detects empty script field."""
         data = {"script": ""}
-        errors = ScriptCompletedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'script' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'script' field"):
+            ScriptCompletedCondition.from_dict(data)
 
     def test_validate_script_not_string(self) -> None:
         """Test validator detects non-string script field."""
         data = {"script": 123}
-        errors = ScriptCompletedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'script' must be a string" in errors[0]
+        with pytest.raises(ConditionParseError, match="'script' must be a string"):
+            ScriptCompletedCondition.from_dict(data)
 
 
 if __name__ == "__main__":

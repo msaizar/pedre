@@ -13,7 +13,7 @@ For validator-specific tests, see:
 
 import argparse
 import json
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import pytest
 
@@ -23,12 +23,15 @@ from pedre.actions.registry import ActionRegistry
 from pedre.commands.validate import ValidateCommand
 from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
+from pedre.events.base import Event
 from pedre.events.registry import EventRegistry
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from _pytest.monkeypatch import MonkeyPatch
+
+    from pedre.game import GameContext
 
 
 @pytest.fixture(autouse=True)
@@ -86,37 +89,39 @@ class TestValidateCommand:
         """Setup basic registries for tests."""
 
         # Register a simple event
-        @EventRegistry.register("test_event")
-        class TestEvent:
-            pass
+        @EventRegistry.register
+        class TestEvent(Event):
+            name: ClassVar[str] = "test_event"
 
         # Register a simple action
-        @ActionRegistry.register("test_action")
+        @ActionRegistry.register
         class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
+            name = "test_action"
+
+            def __init__(self, **kwargs: dict[str, Any]) -> None:
                 pass
 
             @classmethod
-            def from_dict(cls, data: dict) -> TestCondition:
-                return cast("TestCondition", cls(**data))
+            def from_dict(cls, data: dict[str, Any]) -> TestAction:
+                return cls(**data)
 
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
+            def execute(self, context: GameContext) -> bool:
+                return True
+
+            def reset(self) -> None:
+                return
 
         # Register a simple condition
-        @ConditionRegistry.register("test_condition")
+        @ConditionRegistry.register
         class TestCondition(Condition):
+            name = "test_condition"
+
             def check(self, context: object) -> bool:
                 return True
 
             @classmethod
             def from_dict(cls, data: dict[str, Any]) -> TestCondition:
                 return cls()
-
-            @staticmethod
-            def validate_params(data: dict[str, Any]) -> list[str]:
-                return []
 
     # Argument Parsing Tests
 
@@ -172,7 +177,7 @@ class TestValidateCommand:
         """Test --type scripts validates only scripts."""
         script_data = {
             "test_script": {
-                "actions": [{"type": "test_action"}],
+                "actions": [{"name": "test_action"}],
             }
         }
 
@@ -242,7 +247,7 @@ class TestValidateCommand:
 
         script_data = {
             "test_script": {
-                "actions": [{"type": "test_action"}],
+                "actions": [{"name": "test_action"}],
             }
         }
         script_file = scripts_dir / "test_scripts.json"
@@ -350,7 +355,7 @@ class TestValidateCommand:
         """Test validate completes successfully when no errors."""
         script_data = {
             "test_script": {
-                "actions": [{"type": "test_action"}],
+                "actions": [{"name": "test_action"}],
             }
         }
         script_file = scripts_dir / "test_scripts.json"

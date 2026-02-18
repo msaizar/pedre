@@ -7,7 +7,7 @@ from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
 
-@EventRegistry.register("npc_interacted")
+@EventRegistry.register
 @dataclass
 class NPCInteractedEvent(Event):
     """Fired when player interacts with an NPC.
@@ -35,7 +35,10 @@ class NPCInteractedEvent(Event):
         dialog_level: Current conversation level.
     """
 
+    name: ClassVar[str] = "npc_interacted"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc", "dialog_level"})
+    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
     npc_name: str
     dialog_level: int
 
@@ -44,7 +47,7 @@ class NPCInteractedEvent(Event):
         return {"npc": self.npc_name, "dialog_level": self.dialog_level}
 
 
-@EventRegistry.register("npc_movement_complete")
+@EventRegistry.register
 @dataclass
 class NPCMovementCompleteEvent(Event):
     """Fired when an NPC completes movement to target.
@@ -71,7 +74,10 @@ class NPCMovementCompleteEvent(Event):
         npc_name: Name of the NPC that completed movement.
     """
 
+    name: ClassVar[str] = "npc_movement_complete"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
+    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
     npc_name: str
 
     def get_script_data(self) -> dict[str, Any]:
@@ -79,7 +85,7 @@ class NPCMovementCompleteEvent(Event):
         return {"npc": self.npc_name}
 
 
-@EventRegistry.register("npc_appear_complete")
+@EventRegistry.register
 @dataclass
 class NPCAppearCompleteEvent(Event):
     """Fired when an NPC completes appear animation.
@@ -106,7 +112,10 @@ class NPCAppearCompleteEvent(Event):
         npc_name: Name of the NPC that appeared.
     """
 
+    name: ClassVar[str] = "npc_appear_complete"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
+    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
     npc_name: str
 
     def get_script_data(self) -> dict[str, Any]:
@@ -114,7 +123,7 @@ class NPCAppearCompleteEvent(Event):
         return {"npc": self.npc_name}
 
 
-@EventRegistry.register("npc_disappear_complete")
+@EventRegistry.register
 @dataclass
 class NPCDisappearCompleteEvent(Event):
     """Fired when an NPC completes disappear animation.
@@ -141,8 +150,11 @@ class NPCDisappearCompleteEvent(Event):
         npc_name: Name of the NPC that disappeared.
     """
 
+    name: ClassVar[str] = "npc_disappear_complete"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
     npc_name: str
+    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
 
     def get_script_data(self) -> dict[str, Any]:
         """Get data for script triggers."""

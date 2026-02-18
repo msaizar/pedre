@@ -3,15 +3,17 @@
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.conditions.base import Condition
-from pedre.conditions.registry import ConditionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
 
 
-@ConditionRegistry.register("npc_interacted")
+@ConditionRegistry.register
 class NPCInteractedCondition(Condition):
     """Check if an NPC has been interacted with in a specific scene."""
+
+    name = "npc_interacted"
 
     def __init__(self, npc_name: str, scene_name: str | None = None, *, expected: bool = True) -> None:
         """Initialize condition with NPC name, scene, and expected state."""
@@ -29,34 +31,33 @@ class NPCInteractedCondition(Condition):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create from dictionary."""
-        return cls(
-            npc_name=data.get("npc", ""),
-            scene_name=data.get("scene"),
-            expected=data.get("equals", True),
-        )
-
-    @staticmethod
-    def validate_params(data: dict[str, Any]) -> list[str]:
-        """Validate parameters."""
-        errors = []
         npc = data.get("npc")
         if not npc:
-            errors.append("missing required 'npc' field")
-        elif not isinstance(npc, str):
-            errors.append("'npc' must be a string")
+            msg = "missing required 'npc' field"
+            raise ConditionParseError(msg)
+        if not isinstance(npc, str):
+            msg = "'npc' must be a string"
+            raise ConditionParseError(msg)
+        scene = data.get("scene")
+        if scene and not isinstance(scene, str):
+            msg = "'scene' must be a string"
+            raise ConditionParseError(msg)
+        equals = data.get("equals", True)
+        if equals and not isinstance(equals, bool):
+            msg = "'equals' must be a bool"
+            raise ConditionParseError(msg)
+        return cls(
+            npc_name=npc,
+            scene_name=scene,
+            expected=equals,
+        )
 
-        if "scene" in data and not isinstance(data["scene"], str):
-            errors.append("'scene' must be a string")
 
-        if "equals" in data and not isinstance(data["equals"], bool):
-            errors.append("'equals' must be a bool")
-
-        return errors
-
-
-@ConditionRegistry.register("npc_dialog_level")
+@ConditionRegistry.register
 class NPCDialogLevelCondition(Condition):
     """Check an NPC's dialog level."""
+
+    name = "npc_dialog_level"
 
     def __init__(self, npc_name: str, expected_level: int) -> None:
         """Initialize condition with NPC name and expected dialog level."""
@@ -74,24 +75,23 @@ class NPCDialogLevelCondition(Condition):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create from dictionary."""
-        return cls(
-            npc_name=data.get("npc", ""),
-            expected_level=data.get("equals", 0),
-        )
-
-    @staticmethod
-    def validate_params(data: dict[str, Any]) -> list[str]:
-        """Validate parameters."""
-        errors = []
         npc = data.get("npc")
         if not npc:
-            errors.append("missing required 'npc' field")
-        elif not isinstance(npc, str):
-            errors.append("'npc' must be a string")
+            msg = "missing required 'npc' field"
+            raise ConditionParseError(msg)
+        if not isinstance(npc, str):
+            msg = "'npc' must be a string"
+            raise ConditionParseError(msg)
 
-        if "equals" not in data:
-            errors.append("missing required 'equals' field")
-        elif not isinstance(data["equals"], int) or isinstance(data["equals"], bool):
-            errors.append("'equals' must be an int")
+        equals = data.get("equals")
+        if equals is None:
+            msg = "missing required 'equals' field"
+            raise ConditionParseError(msg)
 
-        return errors
+        if not isinstance(equals, int) or isinstance(equals, bool):
+            msg = "'equals' must be an int"
+            raise ConditionParseError(msg)
+        return cls(
+            npc_name=npc,
+            expected_level=equals,
+        )

@@ -3,6 +3,9 @@
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.interaction.conditions import ObjectInteractedCondition
 
 
@@ -73,37 +76,28 @@ class TestObjectInteractedCondition(unittest.TestCase):
     def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
         data = {"object": "test_object"}
-        errors = ObjectInteractedCondition.validate_params(data)
-        assert errors == []
+        ObjectInteractedCondition.from_dict(data)
 
     def test_validate_missing_object(self) -> None:
         """Test validator detects missing object field."""
         data = {}
-        errors = ObjectInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'object' field" in errors[0]
+        with pytest.raises(ConditionParseError):
+            ObjectInteractedCondition.from_dict(data)
 
     def test_validate_empty_object(self) -> None:
         """Test validator detects empty object field."""
         data = {"object": ""}
-        errors = ObjectInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'object' field" in errors[0]
+        with pytest.raises(ConditionParseError):
+            ObjectInteractedCondition.from_dict(data)
 
     def test_validate_object_not_string(self) -> None:
         """Test validator detects non-string object field."""
         data = {"object": 123}
-        errors = ObjectInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'object' must be a string" in errors[0]
+        with pytest.raises(ConditionParseError):
+            ObjectInteractedCondition.from_dict(data)
 
     def test_validate_equals_not_bool(self) -> None:
         """Test validator detects non-bool equals field."""
         data = {"object": "test_object", "equals": "yes"}
-        errors = ObjectInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'equals' must be a bool" in errors[0]
-
-
-if __name__ == "__main__":
-    unittest.main()
+        with pytest.raises(ConditionParseError):
+            ObjectInteractedCondition.from_dict(data)

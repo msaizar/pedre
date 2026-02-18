@@ -1,10 +1,16 @@
 """Dialog validator for NPC dialogs."""
 
 import json
+from typing import TYPE_CHECKING, Any
 
-from pedre.actions.registry import ActionRegistry
-from pedre.conditions.registry import ConditionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
+from pedre.types import EntityReference
 from pedre.validators.base import ValidationResult, Validator
+
+if TYPE_CHECKING:
+    from pedre.actions.base import Action
+    from pedre.conditions.base import Condition
 
 
 class DialogValidator(Validator):
@@ -28,15 +34,10 @@ class DialogValidator(Validator):
                 metadata={},
             )
 
-        # Find all dialog files (*_dialogs.json or *_dialog.json)
         dialog_files = list(self.path.glob("*_dialogs.json")) + list(self.path.glob("*_dialog.json"))
 
         if not dialog_files:
-            return ValidationResult(
-                errors=[],
-                item_count=0,
-                metadata={},
-            )
+            return ValidationResult(errors=[], item_count=0, metadata={})
 
         errors: list[str] = []
         total_dialogs = 0
@@ -47,140 +48,94 @@ class DialogValidator(Validator):
             try:
                 with dialog_file.open() as f:
                     data = json.load(f)
-
-                # Validate structure: should be dict[str, dict[str | int, dict]]
-                if not isinstance(data, dict):
-                    errors.append(f"Dialog file '{dialog_file.name}': root must be a dictionary")
-                    continue
-
-                # Iterate through NPCs
-                for npc_name, npc_dialogs in data.items():
-                    if not isinstance(npc_dialogs, dict):
-                        errors.append(
-                            f"Dialog file '{dialog_file.name}': NPC '{npc_name}' dialogs must be a dictionary"
-                        )
-                        continue
-
-                    # Iterate through dialog levels
-                    for level, dialog_data in npc_dialogs.items():
-                        total_dialogs += 1
-
-                        if not isinstance(dialog_data, dict):
-                            errors.append(f"Dialog '{npc_name}' level {level}: dialog data must be a dictionary")
-                            continue
-
-                        # Validate required 'text' field
-                        if "text" not in dialog_data:
-                            errors.append(f"Dialog '{npc_name}' level {level}: missing required 'text' field")
-                        elif not isinstance(dialog_data["text"], list):
-                            errors.append(f"Dialog '{npc_name}' level {level}: 'text' must be a list")
-                        elif not dialog_data["text"]:
-                            errors.append(f"Dialog '{npc_name}' level {level}: 'text' list cannot be empty")
-                        else:
-                            # Check all text items are strings
-                            for i, text_item in enumerate(dialog_data["text"]):
-                                if not isinstance(text_item, str):
-                                    errors.append(
-                                        f"Dialog '{npc_name}' level {level}: 'text[{i}]' must be a string, "
-                                        f"got {type(text_item).__name__}"
-                                    )
-
-                        # Validate optional 'name' field
-                        if "name" in dialog_data and not isinstance(dialog_data["name"], str):
-                            errors.append(
-                                f"Dialog '{npc_name}' level {level}: 'name' must be a string, "
-                                f"got {type(dialog_data['name']).__name__}"
-                            )
-
-                        # Validate optional 'conditions' field
-                        if "conditions" in dialog_data:
-                            conditions = dialog_data["conditions"]
-                            if not isinstance(conditions, list):
-                                errors.append(f"Dialog '{npc_name}' level {level}: 'conditions' must be a list")
-                            else:
-                                total_conditions += len(conditions)
-                                for i, condition in enumerate(conditions):
-                                    if not isinstance(condition, dict):
-                                        errors.append(
-                                            f"Dialog '{npc_name}' level {level}: condition {i} must be a dictionary"
-                                        )
-                                        continue
-
-                                    check_type = condition.get("check")
-                                    if not check_type:
-                                        errors.append(
-                                            f"Dialog '{npc_name}' level {level}: "
-                                            f"condition {i} missing required 'check' key"
-                                        )
-                                    elif not ConditionRegistry.is_registered(check_type):
-                                        errors.append(
-                                            f"Dialog '{npc_name}' level {level}: "
-                                            f"condition {i} has unknown type '{check_type}' "
-                                            f"(registered conditions: {', '.join(ConditionRegistry.get_all_types())})"
-                                        )
-                                    else:
-                                        # Validate condition parameters
-                                        param_errors = ConditionRegistry.validate(check_type, condition)
-                                        errors.extend(
-                                            f"Dialog '{npc_name}' level {level}: condition {i} ({check_type}): {err}"
-                                            for err in param_errors
-                                        )
-
-                        # Validate optional 'on_condition_fail' field
-                        if "on_condition_fail" in dialog_data:
-                            on_condition_fail = dialog_data["on_condition_fail"]
-                            if not isinstance(on_condition_fail, list):
-                                errors.append(f"Dialog '{npc_name}' level {level}: 'on_condition_fail' must be a list")
-                            else:
-                                total_actions += len(on_condition_fail)
-                                for i, action in enumerate(on_condition_fail):
-                                    if not isinstance(action, dict):
-                                        errors.append(
-                                            f"Dialog '{npc_name}' level {level}: "
-                                            f"on_condition_fail action {i} must be a dictionary"
-                                        )
-                                        continue
-
-                                    action_type = action.get("type")
-                                    if not action_type:
-                                        errors.append(
-                                            f"Dialog '{npc_name}' level {level}: "
-                                            f"on_condition_fail action {i} missing required 'type' key"
-                                        )
-                                    elif not ActionRegistry.is_registered(action_type):
-                                        errors.append(
-                                            f"Dialog '{npc_name}' level {level}: "
-                                            f"on_condition_fail action {i} has unknown type '{action_type}' "
-                                            f"(registered actions: {', '.join(ActionRegistry.get_all_types())})"
-                                        )
-                                    else:
-                                        # Validate action parameters
-                                        param_errors = ActionRegistry.validate(action_type, action)
-                                        errors.extend(
-                                            f"Dialog '{npc_name}' level {level}: "
-                                            f"on_condition_fail action {i} ({action_type}): {err}"
-                                            for err in param_errors
-                                        )
-
-                        # Check for unknown keys
-                        valid_keys = {"text", "name", "conditions", "on_condition_fail"}
-                        unknown_keys = set(dialog_data.keys()) - valid_keys
-                        if unknown_keys:
-                            errors.append(
-                                f"Dialog '{npc_name}' level {level}: unknown keys {sorted(unknown_keys)} "
-                                f"(valid keys: {sorted(valid_keys)})"
-                            )
-
-                # Populate context with NPC names from this dialog file
-                # Extract scene name from filename (e.g., "village_dialogs.json" -> "village")
-                scene_name = dialog_file.stem.replace("_dialogs", "").replace("_dialog", "")
-                for npc_name in data:
-                    self.context.dialog_npcs.setdefault(scene_name, set()).add(npc_name)
-
             except json.JSONDecodeError as e:
                 errors.append(f"Failed to parse {dialog_file.name}: {e}")
+                continue
             except OSError as e:
                 errors.append(f"Failed to load {dialog_file.name}: {e}")
+                continue
+
+            if not isinstance(data, dict):
+                errors.append(f"Dialog file '{dialog_file.name}': root must be a dictionary")
+                continue
+
+            scene_name = dialog_file.stem.replace("_dialogs", "").replace("_dialog", "")
+
+            for npc_name, npc_dialogs in data.items():
+                if not isinstance(npc_dialogs, dict):
+                    errors.append(f"Dialog file '{dialog_file.name}': NPC '{npc_name}' dialogs must be a dictionary")
+                    continue
+
+                for level, dialog_data in npc_dialogs.items():
+                    total_dialogs += 1
+
+                    if not isinstance(dialog_data, dict):
+                        errors.append(f"Dialog '{npc_name}' level {level}: dialog data must be a dictionary")
+                        continue
+
+                    # ---- Validate text ----
+                    text = dialog_data.get("text")
+                    if not isinstance(text, list) or not text:
+                        errors.append(f"Dialog '{npc_name}' level {level}: 'text' must be a non-empty list")
+                        continue
+
+                    for i, line in enumerate(text):
+                        if not isinstance(line, str):
+                            errors.append(f"Dialog '{npc_name}' level {level}: text[{i}] must be string")
+
+                    # ---- Validate name ----
+                    if (
+                        "name" in dialog_data
+                        and dialog_data["name"] is not None
+                        and not isinstance(dialog_data["name"], str)
+                    ):
+                        errors.append(f"Dialog '{npc_name}' level {level}: 'name' must be string or null")
+
+                    # ---- Parse conditions ----
+                    parsed_conditions: list[Condition] = []
+                    conditions_raw: list[dict[str, Any]] = dialog_data.get("conditions") or []
+
+                    if conditions_raw and not isinstance(conditions_raw, list):
+                        errors.append(f"Dialog '{npc_name}' level {level}: 'conditions' must be a list")
+                    else:
+                        for i, condition_def in enumerate(conditions_raw):
+                            try:
+                                condition_obj = ConditionRegistry.create(condition_def)
+                                parsed_conditions.append(condition_obj)
+                            except ConditionParseError as e:
+                                errors.append(f"Dialog '{npc_name}' level {level}: condition {i}: {e}")
+
+                    total_conditions += len(parsed_conditions)
+
+                    # ---- Parse on_condition_fail ----
+                    parsed_actions: list[Action] = []
+                    fail_raw: list[dict[str, Any]] = dialog_data.get("on_condition_fail") or []
+
+                    if fail_raw and not isinstance(fail_raw, list):
+                        errors.append(f"Dialog '{npc_name}' level {level}: 'on_condition_fail' must be a list")
+                    else:
+                        for i, action_def in enumerate(fail_raw):
+                            try:
+                                action_obj = ActionRegistry.create(action_def)
+                                parsed_actions.append(action_obj)
+                            except ActionParseError as e:
+                                errors.append(f"Dialog '{npc_name}' level {level}: on_condition_fail action {i}: {e}")
+
+                    total_actions += len(parsed_actions)
+
+                    # ---- Collect references ----
+                    refs: set[EntityReference] = set()
+
+                    refs.add(EntityReference(type="map", name=scene_name))
+                    refs.add(EntityReference(type="npc", name=npc_name))
+
+                    for condition in parsed_conditions:
+                        refs.update(condition.get_references())
+
+                    for action in parsed_actions:
+                        refs.update(action.get_references())
+
+                    self.context.dialog_references[(scene_name, npc_name, str(level))] = refs
 
         return ValidationResult(
             errors=errors,
@@ -197,22 +152,20 @@ class DialogValidator(Validator):
         Returns:
             ValidationResult with cross-reference errors and metadata
         """
-        errors = []
+        errors: list[str] = []
 
-        for scene_name, npc_names in self.context.dialog_npcs.items():
-            # Match dialog scene to map name (e.g., "village" dialog -> "village" map)
+        for scene_name, npc_name, level in self.context.dialog_references:
             map_npcs = self.context.get_map_npcs(scene_name)
 
-            errors.extend(
-                f"Dialog '{scene_name}': NPC '{npc_name}' not found in map '{scene_name}.tmx'"
-                for npc_name in npc_names
-                if npc_name not in map_npcs
-            )
-
-        total_npc_refs = sum(len(npcs) for npcs in self.context.dialog_npcs.values())
+            if npc_name not in map_npcs:
+                errors.append(
+                    f"Dialog '{scene_name}' NPC '{npc_name}' (level {level}) not found in map '{scene_name}.tmx'"
+                )
 
         return ValidationResult(
             errors=errors,
-            item_count=len(self.context.dialog_npcs),
-            metadata={"NPC references validated": total_npc_refs},
+            item_count=len(self.context.dialog_references),
+            metadata={
+                "Dialog entries validated": len(self.context.dialog_references),
+            },
         )

@@ -36,7 +36,7 @@ def test_condition_loader_with_empty_list(monkeypatch: pytest.MonkeyPatch) -> No
     loader = ConditionLoader()
     loader.load_modules()  # Should not raise
 
-    assert not ConditionRegistry.get_all_types()
+    assert not ConditionRegistry.get_all_names()
 
 
 def test_condition_loader_raises_on_invalid_module(monkeypatch: pytest.MonkeyPatch) -> None:

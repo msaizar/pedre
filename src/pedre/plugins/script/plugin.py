@@ -58,19 +58,20 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from pedre.actions import ActionSequence
-from pedre.actions.registry import ActionRegistry
-from pedre.conditions.registry import ConditionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 from pedre.conf import settings
 from pedre.events.registry import EventRegistry
 from pedre.helpers import asset_path
 from pedre.plugins.registry import PluginRegistry
-from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptEvent, ScriptValidationError
+from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptEvent, ScriptTrigger
 from pedre.plugins.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
+    from pedre.actions.base import Action
+    from pedre.conditions.base import Condition
     from pedre.events import Event
     from pedre.plugins.game_context import GameContext
-
 logger = logging.getLogger(__name__)
 
 
@@ -251,17 +252,10 @@ class ScriptPlugin(ScriptBasePlugin):
             if not action_data_list:
                 continue
 
-            # Parse actions from JSON
-            actions = []
-            for action_data in action_data_list:
-                action = ActionRegistry.parse(action_data)
-                if action:
-                    actions.append(action)
-
+            actions = list(action_data_list)
             if not actions:
                 continue
 
-            # Calculate resume index (back up past wait actions)
             resume_index = self._calculate_resume_index(action_data_list, saved_index)
             resume_index = min(resume_index, len(actions))
 
@@ -270,6 +264,7 @@ class ScriptPlugin(ScriptBasePlugin):
 
             sequence_name = f"{script_name}_fail" if is_fail else script_name
             self.active_sequences.append((sequence_name, sequence))
+
             logger.info(
                 "Restored active script '%s' at action %d (saved: %d)",
                 sequence_name,
@@ -277,7 +272,7 @@ class ScriptPlugin(ScriptBasePlugin):
                 saved_index,
             )
 
-    def _calculate_resume_index(self, actions: list[dict[str, Any]], saved_index: int) -> int:
+    def _calculate_resume_index(self, actions: list[Action], saved_index: int) -> int:
         """Find the best action index to resume from after loading.
 
         If the saved action is a wait action, backs up to the preceding
@@ -292,11 +287,15 @@ class ScriptPlugin(ScriptBasePlugin):
             The adjusted index to resume execution from.
         """
         resume_index = saved_index
+
         while resume_index > 0:
-            action_type = actions[resume_index].get("type", "")
-            if not action_type.startswith("wait_"):
+            action = actions[resume_index]
+
+            if not action.name.startswith("wait_"):
                 break
+
             resume_index -= 1
+
         return resume_index
 
     def _load_all_scripts(self) -> None:
@@ -383,8 +382,8 @@ class ScriptPlugin(ScriptBasePlugin):
         # Identify all unique events required by loaded scripts
         required_events = set()
         for script in self.scripts.values():
-            if script.trigger and "event" in script.trigger:
-                required_events.add(script.trigger["event"])
+            if script.trigger:
+                required_events.add(script.trigger.event_name)
 
         # Subscribe to all required events using the generic handler
         # Skip events we've already subscribed to avoid duplicate handlers
@@ -412,7 +411,7 @@ class ScriptPlugin(ScriptBasePlugin):
         Args:
             event: The event instance that occurred.
         """
-        event_name = EventRegistry.get_name(type(event))
+        event_name = event.name
         if not event_name:
             return
 
@@ -443,20 +442,55 @@ class ScriptPlugin(ScriptBasePlugin):
                     f"Script '{script_name}': unknown keys {sorted(unknown_keys)} (valid keys: {sorted(valid_keys)})"
                 )
 
+            # Parse trigger
+            trigger_obj: ScriptTrigger | None = None
+            if trigger_def := script_def.get("trigger"):
+                event_name = trigger_def.get("event")
+                if event_name:
+                    filters = {k: v for k, v in trigger_def.items() if k != "event"}
+                    trigger_obj = ScriptTrigger(event_name=event_name, filters=filters)
+
+            # Parse conditions
+            parsed_conditions: list[Condition] = []
+            for condition_def in script_def.get("conditions", []):
+                try:
+                    condition_obj = ConditionRegistry.create(condition_def)
+                    parsed_conditions.append(condition_obj)
+                except ConditionParseError as e:
+                    logger.warning("Failed to parse condition in script '%s': %s", script_name, e)
+
+            # Parse actions
+            parsed_actions: list[Action] = []
+            for action_def in script_def.get("actions", []):
+                try:
+                    action_obj = ActionRegistry.create(action_def)
+                    parsed_actions.append(action_obj)
+                except ActionParseError as e:
+                    logger.warning("Failed to parse action in script '%s': %s", script_name, e)
+
+            # Parse on_condition_fail actions
+            parsed_fail_actions: list[Action] = []
+            for action_def in script_def.get("on_condition_fail", []):
+                try:
+                    action_obj = ActionRegistry.create(action_def)
+                    parsed_fail_actions.append(action_obj)
+                except ActionParseError as e:
+                    logger.warning("Failed to parse on_condition_fail action in script '%s': %s", script_name, e)
+
             script = Script(
-                trigger=script_def.get("trigger"),
-                conditions=script_def.get("conditions", []),
+                trigger=trigger_obj,
+                conditions=parsed_conditions,
                 scene=script_def.get("scene"),
                 run_once=script_def.get("run_once", False),
-                actions=script_def.get("actions", []),
-                on_condition_fail=script_def.get("on_condition_fail", []),
+                actions=parsed_actions,
+                on_condition_fail=parsed_fail_actions,
             )
 
             self.scripts[script_name] = script
 
         logger.debug("ScriptPlugin: Parsed %d scripts", len(self.scripts))
 
-    def _check_conditions(self, conditions: list[dict[str, Any]]) -> bool:
+    def _check_conditions(self, conditions: list[Condition]) -> bool:
         """Check if all conditions are satisfied.
 
         Args:
@@ -470,7 +504,7 @@ class ScriptPlugin(ScriptBasePlugin):
 
         return all(self._check_single_condition(condition) for condition in conditions)
 
-    def _check_single_condition(self, condition: dict[str, Any]) -> bool:
+    def _check_single_condition(self, condition: Condition) -> bool:
         """Check a single condition.
 
         Args:
@@ -482,13 +516,7 @@ class ScriptPlugin(ScriptBasePlugin):
         if not self.context:
             return False
 
-        check_type = condition.get("check")
-        if not check_type:
-            logger.warning("ScriptPlugin: Condition missing 'check' field")
-            return False
-
-        # Delegate to ConditionRegistry
-        return ConditionRegistry.check(check_type, condition, self.context)
+        return condition.check(self.context)
 
     def _execute_script(self, script_name: str, script: Script) -> None:
         """Execute a script's action sequence.
@@ -499,7 +527,7 @@ class ScriptPlugin(ScriptBasePlugin):
         """
         self._execute_actions(script_name, script.actions)
 
-    def _execute_actions(self, sequence_name: str, action_data_list: list[dict[str, Any]]) -> None:
+    def _execute_actions(self, sequence_name: str, action_data_list: list[Action]) -> None:
         """Execute a list of actions as a sequence.
 
         Args:
@@ -509,21 +537,13 @@ class ScriptPlugin(ScriptBasePlugin):
         if not self.context:
             return
 
-        # Parse actions into Action objects
-        actions = []
-        for action_data in action_data_list:
-            action = ActionRegistry.parse(action_data)
-            if action:
-                actions.append(action)
-            else:
-                logger.warning("ScriptPlugin: Failed to parse action: %s", action_data)
-
-        if actions:
-            sequence = ActionSequence(actions)
-            self.active_sequences.append((sequence_name, sequence))
-            logger.info("ScriptPlugin: Executing '%s' with %d actions", sequence_name, len(actions))
-        else:
-            logger.warning("ScriptPlugin: '%s' has no valid actions", sequence_name)
+        sequence = ActionSequence(action_data_list)
+        self.active_sequences.append((sequence_name, sequence))
+        logger.info(
+            "ScriptPlugin: Executing '%s' with %d actions",
+            sequence_name,
+            len(action_data_list),
+        )
 
     def _process_pending_checks(self) -> None:
         """Process scripts that were queued for deferred condition checking."""
@@ -580,7 +600,7 @@ class ScriptPlugin(ScriptBasePlugin):
                         script_name,
                     )
 
-    def _trigger_matches_event(self, trigger: dict[str, Any], event_type: str, event_data: dict[str, Any]) -> bool:
+    def _trigger_matches_event(self, trigger: ScriptTrigger, event_type: str, event_data: dict[str, Any]) -> bool:
         """Check if a script trigger matches an event.
 
         Args:
@@ -591,110 +611,7 @@ class ScriptPlugin(ScriptBasePlugin):
         Returns:
             True if trigger matches the event, False otherwise.
         """
-        if trigger.get("event") != event_type:
+        if trigger.event_name != event_type:
             return False
 
-        # Check additional filters
-        for key, value in trigger.items():
-            if key == "event":
-                continue
-            if event_data.get(key) != value:
-                return False
-
-        return True
-
-    def validate_scripts(self) -> None:
-        """Validate all loaded scripts against registered events, conditions, and actions.
-
-        Checks that:
-        - All trigger events are registered in EventRegistry
-        - All conditions have valid "check" types registered in ConditionRegistry
-        - All actions have valid "type" values registered in ActionRegistry
-        - Each script has at least one action in its actions list
-
-        Raises:
-            ScriptValidationError: If any validation errors are found. The exception
-                contains a list of all error messages.
-        """
-        errors = list(self._validation_errors)  # Include any errors from parsing
-
-        for script_name, script in self.scripts.items():
-            # Validate trigger event
-            if script.trigger:
-                event_name = script.trigger.get("event")
-                if not event_name:
-                    errors.append(f"Script '{script_name}': trigger missing required 'event' key")
-                elif not EventRegistry.is_registered(event_name):
-                    errors.append(
-                        f"Script '{script_name}': unknown event '{event_name}' "
-                        f"(registered events: {', '.join(EventRegistry.get_all_types())})"
-                    )
-                else:
-                    # Validate trigger filter keys
-                    trigger_keys_set = EventRegistry.get_trigger_keys(event_name)
-                    if trigger_keys_set is not None:
-                        filter_keys = {k for k in script.trigger if k != "event"}
-                        unknown_filter_keys = filter_keys - trigger_keys_set
-                        if unknown_filter_keys:
-                            errors.append(
-                                f"Script '{script_name}': trigger has unknown filter keys "
-                                f"{sorted(unknown_filter_keys)} for event '{event_name}' "
-                                f"(valid keys: {sorted(trigger_keys_set)})"
-                            )
-
-            # Validate conditions
-            for i, condition in enumerate(script.conditions):
-                check_type = condition.get("check")
-                if not check_type:
-                    errors.append(f"Script '{script_name}': condition {i} missing required 'check' key")
-                elif not ConditionRegistry.is_registered(check_type):
-                    errors.append(
-                        f"Script '{script_name}': unknown condition '{check_type}' "
-                        f"(registered conditions: {', '.join(ConditionRegistry.get_all_types())})"
-                    )
-                else:
-                    # Validate condition parameters
-                    param_errors = ConditionRegistry.validate(check_type, condition)
-                    errors.extend(
-                        f"Script '{script_name}': condition {i} ({check_type}): {err}" for err in param_errors
-                    )
-
-            # Validate actions list is not empty
-            if not script.actions:
-                errors.append(f"Script '{script_name}': 'actions' list is empty")
-
-            # Validate actions
-            for i, action in enumerate(script.actions):
-                action_type = action.get("type")
-                if not action_type:
-                    errors.append(f"Script '{script_name}': action {i} missing required 'type' key")
-                elif not ActionRegistry.is_registered(action_type):
-                    errors.append(
-                        f"Script '{script_name}': unknown action type '{action_type}' "
-                        f"(registered actions: {', '.join(ActionRegistry.get_all_types())})"
-                    )
-                else:
-                    # Validate action parameters
-                    param_errors = ActionRegistry.validate(action_type, action)
-                    errors.extend(f"Script '{script_name}': action {i} ({action_type}): {err}" for err in param_errors)
-
-            # Validate on_condition_fail actions
-            for i, action in enumerate(script.on_condition_fail):
-                action_type = action.get("type")
-                if not action_type:
-                    errors.append(f"Script '{script_name}': on_condition_fail action {i} missing required 'type' key")
-                elif not ActionRegistry.is_registered(action_type):
-                    errors.append(
-                        f"Script '{script_name}': on_condition_fail action {i} has unknown type '{action_type}' "
-                        f"(registered actions: {', '.join(ActionRegistry.get_all_types())})"
-                    )
-                else:
-                    # Validate action parameters
-                    param_errors = ActionRegistry.validate(action_type, action)
-                    errors.extend(
-                        f"Script '{script_name}': on_condition_fail action {i} ({action_type}): {err}"
-                        for err in param_errors
-                    )
-
-        if errors:
-            raise ScriptValidationError(errors)
+        return all(event_data.get(key) == value for key, value in trigger.filters.items())

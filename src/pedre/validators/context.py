@@ -43,8 +43,8 @@ class ValidationContext:
     """
 
     map_entities: dict[str, dict[str, set[str]]] = field(default_factory=dict)
-    dialog_npcs: dict[str, set[str]] = field(default_factory=dict)
     script_references: dict[str, set[EntityReference]] = field(default_factory=dict)
+    dialog_references: dict[tuple[str, str, str], set[EntityReference]] = field(default_factory=dict)
 
     def add_map_entity(
         self,

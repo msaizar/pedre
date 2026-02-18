@@ -3,6 +3,9 @@
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.npc.conditions import (
     NPCDialogLevelCondition,
     NPCInteractedCondition,
@@ -86,43 +89,37 @@ class TestNPCInteractedCondition(unittest.TestCase):
     def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
         data = {"npc": "test_npc"}
-        errors = NPCInteractedCondition.validate_params(data)
-        assert errors == []
+        NPCInteractedCondition.from_dict(data)
 
     def test_validate_missing_npc(self) -> None:
         """Test validator detects missing npc field."""
         data = {}
-        errors = NPCInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'npc' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'npc' field"):
+            NPCInteractedCondition.from_dict(data)
 
     def test_validate_empty_npc(self) -> None:
         """Test validator detects empty npc field."""
         data = {"npc": ""}
-        errors = NPCInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'npc' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'npc' field"):
+            NPCInteractedCondition.from_dict(data)
 
     def test_validate_npc_not_string(self) -> None:
         """Test validator detects non-string npc field."""
         data = {"npc": 123}
-        errors = NPCInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'npc' must be a string" in errors[0]
+        with pytest.raises(ConditionParseError, match="'npc' must be a string"):
+            NPCInteractedCondition.from_dict(data)
 
     def test_validate_scene_not_string(self) -> None:
         """Test validator detects non-string scene field."""
         data = {"npc": "test_npc", "scene": 123}
-        errors = NPCInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'scene' must be a string" in errors[0]
+        with pytest.raises(ConditionParseError, match="'scene' must be a string"):
+            NPCInteractedCondition.from_dict(data)
 
     def test_validate_equals_not_bool(self) -> None:
         """Test validator detects non-bool equals field."""
         data = {"npc": "test_npc", "equals": "yes"}
-        errors = NPCInteractedCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'equals' must be a bool" in errors[0]
+        with pytest.raises(ConditionParseError, match="'equals' must be a bool"):
+            NPCInteractedCondition.from_dict(data)
 
 
 class TestNPCDialogLevelCondition(unittest.TestCase):
@@ -189,65 +186,45 @@ class TestNPCDialogLevelCondition(unittest.TestCase):
     def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
         data = {"npc": "test_npc", "equals": 2}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert errors == []
+        NPCDialogLevelCondition.from_dict(data)
 
     def test_validate_missing_npc(self) -> None:
         """Test validator detects missing npc field."""
         data = {"equals": 2}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'npc' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'npc' field"):
+            NPCDialogLevelCondition.from_dict(data)
 
     def test_validate_empty_npc(self) -> None:
         """Test validator detects empty npc field."""
         data = {"npc": "", "equals": 2}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'npc' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'npc' field"):
+            NPCDialogLevelCondition.from_dict(data)
 
     def test_validate_missing_equals(self) -> None:
         """Test validator detects missing equals field."""
         data = {"npc": "test_npc"}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'equals' field" in errors[0]
-
-    def test_validate_missing_both(self) -> None:
-        """Test validator detects both missing fields."""
-        data = {}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert len(errors) == 2
-        assert any("'npc'" in e for e in errors)
-        assert any("'equals'" in e for e in errors)
+        with pytest.raises(ConditionParseError, match="missing required 'equals' field"):
+            NPCDialogLevelCondition.from_dict(data)
 
     def test_validate_equals_zero(self) -> None:
         """Test validator accepts equals=0."""
         data = {"npc": "test_npc", "equals": 0}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert errors == []
+        NPCDialogLevelCondition.from_dict(data)
 
     def test_validate_npc_not_string(self) -> None:
         """Test validator detects non-string npc field."""
         data = {"npc": 123, "equals": 2}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'npc' must be a string" in errors[0]
+        with pytest.raises(ConditionParseError, match="'npc' must be a string"):
+            NPCDialogLevelCondition.from_dict(data)
 
     def test_validate_equals_not_int(self) -> None:
         """Test validator detects non-int equals field."""
         data = {"npc": "test_npc", "equals": "2"}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'equals' must be an int" in errors[0]
+        with pytest.raises(ConditionParseError, match="'equals' must be an int"):
+            NPCDialogLevelCondition.from_dict(data)
 
     def test_validate_equals_bool(self) -> None:
         """Test validator detects bool equals field."""
         data = {"npc": "test_npc", "equals": True}
-        errors = NPCDialogLevelCondition.validate_params(data)
-        assert len(errors) == 1
-        assert "'equals' must be an int" in errors[0]
-
-
-if __name__ == "__main__":
-    unittest.main()
+        with pytest.raises(ConditionParseError, match="'equals' must be an int"):
+            NPCDialogLevelCondition.from_dict(data)

@@ -61,7 +61,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
-from pedre.conditions.registry import ConditionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 from pedre.conf import settings
 from pedre.helpers import asset_path, matches_key
 from pedre.plugins.npc.base import NPCBasePlugin, NPCDialogConfig, NPCState
@@ -471,14 +471,14 @@ class NPCPlugin(NPCBasePlugin):
         Returns:
             True if all conditions are met.
         """
-        for condition in conditions:
-            check_type = condition.get("check")
-            if not check_type:
-                logger.warning("NPCPlugin: Condition missing 'check' field")
+        for condition_data in conditions:
+            try:
+                condition = ConditionRegistry.create(condition_data)
+            except ConditionParseError as e:
+                logger.warning("Failed to parse condition: %s", e)
                 return False
 
-            # Delegate to ConditionRegistry
-            if not ConditionRegistry.check(check_type, condition, self.context):
+            if not condition.check(self.context):
                 return False
 
         return True

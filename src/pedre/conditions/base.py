@@ -1,10 +1,11 @@
 """Base class for all conditions."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
+    from pedre.types import EntityReference
 
 
 class Condition(ABC):
@@ -16,8 +17,21 @@ class Condition(ABC):
     Subclasses must implement:
     1. check(context) - The logic to evaluate the condition
     2. from_dict(data) - Factory method to create instance from JSON data
-    3. validate_params(data) - Static method to validate JSON parameters
     """
+
+    name: ClassVar[str]
+
+    def __init_subclass__(cls, **kwargs: dict[str, Any]) -> None:
+        """Init for subclasses of Condition."""
+        super().__init_subclass__(**kwargs)
+
+        # Only enforce if class explicitly declares it wants registration
+        if "name" not in cls.__dict__:
+            return  # treat as non-registrable base class
+
+        if not isinstance(cls.name, str):
+            msg = f"{cls.__name__}.name must be a string"
+            raise TypeError(msg)
 
     @abstractmethod
     def check(self, context: GameContext) -> bool:
@@ -42,14 +56,6 @@ class Condition(ABC):
             Review instance of the Condition subclass.
         """
 
-    @staticmethod
-    def validate_params(data: dict[str, Any]) -> list[str]:  # noqa: ARG004
-        """Validate the parameters for this condition.
-
-        Args:
-            data: Dictionary containing condition parameters to validate.
-
-        Returns:
-            List of error messages. Empty list means validation passed.
-        """
-        return []
+    def get_references(self) -> set[EntityReference]:
+        """Return entity references used by this condition."""
+        return set()
