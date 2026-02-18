@@ -67,7 +67,6 @@ class ItemAcquiredEvent(Event):
 
     Attributes:
         item_id: Unique identifier of the item that was acquired.
-        item_name: Display name of the item (for logging/debugging).
     """
 
     name: ClassVar[str] = "item_acquired"
@@ -75,7 +74,6 @@ class ItemAcquiredEvent(Event):
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id"})
     reference_fields: ClassVar[dict[str, str]] = {"item_id": "inventory_item"}
     item_id: str
-    item_name: str
 
     def get_script_data(self) -> dict[str, Any]:
         """Get data for script triggers."""
@@ -106,7 +104,7 @@ class ItemAcquisitionFailedEvent(Event):
 
     Attributes:
         item_id: Unique identifier of the item that failed to be acquired.
-        reason: Reason for failure ("capacity", "unknown_item", or "already_owned").
+        reason: Reason for failure ("capacity", "already_owned").
     """
 
     name: ClassVar[str] = "item_acquisition_failed"
@@ -158,7 +156,6 @@ class ItemConsumedEvent(Event):
 
     Attributes:
         item_id: Unique identifier of the item that was consumed.
-        item_name: Display name of the item (for logging/debugging).
         category: Category of the consumed item (e.g., "consumable").
     """
 
@@ -167,7 +164,6 @@ class ItemConsumedEvent(Event):
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"item_id", "category"})
     reference_fields: ClassVar[dict[str, str]] = {"item_id": "inventory_item"}
     item_id: str
-    item_name: str
     category: str
 
     def get_script_data(self) -> dict[str, Any]:
