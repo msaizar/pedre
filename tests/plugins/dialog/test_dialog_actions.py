@@ -1,12 +1,14 @@
 """Unit tests for dialog actions."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
 from pedre.plugins.dialog.actions import DialogAction, WaitForDialogCloseAction
 
 
-class TestDialogAction(unittest.TestCase):
+class TestDialogAction:
     """Test DialogAction."""
 
     def test_init_defaults(self) -> None:
@@ -177,7 +179,7 @@ class TestDialogAction(unittest.TestCase):
         assert action.started is False
 
 
-class TestWaitForDialogCloseAction(unittest.TestCase):
+class TestWaitForDialogCloseAction:
     """Test WaitForDialogCloseAction."""
 
     def test_from_dict(self) -> None:
@@ -220,5 +222,45 @@ class TestWaitForDialogCloseAction(unittest.TestCase):
         assert result is True
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestDialogActionFromDictValidation:
+    """Test DialogAction.from_dict validation errors."""
+
+    def test_missing_speaker(self) -> None:
+        """Test error when speaker is missing."""
+        with pytest.raises(ActionParseError, match="missing required 'speaker' field"):
+            DialogAction.from_dict({"text": ["Hello!"]})
+
+    def test_speaker_not_string(self) -> None:
+        """Test error when speaker is not a string."""
+        with pytest.raises(ActionParseError, match="'speaker' must be a string"):
+            DialogAction.from_dict({"speaker": 123, "text": ["Hello!"]})
+
+    def test_missing_text(self) -> None:
+        """Test error when text is missing."""
+        with pytest.raises(ActionParseError, match="missing required 'text' field"):
+            DialogAction.from_dict({"speaker": "NPC"})
+
+    def test_text_not_list(self) -> None:
+        """Test error when text is not a list."""
+        with pytest.raises(ActionParseError, match="'text' must be a list"):
+            DialogAction.from_dict({"speaker": "NPC", "text": "Hello!"})
+
+    def test_text_empty(self) -> None:
+        """Test error when text is an empty list."""
+        with pytest.raises(ActionParseError, match="'text' must not be empty"):
+            DialogAction.from_dict({"speaker": "NPC", "text": []})
+
+    def test_text_items_not_strings(self) -> None:
+        """Test error when text list contains non-strings."""
+        with pytest.raises(ActionParseError, match="all items in 'text' must be strings"):
+            DialogAction.from_dict({"speaker": "NPC", "text": ["Hello!", 42]})
+
+    def test_instant_not_bool(self) -> None:
+        """Test error when instant is not a bool."""
+        with pytest.raises(ActionParseError, match="'instant' must be a bool"):
+            DialogAction.from_dict({"speaker": "NPC", "text": ["Hello!"], "instant": "yes"})
+
+    def test_auto_close_not_bool(self) -> None:
+        """Test error when auto_close is not a bool."""
+        with pytest.raises(ActionParseError, match="'auto_close' must be a bool"):
+            DialogAction.from_dict({"speaker": "NPC", "text": ["Hello!"], "auto_close": 1})
