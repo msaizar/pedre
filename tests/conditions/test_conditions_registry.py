@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from pedre.conditions.base import Condition
-from pedre.conditions.registry import ConditionRegistry
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -119,6 +119,34 @@ class TestConditionRegistryRegister:
 
         assert "Registered condition: debug_condition" in caplog.text
 
+    def test_register_duplicate_raises_error(self) -> None:
+        """Test that registering a condition with a duplicate name raises ValueError."""
+
+        @ConditionRegistry.register
+        class TestCondition1(Condition):
+            name = "duplicate_condition"
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition1:
+                return cls()
+
+        # Try to register another condition with the same name
+        with pytest.raises(ValueError, match="Condition 'duplicate_condition' already registered"):
+
+            @ConditionRegistry.register
+            class TestCondition2(Condition):
+                name = "duplicate_condition"
+
+                def check(self, context: object) -> bool:
+                    return False
+
+                @classmethod
+                def from_dict(cls, data: dict[str, Any]) -> TestCondition2:
+                    return cls()
+
 
 class TestConditionRegistryClear:
     """Tests for the clear method."""
@@ -211,6 +239,67 @@ class TestConditionRegistryClear:
                 return cls()
 
         assert ConditionRegistry.is_registered("reusable_condition") is True
+
+
+class TestConditionRegistryGet:
+    """Tests for the get method."""
+
+    def test_get_registered_condition(self) -> None:
+        """Test getting a registered condition class."""
+
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "test_condition"
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
+
+        condition_class = ConditionRegistry.get("test_condition")
+        assert condition_class == TestCondition
+
+    def test_get_unregistered_condition(self) -> None:
+        """Test getting an unregistered condition class returns None."""
+        condition_class = ConditionRegistry.get("unknown_condition")
+        assert condition_class is None
+
+
+class TestConditionRegistryCreate:
+    """Tests for the create method."""
+
+    def test_create_missing_name_field(self) -> None:
+        """Test that create raises ConditionParseError when 'name' field is missing."""
+        with pytest.raises(ConditionParseError, match="Condition missing 'name' field"):
+            ConditionRegistry.create({"other_field": "value"})
+
+    def test_create_unknown_condition(self) -> None:
+        """Test that create raises ConditionParseError for unknown condition name."""
+        with pytest.raises(ConditionParseError, match="Unknown condition 'nonexistent_condition'"):
+            ConditionRegistry.create({"name": "nonexistent_condition"})
+
+    def test_create_success(self) -> None:
+        """Test successful condition creation."""
+
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "test_create"
+
+            def __init__(self, value: str = "default") -> None:
+                self.value = value
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls(value=data.get("value", "default"))
+
+        condition = ConditionRegistry.create({"name": "test_create", "value": "test_value"})
+        assert isinstance(condition, TestCondition)
+        assert condition.value == "test_value"
 
 
 class TestConditionRegistryIntrospection:
