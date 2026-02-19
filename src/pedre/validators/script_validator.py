@@ -70,10 +70,8 @@ class ScriptValidator(Validator):
                             f"(registered events: {', '.join(EventRegistry.get_all_names())})"
                         )
                     else:
-                        trigger_keys = None
                         event = EventRegistry.get(event_name)
-                        if event:
-                            trigger_keys = event.trigger_keys
+                        trigger_keys = event.trigger_keys if event else None
                         filters = {k: v for k, v in trigger_def.items() if k != "event"}
 
                         if trigger_keys is not None:
