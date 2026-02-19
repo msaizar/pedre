@@ -1,12 +1,12 @@
 """Tests for EventRegistry."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import pytest
 
 from pedre.events import Event
-from pedre.events.registry import EventRegistry
+from pedre.events.registry import EventParseError, EventRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -92,6 +92,66 @@ class TestEventRegistryRegister:
             name: ClassVar[str] = "debug_event"
 
         assert "Registered event: debug_event" in caplog.text
+
+    def test_register_duplicate_raises_error(self) -> None:
+        """Test that registering an event with a duplicate name raises ValueError."""
+
+        @EventRegistry.register
+        class TestEvent1(SimpleEvent):
+            name: ClassVar[str] = "duplicate_event"
+
+        # Try to register another event with the same name
+        with pytest.raises(ValueError, match="Event 'duplicate_event' already registered"):
+
+            @EventRegistry.register
+            class TestEvent2(AnotherEvent):
+                name: ClassVar[str] = "duplicate_event"
+
+
+class TestEventRegistryCreate:
+    """Tests for the create method."""
+
+    def test_create_missing_name_field(self) -> None:
+        """Test that create raises EventParseError when 'name' field is missing."""
+        with pytest.raises(EventParseError, match="Event missing 'name' field"):
+            EventRegistry.create({"value": "test"})
+
+    def test_create_unknown_event(self) -> None:
+        """Test that create raises EventParseError for unknown event name."""
+        with pytest.raises(EventParseError, match="Unknown event 'nonexistent_event'"):
+            EventRegistry.create({"name": "nonexistent_event"})
+
+    def test_create_from_dict_raises_exception(self) -> None:
+        """Test that create wraps exceptions from from_dict in EventParseError."""
+
+        @EventRegistry.register
+        class FailingEvent(Event):
+            name: ClassVar[str] = "failing_event"
+
+            @classmethod
+            def from_dict(cls, data: dict) -> FailingEvent:
+                msg = "Invalid data format"
+                raise ValueError(msg)
+
+        with pytest.raises(EventParseError, match="Failed to parse event 'failing_event': Invalid data format"):
+            EventRegistry.create({"name": "failing_event", "value": "test"})
+
+    def test_create_success(self) -> None:
+        """Test successful event creation."""
+
+        @EventRegistry.register
+        class TestEvent(SimpleEvent):
+            name: ClassVar[str] = "test_create"
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestEvent:
+                # Filter out the 'name' field as it's a ClassVar, not an instance field
+                params = {k: v for k, v in data.items() if k != "name"}
+                return cls(**params)
+
+        event = EventRegistry.create({"name": "test_create", "value": "test_value"})
+        assert isinstance(event, TestEvent)
+        assert event.value == "test_value"
 
 
 class TestEventRegistryGet:
