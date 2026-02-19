@@ -2,6 +2,9 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
 from pedre.plugins.camera.actions import (
     FollowNPCAction,
     FollowPlayerAction,
@@ -50,6 +53,11 @@ class TestFollowPlayerAction:
         """Test defaults when creating from dict."""
         action = FollowPlayerAction.from_dict({})
         assert action.smooth is True
+
+    def test_from_dict_invalid_smooth_type(self) -> None:
+        """Test from_dict with invalid smooth type."""
+        with pytest.raises(ActionParseError, match="'smooth' must be a bool"):
+            FollowPlayerAction.from_dict({"smooth": "string"})
 
     def test_reset(self) -> None:
         """Test reset clears executed flag."""
@@ -143,6 +151,29 @@ class TestFollowNPCAction:
         """Test defaults when creating from dict."""
         action = FollowNPCAction.from_dict({"npc": "test"})
         assert action.smooth is True
+
+    def test_from_dict_missing_npc_field(self) -> None:
+        """Test from dict with missing npc."""
+        with pytest.raises(ActionParseError, match="follow_npc: missing required 'npc' field"):
+            FollowNPCAction.from_dict({})
+
+    def test_from_dict_invalid_npc_type(self) -> None:
+        """Test from dict with invalid npc ty[e]."""
+        with pytest.raises(ActionParseError, match="follow_npc: 'npc' must be a string"):
+            FollowNPCAction.from_dict({"npc": 23})
+
+    def test_from_dict_invalid_smooth_type(self) -> None:
+        """Test from dict with invalid npc ty[e]."""
+        with pytest.raises(ActionParseError, match="follow_npc: 'smooth' must be a bool"):
+            FollowNPCAction.from_dict({"npc": "yema", "smooth": 23})
+
+    def test_get_references(self) -> None:
+        """Test get references."""
+        action = FollowNPCAction.from_dict({"npc": "yema"})
+        references = action.get_references()
+        reference = references.pop()
+        assert reference.type == "npc"
+        assert reference.name == "yema"
 
     def test_reset(self) -> None:
         """Test reset clears executed flag."""

@@ -181,9 +181,7 @@ class FollowNPCAction(Action):
 
     def get_references(self) -> set[EntityReference]:
         """Extract references for validation."""
-        refs = set()
-        refs.update([EntityReference(type="npc", name=self.npc_name)])
-        return refs
+        return {EntityReference(type="npc", name=self.npc_name)}
 
 
 @ActionRegistry.register
