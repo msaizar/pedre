@@ -2,8 +2,12 @@
 
 import json
 import unittest
+from dataclasses import dataclass
 from unittest.mock import MagicMock, mock_open, patch
 
+from pedre.actions.registry import ActionParseError
+from pedre.conditions.registry import ConditionParseError
+from pedre.events.base import Event
 from pedre.plugins.script.base import Script, ScriptTrigger
 from pedre.plugins.script.events import ScriptCompleteEvent
 from pedre.plugins.script.plugin import ScriptPlugin
@@ -1231,3 +1235,181 @@ class TestScriptPlugin(unittest.TestCase):
             # Should log that conditions failed with no fail actions
             mock_logger.debug.assert_called()
             assert len(self.plugin.active_sequences) == 0
+
+    def test_on_generic_event_no_event_name(self) -> None:
+        """Test generic event handler with no event name."""
+        mock_event = MagicMock()
+        mock_event.name = None
+
+        self.plugin.setup(self.mock_context)
+        self.plugin._on_generic_event(mock_event)
+
+        # Should exit early, no script trigger handling
+        # No assertion needed, just verify no crash
+
+    def test_on_generic_event_with_get_script_data(self) -> None:
+        """Test generic event handler using get_script_data protocol."""
+        mock_event = MagicMock()
+        mock_event.name = "test_event"
+        mock_event.get_script_data.return_value = {"key": "value"}
+
+        self.plugin.setup(self.mock_context)
+
+        with patch.object(self.plugin, "_handle_event_trigger") as mock_handle:
+            self.plugin._on_generic_event(mock_event)
+
+            mock_handle.assert_called_once_with("test_event", {"key": "value"})
+
+    def test_on_generic_event_without_get_script_data(self) -> None:
+        """Test generic event handler fallback to asdict."""
+
+        @dataclass
+        class TestEvent(Event):
+            name: str
+            value: int
+
+        event = TestEvent(name="test_event", value=42)
+
+        self.plugin.setup(self.mock_context)
+
+        with patch.object(self.plugin, "_handle_event_trigger") as mock_handle:
+            self.plugin._on_generic_event(event)
+
+            mock_handle.assert_called_once_with("test_event", {"name": "test_event", "value": 42})
+
+    @patch("pedre.plugins.script.plugin.ConditionRegistry")
+    def test_parse_scripts_condition_parse_error(self, mock_condition_registry: MagicMock) -> None:
+        """Test parsing script with condition parse error."""
+        mock_condition_registry.create.side_effect = ConditionParseError("Invalid condition")
+
+        script_data = {
+            "test_script": {
+                "conditions": [{"check": "invalid"}],
+                "actions": [],
+            }
+        }
+
+        with patch("pedre.plugins.script.plugin.logger") as mock_logger:
+            self.plugin._parse_scripts(script_data)
+
+            # Should log warning about failed condition parse
+            mock_logger.warning.assert_called()
+
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_parse_scripts_action_parse_error(self, mock_action_registry: MagicMock) -> None:
+        """Test parsing script with action parse error."""
+        mock_action_registry.create.side_effect = ActionParseError("Invalid action")
+
+        script_data = {
+            "test_script": {
+                "actions": [{"type": "invalid"}],
+            }
+        }
+
+        with patch("pedre.plugins.script.plugin.logger") as mock_logger:
+            self.plugin._parse_scripts(script_data)
+
+            # Should log warning about failed action parse
+            mock_logger.warning.assert_called()
+
+    @patch("pedre.plugins.script.plugin.ActionRegistry")
+    def test_parse_scripts_fail_action_parse_error(self, mock_action_registry: MagicMock) -> None:
+        """Test parsing script with on_condition_fail action parse error."""
+        mock_action_registry.create.side_effect = ActionParseError("Invalid fail action")
+
+        script_data = {
+            "test_script": {
+                "actions": [],
+                "on_condition_fail": [{"type": "invalid"}],
+            }
+        }
+
+        with patch("pedre.plugins.script.plugin.logger") as mock_logger:
+            self.plugin._parse_scripts(script_data)
+
+            # Should log warning about failed on_condition_fail action parse
+            mock_logger.warning.assert_called()
+
+    def test_parse_scripts_unknown_keys(self) -> None:
+        """Test parsing script with unknown keys."""
+        script_data = {
+            "test_script": {
+                "actions": [],
+                "unknown_key": "value",
+                "another_unknown": 123,
+            }
+        }
+
+        self.plugin._parse_scripts(script_data)
+
+        # Should add validation error
+        assert len(self.plugin._validation_errors) > 0
+        assert "unknown keys" in self.plugin._validation_errors[0]
+
+    def test_parse_scripts_no_trigger_event(self) -> None:
+        """Test parsing script with trigger but no event field."""
+        script_data = {
+            "test_script": {
+                "trigger": {"filter": "value"},  # Missing 'event'
+                "actions": [],
+            }
+        }
+
+        self.plugin._parse_scripts(script_data)
+
+        # Script should be created with no trigger
+        assert "test_script" in self.plugin.scripts
+        assert self.plugin.scripts["test_script"].trigger is None
+
+    def test_parse_scripts_trigger_with_filters(self) -> None:
+        """Test parsing script with trigger including filters."""
+        script_data = {
+            "test_script": {
+                "trigger": {"event": "test_event", "npc": "martin", "level": 5},
+                "actions": [],
+            }
+        }
+
+        self.plugin._parse_scripts(script_data)
+
+        # Script trigger should have event and filters
+        assert "test_script" in self.plugin.scripts
+        script = self.plugin.scripts["test_script"]
+        assert script.trigger is not None
+        assert script.trigger.event_name == "test_event"
+        assert script.trigger.filters == {"npc": "martin", "level": 5}
+
+    @patch("pedre.plugins.script.plugin.ActionSequence")
+    def test_restore_save_state_actions_list_becomes_empty(self, mock_sequence_class: MagicMock) -> None:
+        """Test restoring script when list() conversion results in empty list."""
+        # Create a mock iterator that appears to have items but list() returns empty
+        # This tests the edge case where action_data_list is truthy but list(action_data_list) is empty
+        mock_action_data = MagicMock()
+        mock_action_data.__bool__.return_value = True  # Passes the first check
+        mock_action_data.__iter__.return_value = iter([])  # But list() gives empty
+
+        script = Script(
+            trigger=None,
+            conditions=[],
+            scene=None,
+            run_once=False,
+            actions=mock_action_data,
+            on_condition_fail=[],
+        )
+        self.plugin.scripts = {"test_script": script}
+
+        state = {
+            "active_scripts": [
+                {
+                    "script_name": "test_script",
+                    "current_index": 0,
+                    "is_fail_sequence": False,
+                }
+            ]
+        }
+
+        self.plugin.restore_save_state(state)
+
+        # Should not add to active sequences due to empty list after conversion
+        assert len(self.plugin.active_sequences) == 0
+        mock_sequence_class.assert_not_called()
