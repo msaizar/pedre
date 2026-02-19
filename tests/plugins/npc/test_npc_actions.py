@@ -21,6 +21,7 @@ from pedre.plugins.npc.actions import (
     WaitForNPCsDisappearAction,
 )
 from pedre.plugins.npc.sprites import AnimatedNPC
+from pedre.types import EntityReference
 
 
 class TestMoveNPCAction(unittest.TestCase):
@@ -983,3 +984,175 @@ class TestStartDisappearAnimationAction(unittest.TestCase):
 
         with pytest.raises(ActionParseError):
             StartDisappearAnimationAction.from_dict(data)
+
+
+class TestNPCActionFromDictValidation:
+    """Test from_dict validation errors across NPC actions."""
+
+    # MoveNPCAction
+    def test_move_npc_npcs_not_list(self) -> None:
+        """Test from_dict npcs is list."""
+        with pytest.raises(ActionParseError, match="'npcs' must be a list"):
+            MoveNPCAction.from_dict({"npcs": "martin", "waypoint": "town_square"})
+
+    def test_move_npc_npcs_items_not_strings(self) -> None:
+        """Test from_dict npcs items are strings."""
+        with pytest.raises(ActionParseError, match="'npcs' items must be strings"):
+            MoveNPCAction.from_dict({"npcs": ["martin", 42], "waypoint": "town_square"})
+
+    def test_move_npc_missing_waypoint(self) -> None:
+        """Test from_dict move npc missing waypoint."""
+        with pytest.raises(ActionParseError, match="missing required 'waypoint' field"):
+            MoveNPCAction.from_dict({"npcs": ["martin"]})
+
+    def test_move_npc_waypoint_not_string(self) -> None:
+        """Test from_dict move npc waypoint is string."""
+        with pytest.raises(ActionParseError, match="'waypoint' must be a string"):
+            MoveNPCAction.from_dict({"npcs": ["martin"], "waypoint": 123})
+
+    # StartAppearAnimationAction
+    def test_start_appear_npcs_not_list(self) -> None:
+        """Test StartAppearAnimationAction from_dict npcs must be list."""
+        with pytest.raises(ActionParseError, match="'npcs' must be a list"):
+            StartAppearAnimationAction.from_dict({"npcs": "martin"})
+
+    def test_start_appear_npcs_items_not_strings(self) -> None:
+        """Test StartAppearAnimationAction from_dict npcs items must be string."""
+        with pytest.raises(ActionParseError, match="'npcs' items must be strings"):
+            StartAppearAnimationAction.from_dict({"npcs": ["martin", 99]})
+
+    # AdvanceDialogAction
+    def test_advance_dialog_npc_not_string(self) -> None:
+        """Test error when npc is not a string."""
+        with pytest.raises(ActionParseError, match="'npc' must be a string"):
+            AdvanceDialogAction.from_dict({"npc": 123})
+
+    # SetDialogLevelAction
+    def test_set_dialog_level_npc_not_string(self) -> None:
+        """Test error when npc is not a string."""
+        with pytest.raises(ActionParseError, match="'npc' must be a string"):
+            SetDialogLevelAction.from_dict({"npc": 123, "dialog_level": 1})
+
+    def test_set_dialog_level_missing_dialog_level(self) -> None:
+        """Test error when dialog_level is missing."""
+        with pytest.raises(ActionParseError, match="missing required 'dialog_level' field"):
+            SetDialogLevelAction.from_dict({"npc": "martin"})
+
+    def test_set_dialog_level_not_int(self) -> None:
+        """Test error when dialog_level is not an int."""
+        with pytest.raises(ActionParseError, match="'dialog_level' must be an int"):
+            SetDialogLevelAction.from_dict({"npc": "martin", "dialog_level": "five"})
+
+    def test_set_dialog_level_bool_rejected(self) -> None:
+        """Test error when dialog_level is a bool (bool is subclass of int, so explicitly rejected)."""
+        with pytest.raises(ActionParseError, match="'dialog_level' must be an int"):
+            SetDialogLevelAction.from_dict({"npc": "martin", "dialog_level": True})
+
+    # SetCurrentNPCAction
+    def test_set_current_npc_not_string(self) -> None:
+        """Test error when npc is not a string."""
+        with pytest.raises(ActionParseError, match="'npc' must be a string"):
+            SetCurrentNPCAction.from_dict({"npc": 123})
+
+    # WaitForNPCMovementAction
+    def test_wait_movement_npc_not_string(self) -> None:
+        """Test error when npc is not a string."""
+        with pytest.raises(ActionParseError, match="'npc' must be a string"):
+            WaitForNPCMovementAction.from_dict({"npc": 123})
+
+    # WaitForNPCsAppearAction
+    def test_wait_appear_npcs_not_list(self) -> None:
+        """Test error when npcs is not a list."""
+        with pytest.raises(ActionParseError, match="'npcs' must be a list"):
+            WaitForNPCsAppearAction.from_dict({"npcs": "martin"})
+
+    def test_wait_appear_npcs_items_not_strings(self) -> None:
+        """Test error when npcs items are not strings."""
+        with pytest.raises(ActionParseError, match="'npcs' items must be strings"):
+            WaitForNPCsAppearAction.from_dict({"npcs": ["martin", 99]})
+
+    # WaitForNPCsDisappearAction
+    def test_wait_disappear_npcs_not_list(self) -> None:
+        """Test error when npcs is not a list."""
+        with pytest.raises(ActionParseError, match="'npcs' must be a list"):
+            WaitForNPCsDisappearAction.from_dict({"npcs": "martin"})
+
+    def test_wait_disappear_npcs_items_not_strings(self) -> None:
+        """Test error when npcs items are not strings."""
+        with pytest.raises(ActionParseError, match="'npcs' items must be strings"):
+            WaitForNPCsDisappearAction.from_dict({"npcs": ["martin", 99]})
+
+    # StartDisappearAnimationAction
+    def test_start_disappear_npcs_not_list(self) -> None:
+        """Test error when npcs is not a list."""
+        with pytest.raises(ActionParseError, match="'npcs' must be a list"):
+            StartDisappearAnimationAction.from_dict({"npcs": "martin"})
+
+    def test_start_disappear_npcs_items_not_strings(self) -> None:
+        """Test error when npcs items are not strings."""
+        with pytest.raises(ActionParseError, match="'npcs' items must be strings"):
+            StartDisappearAnimationAction.from_dict({"npcs": ["martin", 99]})
+
+
+class TestNPCActionGetReferences:
+    """Test get_references() on NPC actions."""
+
+    def test_move_npc_references(self) -> None:
+        """Test get_references in MoveNPCAction."""
+        action = MoveNPCAction(npc_names=["martin", "yema"], waypoint="town_square")
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+        assert EntityReference(type="npc", name="yema") in refs
+        assert EntityReference(type="waypoint", name="town_square") in refs
+
+    def test_start_appear_references(self) -> None:
+        """Test get_references in StartAppearAnimationAction."""
+        action = StartAppearAnimationAction(npc_names=["martin", "yema"])
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+        assert EntityReference(type="npc", name="yema") in refs
+
+    def test_advance_dialog_references(self) -> None:
+        """Test get_references in AdvanceDialogAction."""
+        action = AdvanceDialogAction(npc_name="martin")
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+
+    def test_set_dialog_level_references(self) -> None:
+        """Test get_references in SetDialogLevelAction."""
+        action = SetDialogLevelAction(npc_name="martin", level=3)
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+
+    def test_set_current_npc_references(self) -> None:
+        """Test get_references in SetCurrentNPC."""
+        action = SetCurrentNPCAction(npc_name="martin")
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+
+    def test_wait_for_movement_references(self) -> None:
+        """Test get_references in WaitForNPCMovement."""
+        action = WaitForNPCMovementAction(npc_name="martin")
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+
+    def test_wait_npcs_appear_references(self) -> None:
+        """Test get_references in WaitForNPCsAppear."""
+        action = WaitForNPCsAppearAction(npc_names=["martin", "yema"])
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+        assert EntityReference(type="npc", name="yema") in refs
+
+    def test_wait_npcs_disappear_references(self) -> None:
+        """Test get_references in WaitForNPCsDisappear."""
+        action = WaitForNPCsDisappearAction(npc_names=["martin", "yema"])
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+        assert EntityReference(type="npc", name="yema") in refs
+
+    def test_start_disappear_references(self) -> None:
+        """Test get_references in StartDisappear."""
+        action = StartDisappearAnimationAction(npc_names=["martin", "yema"])
+        refs = action.get_references()
+        assert EntityReference(type="npc", name="martin") in refs
+        assert EntityReference(type="npc", name="yema") in refs

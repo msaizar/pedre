@@ -1842,5 +1842,39 @@ class TestNPCPlugin(unittest.TestCase):
         assert self.plugin.interacted_npcs == {"old_scene": {"old_npc"}}
 
 
+class TestCheckDialogConditions(unittest.TestCase):
+    """Test NPCPlugin._check_dialog_conditions."""
+
+    def setUp(self) -> None:
+        """Set up the NPCPlugin and mock context."""
+        self.plugin = NPCPlugin()
+        self.mock_context = MagicMock()
+        self.plugin.setup(self.mock_context)
+
+    @patch("pedre.plugins.npc.plugin.ConditionRegistry")
+    def test_condition_check_returns_false(self, mock_registry: MagicMock) -> None:
+        """Test returns False when a condition parses but its check fails."""
+        mock_condition = MagicMock()
+        mock_condition.check.return_value = False
+        mock_registry.create.return_value = mock_condition
+
+        result = self.plugin._check_dialog_conditions([{"type": "some_condition"}])
+
+        assert result is False
+        mock_condition.check.assert_called_once_with(self.mock_context)
+
+    @patch("pedre.plugins.npc.plugin.ConditionRegistry")
+    def test_all_conditions_pass(self, mock_registry: MagicMock) -> None:
+        """Test returns True when all conditions pass their checks."""
+        mock_condition = MagicMock()
+        mock_condition.check.return_value = True
+        mock_registry.create.return_value = mock_condition
+
+        result = self.plugin._check_dialog_conditions([{"type": "cond_a"}, {"type": "cond_b"}])
+
+        assert result is True
+        assert mock_condition.check.call_count == 2
+
+
 if __name__ == "__main__":
     unittest.main()
