@@ -458,6 +458,73 @@ class TestConsumeItemAction:
         assert action.started is False
 
 
+class TestAcquireItemActionFromDictValidation:
+    """Test AcquireItemAction.from_dict validation errors."""
+
+    def test_item_id_not_string(self) -> None:
+        """Test error when item_id is not a string."""
+        with pytest.raises(ActionParseError, match="'item_id' must be a string"):
+            AcquireItemAction.from_dict({"item_id": 123})
+
+
+class TestAddItemActionFromDictValidation:
+    """Test AddItemAction.from_dict validation errors."""
+
+    def test_missing_item_name(self) -> None:
+        """Test error when item_name is missing."""
+        with pytest.raises(ActionParseError, match="missing required 'item_name' field"):
+            AddItemAction.from_dict({"description": "Desc"})
+
+    def test_item_name_not_string(self) -> None:
+        """Test error when item_name is not a string."""
+        with pytest.raises(ActionParseError, match="'item_name' must be a string"):
+            AddItemAction.from_dict({"item_name": 123, "description": "Desc"})
+
+    def test_description_not_string(self) -> None:
+        """Test error when description is not a string."""
+        with pytest.raises(ActionParseError, match="'description' must be a string"):
+            AddItemAction.from_dict({"item_name": "Item", "description": 42})
+
+    def test_item_id_not_string(self) -> None:
+        """Test error when item_id is not a string."""
+        with pytest.raises(ActionParseError, match="'item_id' must be a string"):
+            AddItemAction.from_dict({"item_name": "Item", "description": "Desc", "item_id": 99})
+
+    def test_image_path_not_string(self) -> None:
+        """Test error when image_path is not a string."""
+        with pytest.raises(ActionParseError, match="'image_path' must be a string"):
+            AddItemAction.from_dict({"item_name": "Item", "description": "Desc", "image_path": True})
+
+    def test_icon_path_not_string(self) -> None:
+        """Test error when icon_path is not a string."""
+        with pytest.raises(ActionParseError, match="'icon_path' must be a string"):
+            AddItemAction.from_dict({"item_name": "Item", "description": "Desc", "icon_path": 123})
+
+    def test_category_not_string(self) -> None:
+        """Test error when category is not a string."""
+        with pytest.raises(ActionParseError, match="'category' must be a string"):
+            AddItemAction.from_dict({"item_name": "Item", "description": "Desc", "category": 5})
+
+    def test_acquired_not_bool(self) -> None:
+        """Test error when acquired is not a bool."""
+        with pytest.raises(ActionParseError, match="'acquired' must be a bool"):
+            AddItemAction.from_dict({"item_name": "Item", "description": "Desc", "acquired": "yes"})
+
+    def test_consumable_not_bool(self) -> None:
+        """Test error when consumable is not a bool."""
+        with pytest.raises(ActionParseError, match="'consumable' must be a bool"):
+            AddItemAction.from_dict({"item_name": "Item", "description": "Desc", "consumable": 1})
+
+
+class TestConsumeItemActionFromDictValidation:
+    """Test ConsumeItemAction.from_dict validation errors."""
+
+    def test_item_id_not_string(self) -> None:
+        """Test error when item_id is not a string."""
+        with pytest.raises(ActionParseError, match="'item_id' must be a string"):
+            ConsumeItemAction.from_dict({"item_id": 123})
+
+
 class TestGetReferences:
     """Test get_references() on inventory actions."""
 
