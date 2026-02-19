@@ -154,3 +154,51 @@ class TestInventoryItemsValidator:
 
         assert result.errors == []
         assert result.item_count == 0
+
+    def test_validate_os_error(self, context: ValidationContext, tmp_path: Path) -> None:
+        """Test error handling when OSError occurs while reading file."""
+        items_file = tmp_path / "inventory_items.json"
+        items_file.write_text(json.dumps({"items": []}))
+        items_file.chmod(0o000)
+
+        validator = InventoryItemsValidator(items_file, context)
+        result = validator.validate()
+
+        items_file.chmod(0o644)
+        assert len(result.errors) == 1
+        assert "Failed to load" in result.errors[0]
+        assert result.item_count == 0
+
+    def test_validate_item_not_dict(self, context: ValidationContext, tmp_path: Path) -> None:
+        """Test error when item is not a dictionary."""
+        data = {"items": ["not_a_dict", {"id": "valid_item", "name": "Valid"}]}
+        items_file = tmp_path / "inventory_items.json"
+        items_file.write_text(json.dumps(data))
+        validator = InventoryItemsValidator(items_file, context)
+        result = validator.validate()
+
+        assert any("must be a dictionary" in e for e in result.errors)
+        assert result.item_count == 1
+        assert "valid_item" in context.get_inventory_items()
+
+    def test_validate_item_id_not_string(self, context: ValidationContext, tmp_path: Path) -> None:
+        """Test error when item id is not a string."""
+        data = {"items": [{"id": 123, "name": "Invalid ID Type"}]}
+        items_file = tmp_path / "inventory_items.json"
+        items_file.write_text(json.dumps(data))
+        validator = InventoryItemsValidator(items_file, context)
+        result = validator.validate()
+
+        assert any("'id' must be a string" in e for e in result.errors)
+        assert result.item_count == 0
+
+    def test_validate_item_name_not_string(self, context: ValidationContext, tmp_path: Path) -> None:
+        """Test error when item name is not a string."""
+        data = {"items": [{"id": "test_item", "name": 456}]}
+        items_file = tmp_path / "inventory_items.json"
+        items_file.write_text(json.dumps(data))
+        validator = InventoryItemsValidator(items_file, context)
+        result = validator.validate()
+
+        assert any("'name' must be a string" in e for e in result.errors)
+        assert result.item_count == 0
