@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from pedre.actions.registry import ActionParseError
+from pedre.conf import settings
 from pedre.plugins.audio.actions import PlayMusicAction, PlaySFXAction
 
 
@@ -87,7 +88,7 @@ class TestPlaySFXAction:
     def test_from_dict_missing_file(self) -> None:
         """Test creating PlaySFXAction with missing file key."""
         data = {}
-        with pytest.raises(ActionParseError):
+        with pytest.raises(ActionParseError, match="play_sfx: missing required 'file' field"):
             PlaySFXAction.from_dict(data)
 
     @patch("pedre.plugins.audio.actions.asset_exists")
@@ -99,6 +100,21 @@ class TestPlaySFXAction:
         action = PlaySFXAction.from_dict(data)
 
         assert action.sfx_file == "test.wav"
+
+    def test_from_dict_wrong_file_type(self) -> None:
+        """Test creating PlaySFXAction from dictionary with a wrong file type."""
+        data = {"file": 123}
+        with pytest.raises(ActionParseError, match="play_sfx: 'file' must be a string"):
+            PlaySFXAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_file_doesnt_exist(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlaySFXAction with missing file."""
+        mock_asset_exists.return_value = False
+        data = {"file": "file.ogg"}
+        full_path = f"{settings.AUDIO_SFX_DIRECTORY}/file.ogg"
+        with pytest.raises(ActionParseError, match=f"play_sfx: '{full_path}' does not exist"):
+            PlaySFXAction.from_dict(data)
 
 
 class TestPlayMusicAction(unittest.TestCase):
@@ -221,7 +237,47 @@ class TestPlayMusicAction(unittest.TestCase):
         """Test creating PlayMusicAction with missing file key."""
         data = {"loop": True}
 
-        with pytest.raises(ActionParseError):
+        with pytest.raises(ActionParseError, match="play_music: missing required 'file' field"):
+            PlayMusicAction.from_dict(data)
+
+    def test_from_dict_invalid_file_type(self) -> None:
+        """Test creating PlayMusicAction with invalid file type."""
+        data = {"file": True}
+
+        with pytest.raises(ActionParseError, match="play_music: 'file' must be a string"):
+            PlayMusicAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_file_doesnt_exist(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with non existing file."""
+        mock_asset_exists.return_value = False
+        data = {"file": "music.ogg"}
+        full_path = f"{settings.AUDIO_MUSIC_DIRECTORY}/music.ogg"
+        with pytest.raises(ActionParseError, match=f"play_music: '{full_path}' does not exist"):
+            PlayMusicAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_invalid_loop_type(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with invalid loop type."""
+        mock_asset_exists.return_value = True
+        data = {"file": "music.ogg", "loop": 123}
+        with pytest.raises(ActionParseError, match="play_music: 'loop' must be a bool"):
+            PlayMusicAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_invalid_volume_bool_type(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with invalid bool volume type."""
+        mock_asset_exists.return_value = True
+        data = {"file": "music.ogg", "volume": True}
+        with pytest.raises(ActionParseError, match="play_music: 'volume' must be a number"):
+            PlayMusicAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_invalid_volume_str_type(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with invalid str volume type."""
+        mock_asset_exists.return_value = True
+        data = {"file": "music.ogg", "volume": "Asd"}
+        with pytest.raises(ActionParseError, match="play_music: 'volume' must be a number"):
             PlayMusicAction.from_dict(data)
 
     @patch("pedre.plugins.audio.actions.asset_exists")
