@@ -927,3 +927,24 @@ class TestMapValidator:
 
         assert len(result.errors) == 1
         assert f"music file '{settings.AUDIO_MUSIC_DIRECTORY}/missing.mp3' not found" in result.errors[0]
+
+    def test_map_with_prepopulated_context(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test validation when context already has the map registered."""
+        map_file = maps_dir / "test.tmx"
+        map_file.write_text("")
+
+        # Pre-populate the context with the map name
+        context.map_entities["test"] = {"npcs": {"existing_npc"}}
+
+        npc = self._create_mock_object(name="new_npc", properties={"sprite_sheet": "npc.png"})
+        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("arcade.load_tilemap", return_value=tile_map):
+            result = validator.validate()
+
+        assert result.errors == []
+        # Both the pre-existing and new NPC should be in context
+        assert "existing_npc" in context.get_map_npcs("test")
+        assert "new_npc" in context.get_map_npcs("test")
