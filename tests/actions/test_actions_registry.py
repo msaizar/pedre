@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from pedre.actions.base import Action
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -179,6 +179,55 @@ class TestActionRegistryRegister:
 
         # The decorator should return the class unchanged
         assert TestAction.__name__ == "TestAction"
+
+    def test_register_duplicate_raises_error(self) -> None:
+        """Test that registering an action with a duplicate name raises ValueError."""
+
+        @ActionRegistry.register
+        class TestAction1(SimpleAction):
+            name = "duplicate_action"
+
+        # Try to register another action with the same name
+        with pytest.raises(ValueError, match="Action 'duplicate_action' already registered"):
+
+            @ActionRegistry.register
+            class TestAction2(SimpleAction):
+                name = "duplicate_action"
+
+
+class TestActionRegistryCreate:
+    """Tests for the create method."""
+
+    def test_create_missing_name_field(self) -> None:
+        """Test that create raises ActionParseError when 'name' field is missing."""
+        with pytest.raises(ActionParseError, match="Action missing 'name' field"):
+            ActionRegistry.create({"value": "test"})
+
+    def test_create_unknown_action(self) -> None:
+        """Test that create raises ActionParseError for unknown action name."""
+        with pytest.raises(ActionParseError, match="Unknown action 'nonexistent_action'"):
+            ActionRegistry.create({"name": "nonexistent_action", "value": "test"})
+
+    def test_create_from_dict_raises_exception(self) -> None:
+        """Test that create wraps exceptions from from_dict in ActionParseError."""
+
+        @ActionRegistry.register
+        class FailingAction(FailingParserAction):
+            name = "failing_action"
+
+        with pytest.raises(ActionParseError, match="Failed to parse action 'failing_action': Invalid data"):
+            ActionRegistry.create({"name": "failing_action", "value": "test"})
+
+    def test_create_success(self) -> None:
+        """Test successful action creation."""
+
+        @ActionRegistry.register
+        class TestAction(SimpleAction):
+            name = "test_create"
+
+        action = ActionRegistry.create({"name": "test_create", "value": "test_value"})
+        assert isinstance(action, TestAction)
+        assert action.value == "test_value"
 
 
 class TestActionRegistryGet:
