@@ -2,6 +2,9 @@
 
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
 from pedre.plugins.particle.actions import EmitParticlesAction
 
 
@@ -555,3 +558,108 @@ class TestEmitParticlesAction:
         assert result is True
         mock_particle_plugin.emit_sparkles.assert_called_once_with(450.0, 550.0)
         assert action.executed is True
+
+
+class TestEmitParticlesActionFromDict:
+    """Unit test class for EmitParticlesAction.from_dict validation."""
+
+    def test_from_dict_missing_particle_type(self) -> None:
+        """Test from_dict with missing particle_type field."""
+        data = {"npc": "yema"}
+
+        with pytest.raises(ActionParseError, match="missing required 'particle_type' field"):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_particle_type_not_string(self) -> None:
+        """Test from_dict with particle_type that is not a string."""
+        data = {"particle_type": 123, "npc": "yema"}
+
+        with pytest.raises(ActionParseError, match="'particle_type' must be a string"):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_unknown_particle_type(self) -> None:
+        """Test from_dict with unknown particle_type value."""
+        data = {"particle_type": "invalid_type", "npc": "yema"}
+
+        with pytest.raises(
+            ActionParseError,
+            match="unknown particle_type 'invalid_type' \\(valid: burst, hearts, sparkles, trail\\)",
+        ):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_no_location(self) -> None:
+        """Test from_dict with no location specified."""
+        data = {"particle_type": "hearts"}
+
+        with pytest.raises(
+            ActionParseError, match="must specify one location \\(npc, player, or interactive_object\\)"
+        ):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_multiple_locations(self) -> None:
+        """Test from_dict with multiple locations specified."""
+        data = {"particle_type": "hearts", "npc": "yema", "player": True}
+
+        with pytest.raises(
+            ActionParseError, match="only one location allowed \\(npc, player, or interactive_object\\)"
+        ):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_npc_not_string(self) -> None:
+        """Test from_dict with npc field that is not a string."""
+        data = {"particle_type": "hearts", "npc": 123}
+
+        with pytest.raises(ActionParseError, match="'npc' must be a string"):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_player_not_bool(self) -> None:
+        """Test from_dict with player field that is not a bool."""
+        data = {"particle_type": "hearts", "player": "yes"}
+
+        with pytest.raises(ActionParseError, match="'player' must be a bool"):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_interactive_object_not_string(self) -> None:
+        """Test from_dict with interactive_object field that is not a string."""
+        data = {"particle_type": "hearts", "interactive_object": 456}
+
+        with pytest.raises(ActionParseError, match="'interactive_object' must be a string"):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_color_invalid_format(self) -> None:
+        """Test from_dict with invalid color format."""
+        data = {"particle_type": "hearts", "npc": "yema", "color": "red"}
+
+        with pytest.raises(ActionParseError, match="'color' must be a list of 3 integers"):
+            EmitParticlesAction.from_dict(data)
+
+
+class TestEmitParticlesActionGetReferences:
+    """Unit test class for EmitParticlesAction.get_references."""
+
+    def test_get_references_with_npc(self) -> None:
+        """Test get_references returns NPC reference."""
+        action = EmitParticlesAction("hearts", npc_name="yema")
+        refs = action.get_references()
+
+        assert len(refs) == 1
+        ref = next(iter(refs))
+        assert ref.type == "npc"
+        assert ref.name == "yema"
+
+    def test_get_references_with_interactive_object(self) -> None:
+        """Test get_references returns interactive object reference."""
+        action = EmitParticlesAction("hearts", interactive_object="chest")
+        refs = action.get_references()
+
+        assert len(refs) == 1
+        ref = next(iter(refs))
+        assert ref.type == "interactive_object"
+        assert ref.name == "chest"
+
+    def test_get_references_with_player(self) -> None:
+        """Test get_references returns empty set for player."""
+        action = EmitParticlesAction("hearts", player=True)
+        refs = action.get_references()
+
+        assert len(refs) == 0
