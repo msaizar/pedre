@@ -1,7 +1,7 @@
 """Base class for ScriptPlugin."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol
 
 from pedre.events.registry import EventRegistry
@@ -56,35 +56,6 @@ class ScriptTrigger:
             return set()
 
         return event_cls.get_references(self.filters)
-
-
-@dataclass
-class ScriptDefinition:
-    """Represents a game script with triggers, conditions, and actions.
-
-    A script encapsulates a sequence of actions that can be triggered by events
-    or manual calls. Scripts support conditional execution, scene restrictions,
-    and one-time execution for story progression control.
-
-    Attributes:
-        trigger: Event specification that triggers this script.
-        conditions: List of condition dictionaries that must all be true.
-        scene: Optional scene name where this script can run.
-        run_once: If True, script only executes once per game session.
-        actions: List of action dictionaries to execute in sequence.
-        on_condition_fail: Optional actions to execute when conditions fail.
-        has_run: Tracks if this script has started (for run_once prevention).
-        completed: Tracks if this script has fully completed all actions.
-    """
-
-    trigger: ScriptTrigger | None = None
-    conditions: list[dict[str, Any]] = field(default_factory=list)
-    scene: str | None = None
-    run_once: bool = False
-    actions: list[dict[str, Any]] = field(default_factory=list)
-    on_condition_fail: list[dict[str, Any]] = field(default_factory=list)
-    has_run: bool = False
-    completed: bool = False
 
 
 @dataclass
