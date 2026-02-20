@@ -1,12 +1,11 @@
 """Unit tests for AnimatedPlayer in src/pedre/plugins/player/sprites.py."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
 from pedre.plugins.player.sprites import AnimatedPlayer
 
 
-class TestAnimatedPlayer(unittest.TestCase):
+class TestAnimatedPlayer:
     """Test Suite for AnimatedPlayer."""
 
     @patch("pedre.plugins.player.sprites.AnimatedSprite.__init__")
@@ -86,7 +85,3 @@ class TestAnimatedPlayer(unittest.TestCase):
         assert call_args[1]["idle_down_frames"] is None
         assert call_args[1]["walk_up_frames"] is None
         assert call_args[1]["walk_down_frames"] is None
-
-
-if __name__ == "__main__":
-    unittest.main()

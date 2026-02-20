@@ -1,6 +1,5 @@
 """Unit tests for audio action classes."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -117,7 +116,7 @@ class TestPlaySFXAction:
             PlaySFXAction.from_dict(data)
 
 
-class TestPlayMusicAction(unittest.TestCase):
+class TestPlayMusicAction:
     """Unit test class for PlayMusicAction."""
 
     def test_init_defaults(self) -> None:

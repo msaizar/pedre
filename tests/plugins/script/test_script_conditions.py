@@ -1,6 +1,5 @@
 """Tests for script conditions."""
 
-import unittest
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,57 +9,59 @@ from pedre.plugins.script.base import Script
 from pedre.plugins.script.conditions import ScriptCompletedCondition
 
 
-class TestScriptCompletedCondition(unittest.TestCase):
+@pytest.fixture
+def mock_context() -> MagicMock:
+    """Create a mock context with a script plugin."""
+    context = MagicMock()
+    context.script_plugin = MagicMock()
+    return context
+
+
+class TestScriptCompletedCondition:
     """Test cases for ScriptCompletedCondition."""
 
-    def setUp(self) -> None:
-        """Set up test fixtures."""
-        self.mock_context = MagicMock()
-        self.mock_script_plugin = MagicMock()
-        self.mock_context.script_plugin = self.mock_script_plugin
-
-    def test_check_returns_true(self) -> None:
+    def test_check_returns_true(self, mock_context: MagicMock) -> None:
         """Test that check returns True when script is completed."""
         mock_script = MagicMock()
         mock_script.completed = True
-        self.mock_script_plugin.get_scripts.return_value = {"test_script": mock_script}
+        mock_context.script_plugin.get_scripts.return_value = {"test_script": mock_script}
 
         condition = ScriptCompletedCondition(script_name="test_script")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
 
         assert result is True
-        self.mock_script_plugin.get_scripts.assert_called_once()
+        mock_context.script_plugin.get_scripts.assert_called_once()
 
-    def test_check_returns_false_not_completed(self) -> None:
+    def test_check_returns_false_not_completed(self, mock_context: MagicMock) -> None:
         """Test that check returns False when script is not completed."""
         mock_script = MagicMock()
         mock_script.completed = False
-        self.mock_script_plugin.get_scripts.return_value = {"test_script": mock_script}
+        mock_context.script_plugin.get_scripts.return_value = {"test_script": mock_script}
 
         condition = ScriptCompletedCondition(script_name="test_script")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
 
         assert result is False
 
-    def test_check_script_not_found(self) -> None:
+    def test_check_script_not_found(self, mock_context: MagicMock) -> None:
         """Test that check returns False when script is not found."""
-        self.mock_script_plugin.get_scripts.return_value = {}
+        mock_context.script_plugin.get_scripts.return_value = {}
 
         condition = ScriptCompletedCondition(script_name="nonexistent_script")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
 
         assert result is False
-        self.mock_script_plugin.get_scripts.assert_called_once()
+        mock_context.script_plugin.get_scripts.assert_called_once()
 
-    def test_check_missing_script_name(self) -> None:
+    def test_check_missing_script_name(self, mock_context: MagicMock) -> None:
         """Test that missing script name returns False."""
         condition = ScriptCompletedCondition(script_name="")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
 
         assert result is False
-        self.mock_script_plugin.get_scripts.assert_not_called()
+        mock_context.script_plugin.get_scripts.assert_not_called()
 
-    def test_check_with_multiple_scripts(self) -> None:
+    def test_check_with_multiple_scripts(self, mock_context: MagicMock) -> None:
         """Test checking a specific script when multiple scripts exist."""
         mock_script_completed = MagicMock()
         mock_script_completed.completed = True
@@ -68,22 +69,22 @@ class TestScriptCompletedCondition(unittest.TestCase):
         mock_script_not_completed = MagicMock()
         mock_script_not_completed.completed = False
 
-        self.mock_script_plugin.get_scripts.return_value = {
+        mock_context.script_plugin.get_scripts.return_value = {
             "completed_script": mock_script_completed,
             "running_script": mock_script_not_completed,
         }
 
         # Check the completed script
         condition = ScriptCompletedCondition(script_name="completed_script")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
         assert result is True
 
         # Check the not completed script
         condition = ScriptCompletedCondition(script_name="running_script")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
         assert result is False
 
-    def test_check_with_real_script_object(self) -> None:
+    def test_check_with_real_script_object(self, mock_context: MagicMock) -> None:
         """Test with actual Script dataclass instance."""
         # Create a real Script instance
         mock_action = MagicMock()
@@ -107,19 +108,19 @@ class TestScriptCompletedCondition(unittest.TestCase):
             completed=False,
         )
 
-        self.mock_script_plugin.get_scripts.return_value = {
+        mock_context.script_plugin.get_scripts.return_value = {
             "script1": completed_script,
             "script2": not_completed_script,
         }
 
         # Test completed script
         condition = ScriptCompletedCondition(script_name="script1")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
         assert result is True
 
         # Test not completed script
         condition = ScriptCompletedCondition(script_name="script2")
-        result = condition.check(self.mock_context)
+        result = condition.check(mock_context)
         assert result is False
 
     def test_validate_success(self) -> None:
@@ -144,7 +145,3 @@ class TestScriptCompletedCondition(unittest.TestCase):
         data = {"script": 123}
         with pytest.raises(ConditionParseError, match="'script' must be a string"):
             ScriptCompletedCondition.from_dict(data)
-
-
-if __name__ == "__main__":
-    unittest.main()

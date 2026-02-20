@@ -1,11 +1,9 @@
 """Unit tests for scene events."""
 
-import unittest
-
 from pedre.plugins.scene.events import SceneStartEvent
 
 
-class TestSceneStartEvent(unittest.TestCase):
+class TestSceneStartEvent:
     """Test SceneStartEvent."""
 
     def test_init(self) -> None:
@@ -29,7 +27,3 @@ class TestSceneStartEvent(unittest.TestCase):
         data = event.get_script_data()
 
         assert data == {"scene": "town"}
-
-
-if __name__ == "__main__":
-    unittest.main()

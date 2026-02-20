@@ -1,7 +1,6 @@
 """Unit tests for helper functions in src/pedre/helpers.py."""
 
 import sys
-import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -18,7 +17,7 @@ from pedre.helpers import (
 )
 
 
-class TestGetAppDataDir(unittest.TestCase):
+class TestGetAppDataDir:
     """Test Suite for get_app_data_dir function."""
 
     @patch("pedre.helpers.Path.cwd")
@@ -96,7 +95,7 @@ class TestGetAppDataDir(unittest.TestCase):
         mock_user_data_dir.assert_called_once_with("Game-Version", appauthor=False)
 
 
-class TestMatchesKey(unittest.TestCase):
+class TestMatchesKey:
     """Test Suite for matches_key function."""
 
     def test_matches_key_single_letter_match(self) -> None:
@@ -136,7 +135,7 @@ class TestMatchesKey(unittest.TestCase):
         assert matches_key(arcade.key.NUM_1, "NUM_1") is True
 
 
-class TestCalculateResponsiveValue(unittest.TestCase):
+class TestCalculateResponsiveValue:
     """Test Suite for calculate_responsive_value function."""
 
     def test_calculate_responsive_value_in_range(self) -> None:
@@ -174,7 +173,7 @@ class TestCalculateResponsiveValue(unittest.TestCase):
         assert result == 32
 
 
-class TestComputeUIScale(unittest.TestCase):
+class TestComputeUIScale:
     """Test Suite for compute_ui_scale function."""
 
     def test_compute_ui_scale_same_as_reference(self) -> None:
@@ -230,7 +229,7 @@ class TestComputeUIScale(unittest.TestCase):
         assert abs(result - 1.111) < 0.01
 
 
-class TestScaleFont(unittest.TestCase):
+class TestScaleFont:
     """Test Suite for scale_font function."""
 
     def test_scale_font_at_reference(self) -> None:
@@ -288,7 +287,7 @@ class TestScaleFont(unittest.TestCase):
         assert result == 13
 
 
-class TestScale(unittest.TestCase):
+class TestScale:
     """Test Suite for scale function."""
 
     def test_scale_basic(self) -> None:
@@ -331,7 +330,7 @@ class TestScale(unittest.TestCase):
         assert result == 19
 
 
-class TestAssetExists(unittest.TestCase):
+class TestAssetExists:
     """Tests for asset_exists."""
 
     def test_asset_exists_success_and_failure(self) -> None:
@@ -354,7 +353,3 @@ class TestAssetExists(unittest.TestCase):
         # Test exception
         with patch("pedre.helpers.asset_path", side_effect=ValueError("Invalid path")):
             assert asset_exists("trigger_exception") is False
-
-
-if __name__ == "__main__":
-    unittest.main()

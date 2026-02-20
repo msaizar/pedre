@@ -2,7 +2,6 @@
 
 import logging
 import sys
-import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -12,7 +11,7 @@ from pedre.conf import settings
 from pedre.main import create_game, run_game, setup_logging, setup_resources
 
 
-class TestRunGame(unittest.TestCase):
+class TestRunGame:
     """Test Suite for run_game function."""
 
     @patch("pedre.main.arcade.run")
@@ -36,7 +35,7 @@ class TestRunGame(unittest.TestCase):
         mock_arcade_run.assert_called_once()
 
 
-class TestSetupLogging(unittest.TestCase):
+class TestSetupLogging:
     """Test Suite for setup_logging function."""
 
     @patch("pedre.main.logging.basicConfig")
@@ -96,7 +95,7 @@ class TestSetupLogging(unittest.TestCase):
         assert kwargs["level"] == logging.INFO
 
 
-class TestSetupResources(unittest.TestCase):
+class TestSetupResources:
     """Test Suite for setup_resources function."""
 
     @patch("pedre.main.arcade.resources.add_resource_handle")
@@ -132,7 +131,7 @@ class TestSetupResources(unittest.TestCase):
         mock_add_resource_handle.assert_called_once_with(settings.ASSETS_HANDLE, expected_path)
 
 
-class TestCreateGame(unittest.TestCase):
+class TestCreateGame:
     """Test Suite for create_game function."""
 
     @patch("pedre.main.Game")

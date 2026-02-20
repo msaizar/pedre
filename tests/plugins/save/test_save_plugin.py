@@ -1,59 +1,64 @@
 """Unit tests for SavePlugin in src/pedre/plugins/save/plugin.py."""
 
 import json
-import unittest
 from datetime import UTC
 from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 from pedre.plugins.save.base import GameSaveData
 from pedre.plugins.save.plugin import SavePlugin
 
+SavePluginCtx = tuple[SavePlugin, MagicMock, MagicMock]
 
-class TestSavePlugin(unittest.TestCase):
+
+def _make_save_plugin() -> SavePlugin:
+    """Create a SavePlugin with a mocked get_app_data_dir."""
+    with patch("pedre.plugins.save.plugin.get_app_data_dir") as mock_get_dir:
+        mock_path = MagicMock()
+
+        def create_mock_path(filename: str) -> MagicMock:
+            path_mock = MagicMock()
+            path_mock.name = filename
+            return path_mock
+
+        mock_path.__truediv__ = MagicMock(side_effect=create_mock_path)
+        mock_get_dir.return_value = mock_path
+        return SavePlugin()
+
+
+@pytest.fixture
+def save_plugin_ctx() -> SavePluginCtx:
+    """Create a fresh SavePlugin with a mock context and audio plugin."""
+    plugin = _make_save_plugin()
+
+    mock_context = MagicMock()
+    mock_audio_plugin = MagicMock()
+
+    mock_context.audio_plugin = mock_audio_plugin
+    mock_context.player_plugin = MagicMock()
+    mock_context.scene_plugin = MagicMock()
+    mock_context.cache_plugin = MagicMock()
+
+    mock_plugin1 = MagicMock()
+    mock_plugin1.name = "plugin1"
+    mock_plugin1.get_save_state.return_value = {"key1": "value1"}
+
+    mock_plugin2 = MagicMock()
+    mock_plugin2.name = "plugin2"
+    mock_plugin2.get_save_state.return_value = {"key2": "value2"}
+
+    mock_context.get_plugins.return_value = {
+        "plugin1": mock_plugin1,
+        "plugin2": mock_plugin2,
+    }
+
+    plugin.setup(mock_context)
+    return plugin, mock_context, mock_audio_plugin
+
+
+class TestSavePlugin:
     """Test Suite for SavePlugin."""
-
-    def setUp(self) -> None:
-        """Set up the SavePlugin and mock context."""
-        with patch("pedre.plugins.save.plugin.get_app_data_dir") as mock_get_dir:
-            mock_path = MagicMock()
-
-            # Configure the mock to support path operations
-            def create_mock_path(filename: str) -> MagicMock:
-                path_mock = MagicMock()
-                path_mock.name = filename
-                return path_mock
-
-            mock_path.__truediv__ = MagicMock(side_effect=create_mock_path)
-            mock_get_dir.return_value = mock_path
-            self.plugin = SavePlugin()
-        self.mock_context = MagicMock()
-
-        # Mock dependent plugins
-        self.mock_player_plugin = MagicMock()
-        self.mock_scene_plugin = MagicMock()
-        self.mock_audio_plugin = MagicMock()
-        self.mock_cache_plugin = MagicMock()
-
-        self.mock_context.player_plugin = self.mock_player_plugin
-        self.mock_context.scene_plugin = self.mock_scene_plugin
-        self.mock_context.audio_plugin = self.mock_audio_plugin
-        self.mock_context.cache_plugin = self.mock_cache_plugin
-
-        # Mock get_plugins to return a dictionary of plugins
-        mock_plugin1 = MagicMock()
-        mock_plugin1.name = "plugin1"
-        mock_plugin1.get_save_state.return_value = {"key1": "value1"}
-
-        mock_plugin2 = MagicMock()
-        mock_plugin2.name = "plugin2"
-        mock_plugin2.get_save_state.return_value = {"key2": "value2"}
-
-        self.mock_context.get_plugins.return_value = {
-            "plugin1": mock_plugin1,
-            "plugin2": mock_plugin2,
-        }
-
-        self.plugin.setup(self.mock_context)
 
     def test_initialization(self) -> None:
         """Test proper initialization of the plugin."""
@@ -67,88 +72,105 @@ class TestSavePlugin(unittest.TestCase):
 
     def test_setup(self) -> None:
         """Test setup assigns context."""
-        with patch("pedre.plugins.save.plugin.get_app_data_dir") as mock_get_dir:
-            mock_path = MagicMock()
-            mock_get_dir.return_value = mock_path
-            plugin = SavePlugin()
+        plugin = _make_save_plugin()
         mock_context = MagicMock()
         plugin.setup(mock_context)
         assert plugin.context == mock_context
 
-    def test_cleanup(self) -> None:
+    def test_cleanup(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test cleanup does nothing gracefully."""
-        self.plugin.cleanup()
+        plugin, _, _ = save_plugin_ctx
+        plugin.cleanup()
         # Should not raise any exceptions
 
     @patch("pedre.plugins.save.plugin.matches_key")
     @patch("pedre.plugins.save.plugin.settings")
-    def test_on_key_press_quick_save(self, mock_settings: MagicMock, mock_matches_key: MagicMock) -> None:
+    def test_on_key_press_quick_save(
+        self,
+        mock_settings: MagicMock,
+        mock_matches_key: MagicMock,
+        save_plugin_ctx: SavePluginCtx,
+    ) -> None:
         """Test quick save key handling."""
+        plugin, _, _ = save_plugin_ctx
         mock_settings.SAVE_QUICK_SAVE_KEY = "F5"
         mock_matches_key.side_effect = lambda _sym, key: key == "F5"
 
-        with patch.object(self.plugin, "_handle_quick_save") as mock_handle:
-            result = self.plugin.on_key_press(1, 0)
+        with patch.object(plugin, "_handle_quick_save") as mock_handle:
+            result = plugin.on_key_press(1, 0)
             mock_handle.assert_called_once()
             assert result is True
 
     @patch("pedre.plugins.save.plugin.matches_key")
     @patch("pedre.plugins.save.plugin.settings")
-    def test_on_key_press_quick_load(self, mock_settings: MagicMock, mock_matches_key: MagicMock) -> None:
+    def test_on_key_press_quick_load(
+        self,
+        mock_settings: MagicMock,
+        mock_matches_key: MagicMock,
+        save_plugin_ctx: SavePluginCtx,
+    ) -> None:
         """Test quick load key handling."""
+        plugin, _, _ = save_plugin_ctx
         mock_settings.SAVE_QUICK_SAVE_KEY = "F5"
         mock_settings.SAVE_QUICK_LOAD_KEY = "F9"
         mock_matches_key.side_effect = lambda _sym, key: key == "F9"
 
-        with patch.object(self.plugin, "_handle_quick_load") as mock_handle:
-            result = self.plugin.on_key_press(1, 0)
+        with patch.object(plugin, "_handle_quick_load") as mock_handle:
+            result = plugin.on_key_press(1, 0)
             mock_handle.assert_called_once()
             assert result is True
 
     @patch("pedre.plugins.save.plugin.matches_key")
-    def test_on_key_press_no_match(self, mock_matches_key: MagicMock) -> None:
+    def test_on_key_press_no_match(self, mock_matches_key: MagicMock, save_plugin_ctx: SavePluginCtx) -> None:
         """Test key press returns False when no hotkey matches."""
+        plugin, _, _ = save_plugin_ctx
         mock_matches_key.return_value = False
-        result = self.plugin.on_key_press(1, 0)
+        result = plugin.on_key_press(1, 0)
         assert result is False
 
     @patch("pedre.plugins.save.plugin.settings")
-    def test_handle_quick_save_success(self, mock_settings: MagicMock) -> None:
+    def test_handle_quick_save_success(self, mock_settings: MagicMock, save_plugin_ctx: SavePluginCtx) -> None:
         """Test quick save handles success case."""
+        plugin, _, mock_audio_plugin = save_plugin_ctx
         mock_settings.SAVE_SFX_FILE = "save.wav"
 
-        with patch.object(self.plugin, "auto_save", return_value=True):
-            self.plugin._handle_quick_save()
-            self.mock_audio_plugin.play_sfx.assert_called_once_with("save.wav")
+        with patch.object(plugin, "auto_save", return_value=True):
+            plugin._handle_quick_save()
+            mock_audio_plugin.play_sfx.assert_called_once_with("save.wav")
 
-    def test_handle_quick_save_failure(self) -> None:
+    def test_handle_quick_save_failure(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test quick save handles failure case."""
-        with patch.object(self.plugin, "auto_save", return_value=False):
-            self.plugin._handle_quick_save()
-            self.mock_audio_plugin.play_sfx.assert_not_called()
+        plugin, _, mock_audio_plugin = save_plugin_ctx
+        with patch.object(plugin, "auto_save", return_value=False):
+            plugin._handle_quick_save()
+            mock_audio_plugin.play_sfx.assert_not_called()
 
     @patch("pedre.plugins.save.plugin.settings")
-    def test_handle_quick_load_success(self, mock_settings: MagicMock) -> None:
+    def test_handle_quick_load_success(self, mock_settings: MagicMock, save_plugin_ctx: SavePluginCtx) -> None:
         """Test quick load handles success case."""
+        plugin, _, mock_audio_plugin = save_plugin_ctx
         mock_settings.SAVE_SFX_FILE = "save.wav"
         mock_save_data = GameSaveData(save_states={"test": "data"})
 
         with (
-            patch.object(self.plugin, "load_auto_save", return_value=mock_save_data),
-            patch.object(self.plugin, "restore_game_data"),
+            patch.object(plugin, "load_auto_save", return_value=mock_save_data),
+            patch.object(plugin, "restore_game_data"),
         ):
-            self.plugin._handle_quick_load()
-            self.mock_audio_plugin.play_sfx.assert_called_once_with("save.wav")
+            plugin._handle_quick_load()
+            mock_audio_plugin.play_sfx.assert_called_once_with("save.wav")
 
-    def test_handle_quick_load_no_save(self) -> None:
+    def test_handle_quick_load_no_save(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test quick load handles missing save."""
-        with patch.object(self.plugin, "load_auto_save", return_value=None):
-            self.plugin._handle_quick_load()
-            self.mock_audio_plugin.play_sfx.assert_not_called()
+        plugin, _, mock_audio_plugin = save_plugin_ctx
+        with patch.object(plugin, "load_auto_save", return_value=None):
+            plugin._handle_quick_load()
+            mock_audio_plugin.play_sfx.assert_not_called()
 
     @patch("pedre.plugins.save.plugin.datetime")
-    def test_save_game_success(self, mock_datetime: MagicMock) -> None:
+    def test_save_game_success(self, mock_datetime: MagicMock, save_plugin_ctx: SavePluginCtx) -> None:
         """Test saving game successfully."""
+        plugin, mock_context, _ = save_plugin_ctx
+
         # Setup mock timestamp
         mock_now = MagicMock()
         mock_now.timestamp.return_value = 1234567890.0
@@ -159,40 +181,43 @@ class TestSavePlugin(unittest.TestCase):
         mock_player = MagicMock()
         mock_player.center_x = 100.0
         mock_player.center_y = 200.0
-        self.mock_player_plugin.get_player_sprite.return_value = mock_player
+        mock_context.player_plugin.get_player_sprite.return_value = mock_player
 
         # Mock current scene
         mock_scene = MagicMock()
-        self.mock_scene_plugin.get_current_scene.return_value = mock_scene
+        mock_context.scene_plugin.get_current_scene.return_value = mock_scene
 
         # Mock file operations
         m_open = mock_open()
         mock_path = MagicMock()
         mock_path.open = m_open
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.save_game(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.save_game(slot=1)
 
         assert result is True
-        assert self.plugin.current_slot == 1
+        assert plugin.current_slot == 1
         m_open.assert_called_once()
-        self.mock_cache_plugin.cache_scene.assert_called_once_with(mock_scene)
+        mock_context.cache_plugin.cache_scene.assert_called_once_with(mock_scene)
 
         # Verify JSON was written with correct structure
         handle = m_open()
         written_calls = list(handle.write.call_args_list)
         assert len(written_calls) > 0
 
-    def test_save_game_no_player_sprite(self) -> None:
+    def test_save_game_no_player_sprite(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test save game handles missing player sprite."""
-        self.mock_player_plugin.get_player_sprite.return_value = None
+        plugin, mock_context, _ = save_plugin_ctx
+        mock_context.player_plugin.get_player_sprite.return_value = None
 
-        result = self.plugin.save_game(slot=1)
+        result = plugin.save_game(slot=1)
         assert result is True
 
     @patch("pedre.plugins.save.plugin.datetime")
-    def test_save_game_with_empty_plugin_state(self, mock_datetime: MagicMock) -> None:
+    def test_save_game_with_empty_plugin_state(self, mock_datetime: MagicMock, save_plugin_ctx: SavePluginCtx) -> None:
         """Test save game handles plugins that return None or empty state."""
+        plugin, mock_context, _ = save_plugin_ctx
+
         # Setup mock timestamp
         mock_now = MagicMock()
         mock_now.timestamp.return_value = 1234567890.0
@@ -201,7 +226,7 @@ class TestSavePlugin(unittest.TestCase):
 
         # Mock player sprite
         mock_player = MagicMock()
-        self.mock_player_plugin.get_player_sprite.return_value = mock_player
+        mock_context.player_plugin.get_player_sprite.return_value = mock_player
 
         # Mock plugins with empty/None states
         mock_plugin_empty = MagicMock()
@@ -212,7 +237,7 @@ class TestSavePlugin(unittest.TestCase):
         mock_plugin_valid.name = "valid_plugin"
         mock_plugin_valid.get_save_state.return_value = {"data": "test"}
 
-        self.mock_context.get_plugins.return_value = {
+        mock_context.get_plugins.return_value = {
             "empty_plugin": mock_plugin_empty,
             "valid_plugin": mock_plugin_valid,
         }
@@ -222,8 +247,8 @@ class TestSavePlugin(unittest.TestCase):
         mock_path = MagicMock()
         mock_path.open = m_open
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.save_game(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.save_game(slot=1)
 
         assert result is True
         # Verify only the valid plugin's state was saved
@@ -232,15 +257,17 @@ class TestSavePlugin(unittest.TestCase):
         assert "valid_plugin" in written_data
         assert "empty_plugin" not in written_data
 
-    def test_save_game_exception(self) -> None:
+    def test_save_game_exception(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test save game handles exceptions."""
-        self.mock_player_plugin.get_player_sprite.side_effect = Exception("Test error")
+        plugin, mock_context, _ = save_plugin_ctx
+        mock_context.player_plugin.get_player_sprite.side_effect = Exception("Test error")
 
-        result = self.plugin.save_game(slot=1)
+        result = plugin.save_game(slot=1)
         assert result is False
 
-    def test_load_game_success(self) -> None:
+    def test_load_game_success(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test loading game successfully."""
+        plugin, _, _ = save_plugin_ctx
         save_data = {
             "save_states": {"plugin1": {"key": "value"}},
             "save_timestamp": 1234567890.0,
@@ -252,37 +279,40 @@ class TestSavePlugin(unittest.TestCase):
         mock_path.exists.return_value = True
         mock_path.open = m_open
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.load_game(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.load_game(slot=1)
 
         assert result is not None
         assert isinstance(result, GameSaveData)
         assert result.save_states == {"plugin1": {"key": "value"}}
         assert result.save_timestamp == 1234567890.0
-        assert self.plugin.current_slot == 1
+        assert plugin.current_slot == 1
 
-    def test_load_game_no_file(self) -> None:
+    def test_load_game_no_file(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test loading game when file doesn't exist."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.return_value = False
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.load_game(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.load_game(slot=1)
 
         assert result is None
 
-    def test_load_game_exception(self) -> None:
+    def test_load_game_exception(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test load game handles exceptions."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.side_effect = Exception("Test error")
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.load_game(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.load_game(slot=1)
 
         assert result is None
 
-    def test_restore_game_data(self) -> None:
+    def test_restore_game_data(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test restoring game data to plugins."""
+        plugin, mock_context, _ = save_plugin_ctx
         save_data = GameSaveData(
             save_states={
                 "plugin1": {"key1": "value1"},
@@ -290,18 +320,19 @@ class TestSavePlugin(unittest.TestCase):
             }
         )
 
-        self.plugin.restore_game_data(save_data)
+        plugin.restore_game_data(save_data)
 
         # Verify pending save data was set
-        self.mock_context.set_pending_save_data.assert_called_once_with(save_data)
+        mock_context.set_pending_save_data.assert_called_once_with(save_data)
 
         # Verify each plugin's restore_save_state was called
-        plugins = self.mock_context.get_plugins()
+        plugins = mock_context.get_plugins()
         plugins["plugin1"].restore_save_state.assert_called_once_with({"key1": "value1"})
         plugins["plugin2"].restore_save_state.assert_called_once_with({"key2": "value2"})
 
-    def test_restore_game_data_plugin_not_in_save_states(self) -> None:
+    def test_restore_game_data_plugin_not_in_save_states(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test restoring game data when some plugins are not in save states."""
+        plugin, mock_context, _ = save_plugin_ctx
         save_data = GameSaveData(
             save_states={
                 "plugin1": {"key1": "value1"},
@@ -309,18 +340,19 @@ class TestSavePlugin(unittest.TestCase):
             }
         )
 
-        self.plugin.restore_game_data(save_data)
+        plugin.restore_game_data(save_data)
 
         # Verify pending save data was set
-        self.mock_context.set_pending_save_data.assert_called_once_with(save_data)
+        mock_context.set_pending_save_data.assert_called_once_with(save_data)
 
         # Verify only plugin1's restore_save_state was called
-        plugins = self.mock_context.get_plugins()
+        plugins = mock_context.get_plugins()
         plugins["plugin1"].restore_save_state.assert_called_once_with({"key1": "value1"})
         plugins["plugin2"].restore_save_state.assert_not_called()
 
-    def test_apply_entity_states(self) -> None:
+    def test_apply_entity_states(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test applying entity states after sprites exist."""
+        plugin, mock_context, _ = save_plugin_ctx
         save_data = GameSaveData(
             save_states={
                 "plugin1": {"entity_data": "test1"},
@@ -328,20 +360,21 @@ class TestSavePlugin(unittest.TestCase):
             }
         )
 
-        self.mock_context.get_pending_save_data.return_value = save_data
+        mock_context.get_pending_save_data.return_value = save_data
 
-        self.plugin.apply_entity_states()
+        plugin.apply_entity_states()
 
         # Verify each plugin's apply_entity_state was called
-        plugins = self.mock_context.get_plugins()
+        plugins = mock_context.get_plugins()
         plugins["plugin1"].apply_entity_state.assert_called_once_with({"entity_data": "test1"})
         plugins["plugin2"].apply_entity_state.assert_called_once_with({"entity_data": "test2"})
 
         # Verify pending save data was cleared
-        self.mock_context.clear_pending_save_data.assert_called_once()
+        mock_context.clear_pending_save_data.assert_called_once()
 
-    def test_apply_entity_states_plugin_not_in_save_states(self) -> None:
+    def test_apply_entity_states_plugin_not_in_save_states(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test applying entity states when some plugins are not in save states."""
+        plugin, mock_context, _ = save_plugin_ctx
         save_data = GameSaveData(
             save_states={
                 "plugin1": {"entity_data": "test1"},
@@ -349,78 +382,85 @@ class TestSavePlugin(unittest.TestCase):
             }
         )
 
-        self.mock_context.get_pending_save_data.return_value = save_data
+        mock_context.get_pending_save_data.return_value = save_data
 
-        self.plugin.apply_entity_states()
+        plugin.apply_entity_states()
 
         # Verify only plugin1's apply_entity_state was called
-        plugins = self.mock_context.get_plugins()
+        plugins = mock_context.get_plugins()
         plugins["plugin1"].apply_entity_state.assert_called_once_with({"entity_data": "test1"})
         plugins["plugin2"].apply_entity_state.assert_not_called()
 
         # Verify pending save data was cleared
-        self.mock_context.clear_pending_save_data.assert_called_once()
+        mock_context.clear_pending_save_data.assert_called_once()
 
-    def test_apply_entity_states_no_pending_data(self) -> None:
+    def test_apply_entity_states_no_pending_data(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test apply entity states when no pending data exists."""
-        self.mock_context.get_pending_save_data.return_value = None
+        plugin, mock_context, _ = save_plugin_ctx
+        mock_context.get_pending_save_data.return_value = None
 
-        self.plugin.apply_entity_states()
+        plugin.apply_entity_states()
 
         # Should return early without processing
-        plugins = self.mock_context.get_plugins()
+        plugins = mock_context.get_plugins()
         plugins["plugin1"].apply_entity_state.assert_not_called()
-        self.mock_context.clear_pending_save_data.assert_not_called()
+        mock_context.clear_pending_save_data.assert_not_called()
 
-    def test_delete_save_success(self) -> None:
+    def test_delete_save_success(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test deleting save file successfully."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.return_value = True
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.delete_save(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.delete_save(slot=1)
 
         assert result is True
         mock_path.unlink.assert_called_once()
 
-    def test_delete_save_no_file(self) -> None:
+    def test_delete_save_no_file(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test deleting save when file doesn't exist."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.return_value = False
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.delete_save(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.delete_save(slot=1)
 
         assert result is False
 
-    def test_delete_save_exception(self) -> None:
+    def test_delete_save_exception(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test delete save handles exceptions."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.return_value = True
         mock_path.unlink.side_effect = Exception("Test error")
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.delete_save(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.delete_save(slot=1)
 
         assert result is False
 
-    def test_save_exists(self) -> None:
+    def test_save_exists(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test checking if save exists."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.return_value = True
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.save_exists(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.save_exists(slot=1)
         assert result is True
 
         mock_path.exists.return_value = False
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.save_exists(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.save_exists(slot=1)
         assert result is False
 
     @patch("pedre.plugins.save.plugin.datetime")
-    def test_get_save_info_success(self, mock_datetime_cls: MagicMock) -> None:
+    def test_get_save_info_success(self, mock_datetime_cls: MagicMock, save_plugin_ctx: SavePluginCtx) -> None:
         """Test getting save info successfully."""
+        plugin, _, _ = save_plugin_ctx
+
         # Create a mock datetime instance
         mock_dt = MagicMock()
         mock_dt.strftime.return_value = "2024-01-15 10:30"
@@ -438,8 +478,8 @@ class TestSavePlugin(unittest.TestCase):
         mock_path.exists.return_value = True
         mock_path.open = m_open
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.get_save_info(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.get_save_info(slot=1)
 
         assert result is not None
         assert result["slot"] == 1
@@ -448,59 +488,65 @@ class TestSavePlugin(unittest.TestCase):
         assert result["date_string"] == "2024-01-15 10:30"
         assert result["version"] == "2.0"
 
-    def test_get_save_info_no_file(self) -> None:
+    def test_get_save_info_no_file(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test get save info when file doesn't exist."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.return_value = False
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.get_save_info(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.get_save_info(slot=1)
 
         assert result is None
 
-    def test_get_save_info_exception(self) -> None:
+    def test_get_save_info_exception(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test get save info handles exceptions."""
+        plugin, _, _ = save_plugin_ctx
         mock_path = MagicMock()
         mock_path.exists.side_effect = Exception("Test error")
 
-        with patch.object(self.plugin, "_get_save_path", return_value=mock_path):
-            result = self.plugin.get_save_info(slot=1)
+        with patch.object(plugin, "_get_save_path", return_value=mock_path):
+            result = plugin.get_save_info(slot=1)
 
         assert result is None
 
-    def test_auto_save(self) -> None:
+    def test_auto_save(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test auto save delegates to save_game with slot 0."""
-        with patch.object(self.plugin, "save_game", return_value=True) as mock_save:
-            result = self.plugin.auto_save()
+        plugin, _, _ = save_plugin_ctx
+        with patch.object(plugin, "save_game", return_value=True) as mock_save:
+            result = plugin.auto_save()
 
         assert result is True
         mock_save.assert_called_once_with(0)
 
-    def test_load_auto_save(self) -> None:
+    def test_load_auto_save(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test load auto save delegates to load_game with slot 0."""
+        plugin, _, _ = save_plugin_ctx
         mock_save_data = GameSaveData(save_states={"test": "data"})
 
-        with patch.object(self.plugin, "load_game", return_value=mock_save_data) as mock_load:
-            result = self.plugin.load_auto_save()
+        with patch.object(plugin, "load_game", return_value=mock_save_data) as mock_load:
+            result = plugin.load_auto_save()
 
         assert result == mock_save_data
         mock_load.assert_called_once_with(0)
 
-    def test_get_save_path_auto_save(self) -> None:
+    def test_get_save_path_auto_save(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test get save path for auto save slot."""
-        path = self.plugin._get_save_path(0)
+        plugin, _, _ = save_plugin_ctx
+        path = plugin._get_save_path(0)
         assert path.name == "autosave.json"
 
-    def test_get_save_path_manual_slot(self) -> None:
+    def test_get_save_path_manual_slot(self, save_plugin_ctx: SavePluginCtx) -> None:
         """Test get save path for manual save slot."""
-        path = self.plugin._get_save_path(1)
+        plugin, _, _ = save_plugin_ctx
+        path = plugin._get_save_path(1)
         assert path.name == "save_slot_1.json"
 
-        path = self.plugin._get_save_path(3)
+        path = plugin._get_save_path(3)
         assert path.name == "save_slot_3.json"
 
 
-class TestGameSaveData(unittest.TestCase):
+class TestGameSaveData:
     """Test Suite for GameSaveData."""
 
     def test_initialization_defaults(self) -> None:
@@ -578,7 +624,3 @@ class TestGameSaveData(unittest.TestCase):
         assert restored.save_states == original.save_states
         assert restored.save_timestamp == original.save_timestamp
         assert restored.save_version == original.save_version
-
-
-if __name__ == "__main__":
-    unittest.main()

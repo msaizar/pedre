@@ -1,6 +1,5 @@
 """Unit tests for NPC actions in src/pedre/plugins/npc/actions.py."""
 
-import unittest
 from unittest.mock import MagicMock
 
 import pytest
@@ -24,16 +23,8 @@ from pedre.plugins.npc.sprites import AnimatedNPC
 from pedre.types import EntityReference
 
 
-class TestMoveNPCAction(unittest.TestCase):
+class TestMoveNPCAction:
     """Test Suite for MoveNPCAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_waypoint_plugin = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.waypoint_plugin = self.mock_waypoint_plugin
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of MoveNPCAction."""
@@ -44,70 +35,52 @@ class TestMoveNPCAction(unittest.TestCase):
 
     def test_execute_with_valid_waypoint(self) -> None:
         """Test executing move action with a valid waypoint."""
+        context = MagicMock()
+        context.waypoint_plugin.get_waypoints.return_value = {"town_square": (100.0, 200.0)}
         action = MoveNPCAction(npc_names=["martin"], waypoint="town_square")
 
-        # Mock waypoint plugin to return valid waypoint
-        self.mock_waypoint_plugin.get_waypoints.return_value = {"town_square": (100.0, 200.0)}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately
         assert result is True
         assert action.started is True
-
-        # Should have called move_npc_to_position
-        self.mock_npc_plugin.move_npc_to_position.assert_called_once_with("martin", 100.0, 200.0)
+        context.npc_plugin.move_npc_to_position.assert_called_once_with("martin", 100.0, 200.0)
 
     def test_execute_with_multiple_npcs(self) -> None:
         """Test executing move action with multiple NPCs."""
+        context = MagicMock()
+        context.waypoint_plugin.get_waypoints.return_value = {"forest": (50.0, 75.0)}
         action = MoveNPCAction(npc_names=["martin", "yema", "romi"], waypoint="forest")
 
-        # Mock waypoint plugin to return valid waypoint
-        self.mock_waypoint_plugin.get_waypoints.return_value = {"forest": (50.0, 75.0)}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately
         assert result is True
         assert action.started is True
-
-        # Should have called move_npc_to_position for each NPC
-        assert self.mock_npc_plugin.move_npc_to_position.call_count == 3
-        self.mock_npc_plugin.move_npc_to_position.assert_any_call("martin", 50.0, 75.0)
-        self.mock_npc_plugin.move_npc_to_position.assert_any_call("yema", 50.0, 75.0)
-        self.mock_npc_plugin.move_npc_to_position.assert_any_call("romi", 50.0, 75.0)
+        assert context.npc_plugin.move_npc_to_position.call_count == 3
+        context.npc_plugin.move_npc_to_position.assert_any_call("martin", 50.0, 75.0)
+        context.npc_plugin.move_npc_to_position.assert_any_call("yema", 50.0, 75.0)
+        context.npc_plugin.move_npc_to_position.assert_any_call("romi", 50.0, 75.0)
 
     def test_execute_with_invalid_waypoint(self) -> None:
         """Test executing move action with an invalid waypoint."""
+        context = MagicMock()
+        context.waypoint_plugin.get_waypoints.return_value = {}
         action = MoveNPCAction(npc_names=["martin"], waypoint="invalid_waypoint")
 
-        # Mock waypoint plugin to return empty waypoints
-        self.mock_waypoint_plugin.get_waypoints.return_value = {}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately even on error
         assert result is True
-
-        # Should NOT have called move_npc_to_position
-        self.mock_npc_plugin.move_npc_to_position.assert_not_called()
+        context.npc_plugin.move_npc_to_position.assert_not_called()
 
     def test_execute_idempotent(self) -> None:
         """Test that executing multiple times doesn't repeat the movement."""
+        context = MagicMock()
+        context.waypoint_plugin.get_waypoints.return_value = {"town_square": (100.0, 200.0)}
         action = MoveNPCAction(npc_names=["martin"], waypoint="town_square")
 
-        # Mock waypoint plugin
-        self.mock_waypoint_plugin.get_waypoints.return_value = {"town_square": (100.0, 200.0)}
+        action.execute(context)
+        action.execute(context)
 
-        # Execute twice
-        action.execute(self.mock_context)
-        action.execute(self.mock_context)
-
-        # Should only have called move_npc_to_position once
-        self.mock_npc_plugin.move_npc_to_position.assert_called_once()
+        context.npc_plugin.move_npc_to_position.assert_called_once()
 
     def test_reset(self) -> None:
         """Test resetting the action."""
@@ -134,14 +107,8 @@ class TestMoveNPCAction(unittest.TestCase):
             MoveNPCAction.from_dict(data)
 
 
-class TestStartAppearAnimationAction(unittest.TestCase):
+class TestStartAppearAnimationAction:
     """Test Suite for StartAppearAnimationAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of StartAppearAnimationAction."""
@@ -151,28 +118,24 @@ class TestStartAppearAnimationAction(unittest.TestCase):
 
     def test_execute(self) -> None:
         """Test executing appear animation action."""
+        context = MagicMock()
         action = StartAppearAnimationAction(npc_names=["martin", "yema"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately
         assert result is True
         assert action.executed is True
-
-        # Should have called show_npcs
-        self.mock_npc_plugin.show_npcs.assert_called_once_with(["martin", "yema"])
+        context.npc_plugin.show_npcs.assert_called_once_with(["martin", "yema"])
 
     def test_execute_idempotent(self) -> None:
         """Test that executing multiple times doesn't repeat the appear animation."""
+        context = MagicMock()
         action = StartAppearAnimationAction(npc_names=["martin"])
 
-        # Execute twice
-        action.execute(self.mock_context)
-        action.execute(self.mock_context)
+        action.execute(context)
+        action.execute(context)
 
-        # Should only have called show_npcs once
-        self.mock_npc_plugin.show_npcs.assert_called_once()
+        context.npc_plugin.show_npcs.assert_called_once()
 
     def test_reset(self) -> None:
         """Test resetting the action."""
@@ -198,14 +161,8 @@ class TestStartAppearAnimationAction(unittest.TestCase):
             StartAppearAnimationAction.from_dict(data)
 
 
-class TestAdvanceDialogAction(unittest.TestCase):
+class TestAdvanceDialogAction:
     """Test Suite for AdvanceDialogAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of AdvanceDialogAction."""
@@ -215,28 +172,24 @@ class TestAdvanceDialogAction(unittest.TestCase):
 
     def test_execute(self) -> None:
         """Test executing advance dialog action."""
+        context = MagicMock()
         action = AdvanceDialogAction(npc_name="martin")
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately
         assert result is True
         assert action.executed is True
-
-        # Should have called advance_dialog
-        self.mock_npc_plugin.advance_dialog.assert_called_once_with("martin")
+        context.npc_plugin.advance_dialog.assert_called_once_with("martin")
 
     def test_execute_idempotent(self) -> None:
         """Test that executing multiple times doesn't repeat the advance."""
+        context = MagicMock()
         action = AdvanceDialogAction(npc_name="martin")
 
-        # Execute twice
-        action.execute(self.mock_context)
-        action.execute(self.mock_context)
+        action.execute(context)
+        action.execute(context)
 
-        # Should only have called advance_dialog once
-        self.mock_npc_plugin.advance_dialog.assert_called_once()
+        context.npc_plugin.advance_dialog.assert_called_once()
 
     def test_reset(self) -> None:
         """Test resetting the action."""
@@ -262,14 +215,8 @@ class TestAdvanceDialogAction(unittest.TestCase):
             AdvanceDialogAction.from_dict(data)
 
 
-class TestSetDialogLevelAction(unittest.TestCase):
+class TestSetDialogLevelAction:
     """Test Suite for SetDialogLevelAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of SetDialogLevelAction."""
@@ -280,51 +227,41 @@ class TestSetDialogLevelAction(unittest.TestCase):
 
     def test_execute_with_valid_npc(self) -> None:
         """Test executing set dialog level action with a valid NPC."""
-        action = SetDialogLevelAction(npc_name="martin", level=3)
-
-        # Mock NPC state
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 1
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = SetDialogLevelAction(npc_name="martin", level=3)
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately
         assert result is True
         assert action.executed is True
-
-        # Should have set dialog level
         assert mock_npc_state.dialog_level == 3
 
     def test_execute_with_invalid_npc(self) -> None:
         """Test executing set dialog level action with an invalid NPC."""
+        context = MagicMock()
+        context.npc_plugin.get_npcs.return_value = {}
         action = SetDialogLevelAction(npc_name="invalid_npc", level=5)
 
-        # Mock empty NPC list
-        self.mock_npc_plugin.get_npcs.return_value = {}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately even with invalid NPC
         assert result is True
         assert action.executed is True
 
     def test_execute_idempotent(self) -> None:
         """Test that executing multiple times doesn't repeat the set."""
-        action = SetDialogLevelAction(npc_name="martin", level=5)
-
-        # Mock NPC state
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 1
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = SetDialogLevelAction(npc_name="martin", level=5)
 
-        # Execute twice
-        action.execute(self.mock_context)
+        action.execute(context)
         # Change the level to see if it gets set again
         mock_npc_state.dialog_level = 10
-        action.execute(self.mock_context)
+        action.execute(context)
 
         # Should still be 10 (not set again to 5)
         assert mock_npc_state.dialog_level == 10
@@ -354,16 +291,8 @@ class TestSetDialogLevelAction(unittest.TestCase):
             SetDialogLevelAction.from_dict(data)
 
 
-class TestSetCurrentNPCAction(unittest.TestCase):
+class TestSetCurrentNPCAction:
     """Test Suite for SetCurrentNPCAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_dialog_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
-        self.mock_context.dialog_plugin = self.mock_dialog_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of SetCurrentNPCAction."""
@@ -373,58 +302,45 @@ class TestSetCurrentNPCAction(unittest.TestCase):
 
     def test_execute_with_valid_npc(self) -> None:
         """Test executing set current NPC action with a valid NPC."""
-        action = SetCurrentNPCAction(npc_name="martin")
-
-        # Mock NPC state
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 3
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = SetCurrentNPCAction(npc_name="martin")
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately
         assert result is True
         assert action.executed is True
-
-        # Should have set current NPC name and dialog level
-        self.mock_dialog_plugin.set_current_npc_name.assert_called_once_with("martin")
-        self.mock_dialog_plugin.set_current_dialog_level.assert_called_once_with(3)
+        context.dialog_plugin.set_current_npc_name.assert_called_once_with("martin")
+        context.dialog_plugin.set_current_dialog_level.assert_called_once_with(3)
 
     def test_execute_with_invalid_npc(self) -> None:
         """Test executing set current NPC action with an invalid NPC."""
+        context = MagicMock()
+        context.npc_plugin.get_npcs.return_value = {}
         action = SetCurrentNPCAction(npc_name="invalid_npc")
 
-        # Mock empty NPC list
-        self.mock_npc_plugin.get_npcs.return_value = {}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately even with invalid NPC
         assert result is True
         assert action.executed is True
-
-        # Should not have called set methods since NPC doesn't exist
-        self.mock_dialog_plugin.set_current_npc_name.assert_not_called()
-        self.mock_dialog_plugin.set_current_dialog_level.assert_not_called()
+        context.dialog_plugin.set_current_npc_name.assert_not_called()
+        context.dialog_plugin.set_current_dialog_level.assert_not_called()
 
     def test_execute_idempotent(self) -> None:
         """Test that executing multiple times doesn't repeat the set."""
-        action = SetCurrentNPCAction(npc_name="martin")
-
-        # Mock NPC state
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 3
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = SetCurrentNPCAction(npc_name="martin")
 
-        # Execute twice
-        action.execute(self.mock_context)
-        action.execute(self.mock_context)
+        action.execute(context)
+        action.execute(context)
 
-        # Should only have called set methods once
-        self.mock_dialog_plugin.set_current_npc_name.assert_called_once()
-        self.mock_dialog_plugin.set_current_dialog_level.assert_called_once()
+        context.dialog_plugin.set_current_npc_name.assert_called_once()
+        context.dialog_plugin.set_current_dialog_level.assert_called_once()
 
     def test_reset(self) -> None:
         """Test resetting the action."""
@@ -450,14 +366,8 @@ class TestSetCurrentNPCAction(unittest.TestCase):
             SetCurrentNPCAction.from_dict(data)
 
 
-class TestWaitForNPCMovementAction(unittest.TestCase):
+class TestWaitForNPCMovementAction:
     """Test Suite for WaitForNPCMovementAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of WaitForNPCMovementAction."""
@@ -466,63 +376,51 @@ class TestWaitForNPCMovementAction(unittest.TestCase):
 
     def test_execute_npc_not_found(self) -> None:
         """Test executing when NPC is not found."""
+        context = MagicMock()
+        context.npc_plugin.get_npcs.return_value = {}
         action = WaitForNPCMovementAction(npc_name="martin")
 
-        # Mock empty NPC list
-        self.mock_npc_plugin.get_npcs.return_value = {}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately when NPC not found
         assert result is True
 
     def test_execute_npc_still_moving(self) -> None:
         """Test executing when NPC is still moving."""
-        action = WaitForNPCMovementAction(npc_name="martin")
-
-        # Mock NPC state that is moving
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.path = [(10, 10), (20, 20)]
         mock_npc_state.is_moving = True
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCMovementAction(npc_name="martin")
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should not complete while NPC is moving
         assert result is False
 
     def test_execute_npc_has_path(self) -> None:
         """Test executing when NPC has a path but is_moving is False."""
-        action = WaitForNPCMovementAction(npc_name="martin")
-
-        # Mock NPC state with path but not moving
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.path = [(10, 10)]
         mock_npc_state.is_moving = False
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCMovementAction(npc_name="martin")
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should not complete while NPC has a path
         assert result is False
 
     def test_execute_npc_movement_complete(self) -> None:
         """Test executing when NPC has completed movement."""
-        action = WaitForNPCMovementAction(npc_name="martin")
-
-        # Mock NPC state that has completed movement
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.path = []
         mock_npc_state.is_moving = False
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCMovementAction(npc_name="martin")
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete when path is empty and not moving
         assert result is True
 
     def test_from_dict(self) -> None:
@@ -540,14 +438,8 @@ class TestWaitForNPCMovementAction(unittest.TestCase):
             WaitForNPCMovementAction.from_dict(data)
 
 
-class TestWaitForNPCsAppearAction(unittest.TestCase):
+class TestWaitForNPCsAppearAction:
     """Test Suite for WaitForNPCsAppearAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of WaitForNPCsAppearAction."""
@@ -556,96 +448,78 @@ class TestWaitForNPCsAppearAction(unittest.TestCase):
 
     def test_execute_npcs_not_found(self) -> None:
         """Test executing when NPCs are not found."""
+        context = MagicMock()
+        context.npc_plugin.get_npcs.return_value = {}
         action = WaitForNPCsAppearAction(npc_names=["martin", "yema"])
 
-        # Mock empty NPC list
-        self.mock_npc_plugin.get_npcs.return_value = {}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately when NPCs not found
         assert result is True
 
     def test_execute_animated_npc_still_appearing(self) -> None:
         """Test executing when AnimatedNPC is still appearing."""
-        action = WaitForNPCsAppearAction(npc_names=["martin"])
-
-        # Mock AnimatedNPC that hasn't completed appear animation
+        context = MagicMock()
         mock_sprite = MagicMock(spec=AnimatedNPC)
         mock_sprite.appear_complete = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCsAppearAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should not complete while NPC is still appearing
         assert result is False
 
     def test_execute_animated_npc_appear_complete(self) -> None:
         """Test executing when AnimatedNPC has completed appearing."""
-        action = WaitForNPCsAppearAction(npc_names=["martin"])
-
-        # Mock AnimatedNPC that has completed appear animation
+        context = MagicMock()
         mock_sprite = MagicMock(spec=AnimatedNPC)
         mock_sprite.appear_complete = True
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCsAppearAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete when appear animation is done
         assert result is True
 
     def test_execute_non_animated_npc(self) -> None:
         """Test executing with non-AnimatedNPC sprite."""
-        action = WaitForNPCsAppearAction(npc_names=["martin"])
-
-        # Mock regular sprite (not AnimatedNPC)
+        context = MagicMock()
         mock_sprite = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCsAppearAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately for non-animated NPCs
         assert result is True
 
     def test_execute_multiple_npcs_mixed(self) -> None:
         """Test executing with multiple NPCs in different states."""
-        action = WaitForNPCsAppearAction(npc_names=["martin", "yema"])
-
-        # Martin is an AnimatedNPC still appearing
+        context = MagicMock()
         mock_sprite1 = MagicMock(spec=AnimatedNPC)
         mock_sprite1.appear_complete = False
         mock_npc_state1 = MagicMock()
         mock_npc_state1.sprite = mock_sprite1
 
-        # Yema is an AnimatedNPC that has completed
         mock_sprite2 = MagicMock(spec=AnimatedNPC)
         mock_sprite2.appear_complete = True
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        action = WaitForNPCsAppearAction(npc_names=["martin", "yema"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should not complete while martin is still appearing
         assert result is False
 
     def test_execute_multiple_npcs_all_complete(self) -> None:
         """Test executing with multiple NPCs all completed."""
-        action = WaitForNPCsAppearAction(npc_names=["martin", "yema"])
-
-        # Both are AnimatedNPCs that have completed
+        context = MagicMock()
         mock_sprite1 = MagicMock(spec=AnimatedNPC)
         mock_sprite1.appear_complete = True
         mock_npc_state1 = MagicMock()
@@ -656,12 +530,11 @@ class TestWaitForNPCsAppearAction(unittest.TestCase):
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        action = WaitForNPCsAppearAction(npc_names=["martin", "yema"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete when all NPCs have appeared
         assert result is True
 
     def test_from_dict(self) -> None:
@@ -679,14 +552,8 @@ class TestWaitForNPCsAppearAction(unittest.TestCase):
             WaitForNPCsAppearAction.from_dict(data)
 
 
-class TestWaitForNPCsDisappearAction(unittest.TestCase):
+class TestWaitForNPCsDisappearAction:
     """Test Suite for WaitForNPCsDisappearAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of WaitForNPCsDisappearAction."""
@@ -695,96 +562,78 @@ class TestWaitForNPCsDisappearAction(unittest.TestCase):
 
     def test_execute_npcs_not_found(self) -> None:
         """Test executing when NPCs are not found."""
+        context = MagicMock()
+        context.npc_plugin.get_npcs.return_value = {}
         action = WaitForNPCsDisappearAction(npc_names=["martin", "yema"])
 
-        # Mock empty NPC list
-        self.mock_npc_plugin.get_npcs.return_value = {}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately when NPCs not found
         assert result is True
 
     def test_execute_animated_npc_still_disappearing(self) -> None:
         """Test executing when AnimatedNPC is still disappearing."""
-        action = WaitForNPCsDisappearAction(npc_names=["martin"])
-
-        # Mock AnimatedNPC that hasn't completed disappear animation
+        context = MagicMock()
         mock_sprite = MagicMock(spec=AnimatedNPC)
         mock_sprite.disappear_complete = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCsDisappearAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should not complete while NPC is still disappearing
         assert result is False
 
     def test_execute_animated_npc_disappear_complete(self) -> None:
         """Test executing when AnimatedNPC has completed disappearing."""
-        action = WaitForNPCsDisappearAction(npc_names=["martin"])
-
-        # Mock AnimatedNPC that has completed disappear animation
+        context = MagicMock()
         mock_sprite = MagicMock(spec=AnimatedNPC)
         mock_sprite.disappear_complete = True
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCsDisappearAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete when disappear animation is done
         assert result is True
 
     def test_execute_non_animated_npc(self) -> None:
         """Test executing with non-AnimatedNPC sprite."""
-        action = WaitForNPCsDisappearAction(npc_names=["martin"])
-
-        # Mock regular sprite (not AnimatedNPC)
+        context = MagicMock()
         mock_sprite = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = WaitForNPCsDisappearAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately for non-animated NPCs
         assert result is True
 
     def test_execute_multiple_npcs_mixed(self) -> None:
         """Test executing with multiple NPCs in different states."""
-        action = WaitForNPCsDisappearAction(npc_names=["martin", "yema"])
-
-        # Martin is an AnimatedNPC still disappearing
+        context = MagicMock()
         mock_sprite1 = MagicMock(spec=AnimatedNPC)
         mock_sprite1.disappear_complete = False
         mock_npc_state1 = MagicMock()
         mock_npc_state1.sprite = mock_sprite1
 
-        # Yema is an AnimatedNPC that has completed
         mock_sprite2 = MagicMock(spec=AnimatedNPC)
         mock_sprite2.disappear_complete = True
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        action = WaitForNPCsDisappearAction(npc_names=["martin", "yema"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should not complete while martin is still disappearing
         assert result is False
 
     def test_execute_multiple_npcs_all_complete(self) -> None:
         """Test executing with multiple NPCs all completed."""
-        action = WaitForNPCsDisappearAction(npc_names=["martin", "yema"])
-
-        # Both are AnimatedNPCs that have completed
+        context = MagicMock()
         mock_sprite1 = MagicMock(spec=AnimatedNPC)
         mock_sprite1.disappear_complete = True
         mock_npc_state1 = MagicMock()
@@ -795,12 +644,11 @@ class TestWaitForNPCsDisappearAction(unittest.TestCase):
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        action = WaitForNPCsDisappearAction(npc_names=["martin", "yema"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete when all NPCs have disappeared
         assert result is True
 
     def test_from_dict(self) -> None:
@@ -818,16 +666,8 @@ class TestWaitForNPCsDisappearAction(unittest.TestCase):
             WaitForNPCsDisappearAction.from_dict(data)
 
 
-class TestStartDisappearAnimationAction(unittest.TestCase):
+class TestStartDisappearAnimationAction:
     """Test Suite for StartDisappearAnimationAction."""
-
-    def setUp(self) -> None:
-        """Set up the test context."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_scene_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
-        self.mock_context.scene_plugin = self.mock_scene_plugin
 
     def test_initialization(self) -> None:
         """Test proper initialization of StartDisappearAnimationAction."""
@@ -837,54 +677,41 @@ class TestStartDisappearAnimationAction(unittest.TestCase):
 
     def test_execute_starts_animation(self) -> None:
         """Test executing starts the disappear animation."""
-        action = StartDisappearAnimationAction(npc_names=["martin"])
-
-        # Mock AnimatedNPC
+        context = MagicMock()
         mock_sprite = MagicMock(spec=AnimatedNPC)
         mock_sprite.disappear_complete = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         mock_npc_state.disappear_event_emitted = True
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = StartDisappearAnimationAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Animation started but not complete
         assert action.animation_started is True
-        assert result is False  # Not complete yet
-
-        # Should have called start_disappear_animation
+        assert result is False
         mock_sprite.start_disappear_animation.assert_called_once()
-        # Should have reset disappear event flag
         assert mock_npc_state.disappear_event_emitted is False
 
     def test_execute_waits_for_completion(self) -> None:
         """Test executing waits for animation completion."""
-        action = StartDisappearAnimationAction(npc_names=["martin"])
-
-        # Mock AnimatedNPC
+        context = MagicMock()
         mock_sprite = MagicMock(spec=AnimatedNPC)
         mock_sprite.disappear_complete = True
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         mock_npc_state.disappear_event_emitted = True
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = StartDisappearAnimationAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately
         assert result is True
-
-        # Should have removed NPC from wall list
-        self.mock_scene_plugin.remove_from_wall_list.assert_called_once_with(mock_sprite)
+        context.scene_plugin.remove_from_wall_list.assert_called_once_with(mock_sprite)
 
     def test_execute_multiple_npcs(self) -> None:
         """Test executing with multiple NPCs."""
-        action = StartDisappearAnimationAction(npc_names=["martin", "yema"])
-
-        # Mock AnimatedNPCs
+        context = MagicMock()
         mock_sprite1 = MagicMock(spec=AnimatedNPC)
         mock_sprite1.disappear_complete = True
         mock_npc_state1 = MagicMock()
@@ -895,70 +722,55 @@ class TestStartDisappearAnimationAction(unittest.TestCase):
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state1, "yema": mock_npc_state2}
+        action = StartDisappearAnimationAction(npc_names=["martin", "yema"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete when all animations are done
         assert result is True
-
-        # Should have called start_disappear_animation for both
         mock_sprite1.start_disappear_animation.assert_called_once()
         mock_sprite2.start_disappear_animation.assert_called_once()
-
-        # Should have removed both from wall list
-        assert self.mock_scene_plugin.remove_from_wall_list.call_count == 2
+        assert context.scene_plugin.remove_from_wall_list.call_count == 2
 
     def test_execute_non_animated_npc(self) -> None:
         """Test executing with non-AnimatedNPC sprite."""
-        action = StartDisappearAnimationAction(npc_names=["martin"])
-
-        # Mock regular sprite (not AnimatedNPC)
+        context = MagicMock()
         mock_sprite = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = StartDisappearAnimationAction(npc_names=["martin"])
 
-        # Execute action
-        result = action.execute(self.mock_context)
+        result = action.execute(context)
 
-        # Should complete immediately even though NPC is not AnimatedNPC
         assert result is True
 
     def test_execute_npc_not_found(self) -> None:
         """Test executing when NPC is not found."""
+        context = MagicMock()
+        context.npc_plugin.get_npcs.return_value = {}
         action = StartDisappearAnimationAction(npc_names=["invalid_npc"])
 
-        # Mock empty NPC list
-        self.mock_npc_plugin.get_npcs.return_value = {}
+        result = action.execute(context)
 
-        # Execute action
-        result = action.execute(self.mock_context)
-
-        # Should complete immediately
         assert result is True
 
     def test_execute_animation_in_progress(self) -> None:
         """Test executing while animation is in progress."""
-        action = StartDisappearAnimationAction(npc_names=["martin"])
-
-        # Mock AnimatedNPC with animation in progress
+        context = MagicMock()
         mock_sprite = MagicMock(spec=AnimatedNPC)
         mock_sprite.disappear_complete = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
-        self.mock_npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
+        action = StartDisappearAnimationAction(npc_names=["martin"])
 
-        # First execute to start animation
-        result1 = action.execute(self.mock_context)
+        result1 = action.execute(context)
         assert result1 is False
 
-        # Second execute while still in progress
-        result2 = action.execute(self.mock_context)
+        result2 = action.execute(context)
         assert result2 is False
 
-        # Should only have called start_disappear_animation once
         mock_sprite.start_disappear_animation.assert_called_once()
 
     def test_reset(self) -> None:

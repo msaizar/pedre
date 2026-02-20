@@ -1,11 +1,9 @@
 """Unit tests for dialog events."""
 
-import unittest
-
 from pedre.plugins.dialog.events import DialogClosedEvent, DialogOpenedEvent
 
 
-class TestDialogClosedEvent(unittest.TestCase):
+class TestDialogClosedEvent:
     """Test DialogClosedEvent."""
 
     def test_init(self) -> None:
@@ -32,7 +30,7 @@ class TestDialogClosedEvent(unittest.TestCase):
         assert data == {"npc": "elder", "dialog_level": 0}
 
 
-class TestDialogOpenedEvent(unittest.TestCase):
+class TestDialogOpenedEvent:
     """Test DialogOpenedEvent."""
 
     def test_init(self) -> None:
@@ -57,7 +55,3 @@ class TestDialogOpenedEvent(unittest.TestCase):
         data = event.get_script_data()
 
         assert data == {"npc": "hero", "dialog_level": 0}
-
-
-if __name__ == "__main__":
-    unittest.main()

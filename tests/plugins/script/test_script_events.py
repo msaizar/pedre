@@ -1,11 +1,9 @@
 """Unit tests for script events in src/pedre/plugins/script/events.py."""
 
-import unittest
-
 from pedre.plugins.script.events import ScriptCompleteEvent
 
 
-class TestScriptCompleteEvent(unittest.TestCase):
+class TestScriptCompleteEvent:
     """Test suite for ScriptCompleteEvent."""
 
     def test_initialization(self) -> None:
@@ -80,7 +78,3 @@ class TestScriptCompleteEvent(unittest.TestCase):
         assert event1.script_name == "script1"
         assert event2.script_name == "script2"
         assert event1.get_script_data()["script"] != event2.get_script_data()["script"]
-
-
-if __name__ == "__main__":
-    unittest.main()

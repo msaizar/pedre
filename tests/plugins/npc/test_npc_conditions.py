@@ -1,6 +1,5 @@
 """Tests for NPC conditions."""
 
-import unittest
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,79 +11,81 @@ from pedre.plugins.npc.conditions import (
 )
 
 
-class TestNPCInteractedCondition(unittest.TestCase):
+class TestNPCInteractedCondition:
     """Test cases for NPCInteractedCondition."""
-
-    def setUp(self) -> None:
-        """Set up test fixtures."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_check_returns_true(self) -> None:
         """Test that check returns True when NPC was interacted with."""
-        self.mock_npc_plugin.has_npc_been_interacted_with.return_value = True
+        context = MagicMock()
+        context.npc_plugin.has_npc_been_interacted_with.return_value = True
 
         condition = NPCInteractedCondition(npc_name="test_npc")
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is True
-        self.mock_npc_plugin.has_npc_been_interacted_with.assert_called_once_with("test_npc", None)
+        context.npc_plugin.has_npc_been_interacted_with.assert_called_once_with("test_npc", None)
 
     def test_check_returns_false(self) -> None:
         """Test that check returns False when NPC was not interacted with."""
-        self.mock_npc_plugin.has_npc_been_interacted_with.return_value = False
+        context = MagicMock()
+        context.npc_plugin.has_npc_been_interacted_with.return_value = False
 
         condition = NPCInteractedCondition(npc_name="test_npc")
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is False
-        self.mock_npc_plugin.has_npc_been_interacted_with.assert_called_once_with("test_npc", None)
+        context.npc_plugin.has_npc_been_interacted_with.assert_called_once_with("test_npc", None)
 
     def test_check_with_scene_name(self) -> None:
         """Test check with specific scene name."""
-        self.mock_npc_plugin.has_npc_been_interacted_with.return_value = True
+        context = MagicMock()
+        context.npc_plugin.has_npc_been_interacted_with.return_value = True
 
         condition = NPCInteractedCondition(npc_name="test_npc", scene_name="village")
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is True
-        self.mock_npc_plugin.has_npc_been_interacted_with.assert_called_once_with("test_npc", "village")
+        context.npc_plugin.has_npc_been_interacted_with.assert_called_once_with("test_npc", "village")
 
     def test_check_with_equals_true(self) -> None:
         """Test check with explicit equals=True."""
-        self.mock_npc_plugin.has_npc_been_interacted_with.return_value = True
+        context = MagicMock()
+        context.npc_plugin.has_npc_been_interacted_with.return_value = True
 
         condition = NPCInteractedCondition(npc_name="test_npc", expected=True)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is True
 
     def test_check_with_equals_false(self) -> None:
         """Test check with equals=False (negative check)."""
-        self.mock_npc_plugin.has_npc_been_interacted_with.return_value = False
+        context = MagicMock()
+        context.npc_plugin.has_npc_been_interacted_with.return_value = False
 
         condition = NPCInteractedCondition(npc_name="test_npc", expected=False)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is True  # NPC was NOT interacted with, which matches equals=False
 
     def test_check_equals_false_when_interacted(self) -> None:
         """Test equals=False returns False when NPC was actually interacted with."""
-        self.mock_npc_plugin.has_npc_been_interacted_with.return_value = True
+        context = MagicMock()
+        context.npc_plugin.has_npc_been_interacted_with.return_value = True
 
         condition = NPCInteractedCondition(npc_name="test_npc", expected=False)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is False  # NPC WAS interacted with, which doesn't match equals=False
 
     def test_check_missing_npc_name(self) -> None:
         """Test that missing NPC name returns False."""
+        context = MagicMock()
+
         condition = NPCInteractedCondition(npc_name="")
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is False
-        self.mock_npc_plugin.has_npc_been_interacted_with.assert_not_called()
+        context.npc_plugin.has_npc_been_interacted_with.assert_not_called()
 
     def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
@@ -122,66 +123,66 @@ class TestNPCInteractedCondition(unittest.TestCase):
             NPCInteractedCondition.from_dict(data)
 
 
-class TestNPCDialogLevelCondition(unittest.TestCase):
+class TestNPCDialogLevelCondition:
     """Test cases for NPCDialogLevelCondition."""
-
-    def setUp(self) -> None:
-        """Set up test fixtures."""
-        self.mock_context = MagicMock()
-        self.mock_npc_plugin = MagicMock()
-        self.mock_context.npc_plugin = self.mock_npc_plugin
 
     def test_check_returns_true(self) -> None:
         """Test that check returns True when dialog level matches."""
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 3
-        self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
+        context.npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
         condition = NPCDialogLevelCondition(npc_name="test_npc", expected_level=3)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is True
-        self.mock_npc_plugin.get_npc_by_name.assert_called_once_with("test_npc")
+        context.npc_plugin.get_npc_by_name.assert_called_once_with("test_npc")
 
     def test_check_returns_false_wrong_level(self) -> None:
         """Test that check returns False when dialog level doesn't match."""
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 2
-        self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
+        context.npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
         condition = NPCDialogLevelCondition(npc_name="test_npc", expected_level=3)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is False
 
     def test_check_zero_level(self) -> None:
         """Test check with dialog level 0."""
+        context = MagicMock()
         mock_npc_state = MagicMock()
         mock_npc_state.dialog_level = 0
-        self.mock_npc_plugin.get_npc_by_name.return_value = mock_npc_state
+        context.npc_plugin.get_npc_by_name.return_value = mock_npc_state
 
         condition = NPCDialogLevelCondition(npc_name="test_npc", expected_level=0)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is True
 
     def test_check_npc_not_found(self) -> None:
         """Test that check returns False when NPC is not found."""
-        self.mock_npc_plugin.get_npc_by_name.return_value = None
+        context = MagicMock()
+        context.npc_plugin.get_npc_by_name.return_value = None
 
         condition = NPCDialogLevelCondition(npc_name="nonexistent_npc", expected_level=3)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is False
-        self.mock_npc_plugin.get_npc_by_name.assert_called_once_with("nonexistent_npc")
+        context.npc_plugin.get_npc_by_name.assert_called_once_with("nonexistent_npc")
 
     def test_check_missing_npc_name(self) -> None:
         """Test that missing NPC name returns False."""
+        context = MagicMock()
+
         condition = NPCDialogLevelCondition(npc_name="", expected_level=3)
-        result = condition.check(self.mock_context)
+        result = condition.check(context)
 
         assert result is False
-        self.mock_npc_plugin.get_npc_by_name.assert_not_called()
+        context.npc_plugin.get_npc_by_name.assert_not_called()
 
     def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
