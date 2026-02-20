@@ -111,6 +111,32 @@ def on_update(self, delta_time):
 - Updates all currently executing script action sequences
 - Removes completed sequences and publishes ScriptCompleteEvent
 
+#### run_actions
+
+`run_actions(sequence_name: str, actions: list[Action]) -> None`
+
+Queue a pre-parsed list of actions for immediate execution.
+
+**Parameters:**
+
+- `sequence_name` - Name used for logging and tracking (e.g. `"npc_guard_condition_fail"`)
+- `actions` - List of pre-parsed `Action` objects to execute in sequence
+
+**Example:**
+
+```python
+from pedre.actions.registry import ActionRegistry
+
+actions = [ActionRegistry.create({"name": "dialog", "speaker": "Guard", "text": ["Stop!"]})]
+script_plugin.run_actions("guard_warning", actions)
+```
+
+**Notes:**
+
+- Useful for executing ad-hoc action sequences outside of a script trigger (e.g. NPC dialog `on_condition_fail`)
+- The sequence runs frame-by-frame alongside any other active scripts
+- Publishes `ScriptCompleteEvent` with `sequence_name` when the sequence finishes
+
 ### State Queries
 
 #### get_scripts
@@ -652,6 +678,7 @@ The `ScriptBasePlugin` class defines the minimum interface that any script plugi
 Your custom script plugin must implement these abstract methods:
 
 ```python
+from pedre.actions.base import Action
 from pedre.plugins.script.base import ScriptBasePlugin, Script
 
 class CustomScriptPlugin(ScriptBasePlugin):
@@ -662,6 +689,10 @@ class CustomScriptPlugin(ScriptBasePlugin):
 
     def get_scripts(self) -> dict[str, Script]:
         """Get all loaded scripts."""
+        ...
+
+    def run_actions(self, sequence_name: str, actions: list[Action]) -> None:
+        """Queue an ad-hoc list of actions for execution."""
         ...
 ```
 
