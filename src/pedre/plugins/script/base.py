@@ -73,3 +73,13 @@ class ScriptBasePlugin(BasePlugin, ABC):
     def get_scripts(self) -> dict[str, Script]:
         """Get scripts."""
         ...
+
+    @abstractmethod
+    def run_actions(self, sequence_name: str, actions: list[Action]) -> None:
+        """Queue an ad-hoc list of actions for execution.
+
+        Args:
+            sequence_name: Name used for logging and tracking.
+            actions: Pre-parsed Action objects to execute.
+        """
+        ...

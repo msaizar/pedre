@@ -10,6 +10,8 @@ from pedre.plugins.base import BasePlugin
 if TYPE_CHECKING:
     import arcade
 
+    from pedre.actions.base import Action
+
 
 @dataclass
 class NPCDialogConfig:
@@ -33,7 +35,7 @@ class NPCDialogConfig:
                    dialog to display. Each condition has a "name" type and expected values.
                    Common checks: "npc_dialog_level", "inventory_accessed", "object_interacted".
                    If None or empty, dialog always shows.
-        on_condition_fail: Optional list of action dictionaries to execute if conditions fail.
+        on_condition_fail: Optional list of parsed Action objects to execute if conditions fail.
                           Allows fallback behavior like showing reminder text or triggering
                           alternative sequences. If None, condition failure silently falls back
                           to other available dialog options.
@@ -60,7 +62,7 @@ class NPCDialogConfig:
     text: list[str]
     name: str | None = None
     conditions: list[dict[str, Any]] | None = None
-    on_condition_fail: list[dict[str, Any]] | None = None  # List of actions to execute if conditions fail
+    on_condition_fail: list[Action] | None = None  # List of actions to execute if conditions fail
 
 
 @dataclass

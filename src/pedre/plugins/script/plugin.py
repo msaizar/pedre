@@ -524,6 +524,15 @@ class ScriptPlugin(ScriptBasePlugin):
         """
         self._execute_actions(script_name, script.actions)
 
+    def run_actions(self, sequence_name: str, actions: list[Action]) -> None:
+        """Queue an ad-hoc list of actions for execution.
+
+        Args:
+            sequence_name: Name used for logging and tracking.
+            actions: Pre-parsed Action objects to execute.
+        """
+        self._execute_actions(sequence_name, actions)
+
     def _execute_actions(self, sequence_name: str, action_data_list: list[Action]) -> None:
         """Execute a list of actions as a sequence.
 

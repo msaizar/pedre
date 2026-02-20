@@ -680,6 +680,22 @@ class TestScriptPlugin(unittest.TestCase):
         assert len(self.plugin.active_sequences) == 1
         mock_sequence_class.assert_called_once_with([])
 
+    @patch("pedre.plugins.script.plugin.ActionSequence")
+    def test_run_actions_delegates_to_execute_actions(self, mock_sequence_class: MagicMock) -> None:
+        """Test run_actions queues the action list as an active sequence."""
+        self.plugin.setup(self.mock_context)
+
+        mock_action = MagicMock()
+        mock_sequence = MagicMock()
+        mock_sequence_class.return_value = mock_sequence
+
+        self.plugin.run_actions("my_sequence", [mock_action])
+
+        assert len(self.plugin.active_sequences) == 1
+        assert self.plugin.active_sequences[0][0] == "my_sequence"
+        assert self.plugin.active_sequences[0][1] == mock_sequence
+        mock_sequence_class.assert_called_once_with([mock_action])
+
     def test_process_pending_checks_no_context(self) -> None:
         """Test process pending checks without context."""
         self.plugin.context = None

@@ -61,6 +61,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
+from pedre.actions.registry import ActionParseError, ActionRegistry
 from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 from pedre.conf import settings
 from pedre.helpers import asset_path, matches_key
@@ -75,6 +76,7 @@ from pedre.plugins.npc.sprites import AnimatedNPC
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
+    from pedre.actions.base import Action
     from pedre.plugins.npc.types import NPCInitKwargs
 
 logger = logging.getLogger(__name__)
@@ -279,12 +281,27 @@ class NPCPlugin(NPCBasePlugin):
                     except ValueError:
                         level = level_str
 
+                    # Parse on_condition_fail actions through ActionRegistry
+                    parsed_fail_actions = None
+                    if fail_action_defs := dialog_data.get("on_condition_fail"):
+                        parsed_fail_actions = []
+                        for action_def in fail_action_defs:
+                            try:
+                                parsed_fail_actions.append(ActionRegistry.create(action_def))
+                            except ActionParseError as e:
+                                logger.warning(
+                                    "Failed to parse on_condition_fail action for NPC '%s' level %s: %s",
+                                    npc_name,
+                                    level_str,
+                                    e,
+                                )
+
                     # Create dialog config
                     self.dialogs[scene][npc_name][level] = NPCDialogConfig(
                         text=dialog_data["text"],
                         name=dialog_data.get("name"),
                         conditions=dialog_data.get("conditions"),
-                        on_condition_fail=dialog_data.get("on_condition_fail"),
+                        on_condition_fail=parsed_fail_actions,
                     )
 
                 npc_count += 1
@@ -411,15 +428,10 @@ class NPCPlugin(NPCBasePlugin):
         dialog_config, on_condition_fail = self.get_dialog(name, npc.dialog_level, current_scene)
 
         if dialog_plugin:
-            # If conditions failed, execute on_condition_fail actions
+            # If conditions failed, execute on_condition_fail actions via ScriptPlugin
             if on_condition_fail:
-                for action in on_condition_fail:
-                    if action.get("name") == "dialog":
-                        fail_text = action.get("text", [])
-                        speaker = action.get("speaker", name)
-                        dialog_plugin.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)
-                        return True
-                return False
+                self.context.script_plugin.run_actions(f"npc_{name}_condition_fail", on_condition_fail)
+                return True
 
             # Show dialog - use display name from config if available, otherwise use NPC key name
             if dialog_config:
@@ -485,7 +497,7 @@ class NPCPlugin(NPCBasePlugin):
 
     def get_dialog(
         self, npc_name: str, dialog_level: int, scene: str = "default"
-    ) -> tuple[NPCDialogConfig | None, list[dict[str, Any]] | None]:
+    ) -> tuple[NPCDialogConfig | None, list[Action] | None]:
         """Get dialog for an NPC at a specific conversation level in a scene.
 
         Args:
