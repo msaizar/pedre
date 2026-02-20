@@ -194,24 +194,6 @@ class MapValidator(Validator):
                 if error:
                     errors.append(f"Map '{map_name}': NPCs layer: {error}")
 
-            # Validate animation properties (if present, must be ints)
-            animation_props = [
-                "appear_duration",
-                "appear_complete",
-                "disappear_duration",
-                "disappear_complete",
-                "interact_duration",
-                "interact_complete",
-                "walk_frame_count",
-                "walk_duration",
-                "idle_duration",
-            ]
-            for prop in animation_props:
-                if prop in npc.properties:
-                    error = self._validate_property_type(npc.properties[prop], int, prop, f"NPC '{name}'")
-                    if error:
-                        errors.append(f"Map '{map_name}': NPCs layer: {error}")
-
             # Register NPC in context
             self.context.add_map_entity(map_name, "npcs", name)
 

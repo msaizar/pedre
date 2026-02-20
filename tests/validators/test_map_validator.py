@@ -279,30 +279,6 @@ class TestMapValidator:
         assert len(result.errors) == 1
         assert "'initially_hidden' must be bool" in result.errors[0]
 
-    def test_npc_invalid_animation_property_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC with animation properties that are not ints."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(
-            name="merchant",
-            properties={
-                "sprite_sheet": "merchant.png",
-                "appear_duration": "not_int",
-                "walk_frame_count": 3.5,  # Should be int, not float
-            },
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 2
-        assert any("'appear_duration' must be int" in err for err in result.errors)
-        assert any("'walk_frame_count' must be int" in err for err in result.errors)
-
     def test_npc_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test that map without NPCs layer is valid."""
         map_file = maps_dir / "test.tmx"
