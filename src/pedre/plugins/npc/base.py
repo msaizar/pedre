@@ -30,7 +30,7 @@ class NPCDialogConfig:
              dialog box instead of the NPC's key name. Useful for proper capitalization or
              titles (e.g., "Merchant" instead of "merchant").
         conditions: Optional list of condition dictionaries that must ALL be true for this
-                   dialog to display. Each condition has a "check" type and expected values.
+                   dialog to display. Each condition has a "name" type and expected values.
                    Common checks: "npc_dialog_level", "inventory_accessed", "object_interacted".
                    If None or empty, dialog always shows.
         on_condition_fail: Optional list of action dictionaries to execute if conditions fail.
@@ -48,7 +48,7 @@ class NPCDialogConfig:
                 "1": {
                     "name": "Merchant",
                     "text": ["You're back! Did you check your inventory?"],
-                    "conditions": [{"check": "inventory_accessed", "equals": true}],
+                    "conditions": [{"name": "inventory_accessed", "equals": true}],
                     "on_condition_fail": [
                         {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
                     ]

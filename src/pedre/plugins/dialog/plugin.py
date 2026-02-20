@@ -28,7 +28,7 @@ Dialog Configuration:
                     "text": ["Next dialog level"],
                     "conditions": [
                         {
-                            "check": "inventory_accessed",
+                            "name": "inventory_accessed",
                             "equals": true
                         }
                     ],

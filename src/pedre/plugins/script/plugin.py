@@ -26,7 +26,7 @@ Script anatomy:
 {
   "script_name": {
     "trigger": {"event": "dialog_closed", "npc": "martin", "dialog_level": 1},
-    "conditions": [{"check": "inventory_accessed", "equals": true}],
+    "conditions": [{"name": "inventory_accessed", "equals": true}],
     "scene": "village",
     "run_once": true,
     "actions": [

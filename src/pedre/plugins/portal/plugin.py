@@ -49,14 +49,14 @@ Example conditional portal:
     {
         "tower_gate_open": {
             "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-            "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
+            "conditions": [{"name": "npc_dialog_level", "npc": "guard", "gte": 2}],
             "actions": [
                 {"name": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
             ]
         },
         "tower_gate_locked": {
             "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-            "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
+            "conditions": [{"name": "npc_dialog_level", "npc": "guard", "lt": 2}],
             "actions": [
                 {"name": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
             ]
