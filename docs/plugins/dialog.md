@@ -424,7 +424,7 @@ Dialogs are typically loaded from JSON files in the `assets/dialogs/` directory.
             "text": ["Next dialog level"],
             "conditions": [
                 {
-                    "check": "inventory_accessed",
+                    "name": "inventory_accessed",
                     "equals": true
                 }
             ],
@@ -464,7 +464,7 @@ Dialogs are typically loaded from JSON files in the `assets/dialogs/` directory.
             "text": ["Qué hermoso día, no?"],
             "conditions": [
                 {
-                    "check": "inventory_accessed",
+                    "name": "inventory_accessed",
                     "equals": true
                 }
             ]

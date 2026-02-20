@@ -283,14 +283,14 @@ Portal that requires a condition to be met:
 {
   "tower_gate_open": {
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "gte": 2}],
     "actions": [
       {"name": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "tower_entrance"}
     ]
   },
   "tower_gate_locked": {
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "lt": 2}],
     "actions": [
       {"name": "dialog", "speaker": "Narrator", "text": ["The gate is sealed. Perhaps the guard knows something..."]}
     ]
@@ -316,7 +316,7 @@ Portal that plays a cutscene on first entry:
   },
   "dungeon_return": {
     "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
-    "conditions": [{"check": "script_completed", "script": "dungeon_cutscene"}],
+    "conditions": [{"name": "script_completed", "script": "dungeon_cutscene"}],
     "actions": [
       {"name": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "dungeon_entrance"}
     ]
@@ -472,7 +472,7 @@ Create matching portals in both maps:
   "castle_open": {
     "trigger": {"event": "portal_entered", "portal": "castle_gate"},
     "conditions": [
-      {"check": "npc_interacted", "npc": "king", "scene": "throne_room"}
+      {"name": "npc_interacted", "npc": "king", "scene": "throne_room"}
     ],
     "actions": [
       {"name": "change_scene", "target_map": "castle_interior.tmx", "spawn_waypoint": "entrance"}
@@ -481,7 +481,7 @@ Create matching portals in both maps:
   "castle_locked": {
     "trigger": {"event": "portal_entered", "portal": "castle_gate"},
     "conditions": [
-      {"check": "npc_interacted", "npc": "king", "scene": "throne_room", "equals": false}
+      {"name": "npc_interacted", "npc": "king", "scene": "throne_room", "equals": false}
     ],
     "actions": [
       {"name": "dialog", "speaker": "Guard", "text": ["The castle is closed to visitors."]}

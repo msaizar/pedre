@@ -336,7 +336,7 @@ Check if an object has been interacted with.
     },
     "conditions": [
         {
-            "check": "object_interacted",
+            "name": "object_interacted",
             "object": "treasure_chest"
         }
     ]
@@ -347,7 +347,7 @@ Check if an object has been interacted with.
 
 ```json
 {
-    "check": "object_interacted",
+    "name": "object_interacted",
     "object": "treasure_chest",
     "equals": false
 }

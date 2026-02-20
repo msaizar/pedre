@@ -642,7 +642,7 @@ Configuration for NPC dialog at a specific conversation level.
 dialog_config = NPCDialogConfig(
     text=["Hello!", "Welcome to my shop."],
     name="Merchant",
-    conditions=[{"check": "inventory_accessed", "equals": True}],
+    conditions=[{"name": "inventory_accessed", "equals": True}],
     on_condition_fail=[
         {"name": "dialog", "speaker": "Merchant", "text": ["Check your inventory first!"]}
     ]
@@ -662,7 +662,7 @@ Dialog files are named `{scene}_dialogs.json` (e.g., `casa_dialogs.json`). The s
       "name": "Display Name",
       "text": ["First conversation page", "Second page"],
       "conditions": [
-        {"check": "inventory_accessed", "equals": true}
+        {"name": "inventory_accessed", "equals": true}
       ],
       "on_condition_fail": [
         {"name": "dialog", "speaker": "NPC", "text": ["Not ready yet!"]}
@@ -715,7 +715,7 @@ Dialog can be conditional based on game state:
       "name": "Merchant",
       "text": ["You checked your inventory!"],
       "conditions": [
-        {"check": "inventory_accessed", "equals": true}
+        {"name": "inventory_accessed", "equals": true}
       ],
       "on_condition_fail": [
         {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
@@ -1201,7 +1201,7 @@ Check if an NPC has been interacted with in a specific scene.
     },
     "conditions": [
         {
-            "check": "npc_interacted",
+            "name": "npc_interacted",
             "npc": "guard"
         }
     ]
@@ -1212,7 +1212,7 @@ Check if an NPC has been interacted with in a specific scene.
 
 ```json
 {
-    "check": "npc_interacted",
+    "name": "npc_interacted",
     "npc": "guard",
     "equals": false
 }
@@ -1244,7 +1244,7 @@ Check an NPC's dialog level.
     },
     "conditions": [
         {
-            "check": "npc_dialog_level",
+            "name": "npc_dialog_level",
             "npc": "merchant",
             "equals": 2
         }
@@ -1335,7 +1335,7 @@ if nearby:
             "dialog_level": 1
         },
         "conditions": [
-            {"check": "inventory_accessed", "equals": true}
+            {"name": "inventory_accessed", "equals": true}
         ],
         "actions": [
             {"name": "dialog", "speaker": "Merchant", "text": ["Great! You found the inventory!"]},

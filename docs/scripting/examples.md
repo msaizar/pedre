@@ -467,7 +467,7 @@ Different responses based on whether player has required item.
     },
     "conditions": [
       {
-        "check": "object_interacted",
+        "name": "object_interacted",
         "object": "castle_key",
         "equals": true
       }

@@ -520,7 +520,7 @@ particle_plugin.emit_burst(x, y, count=30, color=(255, 0, 255))
       "npc": "yema"
     },
     "conditions": [
-      {"check": "inventory_has_item", "item_id": "flowers"}
+      {"name": "inventory_has_item", "item_id": "flowers"}
     ],
     "actions": [
       {

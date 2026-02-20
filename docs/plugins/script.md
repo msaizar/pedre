@@ -278,7 +278,7 @@ Container for action sequences with trigger conditions and metadata.
 ```python
 script = Script(
     trigger={"event": "dialog_closed", "npc": "martin", "dialog_level": 1},
-    conditions=[{"check": "inventory_accessed", "equals": True}],
+    conditions=[{"name": "inventory_accessed", "equals": True}],
     scene="village",
     run_once=True,
     actions=[
@@ -304,7 +304,7 @@ Scripts are defined in JSON files located in `assets/data/scripts/` with the nam
       "dialog_level": 0
     },
     "conditions": [
-      {"check": "inventory_accessed", "equals": true}
+      {"name": "inventory_accessed", "equals": true}
     ],
     "scene": "village",
     "run_once": true,
@@ -388,8 +388,8 @@ Conditions must all evaluate to true for the script to execute:
 ```json
 {
   "conditions": [
-    {"check": "inventory_accessed", "equals": true},
-    {"check": "npc_dialog_level", "npc": "merchant", "equals": 2}
+    {"name": "inventory_accessed", "equals": true},
+    {"name": "npc_dialog_level", "npc": "merchant", "equals": 2}
   ]
 }
 ```
@@ -441,7 +441,7 @@ The optional `scene` field controls when a script can execute:
     "scene": "castle",
     "trigger": {"event": "portal_entered", "portal": "gate"},
     "conditions": [
-      {"check": "script_completed", "script": "village_quest_complete"}
+      {"name": "script_completed", "script": "village_quest_complete"}
     ],
     "actions": [
       {"name": "change_scene", "target_map": "throne_room.tmx"}
@@ -505,7 +505,7 @@ Check if a specific script has fully completed all its actions.
   },
   "conditions": [
     {
-      "check": "script_completed",
+      "name": "script_completed",
       "script": "main_quest_finale"
     }
   ]
@@ -554,7 +554,7 @@ Check if a specific script has fully completed all its actions.
       "dialog_level": 1
     },
     "conditions": [
-      {"check": "inventory_accessed", "equals": true}
+      {"name": "inventory_accessed", "equals": true}
     ],
     "actions": [
       {"name": "dialog", "speaker": "Merchant", "text": ["Good! You found your inventory!"]}
@@ -607,7 +607,7 @@ Check if a specific script has fully completed all its actions.
       "portal": "to_forest"
     },
     "conditions": [
-      {"check": "npc_interacted", "npc": "guard", "equals": true}
+      {"name": "npc_interacted", "npc": "guard", "equals": true}
     ],
     "actions": [
       {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}

@@ -605,7 +605,7 @@ Published when the inventory view is closed by the player.
     },
     "conditions": [
         {
-            "check": "inventory_accessed",
+            "name": "inventory_accessed",
             "equals": true
         }
     ],
@@ -795,7 +795,7 @@ Check if the player has opened their inventory.
     },
     "conditions": [
         {
-            "check": "inventory_accessed",
+            "name": "inventory_accessed",
             "equals": true
         }
     ]
@@ -827,7 +827,7 @@ Check if an inventory item was acquired.
     },
     "conditions": [
         {
-            "check": "item_acquired",
+            "name": "item_acquired",
             "item_id": "dungeon_key"
         }
     ],
@@ -1017,7 +1017,7 @@ INSTALLED_PLUGINS = [
         },
         "conditions": [
             {
-                "check": "item_acquired",
+                "name": "item_acquired",
                 "item_id": "iron_key"
             }
         ],

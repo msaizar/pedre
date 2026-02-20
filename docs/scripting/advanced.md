@@ -94,7 +94,7 @@ Create branching paths based on player actions and game state.
     },
     "conditions": [
       {
-        "check": "object_interacted",
+        "name": "object_interacted",
         "object": "royal_seal",
         "equals": true
       }

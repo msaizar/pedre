@@ -157,7 +157,7 @@ Use the `conditions` array for checking inventory state.
     },
     "conditions": [
       {
-        "check": "inventory_accessed",
+        "name": "inventory_accessed",
         "equals": true
       }
     ],
@@ -605,7 +605,7 @@ Triggered when the player enters a portal zone.
       "event": "portal_entered",
       "portal": "tower_gate"
     },
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "equals": 2}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "equals": 2}],
     "actions": [
       {"name": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
     ]
@@ -615,7 +615,7 @@ Triggered when the player enters a portal zone.
       "event": "portal_entered",
       "portal": "tower_gate"
     },
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "equals": 0}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "equals": 0}],
     "actions": [
       {"name": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
     ]
@@ -701,7 +701,7 @@ Triggered when a new scene/map finishes loading.
       "scene": "castle"
     },
     "conditions": [
-      {"check": "quest_complete", "quest": "gather_herbs"}
+      {"name": "quest_complete", "quest": "gather_herbs"}
     ],
     "run_once": true,
     "actions": [
@@ -776,12 +776,12 @@ For more complex triggers, combine event types with conditions:
   },
   "conditions": [
     {
-      "check": "npc_dialog_level",
+      "name": "npc_dialog_level",
       "npc": "merchant",
       "equals": 2
     },
     {
-      "check": "inventory_accessed",
+      "name": "inventory_accessed",
       "equals": true
     }
   ]

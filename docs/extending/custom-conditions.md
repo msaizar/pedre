@@ -89,7 +89,7 @@ Once registered, your condition can be used in any JSON script:
     },
     "conditions": [
       {
-        "check": "is_weather",
+        "name": "is_weather",
         "weather": "rain"
       }
     ],
@@ -139,7 +139,7 @@ Usage:
 {
   "conditions": [
     {
-      "check": "player_health",
+      "name": "player_health",
       "lte": 25
     }
   ]

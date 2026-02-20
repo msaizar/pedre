@@ -731,7 +731,7 @@ Transition to a different map/scene with fade effects.
             "portal": "forest_gate"
         },
         "conditions": [
-            {"check": "npc_interacted", "npc": "guard"}
+            {"name": "npc_interacted", "npc": "guard"}
         ],
         "actions": [
             {
@@ -770,7 +770,7 @@ context.scene_plugin.request_transition("castle.tmx", "main_entrance")
             "portal": "castle_gate"
         },
         "conditions": [
-            {"check": "inventory_has_item", "item_id": "royal_seal"}
+            {"name": "inventory_has_item", "item_id": "royal_seal"}
         ],
         "actions": [
             {
@@ -813,7 +813,7 @@ context.scene_plugin.request_transition("castle.tmx", "main_entrance")
             "npc": "elder"
         },
         "conditions": [
-            {"check": "quest_complete", "quest": "gather_herbs"}
+            {"name": "quest_complete", "quest": "gather_herbs"}
         ],
         "actions": [
             {"name": "dialog", "speaker": "Elder", "text": ["You've done well. Now travel to the temple."]},

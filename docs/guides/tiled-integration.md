@@ -754,14 +754,14 @@ Portal transitions are handled through the script plugin using the `portal_enter
 {
   "tower_gate_open": {
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "gte": 2}],
     "actions": [
       {"name": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
     ]
   },
   "tower_gate_locked": {
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "lt": 2}],
     "actions": [
       {"name": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
     ]
@@ -784,7 +784,7 @@ Portal transitions are handled through the script plugin using the `portal_enter
   },
   "dungeon_return": {
     "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
-    "conditions": [{"check": "script_completed", "script": "dungeon_first_entry"}],
+    "conditions": [{"name": "script_completed", "script": "dungeon_first_entry"}],
     "actions": [
       {"name": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
