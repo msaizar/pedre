@@ -2,6 +2,7 @@
 
 import json
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 
@@ -129,12 +130,13 @@ class TestDialogValidator:
         """Test error handling when OSError occurs while reading file."""
         dialog_file = dialogs_dir / "test_dialogs.json"
         dialog_file.write_text(json.dumps({"npc1": {"1": {"text": ["Hello"]}}}))
-        dialog_file.chmod(0o000)
 
         validator = DialogValidator(dialogs_dir, context)
-        result = validator.validate()
 
-        dialog_file.chmod(0o644)
+        # Mock Path.open to raise PermissionError (a subclass of OSError)
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
+            result = validator.validate()
+
         assert any("Failed to load" in e for e in result.errors)
 
     def test_validate_root_not_dict(self, dialogs_dir: Path, context: ValidationContext) -> None:

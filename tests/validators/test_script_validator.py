@@ -2,6 +2,7 @@
 
 import json
 from typing import TYPE_CHECKING, Any, ClassVar
+from unittest.mock import patch
 
 import pytest
 
@@ -139,12 +140,13 @@ class TestScriptValidator:
         """Test error handling when OSError occurs while reading file."""
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
-        script_file.chmod(0o000)
 
         validator = ScriptValidator(scripts_dir, context)
-        result = validator.validate()
 
-        script_file.chmod(0o644)
+        # Mock Path.open to raise PermissionError (a subclass of OSError)
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
+            result = validator.validate()
+
         assert any("Failed to load" in e for e in result.errors)
 
     def test_validate_trigger_missing_event(

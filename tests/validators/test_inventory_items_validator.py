@@ -2,6 +2,7 @@
 
 import json
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -159,12 +160,13 @@ class TestInventoryItemsValidator:
         """Test error handling when OSError occurs while reading file."""
         items_file = tmp_path / "inventory_items.json"
         items_file.write_text(json.dumps({"items": []}))
-        items_file.chmod(0o000)
 
         validator = InventoryItemsValidator(items_file, context)
-        result = validator.validate()
 
-        items_file.chmod(0o644)
+        # Mock Path.open to raise PermissionError (a subclass of OSError)
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
+            result = validator.validate()
+
         assert len(result.errors) == 1
         assert "Failed to load" in result.errors[0]
         assert result.item_count == 0
