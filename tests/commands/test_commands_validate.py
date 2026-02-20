@@ -440,3 +440,30 @@ class TestValidateCommand:
 
         # Should exit with error - multiple files with errors
         assert exc_info.value.code == 1
+
+    def test_validate_cross_reference_errors(self, dialogs_dir: Path, maps_dir: Path) -> None:
+        """Test that cross-reference validation errors are detected and aggregated."""
+        # Create a dialog that references a non-existent NPC (no map files, so no NPCs exist)
+        dialog_data = {
+            "nonexistent_npc": {
+                "0": {
+                    "text": ["Hello, traveler!"],
+                }
+            }
+        }
+
+        dialog_file = dialogs_dir / "npc_dialogs.json"
+        dialog_file.write_text(json.dumps(dialog_data))
+
+        command = ValidateCommand()
+        args = argparse.Namespace(
+            scripts_path=None,
+            type="dialogs",
+            dialogs_path=dialogs_dir,
+            maps_path=maps_dir,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            command.execute(args)
+
+        # Should exit with error due to cross-reference validation failure
+        assert exc_info.value.code == 1
