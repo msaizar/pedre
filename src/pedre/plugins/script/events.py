@@ -36,7 +36,7 @@ class ScriptCompleteEvent(Event):
 
     name: ClassVar[str] = "script_complete"
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"script"})
-    reference_fields: ClassVar[dict[str, str]] = {"script_name": "script"}
+    reference_fields: ClassVar[dict[str, str]] = {"script": "script"}
     script_name: str
 
     def get_script_data(self) -> dict[str, Any]:

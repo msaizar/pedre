@@ -38,7 +38,7 @@ class NPCInteractedEvent(Event):
     name: ClassVar[str] = "npc_interacted"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc", "dialog_level"})
-    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
+    reference_fields: ClassVar[dict[str, str]] = {"npc": "npc"}
     npc_name: str
     dialog_level: int
 
@@ -77,7 +77,7 @@ class NPCMovementCompleteEvent(Event):
     name: ClassVar[str] = "npc_movement_complete"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
-    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
+    reference_fields: ClassVar[dict[str, str]] = {"npc": "npc"}
     npc_name: str
 
     def get_script_data(self) -> dict[str, Any]:
@@ -115,7 +115,7 @@ class NPCAppearCompleteEvent(Event):
     name: ClassVar[str] = "npc_appear_complete"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
-    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
+    reference_fields: ClassVar[dict[str, str]] = {"npc": "npc"}
     npc_name: str
 
     def get_script_data(self) -> dict[str, Any]:
@@ -154,7 +154,7 @@ class NPCDisappearCompleteEvent(Event):
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc"})
     npc_name: str
-    reference_fields: ClassVar[dict[str, str]] = {"npc_name": "npc"}
+    reference_fields: ClassVar[dict[str, str]] = {"npc": "npc"}
 
     def get_script_data(self) -> dict[str, Any]:
         """Get data for script triggers."""

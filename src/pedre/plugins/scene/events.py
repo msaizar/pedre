@@ -38,7 +38,7 @@ class SceneStartEvent(Event):
     name: ClassVar[str] = "scene_start"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"scene"})
-    reference_fields: ClassVar[dict[str, str]] = {"scene_name": "scene"}
+    reference_fields: ClassVar[dict[str, str]] = {"scene": "scene"}
     scene_name: str
 
     def get_script_data(self) -> dict[str, Any]:
