@@ -1,26 +1,32 @@
 """Unit tests for PortalPlugin in src/pedre/plugins/portal/plugin.py."""
 
-import unittest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from pedre.plugins.portal.events import PortalEnteredEvent
 from pedre.plugins.portal.plugin import PortalPlugin
 
+PortalPluginCtx = tuple[PortalPlugin, MagicMock, MagicMock]
 
-class TestPortalPlugin(unittest.TestCase):
+
+@pytest.fixture
+def portal_plugin_ctx() -> PortalPluginCtx:
+    """Create a fresh PortalPlugin with a mock context, event bus, and player plugin."""
+    plugin = PortalPlugin()
+    mock_context = MagicMock()
+    mock_event_bus = MagicMock()
+    mock_player_plugin = MagicMock()
+
+    mock_context.event_bus = mock_event_bus
+    mock_context.player_plugin = mock_player_plugin
+
+    plugin.setup(mock_context)
+    return plugin, mock_event_bus, mock_player_plugin
+
+
+class TestPortalPlugin:
     """Test Suite for PortalPlugin."""
-
-    def setUp(self) -> None:
-        """Set up the PortalPlugin and mock context."""
-        self.plugin = PortalPlugin()
-        self.mock_context = MagicMock()
-        self.mock_event_bus = MagicMock()
-        self.mock_player_plugin = MagicMock()
-
-        self.mock_context.event_bus = self.mock_event_bus
-        self.mock_context.player_plugin = self.mock_player_plugin
-
-        self.plugin.setup(self.mock_context)
 
     def test_initialization(self) -> None:
         """Test proper initialization of the plugin."""
@@ -34,22 +40,25 @@ class TestPortalPlugin(unittest.TestCase):
     def test_setup(self) -> None:
         """Test setup configures context."""
         plugin = PortalPlugin()
-        plugin.setup(self.mock_context)
-        assert plugin.context == self.mock_context
+        mock_context = MagicMock()
+        plugin.setup(mock_context)
+        assert plugin.context == mock_context
 
-    def test_register_portal(self) -> None:
+    def test_register_portal(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test registering a portal."""
+        plugin, _, _ = portal_plugin_ctx
         mock_sprite = MagicMock()
 
-        self.plugin.register_portal(mock_sprite, "test_portal")
+        plugin.register_portal(mock_sprite, "test_portal")
 
-        assert len(self.plugin.portals) == 1
-        assert self.plugin.portals[0].name == "test_portal"
-        assert self.plugin.portals[0].sprite == mock_sprite
+        assert len(plugin.portals) == 1
+        assert plugin.portals[0].name == "test_portal"
+        assert plugin.portals[0].sprite == mock_sprite
 
     @patch("pedre.plugins.portal.plugin.arcade.Sprite")
-    def test_load_from_tiled_basic(self, mock_sprite_cls: MagicMock) -> None:
+    def test_load_from_tiled_basic(self, mock_sprite_cls: MagicMock, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test loading portals from Tiled map."""
+        plugin, _, _ = portal_plugin_ctx
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
 
@@ -65,19 +74,22 @@ class TestPortalPlugin(unittest.TestCase):
         mock_sprite = MagicMock()
         mock_sprite_cls.return_value = mock_sprite
 
-        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         # Verify portal registered
-        assert len(self.plugin.portals) == 1
-        assert self.plugin.portals[0].name == "entrance"
+        assert len(plugin.portals) == 1
+        assert plugin.portals[0].name == "entrance"
 
         # Verify sprite configured
         assert mock_sprite.center_x == 100.0
         assert mock_sprite.center_y == 200.0
 
     @patch("pedre.plugins.portal.plugin.arcade.Sprite")
-    def test_load_from_tiled_polygon_shape(self, mock_sprite_cls: MagicMock) -> None:
+    def test_load_from_tiled_polygon_shape(
+        self, mock_sprite_cls: MagicMock, portal_plugin_ctx: PortalPluginCtx
+    ) -> None:
         """Test loading portal with polygon shape."""
+        plugin, _, _ = portal_plugin_ctx
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
 
@@ -93,10 +105,10 @@ class TestPortalPlugin(unittest.TestCase):
         mock_sprite = MagicMock()
         mock_sprite_cls.return_value = mock_sprite
 
-        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         # Verify portal registered
-        assert len(self.plugin.portals) == 1
+        assert len(plugin.portals) == 1
 
         # Verify sprite configured with bounding box
         # Center should be at (100, 150) - midpoint of (50-150, 100-200)
@@ -105,18 +117,20 @@ class TestPortalPlugin(unittest.TestCase):
         assert mock_sprite.width == 100.0  # 150 - 50
         assert mock_sprite.height == 100.0  # 200 - 100
 
-    def test_load_from_tiled_no_layer(self) -> None:
+    def test_load_from_tiled_no_layer(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test loading when no Portals layer exists."""
+        plugin, _, _ = portal_plugin_ctx
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_tile_map.object_lists.get.return_value = None
 
-        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        assert len(self.plugin.portals) == 0
+        assert len(plugin.portals) == 0
 
-    def test_load_from_tiled_invalid_portal(self) -> None:
+    def test_load_from_tiled_invalid_portal(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test loading skips portals with missing data."""
+        plugin, _, _ = portal_plugin_ctx
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
 
@@ -128,14 +142,15 @@ class TestPortalPlugin(unittest.TestCase):
 
         mock_tile_map.object_lists.get.return_value = [mock_portal]
 
-        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         # Should skip invalid portal
-        assert len(self.plugin.portals) == 0
+        assert len(plugin.portals) == 0
 
     @patch("pedre.plugins.portal.plugin.logger")
-    def test_load_from_tiled_shape_wrong_type(self, mock_logger: MagicMock) -> None:
+    def test_load_from_tiled_shape_wrong_type(self, mock_logger: MagicMock, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test loading skips portals with shape that is wrong type (not list/tuple)."""
+        plugin, _, _ = portal_plugin_ctx
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
 
@@ -147,17 +162,20 @@ class TestPortalPlugin(unittest.TestCase):
 
         mock_tile_map.object_lists.get.return_value = [mock_portal]
 
-        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         # Should skip portal with invalid shape type
-        assert len(self.plugin.portals) == 0
+        assert len(plugin.portals) == 0
         # Should log warning about invalid shape
         assert mock_logger.warning.call_count == 1
         assert "invalid shape" in str(mock_logger.warning.call_args)
 
     @patch("pedre.plugins.portal.plugin.arcade.Sprite")
-    def test_load_from_tiled_polygon_with_invalid_point(self, mock_sprite_cls: MagicMock) -> None:
+    def test_load_from_tiled_polygon_with_invalid_point(
+        self, mock_sprite_cls: MagicMock, portal_plugin_ctx: PortalPluginCtx
+    ) -> None:
         """Test loading polygon portal with invalid point in shape."""
+        plugin, _, _ = portal_plugin_ctx
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
 
@@ -174,44 +192,49 @@ class TestPortalPlugin(unittest.TestCase):
         mock_sprite = MagicMock()
         mock_sprite_cls.return_value = mock_sprite
 
-        self.plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         # Portal should still be registered (valid points are used)
-        assert len(self.plugin.portals) == 1
+        assert len(plugin.portals) == 1
 
-    def test_check_portals_no_player(self) -> None:
+    def test_check_portals_no_player(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test check_portals handles missing player."""
-        self.plugin.check_portals(None)
+        plugin, _, _ = portal_plugin_ctx
+        plugin.check_portals(None)
         # Should not crash
 
-    def test_check_portals_player_enters_portal(self) -> None:
+    def test_check_portals_player_enters_portal(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test event published when player enters portal."""
+        plugin, mock_event_bus, _ = portal_plugin_ctx
+
         # Create portal
         mock_portal_sprite = MagicMock()
         mock_portal_sprite.center_x = 100.0
         mock_portal_sprite.center_y = 100.0
-        self.plugin.register_portal(mock_portal_sprite, "test_portal")
+        plugin.register_portal(mock_portal_sprite, "test_portal")
 
         # Create player near portal
         mock_player = MagicMock()
         mock_player.center_x = 105.0
         mock_player.center_y = 105.0
 
-        self.plugin.check_portals(mock_player)
+        plugin.check_portals(mock_player)
 
         # Verify event published
-        self.mock_event_bus.publish.assert_called_once()
-        event = self.mock_event_bus.publish.call_args[0][0]
+        mock_event_bus.publish.assert_called_once()
+        event = mock_event_bus.publish.call_args[0][0]
         assert isinstance(event, PortalEnteredEvent)
         assert event.portal_name == "test_portal"
 
-    def test_check_portals_player_stays_in_portal(self) -> None:
+    def test_check_portals_player_stays_in_portal(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test event not re-published when player stays in portal."""
+        plugin, mock_event_bus, _ = portal_plugin_ctx
+
         # Create portal
         mock_portal_sprite = MagicMock()
         mock_portal_sprite.center_x = 100.0
         mock_portal_sprite.center_y = 100.0
-        self.plugin.register_portal(mock_portal_sprite, "test_portal")
+        plugin.register_portal(mock_portal_sprite, "test_portal")
 
         # Create player near portal
         mock_player = MagicMock()
@@ -219,20 +242,22 @@ class TestPortalPlugin(unittest.TestCase):
         mock_player.center_y = 105.0
 
         # First check - should publish
-        self.plugin.check_portals(mock_player)
-        assert self.mock_event_bus.publish.call_count == 1
+        plugin.check_portals(mock_player)
+        assert mock_event_bus.publish.call_count == 1
 
         # Second check - should not publish again
-        self.plugin.check_portals(mock_player)
-        assert self.mock_event_bus.publish.call_count == 1
+        plugin.check_portals(mock_player)
+        assert mock_event_bus.publish.call_count == 1
 
-    def test_check_portals_player_exits_and_reenters(self) -> None:
+    def test_check_portals_player_exits_and_reenters(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test event published again when player exits and re-enters."""
+        plugin, mock_event_bus, _ = portal_plugin_ctx
+
         # Create portal
         mock_portal_sprite = MagicMock()
         mock_portal_sprite.center_x = 100.0
         mock_portal_sprite.center_y = 100.0
-        self.plugin.register_portal(mock_portal_sprite, "test_portal")
+        plugin.register_portal(mock_portal_sprite, "test_portal")
 
         # Create player
         mock_player = MagicMock()
@@ -240,67 +265,74 @@ class TestPortalPlugin(unittest.TestCase):
         # Enter portal
         mock_player.center_x = 105.0
         mock_player.center_y = 105.0
-        self.plugin.check_portals(mock_player)
-        assert self.mock_event_bus.publish.call_count == 1
+        plugin.check_portals(mock_player)
+        assert mock_event_bus.publish.call_count == 1
 
         # Exit portal (move far away)
         mock_player.center_x = 500.0
         mock_player.center_y = 500.0
-        self.plugin.check_portals(mock_player)
-        assert self.mock_event_bus.publish.call_count == 1
+        plugin.check_portals(mock_player)
+        assert mock_event_bus.publish.call_count == 1
 
         # Re-enter portal
         mock_player.center_x = 105.0
         mock_player.center_y = 105.0
-        self.plugin.check_portals(mock_player)
-        assert self.mock_event_bus.publish.call_count == 2
+        plugin.check_portals(mock_player)
+        assert mock_event_bus.publish.call_count == 2
 
-    def test_check_portals_player_too_far(self) -> None:
+    def test_check_portals_player_too_far(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test no event when player is too far from portal."""
+        plugin, mock_event_bus, _ = portal_plugin_ctx
+
         # Create portal
         mock_portal_sprite = MagicMock()
         mock_portal_sprite.center_x = 100.0
         mock_portal_sprite.center_y = 100.0
-        self.plugin.register_portal(mock_portal_sprite, "test_portal")
+        plugin.register_portal(mock_portal_sprite, "test_portal")
 
         # Create player far from portal
         mock_player = MagicMock()
         mock_player.center_x = 500.0
         mock_player.center_y = 500.0
 
-        self.plugin.check_portals(mock_player)
+        plugin.check_portals(mock_player)
 
         # Verify no event published
-        self.mock_event_bus.publish.assert_not_called()
+        mock_event_bus.publish.assert_not_called()
 
-    def test_clear(self) -> None:
+    def test_clear(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test clearing portals."""
+        plugin, _, _ = portal_plugin_ctx
+
         # Add some portals
         mock_sprite = MagicMock()
-        self.plugin.register_portal(mock_sprite, "portal1")
-        self.plugin.register_portal(mock_sprite, "portal2")
-        self.plugin._portals_player_inside.add("portal1")
+        plugin.register_portal(mock_sprite, "portal1")
+        plugin.register_portal(mock_sprite, "portal2")
+        plugin._portals_player_inside.add("portal1")
 
-        self.plugin.clear()
+        plugin.clear()
 
-        assert len(self.plugin.portals) == 0
-        assert len(self.plugin._portals_player_inside) == 0
+        assert len(plugin.portals) == 0
+        assert len(plugin._portals_player_inside) == 0
 
-    def test_cleanup(self) -> None:
+    def test_cleanup(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test cleanup clears portals."""
+        plugin, _, _ = portal_plugin_ctx
+
         # Add some portals
         mock_sprite = MagicMock()
-        self.plugin.register_portal(mock_sprite, "portal1")
+        plugin.register_portal(mock_sprite, "portal1")
 
-        self.plugin.cleanup()
+        plugin.cleanup()
 
-        assert len(self.plugin.portals) == 0
+        assert len(plugin.portals) == 0
 
-    def test_update(self) -> None:
+    def test_update(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test update calls check_portals."""
+        plugin, _, mock_player_plugin = portal_plugin_ctx
         mock_player = MagicMock()
-        self.mock_player_plugin.get_player_sprite.return_value = mock_player
+        mock_player_plugin.get_player_sprite.return_value = mock_player
 
-        with patch.object(self.plugin, "check_portals") as mock_check:
-            self.plugin.update(1.0)
+        with patch.object(plugin, "check_portals") as mock_check:
+            plugin.update(1.0)
             mock_check.assert_called_once_with(mock_player)
