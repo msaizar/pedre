@@ -253,9 +253,14 @@ class SetWeatherAction(Action):
 ### Weather Changed Event
 
 ```python
-@EventRegistry.register("weather_changed")
+from dataclasses import dataclass
+from pedre.events import Event
+from pedre.events.registry import EventRegistry
+
+@EventRegistry.register
 @dataclass
-class WeatherChangedEvent:
+class WeatherChangedEvent(Event):
+    name = "weather_changed"
     weather_type: str
     intensity: float
 ```
@@ -263,12 +268,29 @@ class WeatherChangedEvent:
 ### Weather Condition Check
 
 ```python
-@ConditionRegistry.register("is_weather")
-def check_weather(data: dict[str, Any], context: GameContext) -> bool:
-    weather_plugin = context.get_plugin("weather")
-    if not weather_plugin:
-        return False
-    return weather_plugin.current_weather == data.get("weather")
+from typing import TYPE_CHECKING, Any, Self
+from pedre.conditions.base import Condition
+from pedre.conditions.registry import ConditionRegistry
+
+if TYPE_CHECKING:
+    from pedre.plugins.game_context import GameContext
+
+@ConditionRegistry.register
+class IsWeatherCondition(Condition):
+    name = "is_weather"
+
+    def __init__(self, weather: str) -> None:
+        self.weather = weather
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(weather=data.get("weather", ""))
+
+    def check(self, context: GameContext) -> bool:
+        weather_plugin = context.get_plugin("weather")
+        if not weather_plugin:
+            return False
+        return weather_plugin.current_weather == self.weather
 ```
 
 ## Plugin Loader

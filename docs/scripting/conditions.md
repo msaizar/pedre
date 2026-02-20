@@ -619,27 +619,37 @@ Look for condition check messages in console output.
 
 ## Creating Custom Conditions
 
- Pedre supports adding custom condition logic using the `ConditionRegistry`.
+Pedre supports adding custom condition logic using the `ConditionRegistry`.
 
-### 1. Define the Checker Function
+### 1. Define the Condition Class
 
- Create a function that initiates the check. It receives the condition parameters (from JSON) and the `GameContext`.
+Create a class that inherits from `Condition` and decorate it with `@ConditionRegistry.register`. The `name` class attribute is used as the JSON condition name.
 
- ```python
- from typing import Any
- from pedre.plugins.game_context import GameContext
- from pedre.conditions.registry import ConditionRegistry
+```python
+from typing import TYPE_CHECKING, Any, Self
+from pedre.conditions.base import Condition
+from pedre.conditions.registry import ConditionRegistry
 
- @ConditionRegistry.register("is_weather")
- def check_weather(data: dict[str, Any], context: GameContext) -> bool:
-     required_weather = data.get("weather")
+if TYPE_CHECKING:
+    from pedre.plugins.game_context import GameContext
 
-     weather_plugin = context.get_plugin("weather")
-     if not weather_plugin:
-         return False
+@ConditionRegistry.register
+class IsWeatherCondition(Condition):
+    name = "is_weather"
 
-     return weather_plugin.current_weather == required_weather
- ```
+    def __init__(self, weather: str) -> None:
+        self.weather = weather
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(weather=data.get("weather", ""))
+
+    def check(self, context: GameContext) -> bool:
+        weather_plugin = context.get_plugin("weather")
+        if not weather_plugin:
+            return False
+        return weather_plugin.current_weather == self.weather
+```
 
 ### 2. Use in Scripts
 
