@@ -316,7 +316,3 @@ class TestWaypointPlugin(unittest.TestCase):
         # Last waypoint with duplicate name should win
         assert len(self.plugin.waypoints) == 1
         assert self.plugin.waypoints["spawn"] == (96.0, 96.0)
-
-
-if __name__ == "__main__":
-    unittest.main()

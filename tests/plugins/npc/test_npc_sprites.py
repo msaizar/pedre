@@ -566,7 +566,3 @@ class TestAnimatedNPC(unittest.TestCase):
         assert npc.interact_complete
         assert npc.current_frame == 0
         # Texture should remain as it was since no idle animation exists
-
-
-if __name__ == "__main__":
-    unittest.main()

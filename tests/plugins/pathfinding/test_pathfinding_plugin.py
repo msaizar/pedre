@@ -307,7 +307,3 @@ class TestPathfindingPlugin(unittest.TestCase):
         assert any("End tile blocked at" in message for message in log_context.output)
         # Path should still be empty since end is blocked
         assert len(path) == 0
-
-
-if __name__ == "__main__":
-    unittest.main()

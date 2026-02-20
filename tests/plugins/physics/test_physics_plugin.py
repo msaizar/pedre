@@ -98,7 +98,3 @@ class TestPhysicsPlugin(unittest.TestCase):
         assert self.plugin.physics_engine is None
         # Verify engine was never created since player sprite is None
         mock_engine_cls.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

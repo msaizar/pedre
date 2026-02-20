@@ -1,6 +1,5 @@
 """Unit tests for NPC events in src/pedre/plugins/npc/events.py."""
 
-import unittest
 from dataclasses import is_dataclass
 
 from pedre.plugins.npc.events import (
@@ -11,7 +10,7 @@ from pedre.plugins.npc.events import (
 )
 
 
-class TestNPCInteractedEvent(unittest.TestCase):
+class TestNPCInteractedEvent:
     """Test suite for NPCInteractedEvent."""
 
     def test_event_creation(self) -> None:
@@ -38,7 +37,7 @@ class TestNPCInteractedEvent(unittest.TestCase):
         assert event_level_5.get_script_data() == {"npc": "merchant", "dialog_level": 5}
 
 
-class TestNPCMovementCompleteEvent(unittest.TestCase):
+class TestNPCMovementCompleteEvent:
     """Test suite for NPCMovementCompleteEvent."""
 
     def test_event_creation(self) -> None:
@@ -64,7 +63,7 @@ class TestNPCMovementCompleteEvent(unittest.TestCase):
         assert event2.get_script_data() == {"npc": "npc2"}
 
 
-class TestNPCAppearCompleteEvent(unittest.TestCase):
+class TestNPCAppearCompleteEvent:
     """Test suite for NPCAppearCompleteEvent."""
 
     def test_event_creation(self) -> None:
@@ -89,7 +88,7 @@ class TestNPCAppearCompleteEvent(unittest.TestCase):
         assert event.get_script_data() == {"npc": "animated_sprite"}
 
 
-class TestNPCDisappearCompleteEvent(unittest.TestCase):
+class TestNPCDisappearCompleteEvent:
     """Test suite for NPCDisappearCompleteEvent."""
 
     def test_event_creation(self) -> None:
@@ -114,7 +113,7 @@ class TestNPCDisappearCompleteEvent(unittest.TestCase):
         assert event.get_script_data() == {"npc": "fading_enemy"}
 
 
-class TestNPCEventsIntegration(unittest.TestCase):
+class TestNPCEventsIntegration:
     """Integration tests for all NPC events."""
 
     def test_all_events_have_get_script_data(self) -> None:
@@ -167,7 +166,3 @@ class TestNPCEventsIntegration(unittest.TestCase):
             data = event.get_script_data()
             # Should only have "npc" key
             assert list(data.keys()) == ["npc"]
-
-
-if __name__ == "__main__":
-    unittest.main()

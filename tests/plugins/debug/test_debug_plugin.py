@@ -231,7 +231,3 @@ class TestDebugPlugin(unittest.TestCase):
         # Should have removed the extra text object
         assert len(self.plugin.debug_text_objects) == 1
         assert mock_text_cls.called
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -500,7 +500,7 @@ class TestSavePlugin(unittest.TestCase):
         assert path.name == "save_slot_3.json"
 
 
-class TestGameSaveData(unittest.TestCase):
+class TestGameSaveData:
     """Test Suite for GameSaveData."""
 
     def test_initialization_defaults(self) -> None:
@@ -578,7 +578,3 @@ class TestGameSaveData(unittest.TestCase):
         assert restored.save_states == original.save_states
         assert restored.save_timestamp == original.save_timestamp
         assert restored.save_version == original.save_version
-
-
-if __name__ == "__main__":
-    unittest.main()

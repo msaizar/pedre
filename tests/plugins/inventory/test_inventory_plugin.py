@@ -1348,7 +1348,3 @@ class TestInventoryPlugin(unittest.TestCase):
         # Should skip adding the duplicate
         # The original item should remain unchanged
         assert self.plugin.items["existing"].name == "Existing"
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -538,7 +538,3 @@ class TestPluginLoader(unittest.TestCase):
             self.loader._resolve_dependencies(plugins)
 
         assert "nonexistent_plugin" in str(context.value)
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -243,7 +243,3 @@ class TestParticlePlugin(unittest.TestCase):
         self.plugin.enabled = False
         self.plugin.emit_hearts(100, 200, count=5)
         assert len(self.plugin.particles) == 0
-
-
-if __name__ == "__main__":
-    unittest.main()

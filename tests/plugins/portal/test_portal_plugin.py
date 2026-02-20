@@ -304,7 +304,3 @@ class TestPortalPlugin(unittest.TestCase):
         with patch.object(self.plugin, "check_portals") as mock_check:
             self.plugin.update(1.0)
             mock_check.assert_called_once_with(mock_player)
-
-
-if __name__ == "__main__":
-    unittest.main()

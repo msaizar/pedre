@@ -132,7 +132,3 @@ class TestCachePlugin(unittest.TestCase):
         self.plugin.clear()
         self.plugin.restore_save_state(saved_state)
         assert self.plugin._cache == original_cache
-
-
-if __name__ == "__main__":
-    unittest.main()

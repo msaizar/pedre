@@ -1,11 +1,9 @@
 """Unit tests for interaction events in src/pedre/plugins/interaction/events.py."""
 
-import unittest
-
 from pedre.plugins.interaction.events import ObjectInteractedEvent
 
 
-class TestObjectInteractedEvent(unittest.TestCase):
+class TestObjectInteractedEvent:
     """Test suite for ObjectInteractedEvent."""
 
     def test_initialization(self) -> None:
@@ -80,7 +78,3 @@ class TestObjectInteractedEvent(unittest.TestCase):
         assert event1.object_name == "object1"
         assert event2.object_name == "object2"
         assert event1.get_script_data()["object_name"] != event2.get_script_data()["object_name"]
-
-
-if __name__ == "__main__":
-    unittest.main()

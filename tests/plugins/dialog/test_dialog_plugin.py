@@ -997,7 +997,3 @@ class TestDialogPlugin(unittest.TestCase):
         # Should not draw anything
         mock_filled.assert_not_called()
         mock_outline.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1919,7 +1919,3 @@ class TestCheckDialogConditions(unittest.TestCase):
         assert result is True
         mock_cond_a.check.assert_called_once_with(self.mock_context)
         mock_cond_b.check.assert_called_once_with(self.mock_context)
-
-
-if __name__ == "__main__":
-    unittest.main()

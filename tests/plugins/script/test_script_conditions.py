@@ -144,7 +144,3 @@ class TestScriptCompletedCondition(unittest.TestCase):
         data = {"script": 123}
         with pytest.raises(ConditionParseError, match="'script' must be a string"):
             ScriptCompletedCondition.from_dict(data)
-
-
-if __name__ == "__main__":
-    unittest.main()

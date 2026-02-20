@@ -701,7 +701,3 @@ class TestPlayerPlugin(unittest.TestCase):
         # Position should be unchanged (from_dict early returns)
         assert mock_sprite.center_x == 50.0
         assert mock_sprite.center_y == 50.0
-
-
-if __name__ == "__main__":
-    unittest.main()

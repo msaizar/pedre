@@ -610,7 +610,7 @@ class TestScenePlugin(unittest.TestCase):
         assert self.plugin.current_map == "original.tmx"
 
 
-class TestTransitionState(unittest.TestCase):
+class TestTransitionState:
     """Test Suite for TransitionState enum."""
 
     def test_transition_state_values(self) -> None:
@@ -629,7 +629,3 @@ class TestTransitionState(unittest.TestCase):
             TransitionState.FADING_IN,
         ]
         assert len(states) == len(set(states))
-
-
-if __name__ == "__main__":
-    unittest.main()

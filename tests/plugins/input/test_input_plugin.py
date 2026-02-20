@@ -166,7 +166,3 @@ class TestInputPlugin(unittest.TestCase):
         assert handled is True
         # But should not call show() since it's already showing
         mock_pause_menu.show.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

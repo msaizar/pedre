@@ -109,7 +109,7 @@ class TestItemAcquiredCondition(unittest.TestCase):
             ItemAcquiredCondition.from_dict(data)
 
 
-class TestGetReferences(unittest.TestCase):
+class TestGetReferences:
     """Test get_references() on inventory conditions."""
 
     def test_item_acquired_condition_returns_inventory_item_reference(self) -> None:

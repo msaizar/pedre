@@ -985,7 +985,3 @@ class TestPauseMenuPlugin(unittest.TestCase):
             self.plugin.on_draw_ui()
 
         # Should not crash when confirmation_message_text is None
-
-
-if __name__ == "__main__":
-    unittest.main()

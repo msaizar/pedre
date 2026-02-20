@@ -1037,7 +1037,3 @@ class TestGame(unittest.TestCase):
 
         # Window show_view should not be called
         self.mock_window.show_view.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

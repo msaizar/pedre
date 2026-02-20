@@ -465,7 +465,3 @@ class TestInteractionPlugin(unittest.TestCase):
         assert obj.sprite.center_y == 35.0
         assert obj.sprite.width == 30.0
         assert obj.sprite.height == 30.0
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,11 +1,9 @@
 """Unit tests for portal events."""
 
-import unittest
-
 from pedre.plugins.portal.events import PortalEnteredEvent
 
 
-class TestPortalEnteredEvent(unittest.TestCase):
+class TestPortalEnteredEvent:
     """Test PortalEnteredEvent."""
 
     def test_init(self) -> None:
@@ -29,7 +27,3 @@ class TestPortalEnteredEvent(unittest.TestCase):
         data = event.get_script_data()
 
         assert data == {"portal": "town_exit"}
-
-
-if __name__ == "__main__":
-    unittest.main()

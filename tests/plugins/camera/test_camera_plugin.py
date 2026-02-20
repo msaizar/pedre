@@ -848,7 +848,3 @@ class TestCameraPlugin(unittest.TestCase):
 
         # Should fallback to player
         assert pos == (300.0, 350.0)
-
-
-if __name__ == "__main__":
-    unittest.main()
