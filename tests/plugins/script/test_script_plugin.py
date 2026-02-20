@@ -84,7 +84,7 @@ class TestScriptPlugin(unittest.TestCase):
             "test_script": {
                 "trigger": {"event": "test_event"},
                 "conditions": [],
-                "actions": [{"type": "test_action"}],
+                "actions": [{"name": "test_action"}],
                 "run_once": True,
                 "scene": "test_scene",
             }
@@ -544,8 +544,8 @@ class TestScriptPlugin(unittest.TestCase):
                 "conditions": [{"check": "test"}],
                 "scene": "test_scene",
                 "run_once": True,
-                "actions": [{"type": "action1"}],
-                "on_condition_fail": [{"type": "fail_action"}],
+                "actions": [{"name": "action1"}],
+                "on_condition_fail": [{"name": "fail_action"}],
             }
         }
 
@@ -1283,7 +1283,7 @@ class TestScriptPlugin(unittest.TestCase):
 
         script_data = {
             "test_script": {
-                "actions": [{"type": "invalid"}],
+                "actions": [{"name": "invalid"}],
             }
         }
 
@@ -1301,7 +1301,7 @@ class TestScriptPlugin(unittest.TestCase):
         script_data = {
             "test_script": {
                 "actions": [],
-                "on_condition_fail": [{"type": "invalid"}],
+                "on_condition_fail": [{"name": "invalid"}],
             }
         }
 

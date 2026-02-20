@@ -410,7 +410,7 @@ class TestNPCPlugin(unittest.TestCase):
                 "0": {
                     "text": ["Conditional dialog"],
                     "conditions": [{"check": "has_item", "item": "key"}],
-                    "on_condition_fail": [{"type": "dialog", "text": ["You need a key"]}],
+                    "on_condition_fail": [{"name": "dialog", "text": ["You need a key"]}],
                 }
             }
         }
@@ -585,7 +585,7 @@ class TestNPCPlugin(unittest.TestCase):
         dialog_config = NPCDialogConfig(
             text=["You shall pass"],
             conditions=[{"check": "has_item", "item": "pass"}],
-            on_condition_fail=[{"type": "dialog", "text": ["You shall not pass!"], "speaker": "Guard"}],
+            on_condition_fail=[{"name": "dialog", "text": ["You shall not pass!"], "speaker": "Guard"}],
         )
         self.plugin.dialogs = {"dungeon": {"guard": {0: dialog_config}}}
 
@@ -609,7 +609,7 @@ class TestNPCPlugin(unittest.TestCase):
         dialog_config = NPCDialogConfig(
             text=["You shall pass"],
             conditions=[{"check": "has_item", "item": "pass"}],
-            on_condition_fail=[{"type": "other_action"}],
+            on_condition_fail=[{"name": "other_action"}],
         )
         self.plugin.dialogs = {"dungeon": {"guard": {0: dialog_config}}}
 
@@ -686,7 +686,7 @@ class TestNPCPlugin(unittest.TestCase):
 
     def test_get_dialog_condition_failed_returns_actions(self) -> None:
         """Test get_dialog returns on_condition_fail actions."""
-        fail_actions = [{"type": "dialog", "text": ["Failed"]}]
+        fail_actions = [{"name": "dialog", "text": ["Failed"]}]
         dialog_config = NPCDialogConfig(
             text=["Success"], conditions=[{"check": "has_item"}], on_condition_fail=fail_actions
         )
@@ -1522,7 +1522,7 @@ class TestNPCPlugin(unittest.TestCase):
 
         # Dialog with failing conditions and on_condition_fail
         dialog_config = NPCDialogConfig(
-            text=["You shall pass"], conditions=[{"check": "has_item"}], on_condition_fail=[{"type": "dialog"}]
+            text=["You shall pass"], conditions=[{"check": "has_item"}], on_condition_fail=[{"name": "dialog"}]
         )
         self.plugin.dialogs = {"test_scene": {"test_npc": {0: dialog_config}}}
 
@@ -1858,7 +1858,7 @@ class TestCheckDialogConditions(unittest.TestCase):
         mock_condition.check.return_value = False
         mock_registry.create.return_value = mock_condition
 
-        result = self.plugin._check_dialog_conditions([{"type": "some_condition"}])
+        result = self.plugin._check_dialog_conditions([{"name": "some_condition"}])
 
         assert result is False
         mock_condition.check.assert_called_once_with(self.mock_context)
@@ -1870,7 +1870,7 @@ class TestCheckDialogConditions(unittest.TestCase):
         mock_condition.check.return_value = True
         mock_registry.create.return_value = mock_condition
 
-        result = self.plugin._check_dialog_conditions([{"type": "cond_a"}, {"type": "cond_b"}])
+        result = self.plugin._check_dialog_conditions([{"name": "cond_a"}, {"name": "cond_b"}])
 
         assert result is True
         assert mock_condition.check.call_count == 2
