@@ -56,32 +56,6 @@ class SimpleAction(Action):
         self._executed = False
 
 
-class ActionWithoutParser(Action):
-    """Test action without from_dict method."""
-
-    def __init__(self) -> None:
-        """Initialize the action."""
-        self._executed = False
-
-    def execute(self, context: GameContext) -> bool:
-        """Execute the action.
-
-        Args:
-            context: Game context (unused in test).
-
-        Returns:
-            True when complete.
-        """
-        del context  # Unused in test
-        if not self._executed:
-            self._executed = True
-        return True
-
-    def reset(self) -> None:
-        """Reset the action state."""
-        self._executed = False
-
-
 class FailingParserAction(Action):
     """Test action with from_dict that raises an exception."""
 
