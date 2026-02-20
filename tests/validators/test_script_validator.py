@@ -295,6 +295,116 @@ class TestScriptValidator:
         refs = context.script_references["test_script"]
         assert EntityReference(type="map", name="test_map") in refs
 
+    def test_validate_script_trigger_references_stored(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test that event trigger references using reference_fields are properly stored."""
+
+        # Create a mock event with explicit reference fields
+        @EventRegistry.register
+        class RefFieldEvent(Event):
+            name: ClassVar[str] = "ref_field_event"
+            trigger_keys: ClassVar[frozenset[str]] = frozenset({"target_npc"})
+            reference_fields: ClassVar[dict[str, str]] = {"target_npc": "npc"}
+
+        @ActionRegistry.register
+        class TestAction(Action):
+            name = "test_action"
+
+            def __init__(self, **kwargs: dict[str, Any]) -> None:
+                self.kwargs = kwargs
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestAction:
+                return cls(**data)
+
+            def execute(self, context: GameContext) -> bool:
+                return True
+
+            def reset(self) -> None:
+                return
+
+            def get_references(self) -> set[EntityReference]:
+                return set()
+
+        data = {
+            "test_script": {
+                "trigger": {"event": "ref_field_event", "target_npc": "merchant"},
+                "actions": [{"name": "test_action"}],
+            }
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert result.errors == []
+        assert "test_script" in context.script_references
+        refs = context.script_references["test_script"]
+
+        # Verify the reference_fields mapped the trigger key correctly to an NPC reference
+        assert EntityReference(type="npc", name="merchant") in refs
+
+    def test_validate_script_action_condition_references_stored(
+        self, scripts_dir: Path, context: ValidationContext
+    ) -> None:
+        """Test that references from actions, conditions, and on_condition_fail are stored."""
+
+        @ActionRegistry.register
+        class RefAction(Action):
+            name = "ref_action"
+
+            def __init__(self, target: str, **kwargs: dict[str, Any]) -> None:
+                self.target = target
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> RefAction:
+                return cls(target=data["target"])
+
+            def execute(self, context: GameContext) -> bool:
+                return True
+
+            def reset(self) -> None:
+                return
+
+            def get_references(self) -> set[EntityReference]:
+                return {EntityReference(type="interactive_object", name=self.target)}
+
+        @ConditionRegistry.register
+        class RefCondition(Condition):
+            name = "ref_condition"
+
+            def __init__(self, chk_target: str) -> None:
+                self.chk_target = chk_target
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> RefCondition:
+                return cls(chk_target=data["chk_target"])
+
+            def get_references(self) -> set[EntityReference]:
+                return {EntityReference(type="inventory_item", name=self.chk_target)}
+
+        data = {
+            "test_script": {
+                "conditions": [{"name": "ref_condition", "chk_target": "rusty_key"}],
+                "actions": [{"name": "ref_action", "target": "chest"}],
+                "on_condition_fail": [{"name": "ref_action", "target": "door"}],
+            }
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert result.errors == []
+        refs = context.script_references["test_script"]
+
+        # Verify references from all three sources were extracted
+        assert EntityReference(type="inventory_item", name="rusty_key") in refs
+        assert EntityReference(type="interactive_object", name="chest") in refs
+        assert EntityReference(type="interactive_object", name="door") in refs
+
     def test_validate_cross_references_npc_not_found(self, scripts_dir: Path, context: ValidationContext) -> None:
         """Test cross-reference validation when NPC is not found."""
         context.script_references["test_script"] = {EntityReference(type="npc", name="missing_npc")}
