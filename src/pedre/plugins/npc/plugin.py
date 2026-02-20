@@ -414,7 +414,7 @@ class NPCPlugin(NPCBasePlugin):
             # If conditions failed, execute on_condition_fail actions
             if on_condition_fail:
                 for action in on_condition_fail:
-                    if action.get("type") == "dialog":
+                    if action.get("name") == "dialog":
                         fail_text = action.get("text", [])
                         speaker = action.get("speaker", name)
                         dialog_plugin.show_dialog(speaker, fail_text, dialog_level=npc.dialog_level)

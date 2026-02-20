@@ -139,7 +139,7 @@ class ItemConsumedEvent(Event):
                 "item_id": "health_potion_1"
             },
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["You feel refreshed!"]}
+                {"name": "dialog", "speaker": "Narrator", "text": ["You feel refreshed!"]}
             ]
         }
 
@@ -150,7 +150,7 @@ class ItemConsumedEvent(Event):
                 "category": "consumable"
             },
             "actions": [
-                {"type": "play_sound", "sound": "potion_drink.wav"}
+                {"name": "play_sound", "sound": "potion_drink.wav"}
             ]
         }
 

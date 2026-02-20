@@ -95,7 +95,7 @@ Once registered, your condition can be used in any JSON script:
     ],
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Farmer",
         "text": ["Perfect weather for the crops!"]
       }

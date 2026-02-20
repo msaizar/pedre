@@ -43,7 +43,7 @@ Triggered when the player interacts with an NPC (presses SPACE nearby).
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Merchant",
         "text": ["Welcome to my shop!"]
       }
@@ -81,11 +81,8 @@ Triggered when a dialog window is opened and shown to the player.
     },
     "actions": [
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "dialog_open.wav"
-      },
-      {
-        "type": "pause_music"
       }
     ]
   }
@@ -121,11 +118,11 @@ Triggered when a dialog window is closed.
     },
     "actions": [
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "merchant"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "hearts",
         "npc": "merchant"
       }
@@ -167,12 +164,12 @@ Use the `conditions` array for checking inventory state.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Info",
         "text": ["You checked your inventory!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "quest_complete.wav"
       }
     ]
@@ -207,12 +204,12 @@ Triggered when player acquires an inventory item for the first time.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Narrator",
         "text": ["This key might unlock something..."]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "item_get.wav"
       }
     ]
@@ -231,7 +228,7 @@ Triggered when player acquires an inventory item for the first time.
     },
     "actions": [
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "item_pickup.wav"
       }
     ]
@@ -268,12 +265,12 @@ Triggered when player consumes an inventory item.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Narrator",
         "text": ["You feel refreshed!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "potion_drink.wav"
       }
     ]
@@ -293,7 +290,7 @@ Triggered when player consumes an inventory item.
     },
     "actions": [
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "consume.wav"
       }
     ]
@@ -330,12 +327,12 @@ Triggered when an attempt to acquire an item fails.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Narrator",
         "text": ["Your inventory is full! You can't carry any more items."]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "error.wav"
       }
     ]
@@ -356,7 +353,7 @@ Triggered when an attempt to acquire an item fails.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Narrator",
         "text": ["You already have this key."]
       }
@@ -394,16 +391,16 @@ Triggered when the player interacts with an interactive object.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Info",
         "text": ["You found a Silver Key!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "chest_open.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "sparkles",
         "interactive_object": "treasure_chest"
       }
@@ -439,12 +436,12 @@ Triggered when an NPC finishes moving to a waypoint.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Merchant",
         "text": ["I've arrived at the market!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "arrive.wav"
       }
     ]
@@ -479,11 +476,11 @@ Triggered when an NPC's appear animation finishes.
     },
     "actions": [
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "materialize.wav"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Spirit",
         "text": ["I have been summoned!"]
       }
@@ -519,11 +516,11 @@ Triggered when an NPC's disappear animation finishes.
     },
     "actions": [
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "vanish.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "burst",
         "player": true
       }
@@ -558,7 +555,7 @@ Triggered when the player enters a portal zone.
     },
     "actions": [
       {
-        "type": "change_scene",
+        "name": "change_scene",
         "target_map": "forest.tmx",
         "spawn_waypoint": "from_village"
       }
@@ -577,7 +574,7 @@ Triggered when the player enters a portal zone.
     },
     "actions": [
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "portal_whoosh.wav"
       }
     ]
@@ -608,9 +605,9 @@ Triggered when the player enters a portal zone.
       "event": "portal_entered",
       "portal": "tower_gate"
     },
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
+    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "equals": 2}],
     "actions": [
-      {"type": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
     ]
   },
   "tower_gate_locked": {
@@ -618,9 +615,9 @@ Triggered when the player enters a portal zone.
       "event": "portal_entered",
       "portal": "tower_gate"
     },
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
+    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "equals": 0}],
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
+      {"name": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
     ]
   }
 }
@@ -645,11 +642,11 @@ Triggered when a new scene/map finishes loading.
     },
     "actions": [
       {
-        "type": "play_music",
+        "name": "play_music",
         "file": "forest_ambience.ogg"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Narrator",
         "text": ["The forest is dark and mysterious..."]
       }
@@ -670,7 +667,7 @@ Triggered when a new scene/map finishes loading.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Narrator",
         "text": ["Welcome to the village!"]
       }
@@ -709,11 +706,11 @@ Triggered when a new scene/map finishes loading.
     "run_once": true,
     "actions": [
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["king", "advisor"]
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "King",
         "text": ["You've returned! Did you find the herbs?"]
       }
@@ -742,7 +739,7 @@ Triggered when another script finishes executing.
     },
     "actions": [
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["guard", "captain"]
       }
     ]

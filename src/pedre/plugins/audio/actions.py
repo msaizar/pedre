@@ -27,7 +27,7 @@ class PlaySFXAction(Action):
 
     Example usage:
         {
-            "type": "play_sfx",
+            "name": "play_sfx",
             "sfx": "door_open.wav"
         }
     """
@@ -93,13 +93,13 @@ class PlayMusicAction(Action):
     Example usage:
         # Standard looping music
         {
-            "type": "play_music",
+            "name": "play_music",
             "music": "town_theme.ogg"
         }
 
         # One-time music at custom volume
         {
-            "type": "play_music",
+            "name": "play_music",
             "music": "victory_fanfare.ogg",
             "loop": false,
             "volume": 0.8

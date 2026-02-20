@@ -1,6 +1,6 @@
 # Actions
 
-Actions are the commands executed when a script runs. This guide covers all available action types and how to use them.
+Actions are the commands executed when a script runs. This guide covers all available actions and how to use them.
 
 ## Overview
 
@@ -10,12 +10,12 @@ Actions are defined in the `actions` array of a script. They execute sequentiall
 {
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Merchant",
       "text": ["Hello!"]
     },
     {
-      "type": "play_sfx",
+      "name": "play_sfx",
       "file": "greeting.wav"
     }
   ]
@@ -39,7 +39,7 @@ Display dialog with a speaker and text.
 
 ```json
 {
-  "type": "dialog",
+  "name": "dialog",
   "speaker": "Merchant",
   "text": ["Welcome!", "Take a look around."]
 }
@@ -49,7 +49,7 @@ Display dialog with a speaker and text.
 
 ```json
 {
-  "type": "dialog",
+  "name": "dialog",
   "speaker": "Narrator",
   "text": ["The story begins..."],
   "auto_close": true
@@ -83,7 +83,7 @@ Increment an NPC's dialog level by 1.
 
 ```json
 {
-  "type": "advance_dialog",
+  "name": "advance_dialog",
   "npc": "merchant"
 }
 ```
@@ -113,7 +113,7 @@ Set an NPC's conversation progress to a specific level.
 
 ```json
 {
-  "type": "set_dialog_level",
+  "name": "set_dialog_level",
   "npc": "merchant",
   "dialog_level": 2
 }
@@ -146,7 +146,7 @@ Move NPC(s) to a waypoint using pathfinding.
 
 ```json
 {
-  "type": "move_npc",
+  "name": "move_npc",
   "npcs": ["merchant"],
   "waypoint": "well"
 }
@@ -178,7 +178,7 @@ Start the appear animation for one or more NPCs.
 
 ```json
 {
-  "type": "start_appear_animation",
+  "name": "start_appear_animation",
   "npcs": ["guard", "captain", "merchant"]
 }
 ```
@@ -210,7 +210,7 @@ Play disappear animation for NPC(s).
 
 ```json
 {
-  "type": "start_disappear_animation",
+  "name": "start_disappear_animation",
   "npcs": ["ghost"]
 }
 ```
@@ -242,7 +242,7 @@ Set the current context NPC (for dialog event attribution).
 
 ```json
 {
-  "type": "set_current_npc",
+  "name": "set_current_npc",
   "npc": "merchant"
 }
 ```
@@ -273,7 +273,7 @@ Play a sound effect.
 
 ```json
 {
-  "type": "play_sfx",
+  "name": "play_sfx",
   "file": "door_open.wav"
 }
 ```
@@ -307,7 +307,7 @@ Play background music.
 
 ```json
 {
-  "type": "play_music",
+  "name": "play_music",
   "file": "village_theme.ogg",
   "loop": true,
   "volume": 0.8
@@ -343,7 +343,7 @@ Transition to a different map/scene with fade effects.
 
 ```json
 {
-  "type": "change_scene",
+  "name": "change_scene",
   "target_map": "forest.tmx",
   "spawn_waypoint": "from_village"
 }
@@ -370,7 +370,7 @@ Transition to a different map/scene with fade effects.
   "forest_portal": {
     "trigger": {"event": "portal_entered", "portal": "to_forest"},
     "actions": [
-      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -384,10 +384,10 @@ Transition to a different map/scene with fade effects.
     "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "play_sfx", "file": "wind.wav"},
-      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+      {"name": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "play_sfx", "file": "wind.wav"},
+      {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -412,7 +412,7 @@ Spawn particle effects at an NPC, player, or interactive object location.
 
 ```json
 {
-  "type": "emit_particles",
+  "name": "emit_particles",
   "particle_type": "hearts",
   "npc": "merchant"
 }
@@ -422,7 +422,7 @@ Spawn particle effects at an NPC, player, or interactive object location.
 
 ```json
 {
-  "type": "emit_particles",
+  "name": "emit_particles",
   "particle_type": "sparkles",
   "player": true
 }
@@ -432,7 +432,7 @@ Spawn particle effects at an NPC, player, or interactive object location.
 
 ```json
 {
-  "type": "emit_particles",
+  "name": "emit_particles",
   "particle_type": "burst",
   "interactive_object": "treasure_chest"
 }
@@ -442,7 +442,7 @@ Spawn particle effects at an NPC, player, or interactive object location.
 
 ```json
 {
-  "type": "emit_particles",
+  "name": "emit_particles",
   "particle_type": "hearts",
   "npc": "yema",
   "color": [255, 0, 0]
@@ -493,7 +493,7 @@ Give an item to the player's inventory.
 
 ```json
 {
-  "type": "acquire_item",
+  "name": "acquire_item",
   "item_id": "rusty_key"
 }
 ```
@@ -504,16 +504,16 @@ Give an item to the player's inventory.
 {
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Narrator",
       "text": ["You found a key!"]
     },
     {
-      "type": "acquire_item",
+      "name": "acquire_item",
       "item_id": "tower_key"
     },
     {
-      "type": "wait_for_dialog_close"
+      "name": "wait_for_dialog_close"
     }
   ]
 }
@@ -539,7 +539,7 @@ Add a new item to the inventory plugin.
 
 **Parameters:**
 
-- `name` (string, required) - Display name of the item
+- `item_name` (string, required) - Display name of the item
 - `description` (string, required) - Description text for the item
 - `item_id` (string, optional) - Unique identifier (auto-generates UUID if omitted)
 - `image_path` (string, optional) - Path to full-size image
@@ -552,8 +552,8 @@ Add a new item to the inventory plugin.
 
 ```json
 {
-  "type": "add_item",
-  "name": "Health Potion",
+  "name": "add_item",
+  "item_name": "Health Potion",
   "description": "Restores 50 HP",
   "icon_path": "items/potion.png",
   "category": "potion",
@@ -566,9 +566,9 @@ Add a new item to the inventory plugin.
 
 ```json
 {
-  "type": "add_item",
+  "name": "add_item",
   "item_id": "rusty_key",
-  "name": "Rusty Key",
+  "item_name": "Rusty Key",
   "description": "Opens an old door",
   "icon_path": "items/key.png",
   "category": "key",
@@ -603,7 +603,7 @@ Consume an item from the player's inventory.
 
 ```json
 {
-  "type": "consume_item",
+  "name": "consume_item",
   "item_id": "health_potion"
 }
 ```
@@ -614,16 +614,16 @@ Consume an item from the player's inventory.
 {
   "actions": [
     {
-      "type": "consume_item",
+      "name": "consume_item",
       "item_id": "ancient_key"
     },
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Narrator",
       "text": ["The key dissolves into dust..."]
     },
     {
-      "type": "wait_for_dialog_close"
+      "name": "wait_for_dialog_close"
     }
   ]
 }
@@ -656,7 +656,7 @@ Pause script execution until dialog is closed.
 
 ```json
 {
-  "type": "wait_for_dialog_close"
+  "name": "wait_for_dialog_close"
 }
 ```
 
@@ -666,15 +666,15 @@ Pause script execution until dialog is closed.
 {
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Merchant",
       "text": ["Welcome!"]
     },
     {
-      "type": "wait_for_dialog_close"
+      "name": "wait_for_dialog_close"
     },
     {
-      "type": "move_npc",
+      "name": "move_npc",
       "npcs": ["merchant"],
       "waypoint": "shop"
     }
@@ -700,7 +700,7 @@ Pause until an NPC reaches their destination.
 
 ```json
 {
-  "type": "wait_for_movement",
+  "name": "wait_for_movement",
   "npc": "merchant"
 }
 ```
@@ -711,16 +711,16 @@ Pause until an NPC reaches their destination.
 {
   "actions": [
     {
-      "type": "move_npc",
+      "name": "move_npc",
       "npcs": ["guard"],
       "waypoint": "gate"
     },
     {
-      "type": "wait_for_movement",
+      "name": "wait_for_movement",
       "npc": "guard"
     },
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Guard",
       "text": ["I've reached the gate."]
     }
@@ -746,7 +746,7 @@ Pause until NPCs finish their appear animation.
 
 ```json
 {
-  "type": "wait_for_npcs_appear",
+  "name": "wait_for_npcs_appear",
   "npcs": ["guard", "captain"]
 }
 ```
@@ -757,15 +757,15 @@ Pause until NPCs finish their appear animation.
 {
   "actions": [
     {
-      "type": "start_appear_animation",
+      "name": "start_appear_animation",
       "npcs": ["villain"]
     },
     {
-      "type": "wait_for_npcs_appear",
+      "name": "wait_for_npcs_appear",
       "npcs": ["villain"]
     },
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Villain",
       "text": ["Surprise!"]
     }
@@ -791,7 +791,7 @@ Pause until NPCs finish their disappear animation.
 
 ```json
 {
-  "type": "wait_for_npcs_disappear",
+  "name": "wait_for_npcs_disappear",
   "npcs": ["ghost", "spirit"]
 }
 ```
@@ -802,15 +802,15 @@ Pause until NPCs finish their disappear animation.
 {
   "actions": [
     {
-      "type": "start_disappear_animation",
+      "name": "start_disappear_animation",
       "npcs": ["ghost"]
     },
     {
-      "type": "wait_for_npcs_disappear",
+      "name": "wait_for_npcs_disappear",
       "npcs": ["ghost"]
     },
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Narrator",
       "text": ["The ghost has vanished..."]
     }
@@ -835,7 +835,7 @@ Pause until the inventory screen is opened.
 
 ```json
 {
-  "type": "wait_for_inventory_access"
+  "name": "wait_for_inventory_access"
 }
 ```
 
@@ -845,18 +845,18 @@ Pause until the inventory screen is opened.
 {
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Tutorial",
       "text": ["Press I to open your inventory."]
     },
     {
-      "type": "wait_for_dialog_close"
+      "name": "wait_for_dialog_close"
     },
     {
-      "type": "wait_for_inventory_access"
+      "name": "wait_for_inventory_access"
     },
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Tutorial",
       "text": ["Great! You opened your inventory!"]
     }
@@ -879,38 +879,38 @@ Actions execute in order. Use wait actions to control timing:
   "actions": [
     // 1. Show dialog
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Elder",
       "text": ["Watch this!"]
     },
     // 2. Wait for player to close dialog
     {
-      "type": "wait_for_dialog_close"
+      "name": "wait_for_dialog_close"
     },
     // 3. Reveal NPC
     {
-      "type": "start_appear_animation",
+      "name": "start_appear_animation",
       "npcs": ["spirit"]
     },
     // 4. Wait for appear animation
     {
-      "type": "wait_for_npcs_appear",
+      "name": "wait_for_npcs_appear",
       "npcs": ["spirit"]
     },
     // 5. Move NPC
     {
-      "type": "move_npc",
+      "name": "move_npc",
       "npcs": ["spirit"],
       "waypoint": "altar"
     },
     // 6. Wait for movement
     {
-      "type": "wait_for_movement",
+      "name": "wait_for_movement",
       "npc": "spirit"
     },
     // 7. Final dialog
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Spirit",
       "text": ["I have arrived."]
     }
@@ -926,15 +926,15 @@ Actions execute in order. Use wait actions to control timing:
 {
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Merchant",
       "text": ["Hello!"]
     },
     {
-      "type": "wait_for_dialog_close"  // Always include this
+      "name": "wait_for_dialog_close"  // Always include this
     },
     {
-      "type": "advance_dialog",
+      "name": "advance_dialog",
       "npc": "merchant"
     }
   ]
@@ -947,16 +947,16 @@ Actions execute in order. Use wait actions to control timing:
 {
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Info",
       "text": ["You found a key!"]
     },
     {
-      "type": "play_sfx",
+      "name": "play_sfx",
       "file": "item_get.wav"  // Audio cue
     },
     {
-      "type": "emit_particles",
+      "name": "emit_particles",
       "particle_type": "sparkles",  // Visual cue
       "interactive_object": "treasure_chest"
     }
@@ -981,22 +981,22 @@ Actions execute in order. Use wait actions to control timing:
   "actions": [
     // Move both NPCs simultaneously
     {
-      "type": "move_npc",
+      "name": "move_npc",
       "npcs": ["guard"],
       "waypoint": "left"
     },
     {
-      "type": "move_npc",
+      "name": "move_npc",
       "npcs": ["merchant"],
       "waypoint": "right"
     },
     // Wait for both to finish
     {
-      "type": "wait_for_movement",
+      "name": "wait_for_movement",
       "npc": "guard"
     },
     {
-      "type": "wait_for_movement",
+      "name": "wait_for_movement",
       "npc": "merchant"
     },
     // Continue...
@@ -1025,16 +1025,16 @@ Actions execute in order. Use wait actions to control timing:
 {
   "actions": [
     {
-      "type": "play_sfx",
+      "name": "play_sfx",
       "file": "item_get.wav"
     },
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Info",
       "text": ["You found a Silver Key!"]
     },
     {
-      "type": "emit_particles",
+      "name": "emit_particles",
       "particle_type": "sparkles",
       "interactive_object": "item_chest"
     }
@@ -1048,19 +1048,19 @@ Actions execute in order. Use wait actions to control timing:
 {
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Merchant",
       "text": ["Hello, traveler!"]
     },
     {
-      "type": "wait_for_dialog_close"
+      "name": "wait_for_dialog_close"
     },
     {
-      "type": "advance_dialog",
+      "name": "advance_dialog",
       "npc": "merchant"
     },
     {
-      "type": "play_sfx",
+      "name": "play_sfx",
       "file": "greeting.wav"
     }
   ]
@@ -1073,19 +1073,19 @@ Actions execute in order. Use wait actions to control timing:
 {
   "actions": [
     {
-      "type": "play_music",
+      "name": "play_music",
       "file": "ominous.ogg"
     },
     {
-      "type": "start_appear_animation",
+      "name": "start_appear_animation",
       "npcs": ["villain"]
     },
     {
-      "type": "wait_for_npcs_appear",
+      "name": "wait_for_npcs_appear",
       "npcs": ["villain"]
     },
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Villain",
       "text": ["You dare approach?!"]
     }

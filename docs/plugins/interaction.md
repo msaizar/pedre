@@ -304,7 +304,7 @@ Published when player interacts with an interactive object.
         "object_name": "treasure_chest"
     },
     "actions": [
-        {"type": "dialog", "speaker": "Plugin", "text": ["You found a health potion!"]}
+        {"name": "dialog", "speaker": "Plugin", "text": ["You found a health potion!"]}
     ]
 }
 ```

@@ -50,7 +50,7 @@ class NPCDialogConfig:
                     "text": ["You're back! Did you check your inventory?"],
                     "conditions": [{"check": "inventory_accessed", "equals": true}],
                     "on_condition_fail": [
-                        {"type": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
+                        {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
                     ]
                 }
             }

@@ -77,8 +77,11 @@ Define your custom component in a Python module:
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
-@ActionRegistry.register("custom_action")
+@ActionRegistry.register
 class CustomAction(Action):
+
+    name = "custom_action"
+
     def __init__(self, param: str):
         self.param = param
         self._executed = False
@@ -121,7 +124,7 @@ Your extension is now available in JSON scripts:
     "trigger": {"event": "scene_start"},
     "actions": [
       {
-        "type": "custom_action",
+        "name": "custom_action",
         "param": "value"
       }
     ]
@@ -222,8 +225,11 @@ def test_custom_action():
 ### Simple Weather Action
 
 ```python
-@ActionRegistry.register("set_weather")
+@ActionRegistry.register
 class SetWeatherAction(Action):
+
+    name = "set_weather"
+
     def __init__(self, weather: str):
         self.weather = weather
         self._executed = False

@@ -33,10 +33,10 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
 
     Example usage in a tutorial sequence:
         [
-            {"type": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "wait_for_inventory_access"},
-            {"type": "dialog", "speaker": "martin", "text": ["Great job!"]}
+            {"name": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "wait_for_inventory_access"},
+            {"name": "dialog", "speaker": "martin", "text": ["Great job!"]}
         ]
     """
 
@@ -70,16 +70,16 @@ class AcquireItemAction(Action):
 
     Example usage:
         {
-            "type": "acquire_item",
+            "name": "acquire_item",
             "item_id": "rusty_key"
         }
 
         # In a script after finding a treasure chest
         {
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["You found a key!"]},
-                {"type": "acquire_item", "item_id": "tower_key"},
-                {"type": "wait_for_dialog_close"}
+                {"name": "dialog", "speaker": "Narrator", "text": ["You found a key!"]},
+                {"name": "acquire_item", "item_id": "tower_key"},
+                {"name": "wait_for_dialog_close"}
             ]
         }
 
@@ -90,7 +90,7 @@ class AcquireItemAction(Action):
                 "reason": "capacity"
             },
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["Your inventory is full!"]}
+                {"name": "dialog", "speaker": "Narrator", "text": ["Your inventory is full!"]}
             ]
         }
     """
@@ -167,7 +167,7 @@ class AddItemAction(Action):
     Example usage:
         # Without item_id - UUID auto-generated for each potion
         {
-            "type": "add_item",
+            "name": "add_item",
             "name": "Health Potion",
             "description": "Restores 50 HP",
             "icon_path": "items/potion.png",
@@ -178,7 +178,7 @@ class AddItemAction(Action):
 
         # With explicit item_id (for unique items)
         {
-            "type": "add_item",
+            "name": "add_item",
             "item_id": "rusty_key",
             "name": "Rusty Key",
             "description": "Opens an old door",
@@ -190,9 +190,9 @@ class AddItemAction(Action):
         # In a script for finding a potion
         {
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["You found a health potion!"]},
+                {"name": "dialog", "speaker": "Narrator", "text": ["You found a health potion!"]},
                 {
-                    "type": "add_item",
+                    "name": "add_item",
                     "name": "Health Potion",
                     "description": "Restores 50 HP",
                     "icon_path": "items/icons/potion.png",
@@ -201,7 +201,7 @@ class AddItemAction(Action):
                     "consumable": true,
                     "acquired": true
                 },
-                {"type": "wait_for_dialog_close"}
+                {"name": "wait_for_dialog_close"}
             ]
         }
     """
@@ -357,16 +357,16 @@ class ConsumeItemAction(Action):
 
     Example usage:
         {
-            "type": "consume_item",
+            "name": "consume_item",
             "item_id": "health_potion"
         }
 
         # In a script for using a consumable
         {
             "actions": [
-                {"type": "consume_item", "item_id": "ancient_key"},
-                {"type": "dialog", "speaker": "Narrator", "text": ["The key dissolves into dust..."]},
-                {"type": "wait_for_dialog_close"}
+                {"name": "consume_item", "item_id": "ancient_key"},
+                {"name": "dialog", "speaker": "Narrator", "text": ["The key dissolves into dust..."]},
+                {"name": "wait_for_dialog_close"}
             ]
         }
     """

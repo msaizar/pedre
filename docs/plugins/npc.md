@@ -644,7 +644,7 @@ dialog_config = NPCDialogConfig(
     name="Merchant",
     conditions=[{"check": "inventory_accessed", "equals": True}],
     on_condition_fail=[
-        {"type": "dialog", "speaker": "Merchant", "text": ["Check your inventory first!"]}
+        {"name": "dialog", "speaker": "Merchant", "text": ["Check your inventory first!"]}
     ]
 )
 ```
@@ -665,7 +665,7 @@ Dialog files are named `{scene}_dialogs.json` (e.g., `casa_dialogs.json`). The s
         {"check": "inventory_accessed", "equals": true}
       ],
       "on_condition_fail": [
-        {"type": "dialog", "speaker": "NPC", "text": ["Not ready yet!"]}
+        {"name": "dialog", "speaker": "NPC", "text": ["Not ready yet!"]}
       ]
     },
     "1": {
@@ -718,7 +718,7 @@ Dialog can be conditional based on game state:
         {"check": "inventory_accessed", "equals": true}
       ],
       "on_condition_fail": [
-        {"type": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
+        {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
       ]
     }
   }
@@ -845,7 +845,7 @@ Published when player interacts with an NPC.
         "npc": "merchant"
     },
     "actions": [
-        {"type": "play_sfx", "file": "npc_interact.wav"}
+        {"name": "play_sfx", "file": "npc_interact.wav"}
     ]
 }
 ```
@@ -872,7 +872,7 @@ Published when an NPC completes movement to target.
         "npc": "guard"
     },
     "actions": [
-        {"type": "dialog", "speaker": "Guard", "text": ["I've arrived!"]}
+        {"name": "dialog", "speaker": "Guard", "text": ["I've arrived!"]}
     ]
 }
 ```
@@ -900,8 +900,8 @@ Published when an NPC completes appear animation.
         "npc": "spirit"
     },
     "actions": [
-        {"type": "play_sfx", "file": "materialize.wav"},
-        {"type": "dialog", "speaker": "Spirit", "text": ["I have been summoned!"]}
+        {"name": "play_sfx", "file": "materialize.wav"},
+        {"name": "dialog", "speaker": "Spirit", "text": ["I have been summoned!"]}
     ]
 }
 ```
@@ -930,7 +930,7 @@ Published when an NPC completes disappear animation.
         "npc": "ghost"
     },
     "actions": [
-        {"type": "play_sfx", "file": "vanish.wav"}
+        {"name": "play_sfx", "file": "vanish.wav"}
     ]
 }
 ```
@@ -958,7 +958,7 @@ Move one or more NPCs to a waypoint using pathfinding.
 
 ```json
 {
-    "type": "move_npc",
+    "name": "move_npc",
     "npcs": ["merchant", "guard"],
     "waypoint": "town_square"
 }
@@ -985,7 +985,7 @@ Start the appear animation for one or more NPCs.
 
 ```json
 {
-    "type": "start_appear_animation",
+    "name": "start_appear_animation",
     "npcs": ["spirit", "guardian"]
 }
 ```
@@ -1011,7 +1011,7 @@ Advance an NPC's dialog level by 1.
 
 ```json
 {
-    "type": "advance_dialog",
+    "name": "advance_dialog",
     "npc": "merchant"
 }
 ```
@@ -1037,7 +1037,7 @@ Set an NPC's dialog level to a specific value.
 
 ```json
 {
-    "type": "set_dialog_level",
+    "name": "set_dialog_level",
     "npc": "merchant",
     "dialog_level": 5
 }
@@ -1063,7 +1063,7 @@ Set the current NPC tracking for dialog event attribution.
 
 ```json
 {
-    "type": "set_current_npc",
+    "name": "set_current_npc",
     "npc": "merchant"
 }
 ```
@@ -1088,9 +1088,9 @@ Wait for NPC to complete movement.
 
 ```json
 [
-    {"type": "move_npc", "npcs": ["guard"], "waypoint": "gate"},
-    {"type": "wait_for_movement", "npc": "guard"},
-    {"type": "dialog", "speaker": "Guard", "text": ["I'm here!"]}
+    {"name": "move_npc", "npcs": ["guard"], "waypoint": "gate"},
+    {"name": "wait_for_movement", "npc": "guard"},
+    {"name": "dialog", "speaker": "Guard", "text": ["I'm here!"]}
 ]
 ```
 
@@ -1114,9 +1114,9 @@ Wait for multiple NPCs to complete appear animations.
 
 ```json
 [
-    {"type": "start_appear_animation", "npcs": ["spirit", "guardian"]},
-    {"type": "wait_npcs_appear", "npcs": ["spirit", "guardian"]},
-    {"type": "dialog", "speaker": "Spirit", "text": ["We have arrived!"]}
+    {"name": "start_appear_animation", "npcs": ["spirit", "guardian"]},
+    {"name": "wait_npcs_appear", "npcs": ["spirit", "guardian"]},
+    {"name": "dialog", "speaker": "Spirit", "text": ["We have arrived!"]}
 ]
 ```
 
@@ -1140,9 +1140,9 @@ Wait for multiple NPCs to complete disappear animations.
 
 ```json
 [
-    {"type": "start_disappear_animation", "npcs": ["ghost"]},
-    {"type": "wait_for_npcs_disappear", "npcs": ["ghost"]},
-    {"type": "change_scene", "target_map": "next_area.tmx"}
+    {"name": "start_disappear_animation", "npcs": ["ghost"]},
+    {"name": "wait_for_npcs_disappear", "npcs": ["ghost"]},
+    {"name": "change_scene", "target_map": "next_area.tmx"}
 ]
 ```
 
@@ -1166,7 +1166,7 @@ Start the disappear animation for one or more NPCs.
 
 ```json
 {
-    "type": "start_disappear_animation",
+    "name": "start_disappear_animation",
     "npcs": ["ghost", "spirit"]
 }
 ```
@@ -1282,9 +1282,9 @@ if nearby:
             "object_name": "bell"
         },
         "actions": [
-            {"type": "move_npc", "npcs": ["merchant"], "waypoint": "market"},
-            {"type": "wait_for_movement", "npc": "merchant"},
-            {"type": "dialog", "speaker": "Merchant", "text": ["You called?"]}
+            {"name": "move_npc", "npcs": ["merchant"], "waypoint": "market"},
+            {"name": "wait_for_movement", "npc": "merchant"},
+            {"name": "dialog", "speaker": "Merchant", "text": ["You called?"]}
         ]
     }
 }
@@ -1301,10 +1301,10 @@ if nearby:
             "object_name": "ritual_circle"
         },
         "actions": [
-            {"type": "play_sfx", "file": "magic.wav"},
-            {"type": "start_appear_animation", "npcs": ["spirit_1", "spirit_2", "spirit_3"]},
-            {"type": "wait_npcs_appear", "npcs": ["spirit_1", "spirit_2", "spirit_3"]},
-            {"type": "dialog", "speaker": "Spirit", "text": ["You have summoned us!"]}
+            {"name": "play_sfx", "file": "magic.wav"},
+            {"name": "start_appear_animation", "npcs": ["spirit_1", "spirit_2", "spirit_3"]},
+            {"name": "wait_npcs_appear", "npcs": ["spirit_1", "spirit_2", "spirit_3"]},
+            {"name": "dialog", "speaker": "Spirit", "text": ["You have summoned us!"]}
         ]
     }
 }
@@ -1322,9 +1322,9 @@ if nearby:
             "dialog_level": 0
         },
         "actions": [
-            {"type": "dialog", "speaker": "Merchant", "text": ["Hello! Check your inventory."]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "advance_dialog", "npc": "merchant"}
+            {"name": "dialog", "speaker": "Merchant", "text": ["Hello! Check your inventory."]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "advance_dialog", "npc": "merchant"}
         ]
     },
     "merchant_chat_2": {
@@ -1338,9 +1338,9 @@ if nearby:
             {"check": "inventory_accessed", "equals": true}
         ],
         "actions": [
-            {"type": "dialog", "speaker": "Merchant", "text": ["Great! You found the inventory!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "advance_dialog", "npc": "merchant"}
+            {"name": "dialog", "speaker": "Merchant", "text": ["Great! You found the inventory!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "advance_dialog", "npc": "merchant"}
         ]
     }
 }
@@ -1357,13 +1357,13 @@ if nearby:
             "object_name": "alarm_bell"
         },
         "actions": [
-            {"type": "move_npc", "npcs": ["guard_1"], "waypoint": "gate"},
-            {"type": "move_npc", "npcs": ["guard_2"], "waypoint": "gate"},
-            {"type": "move_npc", "npcs": ["guard_3"], "waypoint": "gate"},
-            {"type": "wait_for_movement", "npc": "guard_1"},
-            {"type": "wait_for_movement", "npc": "guard_2"},
-            {"type": "wait_for_movement", "npc": "guard_3"},
-            {"type": "dialog", "speaker": "Captain", "text": ["All guards assembled!"]}
+            {"name": "move_npc", "npcs": ["guard_1"], "waypoint": "gate"},
+            {"name": "move_npc", "npcs": ["guard_2"], "waypoint": "gate"},
+            {"name": "move_npc", "npcs": ["guard_3"], "waypoint": "gate"},
+            {"name": "wait_for_movement", "npc": "guard_1"},
+            {"name": "wait_for_movement", "npc": "guard_2"},
+            {"name": "wait_for_movement", "npc": "guard_3"},
+            {"name": "dialog", "speaker": "Captain", "text": ["All guards assembled!"]}
         ]
     }
 }
@@ -1380,10 +1380,10 @@ if nearby:
             "npc": "ghost"
         },
         "actions": [
-            {"type": "start_disappear_animation", "npcs": ["ghost"]},
-            {"type": "wait_for_npcs_disappear", "npcs": ["ghost"]},
-            {"type": "play_sfx", "file": "vanish.wav"},
-            {"type": "dialog", "speaker": "Narrator", "text": ["The ghost has vanished..."]}
+            {"name": "start_disappear_animation", "npcs": ["ghost"]},
+            {"name": "wait_for_npcs_disappear", "npcs": ["ghost"]},
+            {"name": "play_sfx", "file": "vanish.wav"},
+            {"name": "dialog", "speaker": "Narrator", "text": ["The ghost has vanished..."]}
         ]
     }
 }

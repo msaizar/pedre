@@ -93,7 +93,7 @@ The `trigger` object specifies which event to react to and can include fields to
 {
   "trigger": {
     "event": "script_complete",
-    "script_name": "intro"       // Required: which script
+    "script": "intro"            // Required: which script
   }
 }
 ```
@@ -107,7 +107,7 @@ For checking game state beyond event matching, use the `conditions` array. These
 | Check Type           | Fields                                | Description                                            | Example                                                            |
 | -------------------- | ------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------ |
 | `npc_interacted`     | `npc`, `scene`, `equals`              | Check if NPC was interacted with in a scene            | `{"check": "npc_interacted", "npc": "guard", "equals": true}`      |
-| `npc_dialog_level`   | `npc`, `equals`/`gte`/`gt`/`lte`/`lt` | Match NPC conversation level                           | `{"check": "npc_dialog_level", "npc": "merchant", "gte": 2}`       |
+| `npc_dialog_level`   | `npc`, `equals`                       | Match NPC conversation level                           | `{"check": "npc_dialog_level", "npc": "merchant", "equals": 2}`    |
 | `inventory_accessed` | `equals`                              | Check if inventory was ever opened                     | `{"check": "inventory_accessed", "equals": true}`                  |
 | `object_interacted`  | `object`, `equals`                    | Check if object was ever interacted with (state check) | `{"check": "object_interacted", "object": "sink", "equals": true}` |
 | `script_completed`   | `script`                              | Check if a run_once script has completed               | `{"check": "script_completed", "script": "intro_cutscene"}`        |
@@ -260,7 +260,7 @@ Check if a specific object has been interacted with at any point in the past. Th
   ],
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Guard",
       "text": ["I see you found the royal seal. You may pass."]
     }
@@ -300,7 +300,7 @@ Check if a run_once script has completed execution. This is useful for creating 
     }
   ],
   "actions": [
-    {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+    {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
   ]
 }
 ```
@@ -320,16 +320,16 @@ Check if a run_once script has completed execution. This is useful for creating 
     "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+      {"name": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   },
   "dungeon_return": {
     "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
     "conditions": [{"check": "script_completed", "script": "dungeon_first_entry"}],
     "actions": [
-      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -355,11 +355,11 @@ Check if an inventory item was acquired.
   "conditions": [
     {
       "check": "item_acquired",
-      "script": "dungeon_key"
+      "item_id": "dungeon_key"
     }
   ],
   "actions": [
-    {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+    {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
   ]
 }
 ```
@@ -420,7 +420,7 @@ NPCs can have dialog-level conditions in their dialog JSON files. This allows di
       ],
       "on_condition_fail": [
         {
-          "type": "dialog",
+          "name": "dialog",
           "speaker": "Merchant",
           "text": ["Come back with a letter of introduction."]
         }
@@ -465,17 +465,17 @@ Create branching paths based on player actions:
     ],
     "actions": [
       {
-        "type": "set_dialog_level",
+        "name": "set_dialog_level",
         "npc": "guard",
         "dialog_level": 2
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You have the royal seal! Enter."]
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["king"]
       }
     ]
@@ -489,7 +489,7 @@ Create branching paths based on player actions:
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You need the royal seal to enter."]
       }

@@ -656,8 +656,8 @@ Published when a new scene/map finishes loading.
         "scene": "village"
     },
     "actions": [
-        {"type": "dialog", "speaker": "Narrator", "text": ["Welcome to the village!"]},
-        {"type": "play_music", "file": "village_theme.ogg"}
+        {"name": "dialog", "speaker": "Narrator", "text": ["Welcome to the village!"]},
+        {"name": "play_music", "file": "village_theme.ogg"}
     ]
 }
 ```
@@ -700,7 +700,7 @@ Transition to a different map/scene with fade effects.
 
 ```json
 {
-    "type": "change_scene",
+    "name": "change_scene",
     "target_map": "forest.tmx",
     "spawn_waypoint": "village_entrance"
 }
@@ -735,13 +735,13 @@ Transition to a different map/scene with fade effects.
         ],
         "actions": [
             {
-                "type": "dialog",
+                "name": "dialog",
                 "speaker": "Narrator",
                 "text": ["The guard waves you through..."]
             },
-            {"type": "wait_for_dialog_close"},
+            {"name": "wait_for_dialog_close"},
             {
-                "type": "change_scene",
+                "name": "change_scene",
                 "target_map": "forest.tmx",
                 "spawn_waypoint": "entrance"
             }
@@ -774,7 +774,7 @@ context.scene_plugin.request_transition("castle.tmx", "main_entrance")
         ],
         "actions": [
             {
-                "type": "change_scene",
+                "name": "change_scene",
                 "target_map": "castle.tmx",
                 "spawn_waypoint": "courtyard"
             }
@@ -793,10 +793,10 @@ context.scene_plugin.request_transition("castle.tmx", "main_entrance")
             "event": "scene_start"
         },
         "actions": [
-            {"type": "play_music", "file": "forest_ambience.ogg"},
-            {"type": "dialog", "speaker": "Narrator", "text": ["The forest is dark and mysterious..."]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "start_appear_animation", "npcs": ["forest_spirit"]}
+            {"name": "play_music", "file": "forest_ambience.ogg"},
+            {"name": "dialog", "speaker": "Narrator", "text": ["The forest is dark and mysterious..."]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "start_appear_animation", "npcs": ["forest_spirit"]}
         ]
     }
 }
@@ -816,10 +816,10 @@ context.scene_plugin.request_transition("castle.tmx", "main_entrance")
             {"check": "quest_complete", "quest": "gather_herbs"}
         ],
         "actions": [
-            {"type": "dialog", "speaker": "Elder", "text": ["You've done well. Now travel to the temple."]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "set_quest_state", "quest": "visit_temple", "state": "active"},
-            {"type": "change_scene", "target_map": "temple.tmx", "spawn_waypoint": "entrance"}
+            {"name": "dialog", "speaker": "Elder", "text": ["You've done well. Now travel to the temple."]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "set_quest_state", "quest": "visit_temple", "state": "active"},
+            {"name": "change_scene", "target_map": "temple.tmx", "spawn_waypoint": "entrance"}
         ]
     }
 }

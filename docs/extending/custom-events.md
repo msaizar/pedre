@@ -93,7 +93,7 @@ Scripts can now trigger on this event using the registered name:
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Villager",
         "text": ["Looks like rain again..."]
       }

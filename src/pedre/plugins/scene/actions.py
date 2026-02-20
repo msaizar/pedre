@@ -32,13 +32,13 @@ class ChangeSceneAction(Action):
     Example usage:
         # Simple transition
         {
-            "type": "change_scene",
+            "name": "change_scene",
             "target_map": "Forest.tmx"
         }
 
         # Transition with specific spawn point
         {
-            "type": "change_scene",
+            "name": "change_scene",
             "target_map": "Tower.tmx",
             "spawn_waypoint": "tower_entrance"
         }
@@ -47,9 +47,9 @@ class ChangeSceneAction(Action):
         {
             "trigger": {"event": "portal_entered", "portal": "forest_gate"},
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["The gate opens..."]},
-                {"type": "wait_for_dialog_close"},
-                {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+                {"name": "dialog", "speaker": "Narrator", "text": ["The gate opens..."]},
+                {"name": "wait_for_dialog_close"},
+                {"name": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
             ]
         }
     """

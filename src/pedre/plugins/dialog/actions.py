@@ -27,14 +27,14 @@ class DialogAction(Action):
 
     Example usage:
         {
-            "type": "dialog",
+            "name": "dialog",
             "speaker": "martin",
             "text": ["Hello there!", "Welcome to the game."]
         }
 
         # With instant display (no letter-by-letter reveal)
         {
-            "type": "dialog",
+            "name": "dialog",
             "speaker": "Narrator",
             "text": ["The world fades to black..."],
             "instant": true
@@ -42,7 +42,7 @@ class DialogAction(Action):
 
         # With auto-close for cutscenes
         {
-            "type": "dialog",
+            "name": "dialog",
             "speaker": "Narrator",
             "text": ["The adventure begins..."],
             "auto_close": true
@@ -154,9 +154,9 @@ class WaitForDialogCloseAction(WaitForConditionAction):
 
     Example usage in a sequence:
         [
-            {"type": "dialog", "speaker": "martin", "text": ["Hello!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "dialog", "speaker": "yema", "text": ["Hi there!"]}
+            {"name": "dialog", "speaker": "martin", "text": ["Hello!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "dialog", "speaker": "yema", "text": ["Hi there!"]}
         ]
     """
 

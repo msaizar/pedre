@@ -376,13 +376,13 @@ Make camera follow the player sprite continuously.
 
 ```json
 {
-    "type": "follow_player"
+    "name": "follow_player"
 }
 ```
 
 ```json
 {
-    "type": "follow_player",
+    "name": "follow_player",
     "smooth": false
 }
 ```
@@ -407,14 +407,14 @@ Make camera follow a specific NPC sprite continuously.
 
 ```json
 {
-    "type": "follow_npc",
+    "name": "follow_npc",
     "npc": "martin"
 }
 ```
 
 ```json
 {
-    "type": "follow_npc",
+    "name": "follow_npc",
     "npc": "boss_enemy",
     "smooth": false
 }
@@ -438,7 +438,7 @@ Stop camera following, keep at current position.
 
 ```json
 {
-    "type": "stop_camera_follow"
+    "name": "stop_camera_follow"
 }
 ```
 
@@ -562,10 +562,10 @@ INSTALLED_PLUGINS = [
 
 ```json
 [
-    {"type": "follow_npc", "npc": "boss"},
-    {"type": "dialog", "speaker": "Boss", "text": ["You cannot defeat me!"]},
-    {"type": "wait_for_dialog_close"},
-    {"type": "follow_player"}
+    {"name": "follow_npc", "npc": "boss"},
+    {"name": "dialog", "speaker": "Boss", "text": ["You cannot defeat me!"]},
+    {"name": "wait_for_dialog_close"},
+    {"name": "follow_player"}
 ]
 ```
 
@@ -573,10 +573,10 @@ INSTALLED_PLUGINS = [
 
 ```json
 [
-    {"type": "stop_camera_follow"},
-    {"type": "dialog", "speaker": "Narrator", "text": ["Meanwhile..."]},
-    {"type": "wait_for_dialog_close"},
-    {"type": "follow_player"}
+    {"name": "stop_camera_follow"},
+    {"name": "dialog", "speaker": "Narrator", "text": ["Meanwhile..."]},
+    {"name": "wait_for_dialog_close"},
+    {"name": "follow_player"}
 ]
 ```
 
@@ -584,12 +584,12 @@ INSTALLED_PLUGINS = [
 
 ```json
 [
-    {"type": "follow_npc", "npc": "martin"},
-    {"type": "move_npc", "npcs": ["martin"], "waypoint": "destination"},
-    {"type": "wait_for_movement", "npc": "martin"},
-    {"type": "dialog", "speaker": "Martin", "text": ["I've arrived!"]},
-    {"type": "wait_for_dialog_close"},
-    {"type": "follow_player"}
+    {"name": "follow_npc", "npc": "martin"},
+    {"name": "move_npc", "npcs": ["martin"], "waypoint": "destination"},
+    {"name": "wait_for_movement", "npc": "martin"},
+    {"name": "dialog", "speaker": "Martin", "text": ["I've arrived!"]},
+    {"name": "wait_for_dialog_close"},
+    {"name": "follow_player"}
 ]
 ```
 

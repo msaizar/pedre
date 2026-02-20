@@ -29,12 +29,12 @@ class FollowPlayerAction(Action):
     Example usage:
         # Smooth following (default)
         {
-            "type": "follow_player"
+            "name": "follow_player"
         }
 
         # Instant following (no smoothing)
         {
-            "type": "follow_player",
+            "name": "follow_player",
             "smooth": false
         }
     """
@@ -100,25 +100,25 @@ class FollowNPCAction(Action):
     Example usage:
         # Smooth following (default)
         {
-            "type": "follow_npc",
+            "name": "follow_npc",
             "npc": "martin"
         }
 
         # Instant following (no smoothing)
         {
-            "type": "follow_npc",
+            "name": "follow_npc",
             "npc": "boss_enemy",
             "smooth": false
         }
 
     Common pattern - cutscene focusing on NPC:
         [
-            {"type": "follow_npc", "npc": "martin"},
-            {"type": "dialog", "speaker": "martin", "text": ["Watch this!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "move_npc", "npcs": ["martin"], "waypoint": "destination"},
-            {"type": "wait_for_movement", "npc": "martin"},
-            {"type": "follow_player"}
+            {"name": "follow_npc", "npc": "martin"},
+            {"name": "dialog", "speaker": "martin", "text": ["Watch this!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "move_npc", "npcs": ["martin"], "waypoint": "destination"},
+            {"name": "wait_for_movement", "npc": "martin"},
+            {"name": "follow_player"}
         ]
     """
 
@@ -201,15 +201,15 @@ class StopCameraFollowAction(Action):
 
     Example usage:
         {
-            "type": "stop_camera_follow"
+            "name": "stop_camera_follow"
         }
 
     Example - freeze camera during dialog:
         [
-            {"type": "stop_camera_follow"},
-            {"type": "dialog", "speaker": "narrator", "text": ["Time stands still..."]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "follow_player"}
+            {"name": "stop_camera_follow"},
+            {"name": "dialog", "speaker": "narrator", "text": ["Time stands still..."]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "follow_player"}
         ]
     """
 

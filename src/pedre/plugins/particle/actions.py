@@ -30,28 +30,28 @@ class EmitParticlesAction(Action):
     Example usage:
         # Hearts at NPC location
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "hearts",
             "npc": "yema"
         }
 
         # Sparkles at player location
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "sparkles",
             "player": true
         }
 
         # Trail at interactive object location
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "trail",
             "interactive_object": "waypoint"
         }
 
         # Burst at interactive object location with custom color
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "burst",
             "interactive_object": "treasure_chest",
             "color": [255, 215, 0]

@@ -31,7 +31,7 @@ class PortalEnteredEvent(Event):
                 "portal": "forest_gate"
             },
             "actions": [
-                {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+                {"name": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
             ]
         }
 

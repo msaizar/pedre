@@ -18,19 +18,19 @@ A simple first-time conversation with an NPC that advances dialog progression.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Merchant",
         "text": ["Hello, traveler! Welcome to my shop."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "merchant"
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "greeting.wav"
       }
     ]
@@ -62,16 +62,16 @@ Opening a chest and receiving an item with visual and audio feedback.
     "run_once": true,
     "actions": [
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "chest_open.wav"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Info",
         "text": ["You found the Golden Key!"]
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "sparkles",
         "interactive_object": "golden_chest"
       }
@@ -103,49 +103,49 @@ Coordinating multiple NPCs with movement and dialog.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Let me call the others."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["guard", "merchant"]
       },
       {
-        "type": "wait_for_npcs_appear",
+        "name": "wait_for_npcs_appear",
         "npcs": ["guard", "merchant"]
       },
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "meeting_spot"
       },
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["merchant"],
         "waypoint": "meeting_spot"
       },
       {
-        "type": "wait_for_movement",
+        "name": "wait_for_movement",
         "npc": "guard"
       },
       {
-        "type": "wait_for_movement",
+        "name": "wait_for_movement",
         "npc": "merchant"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You called, Elder?"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Merchant",
         "text": ["What seems to be the matter?"]
       }
@@ -180,16 +180,16 @@ Examining an object with atmospheric effects.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Info",
         "text": ["The altar glows with ancient power..."]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "magic_glow.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "sparkles",
         "interactive_object": "altar"
       }
@@ -221,29 +221,29 @@ Dramatic boss appearance with music and effects.
     "run_once": true,
     "actions": [
       {
-        "type": "play_music",
+        "name": "play_music",
         "file": "boss_theme.ogg"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "burst",
         "interactive_object": "altar"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["boss"]
       },
       {
-        "type": "wait_for_npcs_appear",
+        "name": "wait_for_npcs_appear",
         "npcs": ["boss"]
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Boss",
         "text": ["You dare disturb my slumber?!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       }
     ]
   }
@@ -275,7 +275,7 @@ Looping NPC movement pattern.
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "point_b"
       }
@@ -290,7 +290,7 @@ Looping NPC movement pattern.
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "point_c"
       }
@@ -305,7 +305,7 @@ Looping NPC movement pattern.
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "point_a"
       }
@@ -337,15 +337,15 @@ Multi-stage quest with progress tracking.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Bring me the ancient artifact from the ruins."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "elder"
       }
     ]
@@ -359,7 +359,7 @@ Multi-stage quest with progress tracking.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Have you found the artifact yet?"]
       }
@@ -374,21 +374,21 @@ Multi-stage quest with progress tracking.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Info",
         "text": ["You found the ancient artifact!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "item_get.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "sparkles",
         "interactive_object": "ancient_artifact"
       },
       {
-        "type": "set_dialog_level",
+        "name": "set_dialog_level",
         "npc": "elder",
         "dialog_level": 2
       }
@@ -404,24 +404,24 @@ Multi-stage quest with progress tracking.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["You found it! Thank you, brave adventurer!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "quest_complete.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "burst",
         "npc": "elder"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "elder"
       }
     ]
@@ -435,7 +435,7 @@ Multi-stage quest with progress tracking.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Thank you again for your help!"]
       }
@@ -475,19 +475,19 @@ Different responses based on whether player has required item.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You have the key! You may enter."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "guard"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["king"]
       }
     ]
@@ -501,7 +501,7 @@ Different responses based on whether player has required item.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You need the castle key to enter."]
       }
@@ -532,15 +532,15 @@ Interactive tutorial teaching game mechanics.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guide",
         "text": ["Welcome! Let me teach you the basics."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "guide"
       }
     ]
@@ -555,30 +555,30 @@ Interactive tutorial teaching game mechanics.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guide",
         "text": ["Press I to open your inventory."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "wait_for_inventory_access"
+        "name": "wait_for_inventory_access"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guide",
         "text": ["Great! Now you know how to check your items."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "guide"
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "success.wav"
       }
     ]
@@ -593,7 +593,7 @@ Interactive tutorial teaching game mechanics.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guide",
         "text": ["Tutorial complete! Good luck on your adventure!"]
       }
@@ -625,12 +625,12 @@ Complex cutscene with multiple stages.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Advisor",
         "text": ["At last, I can reveal my true intentions!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       }
     ]
   },
@@ -642,15 +642,15 @@ Complex cutscene with multiple stages.
     },
     "actions": [
       {
-        "type": "play_music",
+        "name": "play_music",
         "file": "betrayal.ogg"
       },
       {
-        "type": "start_disappear_animation",
+        "name": "start_disappear_animation",
         "npcs": ["king"]
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "burst",
         "npc": "king"
       }
@@ -664,15 +664,15 @@ Complex cutscene with multiple stages.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Advisor",
         "text": ["The king is gone! I now rule this kingdom!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["dark_knight_1", "dark_knight_2"]
       }
     ]
@@ -704,28 +704,28 @@ Time-gated event that unlocks new NPCs.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Thanks to your help, the market can now open!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["merchant_1", "merchant_2", "merchant_3"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "celebration.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "hearts",
         "npc": "elder"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "elder"
       }
     ]
@@ -756,24 +756,24 @@ Ghost NPC that vanishes after interaction.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Ghost",
         "text": ["I am but a spirit now...", "Farewell, mortal..."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "sparkles",
         "npc": "ghost"
       },
       {
-        "type": "start_disappear_animation",
+        "name": "start_disappear_animation",
         "npcs": ["ghost"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "ghost_vanish.wav"
       }
     ]

@@ -38,8 +38,8 @@ Usage from Code:
 
 Usage from Scripts:
     [
-        {"type": "play_music", "music": "beach.ogg", "loop": true},
-        {"type": "play_sfx", "sfx": "feliz_cumple.mp3"}
+        {"name": "play_music", "music": "beach.ogg", "loop": true},
+        {"name": "play_sfx", "sfx": "feliz_cumple.mp3"}
     ]
 
 Integration:

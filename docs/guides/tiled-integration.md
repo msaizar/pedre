@@ -725,7 +725,7 @@ Properties:
   "to_forest_portal": {
     "trigger": {"event": "portal_entered", "portal": "to_forest"},
     "actions": [
-      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+      {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
     ]
   }
 }
@@ -742,7 +742,7 @@ Portal transitions are handled through the script plugin using the `portal_enter
   "forest_portal": {
     "trigger": {"event": "portal_entered", "portal": "forest_entrance"},
     "actions": [
-      {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -756,14 +756,14 @@ Portal transitions are handled through the script plugin using the `portal_enter
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
     "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
     "actions": [
-      {"type": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "entrance"}
     ]
   },
   "tower_gate_locked": {
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
     "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
+      {"name": "dialog", "speaker": "Narrator", "text": ["The gate is locked..."]}
     ]
   }
 }
@@ -777,16 +777,16 @@ Portal transitions are handled through the script plugin using the `portal_enter
     "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "entrance"}
+      {"name": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   },
   "dungeon_return": {
     "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
     "conditions": [{"check": "script_completed", "script": "dungeon_first_entry"}],
     "actions": [
-      {"type": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -833,11 +833,9 @@ Reference waypoints by name in your scripts:
 
 ```json
 {
-  "type": "move_npc",
-  "params": {
-    "npc_name": "merchant",
-    "waypoint": "well"
-  }
+  "name": "move_npc",
+  "npcs": ["merchant"],
+  "waypoint": "well"
 }
 ```
 

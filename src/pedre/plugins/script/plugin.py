@@ -30,9 +30,9 @@ Script anatomy:
     "scene": "village",
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "martin", "text": ["Hello!"]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "move_npc", "npcs": ["martin"], "waypoint": "town_square"}
+      {"name": "dialog", "speaker": "martin", "text": ["Hello!"]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "move_npc", "npcs": ["martin"], "waypoint": "town_square"}
     ]
   }
 }

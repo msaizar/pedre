@@ -33,14 +33,14 @@ class MoveNPCAction(Action):
     Example usage:
         # Single NPC
         {
-            "type": "move_npc",
+            "name": "move_npc",
             "npcs": ["martin"],
             "waypoint": "town_square"
         }
 
         # Multiple NPCs
         {
-            "type": "move_npc",
+            "name": "move_npc",
             "npcs": ["martin", "yema"],
             "waypoint": "forest_entrance"
         }
@@ -143,7 +143,7 @@ class StartAppearAnimationAction(Action):
 
     Example usage:
         {
-            "type": "start_appear_animation",
+            "name": "start_appear_animation",
             "npcs": ["martin", "yema", "romi"]
         }
     """
@@ -210,7 +210,7 @@ class AdvanceDialogAction(Action):
 
     Example usage:
         {
-            "type": "advance_dialog",
+            "name": "advance_dialog",
             "npc": "martin"
         }
     """
@@ -274,14 +274,14 @@ class SetDialogLevelAction(Action):
     Example usage:
         # Jump to a specific dialog stage
         {
-            "type": "set_dialog_level",
+            "name": "set_dialog_level",
             "npc": "martin",
             "dialog_level": 5
         }
 
         # Reset dialog to beginning
         {
-            "type": "set_dialog_level",
+            "name": "set_dialog_level",
             "npc": "yema",
             "dialog_level": 0
         }
@@ -375,7 +375,7 @@ class SetCurrentNPCAction(Action):
 
     Example usage:
         {
-            "type": "set_current_npc",
+            "name": "set_current_npc",
             "npc": "martin"
         }
 
@@ -456,9 +456,9 @@ class WaitForNPCMovementAction(WaitForConditionAction):
 
     Example usage in a sequence:
         [
-            {"type": "move_npc", "npc": "martin", "waypoint": "town_square"},
-            {"type": "wait_for_movement", "npc": "martin"},
-            {"type": "dialog", "speaker": "martin", "text": ["I made it!"]}
+            {"name": "move_npc", "npc": "martin", "waypoint": "town_square"},
+            {"name": "wait_for_movement", "npc": "martin"},
+            {"name": "dialog", "speaker": "martin", "text": ["I made it!"]}
         ]
     """
 
@@ -519,9 +519,9 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
 
     Example usage in a reveal sequence:
         [
-            {"type": "start_appear_animation", "npcs": ["martin", "yema"]},
-            {"type": "wait_npcs_appear", "npcs": ["martin", "yema"]},
-            {"type": "dialog", "speaker": "martin", "text": ["We're here!"]}
+            {"name": "start_appear_animation", "npcs": ["martin", "yema"]},
+            {"name": "wait_npcs_appear", "npcs": ["martin", "yema"]},
+            {"name": "dialog", "speaker": "martin", "text": ["We're here!"]}
         ]
     """
 
@@ -589,9 +589,9 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
 
     Example usage in a disappear sequence:
         [
-            {"type": "start_disappear_animation", "npcs": ["martin", "yema"]},
-            {"type": "wait_for_npcs_disappear", "npcs": ["martin", "yema"]},
-            {"type": "change_scene", "target_map": "Forest.tmx"}
+            {"name": "start_disappear_animation", "npcs": ["martin", "yema"]},
+            {"name": "wait_for_npcs_disappear", "npcs": ["martin", "yema"]},
+            {"name": "change_scene", "target_map": "Forest.tmx"}
         ]
     """
 
@@ -660,13 +660,13 @@ class StartDisappearAnimationAction(Action):
     Example usage:
         # Single NPC
         {
-            "type": "start_disappear_animation",
+            "name": "start_disappear_animation",
             "npcs": ["martin"]
         }
 
         # Multiple NPCs
         {
-            "type": "start_disappear_animation",
+            "name": "start_disappear_animation",
             "npcs": ["martin", "yema"]
         }
     """

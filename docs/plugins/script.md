@@ -64,7 +64,7 @@ All scripts are validated after loading to catch configuration errors early. Val
 
 - **Trigger Events**: All `event` values in triggers must be registered in EventRegistry
 - **Conditions**: All `check` types in conditions must be registered in ConditionRegistry
-- **Actions**: All action `type` values must be registered in ActionRegistry
+- **Actions**: All action `name` values must be registered in ActionRegistry
 - **Required Fields**: Scripts must have required keys (`trigger`, `actions`) and valid structure
 - **Unknown Keys**: Scripts cannot have unrecognized top-level keys
 - **Non-Empty Actions**: The `actions` list must contain at least one action
@@ -282,9 +282,9 @@ script = Script(
     scene="village",
     run_once=True,
     actions=[
-        {"type": "dialog", "speaker": "martin", "text": ["Hello!"]},
-        {"type": "wait_for_dialog_close"},
-        {"type": "move_npc", "npcs": ["martin"], "waypoint": "town_square"}
+        {"name": "dialog", "speaker": "martin", "text": ["Hello!"]},
+        {"name": "wait_for_dialog_close"},
+        {"name": "move_npc", "npcs": ["martin"], "waypoint": "town_square"}
     ]
 )
 ```
@@ -309,12 +309,12 @@ Scripts are defined in JSON files located in `assets/data/scripts/` with the nam
     "scene": "village",
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "merchant", "text": ["Hello!"]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "advance_dialog", "npc": "merchant"}
+      {"name": "dialog", "speaker": "merchant", "text": ["Hello!"]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "advance_dialog", "npc": "merchant"}
     ],
     "on_condition_fail": [
-      {"type": "dialog", "speaker": "merchant", "text": ["Check your inventory first!"]}
+      {"name": "dialog", "speaker": "merchant", "text": ["Check your inventory first!"]}
     ]
   }
 }
@@ -444,7 +444,7 @@ The optional `scene` field controls when a script can execute:
       {"check": "script_completed", "script": "village_quest_complete"}
     ],
     "actions": [
-      {"type": "change_scene", "target_map": "throne_room.tmx"}
+      {"name": "change_scene", "target_map": "throne_room.tmx"}
     ]
   }
 }
@@ -472,7 +472,7 @@ Published when a script completes execution.
       "script": "intro_cutscene"
     },
     "actions": [
-      {"type": "start_appear_animation", "npcs": ["guard"]}
+      {"name": "start_appear_animation", "npcs": ["guard"]}
     ]
   }
 }
@@ -534,9 +534,9 @@ Check if a specific script has fully completed all its actions.
     },
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "Merchant", "text": ["Welcome!"]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "advance_dialog", "npc": "merchant"}
+      {"name": "dialog", "speaker": "Merchant", "text": ["Welcome!"]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "advance_dialog", "npc": "merchant"}
     ]
   }
 }
@@ -557,10 +557,10 @@ Check if a specific script has fully completed all its actions.
       {"check": "inventory_accessed", "equals": true}
     ],
     "actions": [
-      {"type": "dialog", "speaker": "Merchant", "text": ["Good! You found your inventory!"]}
+      {"name": "dialog", "speaker": "Merchant", "text": ["Good! You found your inventory!"]}
     ],
     "on_condition_fail": [
-      {"type": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first."]}
+      {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first."]}
     ]
   }
 }
@@ -578,9 +578,9 @@ Check if a specific script has fully completed all its actions.
     },
     "run_once": true,
     "actions": [
-      {"type": "play_sfx", "file": "magic.wav"},
-      {"type": "start_appear_animation", "npcs": ["spirit"]},
-      {"type": "wait_npcs_appear", "npcs": ["spirit"]}
+      {"name": "play_sfx", "file": "magic.wav"},
+      {"name": "start_appear_animation", "npcs": ["spirit"]},
+      {"name": "wait_npcs_appear", "npcs": ["spirit"]}
     ]
   },
   "cutscene_part2": {
@@ -589,9 +589,9 @@ Check if a specific script has fully completed all its actions.
       "script": "cutscene_part1"
     },
     "actions": [
-      {"type": "dialog", "speaker": "Spirit", "text": ["Who dares summon me?"]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "start_disappear_animation", "npcs": ["spirit"]}
+      {"name": "dialog", "speaker": "Spirit", "text": ["Who dares summon me?"]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "start_disappear_animation", "npcs": ["spirit"]}
     ]
   }
 }
@@ -610,10 +610,10 @@ Check if a specific script has fully completed all its actions.
       {"check": "npc_interacted", "npc": "guard", "equals": true}
     ],
     "actions": [
-      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+      {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
     ],
     "on_condition_fail": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["The path is blocked."]}
+      {"name": "dialog", "speaker": "Narrator", "text": ["The path is blocked."]}
     ]
   }
 }
@@ -630,8 +630,8 @@ Check if a specific script has fully completed all its actions.
     },
     "run_once": true,
     "actions": [
-      {"type": "play_music", "file": "village_theme.ogg"},
-      {"type": "dialog", "speaker": "Narrator", "text": ["Welcome to the village!"]}
+      {"name": "play_music", "file": "village_theme.ogg"},
+      {"name": "dialog", "speaker": "Narrator", "text": ["Welcome to the village!"]}
     ]
   }
 }

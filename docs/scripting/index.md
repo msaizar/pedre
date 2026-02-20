@@ -29,16 +29,16 @@ Here's a simple script that shows a greeting when the player talks to a merchant
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Merchant",
         "text": ["Welcome to my shop!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "greeting.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "hearts",
         "npc": "merchant"
       }
