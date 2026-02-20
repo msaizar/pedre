@@ -541,7 +541,7 @@ class TestScriptPlugin(unittest.TestCase):
         script_data = {
             "test_script": {
                 "trigger": {"event": "test_event"},
-                "conditions": [{"check": "test"}],
+                "conditions": [{"name": "test"}],
                 "scene": "test_scene",
                 "run_once": True,
                 "actions": [{"name": "action1"}],
@@ -1265,7 +1265,7 @@ class TestScriptPlugin(unittest.TestCase):
 
         script_data = {
             "test_script": {
-                "conditions": [{"check": "invalid"}],
+                "conditions": [{"name": "invalid"}],
                 "actions": [],
             }
         }

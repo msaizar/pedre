@@ -409,7 +409,7 @@ class TestNPCPlugin(unittest.TestCase):
             "npc1": {
                 "0": {
                     "text": ["Conditional dialog"],
-                    "conditions": [{"check": "has_item", "item": "key"}],
+                    "conditions": [{"name": "has_item", "item": "key"}],
                     "on_condition_fail": [{"name": "dialog", "text": ["You need a key"]}],
                 }
             }
@@ -584,7 +584,7 @@ class TestNPCPlugin(unittest.TestCase):
         # Setup dialog with failing conditions
         dialog_config = NPCDialogConfig(
             text=["You shall pass"],
-            conditions=[{"check": "has_item", "item": "pass"}],
+            conditions=[{"name": "has_item", "item": "pass"}],
             on_condition_fail=[{"name": "dialog", "text": ["You shall not pass!"], "speaker": "Guard"}],
         )
         self.plugin.dialogs = {"dungeon": {"guard": {0: dialog_config}}}
@@ -608,7 +608,7 @@ class TestNPCPlugin(unittest.TestCase):
         # Setup dialog with failing conditions but no fallback dialog
         dialog_config = NPCDialogConfig(
             text=["You shall pass"],
-            conditions=[{"check": "has_item", "item": "pass"}],
+            conditions=[{"name": "has_item", "item": "pass"}],
             on_condition_fail=[{"name": "other_action"}],
         )
         self.plugin.dialogs = {"dungeon": {"guard": {0: dialog_config}}}
@@ -688,7 +688,7 @@ class TestNPCPlugin(unittest.TestCase):
         """Test get_dialog returns on_condition_fail actions."""
         fail_actions = [{"name": "dialog", "text": ["Failed"]}]
         dialog_config = NPCDialogConfig(
-            text=["Success"], conditions=[{"check": "has_item"}], on_condition_fail=fail_actions
+            text=["Success"], conditions=[{"name": "has_item"}], on_condition_fail=fail_actions
         )
         self.plugin.dialogs = {"scene1": {"npc1": {0: dialog_config}}}
 
@@ -721,7 +721,7 @@ class TestNPCPlugin(unittest.TestCase):
 
     def test_get_dialog_no_candidates(self) -> None:
         """Test get_dialog when no candidates with met conditions."""
-        dialog_config = NPCDialogConfig(text=["Conditional"], conditions=[{"check": "impossible"}])
+        dialog_config = NPCDialogConfig(text=["Conditional"], conditions=[{"name": "impossible"}])
         self.plugin.dialogs = {"scene1": {"npc1": {0: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
@@ -1320,7 +1320,7 @@ class TestNPCPlugin(unittest.TestCase):
 
     def test_get_dialog_exact_match_with_conditions_met_returns_dialog(self) -> None:
         """Test get_dialog returns dialog when exact match has conditions that are met."""
-        dialog_config = NPCDialogConfig(text=["Conditional success"], conditions=[{"check": "test"}])
+        dialog_config = NPCDialogConfig(text=["Conditional success"], conditions=[{"name": "test"}])
         self.plugin.dialogs = {"scene1": {"npc1": {5: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=True):
@@ -1332,7 +1332,7 @@ class TestNPCPlugin(unittest.TestCase):
     def test_get_dialog_fallback_with_conditions_appends_candidates(self) -> None:
         """Test get_dialog fallback includes dialogs with met conditions."""
         dialog_no_cond = NPCDialogConfig(text=["No conditions"])
-        dialog_with_cond = NPCDialogConfig(text=["With met conditions"], conditions=[{"check": "test"}])
+        dialog_with_cond = NPCDialogConfig(text=["With met conditions"], conditions=[{"name": "test"}])
         self.plugin.dialogs = {"scene1": {"npc1": {1: dialog_no_cond, 2: dialog_with_cond}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=True):
@@ -1522,7 +1522,7 @@ class TestNPCPlugin(unittest.TestCase):
 
         # Dialog with failing conditions and on_condition_fail
         dialog_config = NPCDialogConfig(
-            text=["You shall pass"], conditions=[{"check": "has_item"}], on_condition_fail=[{"name": "dialog"}]
+            text=["You shall pass"], conditions=[{"name": "has_item"}], on_condition_fail=[{"name": "dialog"}]
         )
         self.plugin.dialogs = {"test_scene": {"test_npc": {0: dialog_config}}}
 
@@ -1595,7 +1595,7 @@ class TestNPCPlugin(unittest.TestCase):
         self.plugin.register_npc(mock_sprite, "guard")
 
         # Dialog with conditions that will fail, and no on_condition_fail
-        dialog_config = NPCDialogConfig(text=["You shall pass"], conditions=[{"check": "has_key"}])
+        dialog_config = NPCDialogConfig(text=["You shall pass"], conditions=[{"name": "has_key"}])
         self.plugin.dialogs = {"castle": {"guard": {0: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
