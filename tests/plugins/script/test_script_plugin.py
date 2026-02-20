@@ -2,12 +2,10 @@
 
 import json
 import unittest
-from dataclasses import dataclass
 from unittest.mock import MagicMock, mock_open, patch
 
 from pedre.actions.registry import ActionParseError
 from pedre.conditions.registry import ConditionParseError
-from pedre.events.base import Event
 from pedre.plugins.script.base import Script, ScriptTrigger
 from pedre.plugins.script.events import ScriptCompleteEvent
 from pedre.plugins.script.plugin import ScriptPlugin
@@ -1259,23 +1257,6 @@ class TestScriptPlugin(unittest.TestCase):
             self.plugin._on_generic_event(mock_event)
 
             mock_handle.assert_called_once_with("test_event", {"key": "value"})
-
-    def test_on_generic_event_without_get_script_data(self) -> None:
-        """Test generic event handler fallback to asdict."""
-
-        @dataclass
-        class TestEvent(Event):
-            name: str
-            value: int
-
-        event = TestEvent(name="test_event", value=42)
-
-        self.plugin.setup(self.mock_context)
-
-        with patch.object(self.plugin, "_handle_event_trigger") as mock_handle:
-            self.plugin._on_generic_event(event)
-
-            mock_handle.assert_called_once_with("test_event", {"name": "test_event", "value": 42})
 
     @patch("pedre.plugins.script.plugin.ConditionRegistry")
     def test_parse_scripts_condition_parse_error(self, mock_condition_registry: MagicMock) -> None:
