@@ -45,7 +45,7 @@ class PortalEnteredEvent(Event):
     name: ClassVar[str] = "portal_entered"
 
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"portal"})
-    reference_fields: ClassVar[dict[str, str]] = {"portal_name": "portal"}
+    reference_fields: ClassVar[dict[str, str]] = {"portal": "portal"}
     portal_name: str
 
     def get_script_data(self) -> dict[str, Any]:
