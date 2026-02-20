@@ -812,8 +812,6 @@ class TestMapValidator:
                 "tile_size": 32,
                 "scale": 1.5,
                 "initially_hidden": True,
-                "walk_frame_count": 4,
-                "appear_duration": 10,
             },
         )
         tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
