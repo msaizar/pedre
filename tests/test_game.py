@@ -1,19 +1,21 @@
 """Unit tests for Game class in src/pedre/game.py."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
 import arcade
+import pytest
 
 from pedre.game import Game
 
 
-class TestGame(unittest.TestCase):
-    """Test Suite for Game class."""
+@pytest.fixture
+def mock_window() -> MagicMock:
+    """Fixture to provide a mock arcade.Window."""
+    return MagicMock(spec=arcade.Window)
 
-    def setUp(self) -> None:
-        """Set up test fixtures."""
-        self.mock_window = MagicMock(spec=arcade.Window)
+
+class TestGame:
+    """Test Suite for Game class."""
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -29,6 +31,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test initialization of Game."""
         # Setup mocks
@@ -53,7 +56,7 @@ class TestGame(unittest.TestCase):
         mock_plugin_loader_class.return_value = mock_plugin_loader
 
         # Create game instance
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -64,7 +67,7 @@ class TestGame(unittest.TestCase):
         mock_plugin_loader_class.assert_called_once()
 
         # Verify window is set
-        assert game.window == self.mock_window
+        assert game.window == mock_window
 
         # Verify event bus created
         mock_event_bus_class.assert_called_once()
@@ -73,7 +76,7 @@ class TestGame(unittest.TestCase):
         # Verify game context created with correct args
         mock_game_context_class.assert_called_once_with(
             event_bus=mock_event_bus,
-            window=self.mock_window,
+            window=mock_window,
         )
         assert game.game_context == mock_game_context
 
@@ -121,6 +124,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test game_view property creates GameView on first access."""
         # Setup mocks for plugin loader
@@ -131,7 +135,7 @@ class TestGame(unittest.TestCase):
         mock_game_view = MagicMock()
         mock_game_view_class.return_value = mock_game_view
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -169,13 +173,14 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test has_game_view returns False when no view exists."""
         mock_plugin_loader = MagicMock()
         mock_plugin_loader.instantiate_all.return_value = {}
         mock_plugin_loader_class.return_value = mock_plugin_loader
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -203,13 +208,14 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test has_game_view returns True when view exists."""
         mock_plugin_loader = MagicMock()
         mock_plugin_loader.instantiate_all.return_value = {}
         mock_plugin_loader_class.return_value = mock_plugin_loader
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -240,6 +246,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test show_game displays the game view."""
         mock_plugin_loader = MagicMock()
@@ -249,7 +256,7 @@ class TestGame(unittest.TestCase):
         mock_game_view = MagicMock()
         mock_game_view_class.return_value = mock_game_view
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
         game.show_game()
 
         # Verify all loaders were called during init
@@ -262,7 +269,7 @@ class TestGame(unittest.TestCase):
 
         # Verify window.show_view was called with game_view
         mock_game_view_class.assert_called_once_with(game)
-        self.mock_window.show_view.assert_called_once_with(mock_game_view)
+        mock_window.show_view.assert_called_once_with(mock_game_view)
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -280,6 +287,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test start_new_game when no existing view."""
         mock_plugin_loader = MagicMock()
@@ -289,7 +297,7 @@ class TestGame(unittest.TestCase):
         mock_game_view = MagicMock()
         mock_game_view_class.return_value = mock_game_view
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
         game.start_new_game()
 
         # Verify all loaders were called during init
@@ -302,7 +310,7 @@ class TestGame(unittest.TestCase):
 
         # Verify show_view was called
         mock_game_view_class.assert_called_once_with(game)
-        self.mock_window.show_view.assert_called_once()
+        mock_window.show_view.assert_called_once()
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -320,6 +328,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test start_new_game cleans up existing view."""
         mock_plugin_loader = MagicMock()
@@ -330,7 +339,7 @@ class TestGame(unittest.TestCase):
         mock_new_view = MagicMock()
         mock_game_view_class.side_effect = [mock_old_view, mock_new_view]
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
         # Create initial view
         _ = game.game_view
 
@@ -350,7 +359,7 @@ class TestGame(unittest.TestCase):
 
         # Verify new view was created and shown
         assert mock_game_view_class.call_count == 2
-        self.mock_window.show_view.assert_called_once_with(mock_new_view)
+        mock_window.show_view.assert_called_once_with(mock_new_view)
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -366,6 +375,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test start_game_or_load loads autosave when it exists."""
         mock_plugin_loader = MagicMock()
@@ -381,7 +391,7 @@ class TestGame(unittest.TestCase):
         mock_save_plugin.load_auto_save.return_value = mock_save_data
         mock_game_context.save_plugin = mock_save_plugin
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -414,6 +424,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test start_game_or_load starts new game when no autosave."""
         mock_plugin_loader = MagicMock()
@@ -427,7 +438,7 @@ class TestGame(unittest.TestCase):
         mock_save_plugin.save_exists.return_value = False
         mock_game_context.save_plugin = mock_save_plugin
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -460,6 +471,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test start_game_or_load starts new game when autosave exists but load returns None."""
         mock_plugin_loader = MagicMock()
@@ -474,7 +486,7 @@ class TestGame(unittest.TestCase):
         mock_save_plugin.load_auto_save.return_value = None  # Returns None
         mock_game_context.save_plugin = mock_save_plugin
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -508,6 +520,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test start_game_or_load starts new game when no save plugin."""
         mock_plugin_loader = MagicMock()
@@ -518,7 +531,7 @@ class TestGame(unittest.TestCase):
         mock_game_context_class.return_value = mock_game_context
         mock_game_context.save_plugin = None
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -550,6 +563,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test continue_game resumes existing view."""
         mock_plugin_loader = MagicMock()
@@ -559,7 +573,7 @@ class TestGame(unittest.TestCase):
         mock_game_view = MagicMock()
         mock_game_view_class.return_value = mock_game_view
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -574,7 +588,7 @@ class TestGame(unittest.TestCase):
         game.continue_game()
 
         # Verify window.show_view was called (resume)
-        self.mock_window.show_view.assert_called_once_with(mock_game_view)
+        mock_window.show_view.assert_called_once_with(mock_game_view)
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -590,6 +604,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test continue_game loads autosave when no existing view."""
         mock_plugin_loader = MagicMock()
@@ -604,7 +619,7 @@ class TestGame(unittest.TestCase):
         mock_save_plugin.load_auto_save.return_value = mock_save_data
         mock_game_context.save_plugin = mock_save_plugin
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -637,6 +652,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test continue_game does nothing when no save plugin."""
         mock_plugin_loader = MagicMock()
@@ -647,7 +663,7 @@ class TestGame(unittest.TestCase):
         mock_game_context_class.return_value = mock_game_context
         mock_game_context.save_plugin = None
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -659,7 +675,7 @@ class TestGame(unittest.TestCase):
         game.continue_game()
 
         # Window show_view should not be called
-        self.mock_window.show_view.assert_not_called()
+        mock_window.show_view.assert_not_called()
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -675,6 +691,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test continue_game does nothing when no autosave."""
         mock_plugin_loader = MagicMock()
@@ -688,7 +705,7 @@ class TestGame(unittest.TestCase):
         mock_save_plugin.load_auto_save.return_value = None
         mock_game_context.save_plugin = mock_save_plugin
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -703,7 +720,7 @@ class TestGame(unittest.TestCase):
         mock_save_plugin.load_auto_save.assert_called_once()
 
         # Window show_view should not be called
-        self.mock_window.show_view.assert_not_called()
+        mock_window.show_view.assert_not_called()
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -721,6 +738,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test load_game restores save data."""
         mock_plugin_loader = MagicMock()
@@ -736,7 +754,7 @@ class TestGame(unittest.TestCase):
         mock_game_view = MagicMock()
         mock_game_view_class.return_value = mock_game_view
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -756,7 +774,7 @@ class TestGame(unittest.TestCase):
         mock_game_view_class.assert_called_once_with(game)
 
         # Verify window.show_view was called
-        self.mock_window.show_view.assert_called_once_with(mock_game_view)
+        mock_window.show_view.assert_called_once_with(mock_game_view)
 
     @patch("pedre.game.PluginLoader")
     @patch("pedre.game.ConditionLoader")
@@ -774,6 +792,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test load_game cleans up existing view before loading."""
         mock_plugin_loader = MagicMock()
@@ -790,7 +809,7 @@ class TestGame(unittest.TestCase):
         mock_new_view = MagicMock()
         mock_game_view_class.side_effect = [mock_old_view, mock_new_view]
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -825,6 +844,7 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test load_game does nothing when no save plugin."""
         mock_plugin_loader = MagicMock()
@@ -835,7 +855,7 @@ class TestGame(unittest.TestCase):
         mock_game_context_class.return_value = mock_game_context
         mock_game_context.save_plugin = None
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -849,7 +869,7 @@ class TestGame(unittest.TestCase):
         game.load_game(mock_save_data)
 
         # Window show_view should not be called
-        self.mock_window.show_view.assert_not_called()
+        mock_window.show_view.assert_not_called()
 
     @patch("pedre.game.arcade.close_window")
     @patch("pedre.game.PluginLoader")
@@ -869,6 +889,7 @@ class TestGame(unittest.TestCase):
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
         mock_close_window: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test exit_game saves and cleans up before exiting."""
         mock_plugin_loader = MagicMock()
@@ -885,7 +906,7 @@ class TestGame(unittest.TestCase):
         mock_game_view = MagicMock()
         mock_game_view_class.return_value = mock_game_view
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -926,6 +947,7 @@ class TestGame(unittest.TestCase):
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
         mock_close_window: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test exit_game continues even if autosave fails."""
         mock_plugin_loader = MagicMock()
@@ -942,7 +964,7 @@ class TestGame(unittest.TestCase):
         mock_game_view = MagicMock()
         mock_game_view_class.return_value = mock_game_view
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -979,13 +1001,14 @@ class TestGame(unittest.TestCase):
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
         mock_close_window: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test exit_game without active view just closes window."""
         mock_plugin_loader = MagicMock()
         mock_plugin_loader.instantiate_all.return_value = {}
         mock_plugin_loader_class.return_value = mock_plugin_loader
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -1013,13 +1036,14 @@ class TestGame(unittest.TestCase):
         mock_event_loader_class: MagicMock,
         mock_condition_loader_class: MagicMock,
         mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
     ) -> None:
         """Test load_game does nothing when game_context is None."""
         mock_plugin_loader = MagicMock()
         mock_plugin_loader.instantiate_all.return_value = {}
         mock_plugin_loader_class.return_value = mock_plugin_loader
 
-        game = Game(self.mock_window)
+        game = Game(mock_window)
 
         # Verify all loaders were called during init
         mock_event_bus_class.assert_called_once()
@@ -1036,4 +1060,4 @@ class TestGame(unittest.TestCase):
         game.load_game(mock_save_data)
 
         # Window show_view should not be called
-        self.mock_window.show_view.assert_not_called()
+        mock_window.show_view.assert_not_called()
