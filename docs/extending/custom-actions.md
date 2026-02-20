@@ -42,7 +42,7 @@ You can also replace built-in actions with your own implementations by omitting 
 
 ## ActionRegistry
 
-The `ActionRegistry` maps action type strings (like `"dialog"`, `"move_npc"`) to Action classes.
+The `ActionRegistry` maps action strings (like `"dialog"`, `"move_npc"`) to Action classes.
 
 ### Location
 
@@ -50,7 +50,7 @@ The `ActionRegistry` maps action type strings (like `"dialog"`, `"move_npc"`) to
 
 ## Creating Custom Actions
 
-To create a new action type, subclass `Action` and decorate it with `@ActionRegistry.register`.
+To create a new action, subclass `Action` and decorate it with `@ActionRegistry.register`.
 
 ### 1. Define the Action Class
 
@@ -58,8 +58,11 @@ To create a new action type, subclass `Action` and decorate it with `@ActionRegi
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
-@ActionRegistry.register("set_weather")
+@ActionRegistry.register
 class SetWeatherAction(Action):
+
+    name = "set_weather"
+
     def __init__(self, weather: str, intensity: float = 1.0):
         self.weather = weather
         self.intensity = intensity
@@ -100,7 +103,7 @@ Once registered, your action can be used in any JSON script:
     "trigger": {"event": "scene_start"},
     "actions": [
       {
-        "type": "set_weather",
+        "name": "set_weather",
         "weather": "rain",
         "intensity": 0.8
       }

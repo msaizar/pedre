@@ -304,7 +304,7 @@ Published when player interacts with an interactive object.
         "object_name": "treasure_chest"
     },
     "actions": [
-        {"type": "dialog", "speaker": "Plugin", "text": ["You found a health potion!"]}
+        {"name": "dialog", "speaker": "Plugin", "text": ["You found a health potion!"]}
     ]
 }
 ```
@@ -336,7 +336,7 @@ Check if an object has been interacted with.
     },
     "conditions": [
         {
-            "check": "object_interacted",
+            "name": "object_interacted",
             "object": "treasure_chest"
         }
     ]
@@ -347,7 +347,7 @@ Check if an object has been interacted with.
 
 ```json
 {
-    "check": "object_interacted",
+    "name": "object_interacted",
     "object": "treasure_chest",
     "equals": false
 }

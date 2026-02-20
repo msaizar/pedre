@@ -1,12 +1,16 @@
 """Unit tests for audio action classes."""
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
+from pedre.conf import settings
 from pedre.plugins.audio.actions import PlayMusicAction, PlaySFXAction
 
 
-class TestPlaySFXAction(unittest.TestCase):
+class TestPlaySFXAction:
     """Unit test class for PlaySFXAction."""
 
     def test_init(self) -> None:
@@ -70,8 +74,10 @@ class TestPlaySFXAction(unittest.TestCase):
         # Should have been called twice (once before reset, once after)
         assert mock_audio_plugin.play_sfx.call_count == 2
 
-    def test_from_dict(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict(self, mock_asset_exists: MagicMock) -> None:
         """Test creating PlaySFXAction from dictionary."""
+        mock_asset_exists.return_value = True
         data = {"file": "footstep.mp3"}
 
         action = PlaySFXAction.from_dict(data)
@@ -82,19 +88,33 @@ class TestPlaySFXAction(unittest.TestCase):
     def test_from_dict_missing_file(self) -> None:
         """Test creating PlaySFXAction with missing file key."""
         data = {}
+        with pytest.raises(ActionParseError, match="play_sfx: missing required 'file' field"):
+            PlaySFXAction.from_dict(data)
 
-        action = PlaySFXAction.from_dict(data)
-
-        assert isinstance(action, PlaySFXAction)
-        assert action.sfx_file == ""
-
-    def test_from_dict_with_extra_keys(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_with_extra_keys(self, mock_asset_exists: MagicMock) -> None:
         """Test that from_dict ignores extra keys."""
+        mock_asset_exists.return_value = True
         data = {"file": "test.wav", "volume": 0.5, "extra_key": "ignored"}
 
         action = PlaySFXAction.from_dict(data)
 
         assert action.sfx_file == "test.wav"
+
+    def test_from_dict_wrong_file_type(self) -> None:
+        """Test creating PlaySFXAction from dictionary with a wrong file type."""
+        data = {"file": 123}
+        with pytest.raises(ActionParseError, match="play_sfx: 'file' must be a string"):
+            PlaySFXAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_file_doesnt_exist(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlaySFXAction with missing file."""
+        mock_asset_exists.return_value = False
+        data = {"file": "file.ogg"}
+        full_path = f"{settings.AUDIO_SFX_DIRECTORY}/file.ogg"
+        with pytest.raises(ActionParseError, match=f"play_sfx: '{full_path}' does not exist"):
+            PlaySFXAction.from_dict(data)
 
 
 class TestPlayMusicAction(unittest.TestCase):
@@ -187,8 +207,10 @@ class TestPlayMusicAction(unittest.TestCase):
         # Should have been called twice (once before reset, once after)
         assert mock_audio_plugin.play_music.call_count == 2
 
-    def test_from_dict_defaults(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_defaults(self, mock_asset_exists: MagicMock) -> None:
         """Test creating PlayMusicAction from dictionary with defaults."""
+        mock_asset_exists.return_value = True
         data = {"file": "background.ogg"}
 
         action = PlayMusicAction.from_dict(data)
@@ -198,8 +220,10 @@ class TestPlayMusicAction(unittest.TestCase):
         assert action.loop is True
         assert action.volume is None
 
-    def test_from_dict_with_all_parameters(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_with_all_parameters(self, mock_asset_exists: MagicMock) -> None:
         """Test creating PlayMusicAction with all parameters."""
+        mock_asset_exists.return_value = True
         data = {"file": "battle.ogg", "loop": False, "volume": 0.5}
 
         action = PlayMusicAction.from_dict(data)
@@ -213,45 +237,73 @@ class TestPlayMusicAction(unittest.TestCase):
         """Test creating PlayMusicAction with missing file key."""
         data = {"loop": True}
 
-        action = PlayMusicAction.from_dict(data)
+        with pytest.raises(ActionParseError, match="play_music: missing required 'file' field"):
+            PlayMusicAction.from_dict(data)
 
-        assert isinstance(action, PlayMusicAction)
-        assert action.music_file == ""
-        assert action.loop is True
+    def test_from_dict_invalid_file_type(self) -> None:
+        """Test creating PlayMusicAction with invalid file type."""
+        data = {"file": True}
 
-    def test_from_dict_with_extra_keys(self) -> None:
-        """Test that from_dict ignores extra keys."""
-        data = {
-            "file": "test.ogg",
-            "loop": False,
-            "volume": 0.8,
-            "extra_key": "ignored",
-        }
+        with pytest.raises(ActionParseError, match="play_music: 'file' must be a string"):
+            PlayMusicAction.from_dict(data)
 
-        action = PlayMusicAction.from_dict(data)
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_file_doesnt_exist(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with non existing file."""
+        mock_asset_exists.return_value = False
+        data = {"file": "music.ogg"}
+        full_path = f"{settings.AUDIO_MUSIC_DIRECTORY}/music.ogg"
+        with pytest.raises(ActionParseError, match=f"play_music: '{full_path}' does not exist"):
+            PlayMusicAction.from_dict(data)
 
-        assert action.music_file == "test.ogg"
-        assert action.loop is False
-        assert action.volume == 0.8
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_invalid_loop_type(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with invalid loop type."""
+        mock_asset_exists.return_value = True
+        data = {"file": "music.ogg", "loop": 123}
+        with pytest.raises(ActionParseError, match="play_music: 'loop' must be a bool"):
+            PlayMusicAction.from_dict(data)
 
-    def test_from_dict_with_explicit_loop_false(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_invalid_volume_bool_type(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with invalid bool volume type."""
+        mock_asset_exists.return_value = True
+        data = {"file": "music.ogg", "volume": True}
+        with pytest.raises(ActionParseError, match="play_music: 'volume' must be a number"):
+            PlayMusicAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_invalid_volume_str_type(self, mock_asset_exists: MagicMock) -> None:
+        """Test creating PlayMusicAction with invalid str volume type."""
+        mock_asset_exists.return_value = True
+        data = {"file": "music.ogg", "volume": "Asd"}
+        with pytest.raises(ActionParseError, match="play_music: 'volume' must be a number"):
+            PlayMusicAction.from_dict(data)
+
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_with_explicit_loop_false(self, mock_asset_exists: MagicMock) -> None:
         """Test that loop=false is properly handled."""
+        mock_asset_exists.return_value = True
         data = {"file": "oneshot.ogg", "loop": False}
 
         action = PlayMusicAction.from_dict(data)
 
         assert action.loop is False
 
-    def test_from_dict_with_explicit_loop_true(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_from_dict_with_explicit_loop_true(self, mock_asset_exists: MagicMock) -> None:
         """Test that loop=true is properly handled."""
+        mock_asset_exists.return_value = True
         data = {"file": "ambient.ogg", "loop": True}
 
         action = PlayMusicAction.from_dict(data)
 
         assert action.loop is True
 
-    def test_volume_can_be_zero(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_volume_can_be_zero(self, mock_asset_exists: MagicMock) -> None:
         """Test that volume of 0.0 is valid."""
+        mock_asset_exists.return_value = True
         action = PlayMusicAction("silent.ogg", volume=0.0)
 
         assert action.volume == 0.0
@@ -262,113 +314,9 @@ class TestPlayMusicAction(unittest.TestCase):
 
         assert action2.volume == 0.0
 
-    def test_volume_can_be_one(self) -> None:
+    @patch("pedre.plugins.audio.actions.asset_exists")
+    def test_volume_can_be_one(self, mock_asset_exists: MagicMock) -> None:
         """Test that volume of 1.0 is valid."""
+        mock_asset_exists.return_value = True
         action = PlayMusicAction("loud.ogg", volume=1.0)
-
         assert action.volume == 1.0
-
-
-class TestPlaySFXActionValidation(unittest.TestCase):
-    """Test PlaySFXAction validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"file": "sound.wav"}
-        errors = PlaySFXAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_missing_file(self) -> None:
-        """Test validate_params detects missing file field."""
-        data = {}
-        errors = PlaySFXAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'file' field" in errors[0]
-
-    def test_validate_params_empty_file(self) -> None:
-        """Test validate_params detects empty file field."""
-        data = {"file": ""}
-        errors = PlaySFXAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'file' field" in errors[0]
-
-    def test_validate_params_file_not_string(self) -> None:
-        """Test validate_params detects non-string file field."""
-        data = {"file": 123}
-        errors = PlaySFXAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'file' must be a string" in errors[0]
-
-
-class TestPlayMusicActionValidation(unittest.TestCase):
-    """Test PlayMusicAction validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"file": "music.ogg"}
-        errors = PlayMusicAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_missing_file(self) -> None:
-        """Test validate_params detects missing file field."""
-        data = {}
-        errors = PlayMusicAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'file' field" in errors[0]
-
-    def test_validate_params_empty_file(self) -> None:
-        """Test validate_params detects empty file field."""
-        data = {"file": ""}
-        errors = PlayMusicAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'file' field" in errors[0]
-
-    def test_validate_params_file_not_string(self) -> None:
-        """Test validate_params detects non-string file field."""
-        data = {"file": 123}
-        errors = PlayMusicAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'file' must be a string" in errors[0]
-
-    def test_validate_params_loop_not_bool(self) -> None:
-        """Test validate_params detects non-bool loop field."""
-        data = {"file": "music.ogg", "loop": "yes"}
-        errors = PlayMusicAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'loop' must be a bool" in errors[0]
-
-    def test_validate_params_volume_not_number(self) -> None:
-        """Test validate_params detects non-number volume field."""
-        data = {"file": "music.ogg", "volume": "loud"}
-        errors = PlayMusicAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'volume' must be a number" in errors[0]
-
-    def test_validate_params_volume_bool(self) -> None:
-        """Test validate_params detects bool volume field."""
-        data = {"file": "music.ogg", "volume": True}
-        errors = PlayMusicAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'volume' must be a number" in errors[0]
-
-    def test_validate_params_volume_none(self) -> None:
-        """Test validate_params accepts None volume field (skips validation)."""
-        data = {"file": "music.ogg", "volume": None}
-        errors = PlayMusicAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_volume_valid_float(self) -> None:
-        """Test validate_params accepts valid float volume."""
-        data = {"file": "music.ogg", "volume": 0.5}
-        errors = PlayMusicAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_volume_valid_int(self) -> None:
-        """Test validate_params accepts valid int volume."""
-        data = {"file": "music.ogg", "volume": 1}
-        errors = PlayMusicAction.validate_params(data)
-        assert errors == []
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.constants import asset_path
+from pedre.helpers import asset_path
 from pedre.plugins.registry import PluginRegistry
 from pedre.plugins.scene.base import SceneBasePlugin, TransitionState
 from pedre.plugins.scene.events import SceneStartEvent
@@ -166,7 +166,7 @@ class ScenePlugin(SceneBasePlugin):
             map_file: Filename of the .tmx map to load (e.g. "map.tmx").
 
         """
-        map_path = asset_path(f"{settings.SCENE_MAPS_FOLDER}/{map_file}", settings.ASSETS_HANDLE)
+        map_path = asset_path(f"{settings.SCENE_MAPS_DIRECTORY}/{map_file}")
         logger.info("Loading map: %s", map_path)
         self.current_map = map_file
 

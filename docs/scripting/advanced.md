@@ -17,12 +17,12 @@ Chain multiple scripts using `script_complete` to create multi-part cutscenes.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Behold the ancient altar!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       }
     ]
   },
@@ -30,20 +30,20 @@ Chain multiple scripts using `script_complete` to create multi-part cutscenes.
     "scene": "temple",
     "trigger": {
       "event": "script_complete",
-      "script_name": "cutscene_part1"
+      "script": "cutscene_part1"
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["elder"],
         "waypoint": "altar"
       },
       {
-        "type": "wait_for_movement",
+        "name": "wait_for_movement",
         "npc": "elder"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["spirit"]
       }
     ]
@@ -52,19 +52,19 @@ Chain multiple scripts using `script_complete` to create multi-part cutscenes.
     "scene": "temple",
     "trigger": {
       "event": "script_complete",
-      "script_name": "cutscene_part2"
+      "script": "cutscene_part2"
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Spirit",
         "text": ["I have been summoned..."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "play_music",
+        "name": "play_music",
         "file": "mysterious.ogg"
       }
     ]
@@ -94,24 +94,24 @@ Create branching paths based on player actions and game state.
     },
     "conditions": [
       {
-        "check": "object_interacted",
+        "name": "object_interacted",
         "object": "royal_seal",
         "equals": true
       }
     ],
     "actions": [
       {
-        "type": "set_dialog_level",
+        "name": "set_dialog_level",
         "npc": "guard",
         "dialog_level": 2
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You have the royal seal! Enter."]
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["king"]
       }
     ]
@@ -125,7 +125,7 @@ Create branching paths based on player actions and game state.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You need the royal seal to enter."]
       }
@@ -156,7 +156,7 @@ Create looping movement patterns for guards, merchants, or other NPCs.
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "point_b"
       }
@@ -171,7 +171,7 @@ Create looping movement patterns for guards, merchants, or other NPCs.
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "point_c"
       }
@@ -186,7 +186,7 @@ Create looping movement patterns for guards, merchants, or other NPCs.
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "point_a"
       }
@@ -215,15 +215,15 @@ Create looping movement patterns for guards, merchants, or other NPCs.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["Hmm, all quiet here..."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "point_b"
       }
@@ -248,15 +248,15 @@ Track quest progress through dialog levels and object interactions.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Bring me the ancient artifact..."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "elder"
       }
     ]
@@ -270,7 +270,7 @@ Track quest progress through dialog levels and object interactions.
     "run_once": true,
     "actions": [
       {
-        "type": "set_dialog_level",
+        "name": "set_dialog_level",
         "npc": "elder",
         "dialog_level": 2
       }
@@ -286,19 +286,19 @@ Track quest progress through dialog levels and object interactions.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["You found it! The quest is complete!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "quest_complete.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "burst",
         "npc": "elder"
       }
@@ -335,36 +335,36 @@ Create dramatic timing with coordinated movement, dialog, and effects.
     "run_once": true,
     "actions": [
       {
-        "type": "play_music",
+        "name": "play_music",
         "file": "ominous.ogg"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["villain"]
       },
       {
-        "type": "wait_for_npcs_appear",
+        "name": "wait_for_npcs_appear",
         "npcs": ["villain"]
       },
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["villain"],
         "waypoint": "throne"
       },
       {
-        "type": "wait_for_movement",
+        "name": "wait_for_movement",
         "npc": "villain"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Villain",
         "text": ["You dare approach my throne?!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["minion_1", "minion_2"]
       }
     ]
@@ -397,50 +397,50 @@ Coordinate multiple NPCs with precise timing.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Let me call the council."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["guard", "merchant", "healer"]
       },
       {
-        "type": "wait_for_npcs_appear",
+        "name": "wait_for_npcs_appear",
         "npcs": ["guard", "merchant", "healer"]
       },
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["guard"],
         "waypoint": "council_spot_1"
       },
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["merchant"],
         "waypoint": "council_spot_2"
       },
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["healer"],
         "waypoint": "council_spot_3"
       },
       {
-        "type": "wait_for_movement",
+        "name": "wait_for_movement",
         "npc": "guard"
       },
       {
-        "type": "wait_for_movement",
+        "name": "wait_for_movement",
         "npc": "merchant"
       },
       {
-        "type": "wait_for_movement",
+        "name": "wait_for_movement",
         "npc": "healer"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["Now that we're all here..."]
       }
@@ -473,15 +473,15 @@ Use dialog levels as state machine for complex NPC behaviors.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Blacksmith",
         "text": ["I need iron ore to work."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "blacksmith"
       }
     ]
@@ -495,7 +495,7 @@ Use dialog levels as state machine for complex NPC behaviors.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Blacksmith",
         "text": ["Have you found the iron ore yet?"]
       }
@@ -510,7 +510,7 @@ Use dialog levels as state machine for complex NPC behaviors.
     "run_once": true,
     "actions": [
       {
-        "type": "set_dialog_level",
+        "name": "set_dialog_level",
         "npc": "blacksmith",
         "dialog_level": 2
       }
@@ -526,19 +526,19 @@ Use dialog levels as state machine for complex NPC behaviors.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Blacksmith",
         "text": ["Excellent! Let me forge this into a sword."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "hammer.wav"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "blacksmith"
       }
     ]
@@ -552,7 +552,7 @@ Use dialog levels as state machine for complex NPC behaviors.
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Blacksmith",
         "text": ["Your sword is ready!"]
       }
@@ -584,15 +584,15 @@ Reveal NPCs based on quest progress or conditions.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Elder",
         "text": ["The market is now open!"]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["merchant_1", "merchant_2", "merchant_3", "buyer_1", "buyer_2"]
       }
     ]
@@ -615,15 +615,15 @@ Guide players through game mechanics interactively.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guide",
         "text": ["Use WASD to move around."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "guide"
       }
     ]
@@ -638,26 +638,26 @@ Guide players through game mechanics interactively.
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guide",
         "text": ["Press I to open your inventory."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "wait_for_inventory_access"
+        "name": "wait_for_inventory_access"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guide",
         "text": ["Great job! Tutorial complete."]
       },
       {
-        "type": "wait_for_dialog_close"
+        "name": "wait_for_dialog_close"
       },
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "guide"
       }
     ]
@@ -741,14 +741,14 @@ cutscene_{scene}_{part}
   "bad_script_1": {
     "trigger": {
       "event": "script_complete",
-      "script_name": "bad_script_2"
+      "script": "bad_script_2"
     },
     "actions": [...]
   },
   "bad_script_2": {
     "trigger": {
       "event": "script_complete",
-      "script_name": "bad_script_1"
+      "script": "bad_script_1"
     },
     "actions": [...]
   }
@@ -769,7 +769,7 @@ Remove NPCs that are no longer needed:
 {
   "actions": [
     {
-      "type": "start_disappear_animation",
+      "name": "start_disappear_animation",
       "npcs": ["temporary_npc"]
     }
   ]

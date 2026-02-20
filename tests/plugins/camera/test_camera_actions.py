@@ -1,8 +1,10 @@
 """Unit tests for camera actions."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
 from pedre.plugins.camera.actions import (
     FollowNPCAction,
     FollowPlayerAction,
@@ -10,7 +12,7 @@ from pedre.plugins.camera.actions import (
 )
 
 
-class TestFollowPlayerAction(unittest.TestCase):
+class TestFollowPlayerAction:
     """Test FollowPlayerAction."""
 
     def test_execute_sets_follow_mode(self) -> None:
@@ -52,6 +54,11 @@ class TestFollowPlayerAction(unittest.TestCase):
         action = FollowPlayerAction.from_dict({})
         assert action.smooth is True
 
+    def test_from_dict_invalid_smooth_type(self) -> None:
+        """Test from_dict with invalid smooth type."""
+        with pytest.raises(ActionParseError, match="'smooth' must be a bool"):
+            FollowPlayerAction.from_dict({"smooth": "string"})
+
     def test_reset(self) -> None:
         """Test reset clears executed flag."""
         action = FollowPlayerAction()
@@ -80,7 +87,7 @@ class TestFollowPlayerAction(unittest.TestCase):
         camera_plugin.set_follow_player.assert_called_once_with(smooth=True)
 
 
-class TestFollowNPCAction(unittest.TestCase):
+class TestFollowNPCAction:
     """Test FollowNPCAction."""
 
     def test_execute_sets_follow_npc(self) -> None:
@@ -145,6 +152,29 @@ class TestFollowNPCAction(unittest.TestCase):
         action = FollowNPCAction.from_dict({"npc": "test"})
         assert action.smooth is True
 
+    def test_from_dict_missing_npc_field(self) -> None:
+        """Test from dict with missing npc."""
+        with pytest.raises(ActionParseError, match="follow_npc: missing required 'npc' field"):
+            FollowNPCAction.from_dict({})
+
+    def test_from_dict_invalid_npc_type(self) -> None:
+        """Test from dict with invalid npc ty[e]."""
+        with pytest.raises(ActionParseError, match="follow_npc: 'npc' must be a string"):
+            FollowNPCAction.from_dict({"npc": 23})
+
+    def test_from_dict_invalid_smooth_type(self) -> None:
+        """Test from dict with invalid npc ty[e]."""
+        with pytest.raises(ActionParseError, match="follow_npc: 'smooth' must be a bool"):
+            FollowNPCAction.from_dict({"npc": "yema", "smooth": 23})
+
+    def test_get_references(self) -> None:
+        """Test get references."""
+        action = FollowNPCAction.from_dict({"npc": "yema"})
+        references = action.get_references()
+        reference = references.pop()
+        assert reference.type == "npc"
+        assert reference.name == "yema"
+
     def test_reset(self) -> None:
         """Test reset clears executed flag."""
         action = FollowNPCAction("martin")
@@ -178,7 +208,7 @@ class TestFollowNPCAction(unittest.TestCase):
         camera_plugin.set_follow_npc.assert_called_once_with("martin", smooth=True)
 
 
-class TestStopCameraFollowAction(unittest.TestCase):
+class TestStopCameraFollowAction:
     """Test StopCameraFollowAction."""
 
     def test_execute_stops_following(self) -> None:
@@ -224,68 +254,3 @@ class TestStopCameraFollowAction(unittest.TestCase):
 
         # Should only be called once
         camera_plugin.stop_follow.assert_called_once()
-
-
-class TestFollowPlayerActionValidation(unittest.TestCase):
-    """Test FollowPlayerAction validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"smooth": True}
-        errors = FollowPlayerAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_empty_dict(self) -> None:
-        """Test validate_params with empty dict."""
-        data = {}
-        errors = FollowPlayerAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_smooth_not_bool(self) -> None:
-        """Test validate_params detects non-bool smooth field."""
-        data = {"smooth": "yes"}
-        errors = FollowPlayerAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'smooth' must be a bool" in errors[0]
-
-
-class TestFollowNPCActionValidation(unittest.TestCase):
-    """Test FollowNPCAction validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"npc": "martin"}
-        errors = FollowNPCAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_missing_npc(self) -> None:
-        """Test validate_params detects missing npc field."""
-        data = {}
-        errors = FollowNPCAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'npc' field" in errors[0]
-
-    def test_validate_params_empty_npc(self) -> None:
-        """Test validate_params detects empty npc field."""
-        data = {"npc": ""}
-        errors = FollowNPCAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'npc' field" in errors[0]
-
-    def test_validate_params_npc_not_string(self) -> None:
-        """Test validate_params detects non-string npc field."""
-        data = {"npc": 123}
-        errors = FollowNPCAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'npc' must be a string" in errors[0]
-
-    def test_validate_params_smooth_not_bool(self) -> None:
-        """Test validate_params detects non-bool smooth field."""
-        data = {"npc": "martin", "smooth": "yes"}
-        errors = FollowNPCAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'smooth' must be a bool" in errors[0]
-
-
-if __name__ == "__main__":
-    unittest.main()

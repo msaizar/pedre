@@ -427,7 +427,7 @@ Emit particle effects at specific locations or following entities.
 
 ```json
 {
-  "type": "emit_particles",
+  "name": "emit_particles",
   "particle_type": "hearts",
   "npc": "yema"
 }
@@ -437,7 +437,7 @@ Emit particle effects at specific locations or following entities.
 
 ```json
 {
-  "type": "emit_particles",
+  "name": "emit_particles",
   "particle_type": "sparkles",
   "player": true,
   "color": [0, 191, 255]
@@ -448,7 +448,7 @@ Emit particle effects at specific locations or following entities.
 
 ```json
 {
-  "type": "emit_particles",
+  "name": "emit_particles",
   "particle_type": "burst",
   "interactive_object": "treasure_chest",
   "color": [255, 215, 0]
@@ -491,17 +491,17 @@ particle_plugin.emit_burst(x, y, count=30, color=(255, 0, 255))
     },
     "actions": [
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "burst",
         "interactive_object": "treasure_chest",
         "color": [255, 215, 0]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "chest_open.wav"
       },
       {
-        "type": "acquire_item",
+        "name": "acquire_item",
         "item_id": "golden_key"
       }
     ]
@@ -520,16 +520,16 @@ particle_plugin.emit_burst(x, y, count=30, color=(255, 0, 255))
       "npc": "yema"
     },
     "conditions": [
-      {"check": "inventory_has_item", "item_id": "flowers"}
+      {"name": "inventory_has_item", "item_id": "flowers"}
     ],
     "actions": [
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "hearts",
         "npc": "yema"
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Yema",
         "text": ["These flowers are beautiful! Thank you!"]
       }

@@ -4,7 +4,9 @@ import logging
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
+from pedre.conf import settings
+from pedre.helpers import asset_exists
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("play_sfx")
+@ActionRegistry.register
 class PlaySFXAction(Action):
     """Play a sound effect.
 
@@ -25,10 +27,12 @@ class PlaySFXAction(Action):
 
     Example usage:
         {
-            "type": "play_sfx",
+            "name": "play_sfx",
             "sfx": "door_open.wav"
         }
     """
+
+    name = "play_sfx"
 
     def __init__(self, sfx_file: str) -> None:
         """Initialize SFX action.
@@ -56,25 +60,25 @@ class PlaySFXAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create PlaySFXAction from a dictionary."""
-        return cls(sfx_file=data.get("file", ""))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate play_sfx action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         file = data.get("file")
-        if not file:
-            errors.append("missing required 'file' field")
-        elif not isinstance(file, str):
-            errors.append("'file' must be a string")
-        return errors
+
+        if file is None:
+            msg = "play_sfx: missing required 'file' field"
+            raise ActionParseError(msg)
+
+        if not isinstance(file, str):
+            msg = "play_sfx: 'file' must be a string"
+            raise ActionParseError(msg)
+
+        full_path = f"{settings.AUDIO_SFX_DIRECTORY}/{file}"
+        if not asset_exists(full_path):
+            msg = f"play_sfx: '{full_path}' does not exist"
+            raise ActionParseError(msg)
+
+        return cls(sfx_file=file)
 
 
-@ActionRegistry.register("play_music")
+@ActionRegistry.register
 class PlayMusicAction(Action):
     """Play background music.
 
@@ -89,18 +93,20 @@ class PlayMusicAction(Action):
     Example usage:
         # Standard looping music
         {
-            "type": "play_music",
+            "name": "play_music",
             "music": "town_theme.ogg"
         }
 
         # One-time music at custom volume
         {
-            "type": "play_music",
+            "name": "play_music",
             "music": "victory_fanfare.ogg",
             "loop": false,
             "volume": 0.8
         }
     """
+
+    name = "play_music"
 
     def __init__(self, music_file: str, *, loop: bool = True, volume: float | None = None) -> None:
         """Initialize music action.
@@ -132,32 +138,34 @@ class PlayMusicAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create PlayMusicAction from a dictionary."""
-        return cls(
-            music_file=data.get("file", ""),
-            loop=data.get("loop", True),
-            volume=data.get("volume"),
-        )
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate play_music action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         file = data.get("file")
-        if not file:
-            errors.append("missing required 'file' field")
-        elif not isinstance(file, str):
-            errors.append("'file' must be a string")
+        if file is None:
+            msg = "play_music: missing required 'file' field"
+            raise ActionParseError(msg)
 
-        if "loop" in data and not isinstance(data["loop"], bool):
-            errors.append("'loop' must be a bool")
+        if not isinstance(file, str):
+            msg = "play_music: 'file' must be a string"
+            raise ActionParseError(msg)
 
-        if "volume" in data and data["volume"] is not None:
-            vol = data["volume"]
-            if isinstance(vol, bool) or not isinstance(vol, (int, float)):
-                errors.append("'volume' must be a number")
+        full_path = f"{settings.AUDIO_MUSIC_DIRECTORY}/{file}"
+        if not asset_exists(full_path):
+            msg = f"play_music: '{full_path}' does not exist"
+            raise ActionParseError(msg)
 
-        return errors
+        loop = data.get("loop", True)
+        if not isinstance(loop, bool):
+            msg = "play_music: 'loop' must be a bool"
+            raise ActionParseError(msg)
+
+        volume = data.get("volume")
+        if volume is not None:
+            if isinstance(volume, bool) or not isinstance(volume, (int, float)):
+                msg = "play_music: 'volume' must be a number"
+                raise ActionParseError(msg)
+            volume = float(volume)
+
+        return cls(
+            music_file=file,
+            loop=loop,
+            volume=volume,
+        )

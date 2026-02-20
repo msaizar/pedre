@@ -77,8 +77,11 @@ Define your custom component in a Python module:
 from pedre.actions import Action
 from pedre.actions.registry import ActionRegistry
 
-@ActionRegistry.register("custom_action")
+@ActionRegistry.register
 class CustomAction(Action):
+
+    name = "custom_action"
+
     def __init__(self, param: str):
         self.param = param
         self._executed = False
@@ -121,7 +124,7 @@ Your extension is now available in JSON scripts:
     "trigger": {"event": "scene_start"},
     "actions": [
       {
-        "type": "custom_action",
+        "name": "custom_action",
         "param": "value"
       }
     ]
@@ -222,8 +225,11 @@ def test_custom_action():
 ### Simple Weather Action
 
 ```python
-@ActionRegistry.register("set_weather")
+@ActionRegistry.register
 class SetWeatherAction(Action):
+
+    name = "set_weather"
+
     def __init__(self, weather: str):
         self.weather = weather
         self._executed = False
@@ -247,9 +253,14 @@ class SetWeatherAction(Action):
 ### Weather Changed Event
 
 ```python
-@EventRegistry.register("weather_changed")
+from dataclasses import dataclass
+from pedre.events import Event
+from pedre.events.registry import EventRegistry
+
+@EventRegistry.register
 @dataclass
-class WeatherChangedEvent:
+class WeatherChangedEvent(Event):
+    name = "weather_changed"
     weather_type: str
     intensity: float
 ```
@@ -257,12 +268,29 @@ class WeatherChangedEvent:
 ### Weather Condition Check
 
 ```python
-@ConditionRegistry.register("is_weather")
-def check_weather(data: dict[str, Any], context: GameContext) -> bool:
-    weather_plugin = context.get_plugin("weather")
-    if not weather_plugin:
-        return False
-    return weather_plugin.current_weather == data.get("weather")
+from typing import TYPE_CHECKING, Any, Self
+from pedre.conditions.base import Condition
+from pedre.conditions.registry import ConditionRegistry
+
+if TYPE_CHECKING:
+    from pedre.plugins.game_context import GameContext
+
+@ConditionRegistry.register
+class IsWeatherCondition(Condition):
+    name = "is_weather"
+
+    def __init__(self, weather: str) -> None:
+        self.weather = weather
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(weather=data.get("weather", ""))
+
+    def check(self, context: GameContext) -> bool:
+        weather_plugin = context.get_plugin("weather")
+        if not weather_plugin:
+            return False
+        return weather_plugin.current_weather == self.weather
 ```
 
 ## Plugin Loader

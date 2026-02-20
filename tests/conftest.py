@@ -18,7 +18,7 @@ def _setup_arcade_resources() -> Generator[None]:
     """Set up arcade resource handles for tests.
 
     This fixture runs automatically for the entire test session and registers
-    the game_assets resource handle so that asset_path() calls work in tests.
+    the settings.ASSETS_HANDLE resource handle so that asset_path() calls work in tests.
     If the assets directory doesn't exist, creates a temporary one.
     """
     # Find the assets directory relative to this test file
@@ -28,7 +28,7 @@ def _setup_arcade_resources() -> Generator[None]:
 
     # If assets directory exists, use it; otherwise create a temporary one
     if assets_dir.exists():
-        arcade.resources.add_resource_handle("game_assets", assets_dir.resolve())
+        arcade.resources.add_resource_handle(settings.ASSETS_HANDLE, assets_dir.resolve())
         yield
     else:
         # Create a temporary directory to serve as the assets folder
@@ -43,7 +43,7 @@ def _setup_arcade_resources() -> Generator[None]:
             inventory_file = data_dir / "inventory_items.json"
             inventory_file.write_text('{"items": []}')
 
-            arcade.resources.add_resource_handle("game_assets", temp_assets.resolve())
+            arcade.resources.add_resource_handle(settings.ASSETS_HANDLE, temp_assets.resolve())
             yield
 
 

@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import arcade
 
+from pedre.actions.registry import ActionParseError
+from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.npc.base import NPCDialogConfig
 from pedre.plugins.npc.plugin import NPCPlugin
 from pedre.plugins.npc.sprites import AnimatedNPC
@@ -404,13 +406,13 @@ class TestNPCPlugin(unittest.TestCase):
             assert result is False
 
     def test_load_dialog_file_with_conditions(self) -> None:
-        """Test loading dialog file with conditions."""
+        """Test loading dialog file with conditions and on_condition_fail actions."""
         dialog_data = {
             "npc1": {
                 "0": {
                     "text": ["Conditional dialog"],
-                    "conditions": [{"check": "has_item", "item": "key"}],
-                    "on_condition_fail": [{"type": "dialog", "text": ["You need a key"]}],
+                    "conditions": [{"name": "has_item", "item": "key"}],
+                    "on_condition_fail": [{"name": "dialog", "speaker": "Guard", "text": ["You need a key"]}],
                 }
             }
         }
@@ -420,15 +422,74 @@ class TestNPCPlugin(unittest.TestCase):
         mock_path.stem = "scene_dialogs"
         mock_path.name = "scene_dialogs.json"
 
-        with patch("json.load", return_value=dialog_data):
+        mock_condition = MagicMock()
+        mock_action = MagicMock()
+        with (
+            patch("json.load", return_value=dialog_data),
+            patch("pedre.plugins.npc.plugin.ConditionRegistry.create", return_value=mock_condition),
+            patch("pedre.plugins.npc.plugin.ActionRegistry.create", return_value=mock_action),
+        ):
             result = self.plugin._load_dialog_file(mock_path)
 
             assert result is True
             assert "scene" in self.plugin.dialogs
             assert "npc1" in self.plugin.dialogs["scene"]
             config = self.plugin.dialogs["scene"]["npc1"][0]
-            assert config.conditions is not None
-            assert config.on_condition_fail is not None
+            assert config.conditions == [mock_condition]
+            assert config.on_condition_fail == [mock_action]
+
+    def test_load_dialog_file_condition_parse_error_skips_condition(self) -> None:
+        """Test that a ConditionParseError during condition parsing is logged and skipped."""
+        dialog_data = {
+            "npc1": {
+                "0": {
+                    "text": ["Hello"],
+                    "conditions": [{"name": "bad_condition"}],
+                }
+            }
+        }
+
+        mock_path = MagicMock(spec=Path)
+        mock_path.stem = "scene_dialogs"
+        mock_path.name = "scene_dialogs.json"
+
+        with (
+            patch("json.load", return_value=dialog_data),
+            patch(
+                "pedre.plugins.npc.plugin.ConditionRegistry.create",
+                side_effect=ConditionParseError("unknown condition"),
+            ),
+        ):
+            result = self.plugin._load_dialog_file(mock_path)
+
+            assert result is True
+            config = self.plugin.dialogs["scene"]["npc1"][0]
+            assert config.conditions == []
+
+    def test_load_dialog_file_on_condition_fail_parse_error_skips_action(self) -> None:
+        """Test that an ActionParseError during on_condition_fail parsing is logged and skipped."""
+        dialog_data = {
+            "npc1": {
+                "0": {
+                    "text": ["Hello"],
+                    "on_condition_fail": [{"name": "bad_action"}],
+                }
+            }
+        }
+
+        mock_path = MagicMock(spec=Path)
+        mock_path.stem = "scene_dialogs"
+        mock_path.name = "scene_dialogs.json"
+
+        with (
+            patch("json.load", return_value=dialog_data),
+            patch("pedre.plugins.npc.plugin.ActionRegistry.create", side_effect=ActionParseError("unknown action")),
+        ):
+            result = self.plugin._load_dialog_file(mock_path)
+
+            assert result is True
+            config = self.plugin.dialogs["scene"]["npc1"][0]
+            assert config.on_condition_fail == []
 
     def test_load_dialog_file_json_decode_error(self) -> None:
         """Test loading dialog file with invalid JSON."""
@@ -572,20 +633,22 @@ class TestNPCPlugin(unittest.TestCase):
 
         assert result is False
 
-    def test_interact_with_npc_condition_fail_dialog(self) -> None:
-        """Test interaction when conditions fail with fallback dialog."""
+    def test_interact_with_npc_condition_fail_delegates_to_script_plugin(self) -> None:
+        """Test interaction when conditions fail delegates on_condition_fail to ScriptPlugin."""
         self.mock_context.dialog_plugin = MagicMock()
+        self.mock_context.script_plugin = MagicMock()
         self.mock_scene_plugin.get_current_scene.return_value = "dungeon"
 
         # Register NPC
         mock_sprite = MagicMock()
         self.plugin.register_npc(mock_sprite, "guard")
 
-        # Setup dialog with failing conditions
+        # Setup dialog with failing conditions and pre-parsed actions
+        mock_action = MagicMock()
         dialog_config = NPCDialogConfig(
             text=["You shall pass"],
-            conditions=[{"check": "has_item", "item": "pass"}],
-            on_condition_fail=[{"type": "dialog", "text": ["You shall not pass!"], "speaker": "Guard"}],
+            conditions=[MagicMock()],
+            on_condition_fail=[mock_action],
         )
         self.plugin.dialogs = {"dungeon": {"guard": {0: dialog_config}}}
 
@@ -593,30 +656,10 @@ class TestNPCPlugin(unittest.TestCase):
             result = self.plugin.interact_with_npc("guard")
 
             assert result is True
-            # Should show fallback dialog
-            self.mock_context.dialog_plugin.show_dialog.assert_called_once()
-
-    def test_interact_with_npc_condition_fail_no_dialog(self) -> None:
-        """Test interaction when conditions fail without dialog fallback."""
-        self.mock_context.dialog_plugin = MagicMock()
-        self.mock_scene_plugin.get_current_scene.return_value = "dungeon"
-
-        # Register NPC
-        mock_sprite = MagicMock()
-        self.plugin.register_npc(mock_sprite, "guard")
-
-        # Setup dialog with failing conditions but no fallback dialog
-        dialog_config = NPCDialogConfig(
-            text=["You shall pass"],
-            conditions=[{"check": "has_item", "item": "pass"}],
-            on_condition_fail=[{"type": "other_action"}],
-        )
-        self.plugin.dialogs = {"dungeon": {"guard": {0: dialog_config}}}
-
-        with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
-            result = self.plugin.interact_with_npc("guard")
-
-            assert result is False
+            self.mock_context.script_plugin.run_actions.assert_called_once_with(
+                "npc_guard_condition_fail", [mock_action]
+            )
+            self.mock_context.dialog_plugin.show_dialog.assert_not_called()
 
     def test_mark_npc_as_interacted_with_scene(self) -> None:
         """Test marking NPC as interacted with specific scene."""
@@ -657,31 +700,15 @@ class TestNPCPlugin(unittest.TestCase):
 
         assert result is True
 
-    def test_check_dialog_conditions_all_pass(self) -> None:
-        """Test dialog conditions when all pass."""
-        conditions = [{"check": "has_item", "item": "key"}]
+    def test_check_dialog_conditions_returns_false_when_condition_fails(self) -> None:
+        """Test returns False when a condition check fails."""
+        mock_condition = MagicMock()
+        mock_condition.check.return_value = False
 
-        with patch("pedre.plugins.npc.plugin.ConditionRegistry.check", return_value=True):
-            result = self.plugin._check_dialog_conditions(conditions)
-
-            assert result is True
-
-    def test_check_dialog_conditions_one_fails(self) -> None:
-        """Test dialog conditions when one fails."""
-        conditions = [{"check": "has_item", "item": "key"}, {"check": "quest_complete", "quest": "main"}]
-
-        with patch("pedre.plugins.npc.plugin.ConditionRegistry.check", side_effect=[True, False]):
-            result = self.plugin._check_dialog_conditions(conditions)
-
-            assert result is False
-
-    def test_check_dialog_conditions_missing_check_field(self) -> None:
-        """Test dialog conditions with missing check field."""
-        conditions = [{"item": "key"}]  # Missing 'check' field
-
-        result = self.plugin._check_dialog_conditions(conditions)
+        result = self.plugin._check_dialog_conditions([mock_condition])
 
         assert result is False
+        mock_condition.check.assert_called_once_with(self.mock_context)
 
     def test_get_dialog_with_scene_fallback(self) -> None:
         """Test get_dialog falls back to default scene."""
@@ -703,11 +730,10 @@ class TestNPCPlugin(unittest.TestCase):
         assert fail_actions is None
 
     def test_get_dialog_condition_failed_returns_actions(self) -> None:
-        """Test get_dialog returns on_condition_fail actions."""
-        fail_actions = [{"type": "dialog", "text": ["Failed"]}]
-        dialog_config = NPCDialogConfig(
-            text=["Success"], conditions=[{"check": "has_item"}], on_condition_fail=fail_actions
-        )
+        """Test get_dialog returns on_condition_fail actions (pre-parsed Action objects)."""
+        mock_action = MagicMock()
+        fail_actions = [mock_action]
+        dialog_config = NPCDialogConfig(text=["Success"], conditions=[MagicMock()], on_condition_fail=fail_actions)
         self.plugin.dialogs = {"scene1": {"npc1": {0: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
@@ -739,7 +765,7 @@ class TestNPCPlugin(unittest.TestCase):
 
     def test_get_dialog_no_candidates(self) -> None:
         """Test get_dialog when no candidates with met conditions."""
-        dialog_config = NPCDialogConfig(text=["Conditional"], conditions=[{"check": "impossible"}])
+        dialog_config = NPCDialogConfig(text=["Conditional"], conditions=[MagicMock()])
         self.plugin.dialogs = {"scene1": {"npc1": {0: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
@@ -1338,7 +1364,7 @@ class TestNPCPlugin(unittest.TestCase):
 
     def test_get_dialog_exact_match_with_conditions_met_returns_dialog(self) -> None:
         """Test get_dialog returns dialog when exact match has conditions that are met."""
-        dialog_config = NPCDialogConfig(text=["Conditional success"], conditions=[{"check": "test"}])
+        dialog_config = NPCDialogConfig(text=["Conditional success"], conditions=[MagicMock()])
         self.plugin.dialogs = {"scene1": {"npc1": {5: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=True):
@@ -1350,7 +1376,7 @@ class TestNPCPlugin(unittest.TestCase):
     def test_get_dialog_fallback_with_conditions_appends_candidates(self) -> None:
         """Test get_dialog fallback includes dialogs with met conditions."""
         dialog_no_cond = NPCDialogConfig(text=["No conditions"])
-        dialog_with_cond = NPCDialogConfig(text=["With met conditions"], conditions=[{"check": "test"}])
+        dialog_with_cond = NPCDialogConfig(text=["With met conditions"], conditions=[MagicMock()])
         self.plugin.dialogs = {"scene1": {"npc1": {1: dialog_no_cond, 2: dialog_with_cond}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=True):
@@ -1538,16 +1564,18 @@ class TestNPCPlugin(unittest.TestCase):
         mock_sprite = MagicMock()
         self.plugin.register_npc(mock_sprite, "test_npc")
 
-        # Dialog with failing conditions and on_condition_fail
+        # Dialog with failing conditions and pre-parsed on_condition_fail action
+        mock_action = MagicMock()
         dialog_config = NPCDialogConfig(
-            text=["You shall pass"], conditions=[{"check": "has_item"}], on_condition_fail=[{"type": "dialog"}]
+            text=["You shall pass"], conditions=[MagicMock()], on_condition_fail=[mock_action]
         )
         self.plugin.dialogs = {"test_scene": {"test_npc": {0: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
             result = self.plugin.interact_with_npc("test_npc")
 
-            # Should return False when no dialog plugin available
+            # Should return False when no dialog plugin available (on_condition_fail branch
+            # is only reached inside the `if dialog_plugin:` block)
             assert result is False
 
     def test_get_dialog_fallback_skip_exact_level_in_loop(self) -> None:
@@ -1613,7 +1641,7 @@ class TestNPCPlugin(unittest.TestCase):
         self.plugin.register_npc(mock_sprite, "guard")
 
         # Dialog with conditions that will fail, and no on_condition_fail
-        dialog_config = NPCDialogConfig(text=["You shall pass"], conditions=[{"check": "has_key"}])
+        dialog_config = NPCDialogConfig(text=["You shall pass"], conditions=[MagicMock()])
         self.plugin.dialogs = {"castle": {"guard": {0: dialog_config}}}
 
         with patch.object(self.plugin, "_check_dialog_conditions", return_value=False):
@@ -1858,6 +1886,39 @@ class TestNPCPlugin(unittest.TestCase):
 
         # interacted_npcs should remain unchanged since key was missing
         assert self.plugin.interacted_npcs == {"old_scene": {"old_npc"}}
+
+
+class TestCheckDialogConditions(unittest.TestCase):
+    """Test NPCPlugin._check_dialog_conditions."""
+
+    def setUp(self) -> None:
+        """Set up the NPCPlugin and mock context."""
+        self.plugin = NPCPlugin()
+        self.mock_context = MagicMock()
+        self.plugin.setup(self.mock_context)
+
+    def test_condition_check_returns_false(self) -> None:
+        """Test returns False when a condition check fails."""
+        mock_condition = MagicMock()
+        mock_condition.check.return_value = False
+
+        result = self.plugin._check_dialog_conditions([mock_condition])
+
+        assert result is False
+        mock_condition.check.assert_called_once_with(self.mock_context)
+
+    def test_all_conditions_pass(self) -> None:
+        """Test returns True when all conditions pass their checks."""
+        mock_cond_a = MagicMock()
+        mock_cond_a.check.return_value = True
+        mock_cond_b = MagicMock()
+        mock_cond_b.check.return_value = True
+
+        result = self.plugin._check_dialog_conditions([mock_cond_a, mock_cond_b])
+
+        assert result is True
+        mock_cond_a.check.assert_called_once_with(self.mock_context)
+        mock_cond_b.check.assert_called_once_with(self.mock_context)
 
 
 if __name__ == "__main__":

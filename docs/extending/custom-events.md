@@ -54,15 +54,17 @@ To add a new event type that scripts can listen for:
 
 ### 1. Define the Event Class
 
-Use the `@EventRegistry.register` decorator to associate a unique name with your event class.
+Use the `@EventRegistry.register` decorator to register your event class. The registry uses the class's `name` attribute as the key.
 
 ```python
 from dataclasses import dataclass
+from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
-@EventRegistry.register("weather_changed")
+@EventRegistry.register
 @dataclass
-class WeatherChangedEvent:
+class WeatherChangedEvent(Event):
+    name = "weather_changed"
     weather_type: str
     intensity: float
 ```
@@ -93,7 +95,7 @@ Scripts can now trigger on this event using the registered name:
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Villager",
         "text": ["Looks like rain again..."]
       }

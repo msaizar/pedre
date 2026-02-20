@@ -4,15 +4,15 @@ import logging
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
-
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("follow_player")
+@ActionRegistry.register
 class FollowPlayerAction(Action):
     """Set camera to follow the player.
 
@@ -29,15 +29,17 @@ class FollowPlayerAction(Action):
     Example usage:
         # Smooth following (default)
         {
-            "type": "follow_player"
+            "name": "follow_player"
         }
 
         # Instant following (no smoothing)
         {
-            "type": "follow_player",
+            "name": "follow_player",
             "smooth": false
         }
     """
+
+    name = "follow_player"
 
     def __init__(self, *, smooth: bool = True) -> None:
         """Initialize follow player action.
@@ -68,22 +70,14 @@ class FollowPlayerAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create FollowPlayerAction from a dictionary."""
-        return cls(smooth=data.get("smooth", True))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate follow_player action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
-        if "smooth" in data and not isinstance(data["smooth"], bool):
-            errors.append("'smooth' must be a bool")
-        return errors
+        smooth = data.get("smooth", True)
+        if not isinstance(smooth, bool):
+            msg = "'smooth' must be a bool"
+            raise ActionParseError(msg)
+        return cls(smooth=smooth)
 
 
-@ActionRegistry.register("follow_npc")
+@ActionRegistry.register
 class FollowNPCAction(Action):
     """Set camera to follow a specific NPC.
 
@@ -106,27 +100,29 @@ class FollowNPCAction(Action):
     Example usage:
         # Smooth following (default)
         {
-            "type": "follow_npc",
+            "name": "follow_npc",
             "npc": "martin"
         }
 
         # Instant following (no smoothing)
         {
-            "type": "follow_npc",
+            "name": "follow_npc",
             "npc": "boss_enemy",
             "smooth": false
         }
 
     Common pattern - cutscene focusing on NPC:
         [
-            {"type": "follow_npc", "npc": "martin"},
-            {"type": "dialog", "speaker": "martin", "text": ["Watch this!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "move_npc", "npcs": ["martin"], "waypoint": "destination"},
-            {"type": "wait_for_movement", "npc": "martin"},
-            {"type": "follow_player"}
+            {"name": "follow_npc", "npc": "martin"},
+            {"name": "dialog", "speaker": "martin", "text": ["Watch this!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "move_npc", "npcs": ["martin"], "waypoint": "destination"},
+            {"name": "wait_for_movement", "npc": "martin"},
+            {"name": "follow_player"}
         ]
     """
+
+    name = "follow_npc"
 
     def __init__(self, npc_name: str, *, smooth: bool = True) -> None:
         """Initialize follow NPC action.
@@ -166,29 +162,29 @@ class FollowNPCAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create FollowNPCAction from a dictionary."""
-        return cls(npc_name=data.get("npc", ""), smooth=data.get("smooth", True))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate follow_npc action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
+        # --- Required: npc ---
         npc = data.get("npc")
-        if not npc:
-            errors.append("missing required 'npc' field")
-        elif not isinstance(npc, str):
-            errors.append("'npc' must be a string")
+        if npc is None:
+            msg = "follow_npc: missing required 'npc' field"
+            raise ActionParseError(msg)
 
-        if "smooth" in data and not isinstance(data["smooth"], bool):
-            errors.append("'smooth' must be a bool")
+        if not isinstance(npc, str):
+            msg = "follow_npc: 'npc' must be a string"
+            raise ActionParseError(msg)
 
-        return errors
+        smooth = data.get("smooth", True)
+        if not isinstance(smooth, bool):
+            msg = "follow_npc: 'smooth' must be a bool"
+            raise ActionParseError(msg)
+
+        return cls(npc_name=npc, smooth=smooth)
+
+    def get_references(self) -> set[EntityReference]:
+        """Extract references for validation."""
+        return {EntityReference(type="npc", name=self.npc_name)}
 
 
-@ActionRegistry.register("stop_camera_follow")
+@ActionRegistry.register
 class StopCameraFollowAction(Action):
     """Stop camera following, keeping it at current position.
 
@@ -205,17 +201,19 @@ class StopCameraFollowAction(Action):
 
     Example usage:
         {
-            "type": "stop_camera_follow"
+            "name": "stop_camera_follow"
         }
 
     Example - freeze camera during dialog:
         [
-            {"type": "stop_camera_follow"},
-            {"type": "dialog", "speaker": "narrator", "text": ["Time stands still..."]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "follow_player"}
+            {"name": "stop_camera_follow"},
+            {"name": "dialog", "speaker": "narrator", "text": ["Time stands still..."]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "follow_player"}
         ]
     """
+
+    name = "stop_camera_follow"
 
     def __init__(self) -> None:
         """Initialize stop camera follow action."""

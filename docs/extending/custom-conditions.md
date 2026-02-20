@@ -47,33 +47,40 @@ The `ConditionRegistry` maintains a mapping of condition names (like `"inventory
 
 ## Creating Custom Conditions
 
-To create a new condition checker, define a function and decorate it with `@ConditionRegistry.register`.
+To create a new condition, define a class that inherits from `Condition` and decorate it with `@ConditionRegistry.register`. The registry uses the class's `name` attribute as the key.
 
-### 1. Define the Checker Function
+### 1. Define the Condition Class
 
 ```python
-from typing import Any
-from pedre.plugins.game_context import GameContext
+from typing import TYPE_CHECKING, Any, Self
+from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
 
-@ConditionRegistry.register("is_weather")
-def check_weather(data: dict[str, Any], context: GameContext) -> bool:
+if TYPE_CHECKING:
+    from pedre.plugins.game_context import GameContext
+
+@ConditionRegistry.register
+class IsWeatherCondition(Condition):
     """Check if the current weather matches the specified type.
 
     Args:
-        data: Condition parameters from JSON (e.g., {"weather": "rain"})
-        context: Game context for accessing plugins
-
-    Returns:
-        True if the condition is met, False otherwise
+        weather: The weather type to check for (e.g., "rain")
     """
-    required_weather = data.get("weather")
 
-    weather_plugin = context.get_plugin("weather")
-    if not weather_plugin:
-        return False
+    name = "is_weather"
 
-    return weather_plugin.current_weather == required_weather
+    def __init__(self, weather: str) -> None:
+        self.weather = weather
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(weather=data.get("weather", ""))
+
+    def check(self, context: GameContext) -> bool:
+        weather_plugin = context.get_plugin("weather")
+        if not weather_plugin:
+            return False
+        return weather_plugin.current_weather == self.weather
 ```
 
 ### 2. Use in Scripts
@@ -89,13 +96,13 @@ Once registered, your condition can be used in any JSON script:
     },
     "conditions": [
       {
-        "check": "is_weather",
+        "name": "is_weather",
         "weather": "rain"
       }
     ],
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Farmer",
         "text": ["Perfect weather for the crops!"]
       }
@@ -109,28 +116,50 @@ Once registered, your condition can be used in any JSON script:
 ### Numeric Comparisons
 
 ```python
-@ConditionRegistry.register("player_health")
-def check_player_health(data: dict[str, Any], context: GameContext) -> bool:
+@ConditionRegistry.register
+class PlayerHealthCondition(Condition):
     """Check if player health meets a condition."""
-    player = context.get_plugin("player")
-    if not player:
+
+    name = "player_health"
+
+    def __init__(self, equals: int | None = None, gte: int | None = None,
+                 gt: int | None = None, lte: int | None = None, lt: int | None = None) -> None:
+        self.equals = equals
+        self.gte = gte
+        self.gt = gt
+        self.lte = lte
+        self.lt = lt
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            equals=data.get("equals"),
+            gte=data.get("gte"),
+            gt=data.get("gt"),
+            lte=data.get("lte"),
+            lt=data.get("lt"),
+        )
+
+    def check(self, context: GameContext) -> bool:
+        player = context.get_plugin("player")
+        if not player:
+            return False
+
+        current_health = player.health
+
+        # Support multiple comparison operators
+        if self.equals is not None:
+            return current_health == self.equals
+        if self.gte is not None:
+            return current_health >= self.gte
+        if self.gt is not None:
+            return current_health > self.gt
+        if self.lte is not None:
+            return current_health <= self.lte
+        if self.lt is not None:
+            return current_health < self.lt
+
         return False
-
-    current_health = player.health
-
-    # Support multiple comparison operators
-    if "equals" in data:
-        return current_health == data["equals"]
-    if "gte" in data:
-        return current_health >= data["gte"]
-    if "gt" in data:
-        return current_health > data["gt"]
-    if "lte" in data:
-        return current_health <= data["lte"]
-    if "lt" in data:
-        return current_health < data["lt"]
-
-    return False
 ```
 
 Usage:
@@ -139,7 +168,7 @@ Usage:
 {
   "conditions": [
     {
-      "check": "player_health",
+      "name": "player_health",
       "lte": 25
     }
   ]
@@ -149,21 +178,30 @@ Usage:
 ### Complex State Checks
 
 ```python
-@ConditionRegistry.register("quest_progress")
-def check_quest_progress(data: dict[str, Any], context: GameContext) -> bool:
+@ConditionRegistry.register
+class QuestProgressCondition(Condition):
     """Check if a quest has reached a specific stage."""
-    quest_plugin = context.get_plugin("quest")
-    if not quest_plugin:
-        return False
 
-    quest_id = data.get("quest_id")
-    required_stage = data.get("stage")
+    name = "quest_progress"
 
-    quest = quest_plugin.get_quest(quest_id)
-    if not quest:
-        return False
+    def __init__(self, quest_id: str, stage: str) -> None:
+        self.quest_id = quest_id
+        self.stage = stage
 
-    return quest.current_stage == required_stage
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(quest_id=data.get("quest_id", ""), stage=data.get("stage", ""))
+
+    def check(self, context: GameContext) -> bool:
+        quest_plugin = context.get_plugin("quest")
+        if not quest_plugin:
+            return False
+
+        quest = quest_plugin.get_quest(self.quest_id)
+        if not quest:
+            return False
+
+        return quest.current_stage == self.stage
 ```
 
 ## Best Practices

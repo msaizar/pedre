@@ -6,15 +6,16 @@ to events without direct class imports, improving decoupling.
 """
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
+    from pedre.events.base import Event
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T", bound=type)
+
+class EventParseError(Exception):
+    """Raised when an event cannot be parsed."""
 
 
 class EventRegistry:
@@ -25,100 +26,73 @@ class EventRegistry:
     classes by name to perform dynamic subscriptions.
     """
 
-    _events: ClassVar[dict[str, type]] = {}
-    _names: ClassVar[dict[type, str]] = {}
-    _trigger_keys: ClassVar[dict[str, frozenset[str]]] = {}
+    _events: ClassVar[dict[str, type[Event]]] = {}
 
     @classmethod
-    def register(cls, name: str) -> Callable[[type[T]], type[T]]:
-        """Decorator to register an event class with a unique string name.
+    def register(cls, event_class: type[Event]) -> type[Event]:
+        """Decorator to register an event class."""
+        event_name = event_class.name
 
-        Args:
-            name: The string name to associate with the event class
-                 (e.g., "dialog_closed").
+        if event_name in cls._events:
+            msg = f"Event '{event_name}' already registered"
+            raise ValueError(msg)
 
-        Returns:
-            The decorator function.
-        """
-
-        def decorator(event_class: type[T]) -> type[T]:
-            if name in cls._events:
-                logger.warning(
-                    "Event '%s' is being re-registered (was %s, now %s)",
-                    name,
-                    cls._events[name].__name__,
-                    event_class.__name__,
-                )
-            cls._events[name] = event_class
-            cls._names[event_class] = name
-            logger.debug("Registered event: %s -> %s", name, event_class.__name__)
-
-            # Auto-register trigger keys if event class has them
-            if hasattr(event_class, "trigger_keys"):
-                cls._trigger_keys[name] = event_class.trigger_keys  # type: ignore[attr-defined]
-                logger.debug("Registered trigger keys for event: %s", name)
-
-            return event_class
-
-        return decorator
+        cls._events[event_name] = event_class
+        logger.debug("Registered event: %s", event_name)
+        return event_class
 
     @classmethod
-    def get(cls, name: str) -> type | None:
-        """Get a registered event class by its name."""
+    def create(cls, data: dict[str, Any]) -> Event:
+        """Create an event from a dictionary."""
+        name = data.get("name")
+        if not name:
+            msg = "Event missing 'name' field"
+            raise EventParseError(msg)
+
+        event_cls = cls._events.get(name)
+        if not event_cls:
+            msg = f"Unknown event '{name}'"
+            raise EventParseError(msg)
+
+        try:
+            return event_cls.from_dict(data)
+        except Exception as exc:
+            msg = f"Failed to parse event '{name}': {exc}"
+            raise EventParseError(msg) from exc
+
+    @classmethod
+    def get(cls, name: str) -> type[Event] | None:
+        """Get an event from a name."""
         return cls._events.get(name)
 
     @classmethod
-    def get_name(cls, event_class: type) -> str | None:
-        """Get the registered name for an event class."""
-        return cls._names.get(event_class)
-
-    @classmethod
-    def is_registered(cls, name: str) -> bool:
-        """Check if an event type is registered.
-
-        Args:
-            name: The event type name to check.
+    def get_all_names(cls) -> list[str]:
+        """Get all registered event names.
 
         Returns:
-            True if the event type is registered, False otherwise.
-        """
-        return name in cls._events
-
-    @classmethod
-    def get_all_types(cls) -> list[str]:
-        """Get all registered event type names.
-
-        Returns:
-            List of event type strings that are registered.
+            List of event names strings that are registered.
         """
         return list(cls._events.keys())
 
     @classmethod
-    def get_trigger_keys(cls, name: str) -> frozenset[str] | None:
-        """Get valid trigger filter keys for an event type.
+    def is_registered(cls, name: str) -> bool:
+        """Check if an event is registered.
 
         Args:
-            name: The event type name.
+            name: The event name to check.
 
         Returns:
-            Frozenset of valid filter key names, or None if not declared.
+            True if the event name has an event registered, False otherwise.
 
-        Example:
-            Getting trigger keys for an event::
-
-                keys = EventRegistry.get_trigger_keys("item_consumed")
-                # Returns: frozenset({"item_id", "category"})
-
-                # Check if a filter key is valid
-                if "category" in keys:
-                    # Valid filter key
-                    pass
         """
-        return cls._trigger_keys.get(name)
+        return name in cls._events
 
     @classmethod
     def clear(cls) -> None:
-        """Clear the registry (primarily for testing)."""
+        """Clear the registry.
+
+        Removes all registered actions. This is primarily useful
+        for testing to ensure a clean state between tests.
+        """
         cls._events.clear()
-        cls._names.clear()
-        cls._trigger_keys.clear()
+        logger.debug("Event registry cleared")

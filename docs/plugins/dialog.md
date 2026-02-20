@@ -424,13 +424,13 @@ Dialogs are typically loaded from JSON files in the `assets/dialogs/` directory.
             "text": ["Next dialog level"],
             "conditions": [
                 {
-                    "check": "inventory_accessed",
+                    "name": "inventory_accessed",
                     "equals": true
                 }
             ],
             "on_condition_fail": [
                 {
-                    "type": "dialog",
+                    "name": "dialog",
                     "speaker": "Display Name",
                     "text": ["Alternative text if condition fails"]
                 }
@@ -464,7 +464,7 @@ Dialogs are typically loaded from JSON files in the `assets/dialogs/` directory.
             "text": ["Qué hermoso día, no?"],
             "conditions": [
                 {
-                    "check": "inventory_accessed",
+                    "name": "inventory_accessed",
                     "equals": true
                 }
             ]
@@ -502,7 +502,7 @@ Published when a dialog is shown to the player.
         "dialog_level": 1
     },
     "actions": [
-        {"type": "play_sfx", "sound": "dialog_open.wav"}
+        {"name": "play_sfx", "sound": "dialog_open.wav"}
     ]
 }
 ```
@@ -526,7 +526,7 @@ Published when a dialog is dismissed by the player.
         "dialog_level": 0
     },
     "actions": [
-        {"type": "set_dialog_level", "npc": "martin", "level": 1}
+        {"name": "set_dialog_level", "npc": "martin", "level": 1}
     ]
 }
 ```
@@ -556,7 +556,7 @@ Show a dialog to the player.
 
 ```json
 {
-    "type": "dialog",
+    "name": "dialog",
     "speaker": "Martin",
     "text": ["Hello there!", "Welcome to the game."]
 }
@@ -564,7 +564,7 @@ Show a dialog to the player.
 
 ```json
 {
-    "type": "dialog",
+    "name": "dialog",
     "speaker": "Narrator",
     "text": ["The world fades to black..."],
     "instant": true,
@@ -589,9 +589,9 @@ Wait for dialog to be closed.
 
 ```json
 [
-    {"type": "dialog", "speaker": "Martin", "text": ["Hello!"]},
-    {"type": "wait_for_dialog_close"},
-    {"type": "dialog", "speaker": "Yema", "text": ["Hi there!"]}
+    {"name": "dialog", "speaker": "Martin", "text": ["Hello!"]},
+    {"name": "wait_for_dialog_close"},
+    {"name": "dialog", "speaker": "Yema", "text": ["Hi there!"]}
 ]
 ```
 
@@ -757,15 +757,15 @@ dialog_plugin.show_dialog(
     },
     "actions": [
         {
-            "type": "dialog",
+            "name": "dialog",
             "speaker": "Martin",
             "text": ["Hello!", "How are you today?"]
         },
         {
-            "type": "wait_for_dialog_close"
+            "name": "wait_for_dialog_close"
         },
         {
-            "type": "set_dialog_level",
+            "name": "set_dialog_level",
             "npc": "martin",
             "level": 1
         }

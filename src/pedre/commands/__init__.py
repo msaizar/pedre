@@ -21,7 +21,7 @@ Example:
         from pedre.commands.base import Command
         from pedre.commands.registry import CommandRegistry
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class BuildCommand(Command):
             name = "build"
             help = "Build the game project"
@@ -42,7 +42,7 @@ Example:
         from pedre.commands.base import Command
         from pedre.commands.registry import CommandRegistry
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class BalanceCommand(Command):
             name = "balance"
             help = "Balance combat stats"

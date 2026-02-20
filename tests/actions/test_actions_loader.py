@@ -36,7 +36,7 @@ def test_action_loader_with_empty_list(monkeypatch: pytest.MonkeyPatch) -> None:
     loader = ActionLoader()
     loader.load_modules()  # Should not raise
 
-    assert not ActionRegistry.get_all_types()
+    assert not ActionRegistry.get_all_names()
 
 
 def test_action_loader_raises_on_invalid_module(monkeypatch: pytest.MonkeyPatch) -> None:

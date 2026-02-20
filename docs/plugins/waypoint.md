@@ -153,8 +153,8 @@ Waypoints are commonly used in scripts for NPC movement:
             "hour": 18
         },
         "actions": [
-            {"type": "move_npc", "npcs": ["merchant"], "waypoint": "merchant_home"},
-            {"type": "wait_for_movement", "npc": "merchant"}
+            {"name": "move_npc", "npcs": ["merchant"], "waypoint": "merchant_home"},
+            {"name": "wait_for_movement", "npc": "merchant"}
         ]
     }
 }
@@ -179,7 +179,7 @@ Waypoints Layer:
     "village_to_forest": {
         "trigger": {"event": "portal_entered", "portal": "forest_entrance"},
         "actions": [
-            {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+            {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
         ]
     }
 }

@@ -4,7 +4,8 @@ import logging
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("change_scene")
+@ActionRegistry.register
 class ChangeSceneAction(Action):
     """Transition to a different map/scene.
 
@@ -31,13 +32,13 @@ class ChangeSceneAction(Action):
     Example usage:
         # Simple transition
         {
-            "type": "change_scene",
+            "name": "change_scene",
             "target_map": "Forest.tmx"
         }
 
         # Transition with specific spawn point
         {
-            "type": "change_scene",
+            "name": "change_scene",
             "target_map": "Tower.tmx",
             "spawn_waypoint": "tower_entrance"
         }
@@ -46,12 +47,14 @@ class ChangeSceneAction(Action):
         {
             "trigger": {"event": "portal_entered", "portal": "forest_gate"},
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["The gate opens..."]},
-                {"type": "wait_for_dialog_close"},
-                {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+                {"name": "dialog", "speaker": "Narrator", "text": ["The gate opens..."]},
+                {"name": "wait_for_dialog_close"},
+                {"name": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
             ]
         }
     """
+
+    name = "change_scene"
 
     def __init__(self, target_map: str, spawn_waypoint: str | None = None) -> None:
         """Initialize scene change action.
@@ -89,23 +92,45 @@ class ChangeSceneAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create ChangeSceneAction from a dictionary."""
-        return cls(target_map=data.get("target_map", ""), spawn_waypoint=data.get("spawn_waypoint", ""))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate change_scene action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         target_map = data.get("target_map")
         if not target_map:
-            errors.append("missing required 'target_map' field")
-        elif not isinstance(target_map, str):
-            errors.append("'target_map' must be a string")
+            msg = "missing required 'target_map' field"
+            raise ActionParseError(msg)
+        if not isinstance(target_map, str):
+            msg = "'target_map' must be a string"
+            raise ActionParseError(msg)
+        spawn_waypoint = data.get("spawn_waypoint")
+        if spawn_waypoint and not isinstance(spawn_waypoint, str):
+            msg = "'spawn_waypoint' must be a string"
+            raise ActionParseError(msg)
 
-        if "spawn_waypoint" in data and not isinstance(data["spawn_waypoint"], str):
-            errors.append("'spawn_waypoint' must be a string")
+        return cls(target_map=target_map, spawn_waypoint=spawn_waypoint)
 
-        return errors
+    def get_references(self) -> set[EntityReference]:
+        """Extract references for validation."""
+        refs = set()
+
+        target_map = self.target_map
+        if isinstance(target_map, str):
+            map_name = target_map.removesuffix(".tmx")
+
+            # Map reference
+            refs.add(
+                EntityReference(
+                    type="map",
+                    name=map_name,
+                )
+            )
+
+            spawn_waypoint = self.spawn_waypoint
+            if isinstance(spawn_waypoint, str):
+                refs.add(
+                    EntityReference(
+                        type="waypoint",
+                        name=spawn_waypoint,
+                        scope="map",
+                        target_map=map_name,
+                    )
+                )
+
+        return refs

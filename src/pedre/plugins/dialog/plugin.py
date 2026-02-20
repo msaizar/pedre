@@ -28,13 +28,13 @@ Dialog Configuration:
                     "text": ["Next dialog level"],
                     "conditions": [
                         {
-                            "check": "inventory_accessed",
+                            "name": "inventory_accessed",
                             "equals": true
                         }
                     ],
                     "on_condition_fail": [
                         {
-                            "type": "dialog",
+                            "name": "dialog",
                             "speaker": "Display Name",
                             "text": ["Alternative text if condition fails"]
                         }
@@ -100,11 +100,11 @@ class DialogPlugin(DialogBasePlugin):
     Scripted Dialog Example:
         # In a script, you can chain dialogs and actions:
         [
-            {"type": "dialog", "speaker": "Martin", "text": ["Hello!"]},
-            {"type": "wait_for_dialog_close"},  # Pauses until player presses SPACE
-            {"type": "move_npc", "npcs": ["martin"], "waypoint": "door"},
-            {"type": "wait_for_movement", "npc": "martin"},
-            {"type": "dialog", "speaker": "Martin", "text": ["I'm leaving now!"]}
+            {"name": "dialog", "speaker": "Martin", "text": ["Hello!"]},
+            {"name": "wait_for_dialog_close"},  # Pauses until player presses SPACE
+            {"name": "move_npc", "npcs": ["martin"], "waypoint": "door"},
+            {"name": "wait_for_movement", "npc": "martin"},
+            {"name": "dialog", "speaker": "Martin", "text": ["I'm leaving now!"]}
         ]
 
     This plugin has no dependencies on other plugins.

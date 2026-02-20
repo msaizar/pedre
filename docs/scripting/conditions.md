@@ -17,7 +17,7 @@ Conditions can be specified in two places:
   },
   "conditions": [
     {
-      "check": "npc_dialog_level",
+      "name": "npc_dialog_level",
       "npc": "merchant",
       "equals": 2
     }
@@ -93,7 +93,7 @@ The `trigger` object specifies which event to react to and can include fields to
 {
   "trigger": {
     "event": "script_complete",
-    "script_name": "intro"       // Required: which script
+    "script": "intro"            // Required: which script
   }
 }
 ```
@@ -106,12 +106,12 @@ For checking game state beyond event matching, use the `conditions` array. These
 
 | Check Type           | Fields                                | Description                                            | Example                                                            |
 | -------------------- | ------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------ |
-| `npc_interacted`     | `npc`, `scene`, `equals`              | Check if NPC was interacted with in a scene            | `{"check": "npc_interacted", "npc": "guard", "equals": true}`      |
-| `npc_dialog_level`   | `npc`, `equals`/`gte`/`gt`/`lte`/`lt` | Match NPC conversation level                           | `{"check": "npc_dialog_level", "npc": "merchant", "gte": 2}`       |
-| `inventory_accessed` | `equals`                              | Check if inventory was ever opened                     | `{"check": "inventory_accessed", "equals": true}`                  |
-| `object_interacted`  | `object`, `equals`                    | Check if object was ever interacted with (state check) | `{"check": "object_interacted", "object": "sink", "equals": true}` |
-| `script_completed`   | `script`                              | Check if a run_once script has completed               | `{"check": "script_completed", "script": "intro_cutscene"}`        |
-| `item_acquired`      | `item_id`                             | Check if an item was acquired                          | `{"check": "item_acquired", "item_id": "golden_key"}`              |
+| `npc_interacted`     | `npc`, `scene`, `equals`              | Check if NPC was interacted with in a scene            | `{"name": "npc_interacted", "npc": "guard", "equals": true}`      |
+| `npc_dialog_level`   | `npc`, `equals`                       | Match NPC conversation level                           | `{"name": "npc_dialog_level", "npc": "merchant", "equals": 2}`    |
+| `inventory_accessed` | `equals`                              | Check if inventory was ever opened                     | `{"name": "inventory_accessed", "equals": true}`                  |
+| `object_interacted`  | `object`, `equals`                    | Check if object was ever interacted with (state check) | `{"name": "object_interacted", "object": "sink", "equals": true}` |
+| `script_completed`   | `script`                              | Check if a run_once script has completed               | `{"name": "script_completed", "script": "intro_cutscene"}`        |
+| `item_acquired`      | `item_id`                             | Check if an item was acquired                          | `{"name": "item_acquired", "item_id": "golden_key"}`              |
 
 ### npc_interacted (state check)
 
@@ -134,7 +134,7 @@ Check if an NPC has been interacted with in a specific scene. This is different 
   },
   "conditions": [
     {
-      "check": "npc_interacted",
+      "name": "npc_interacted",
       "npc": "guard"
     }
   ]
@@ -145,7 +145,7 @@ Check if an NPC has been interacted with in a specific scene. This is different 
 
 ```json
 {
-  "check": "npc_interacted",
+  "name": "npc_interacted",
   "npc": "guard",
   "equals": false
 }
@@ -155,7 +155,7 @@ Check if an NPC has been interacted with in a specific scene. This is different 
 
 ```json
 {
-  "check": "npc_interacted",
+  "name": "npc_interacted",
   "npc": "guard",
   "scene": "castle"
 }
@@ -188,7 +188,7 @@ Check if an NPC's conversation progress matches a specific level.
   },
   "conditions": [
     {
-      "check": "npc_dialog_level",
+      "name": "npc_dialog_level",
       "npc": "merchant",
       "equals": 2
     }
@@ -220,7 +220,7 @@ Check if the player has opened their inventory.
   },
   "conditions": [
     {
-      "check": "inventory_accessed",
+      "name": "inventory_accessed",
       "equals": true
     }
   ]
@@ -253,14 +253,14 @@ Check if a specific object has been interacted with at any point in the past. Th
   },
   "conditions": [
     {
-      "check": "object_interacted",
+      "name": "object_interacted",
       "object": "royal_seal",
       "equals": true
     }
   ],
   "actions": [
     {
-      "type": "dialog",
+      "name": "dialog",
       "speaker": "Guard",
       "text": ["I see you found the royal seal. You may pass."]
     }
@@ -295,12 +295,12 @@ Check if a run_once script has completed execution. This is useful for creating 
   },
   "conditions": [
     {
-      "check": "script_completed",
+      "name": "script_completed",
       "script": "dungeon_intro_cutscene"
     }
   ],
   "actions": [
-    {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+    {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
   ]
 }
 ```
@@ -320,16 +320,16 @@ Check if a run_once script has completed execution. This is useful for creating 
     "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+      {"name": "dialog", "speaker": "Narrator", "text": ["A cold wind blows..."]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   },
   "dungeon_return": {
     "trigger": {"event": "portal_entered", "portal": "dungeon_gate"},
-    "conditions": [{"check": "script_completed", "script": "dungeon_first_entry"}],
+    "conditions": [{"name": "script_completed", "script": "dungeon_first_entry"}],
     "actions": [
-      {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -354,12 +354,12 @@ Check if an inventory item was acquired.
   },
   "conditions": [
     {
-      "check": "item_acquired",
-      "script": "dungeon_key"
+      "name": "item_acquired",
+      "item_id": "dungeon_key"
     }
   ],
   "actions": [
-    {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+    {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
   ]
 }
 ```
@@ -376,16 +376,16 @@ You can combine multiple conditions. ALL must be true for the script to run.
   },
   "conditions": [
     {
-      "check": "npc_dialog_level",
+      "name": "npc_dialog_level",
       "npc": "merchant",
       "equals": 2
     },
     {
-      "check": "inventory_accessed",
+      "name": "inventory_accessed",
       "equals": true
     },
     {
-      "check": "object_interacted",
+      "name": "object_interacted",
       "object": "letter",
       "equals": true
     }
@@ -413,14 +413,14 @@ NPCs can have dialog-level conditions in their dialog JSON files. This allows di
       "text": ["Hello, stranger! I see you have the letter."],
       "conditions": [
         {
-          "check": "object_interacted",
+          "name": "object_interacted",
           "object": "letter",
           "equals": true
         }
       ],
       "on_condition_fail": [
         {
-          "type": "dialog",
+          "name": "dialog",
           "speaker": "Merchant",
           "text": ["Come back with a letter of introduction."]
         }
@@ -458,24 +458,24 @@ Create branching paths based on player actions:
     },
     "conditions": [
       {
-        "check": "object_interacted",
+        "name": "object_interacted",
         "object": "royal_seal",
         "equals": true
       }
     ],
     "actions": [
       {
-        "type": "set_dialog_level",
+        "name": "set_dialog_level",
         "npc": "guard",
         "dialog_level": 2
       },
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You have the royal seal! Enter."]
       },
       {
-        "type": "start_appear_animation",
+        "name": "start_appear_animation",
         "npcs": ["king"]
       }
     ]
@@ -489,7 +489,7 @@ Create branching paths based on player actions:
     },
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Guard",
         "text": ["You need the royal seal to enter."]
       }
@@ -524,7 +524,7 @@ More specific conditions prevent unwanted triggers:
   },
   "conditions": [
     {
-      "check": "object_interacted",
+      "name": "object_interacted",
       "object": "quest_item",
       "equals": true
     }
@@ -589,7 +589,7 @@ Use trigger fields for primary matching, conditions for secondary checks:
   },
   "conditions": [
     {
-      "check": "inventory_accessed",  // Secondary: extra requirement
+      "name": "inventory_accessed",  // Secondary: extra requirement
       "equals": true
     }
   ]
@@ -619,27 +619,37 @@ Look for condition check messages in console output.
 
 ## Creating Custom Conditions
 
- Pedre supports adding custom condition logic using the `ConditionRegistry`.
+Pedre supports adding custom condition logic using the `ConditionRegistry`.
 
-### 1. Define the Checker Function
+### 1. Define the Condition Class
 
- Create a function that initiates the check. It receives the condition parameters (from JSON) and the `GameContext`.
+Create a class that inherits from `Condition` and decorate it with `@ConditionRegistry.register`. The `name` class attribute is used as the JSON condition name.
 
- ```python
- from typing import Any
- from pedre.plugins.game_context import GameContext
- from pedre.conditions.registry import ConditionRegistry
+```python
+from typing import TYPE_CHECKING, Any, Self
+from pedre.conditions.base import Condition
+from pedre.conditions.registry import ConditionRegistry
 
- @ConditionRegistry.register("is_weather")
- def check_weather(data: dict[str, Any], context: GameContext) -> bool:
-     required_weather = data.get("weather")
+if TYPE_CHECKING:
+    from pedre.plugins.game_context import GameContext
 
-     weather_plugin = context.get_plugin("weather")
-     if not weather_plugin:
-         return False
+@ConditionRegistry.register
+class IsWeatherCondition(Condition):
+    name = "is_weather"
 
-     return weather_plugin.current_weather == required_weather
- ```
+    def __init__(self, weather: str) -> None:
+        self.weather = weather
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Self:
+        return cls(weather=data.get("weather", ""))
+
+    def check(self, context: GameContext) -> bool:
+        weather_plugin = context.get_plugin("weather")
+        if not weather_plugin:
+            return False
+        return weather_plugin.current_weather == self.weather
+```
 
 ### 2. Use in Scripts
 
@@ -651,7 +661,7 @@ Look for condition check messages in console output.
    },
    "conditions": [
      {
-       "check": "is_weather",
+       "name": "is_weather",
        "weather": "rain"
      }
    ]

@@ -64,7 +64,7 @@ All scripts are validated after loading to catch configuration errors early. Val
 
 - **Trigger Events**: All `event` values in triggers must be registered in EventRegistry
 - **Conditions**: All `check` types in conditions must be registered in ConditionRegistry
-- **Actions**: All action `type` values must be registered in ActionRegistry
+- **Actions**: All action `name` values must be registered in ActionRegistry
 - **Required Fields**: Scripts must have required keys (`trigger`, `actions`) and valid structure
 - **Unknown Keys**: Scripts cannot have unrecognized top-level keys
 - **Non-Empty Actions**: The `actions` list must contain at least one action
@@ -110,6 +110,32 @@ def on_update(self, delta_time):
 - Called automatically by PluginLoader each frame
 - Updates all currently executing script action sequences
 - Removes completed sequences and publishes ScriptCompleteEvent
+
+#### run_actions
+
+`run_actions(sequence_name: str, actions: list[Action]) -> None`
+
+Queue a pre-parsed list of actions for immediate execution.
+
+**Parameters:**
+
+- `sequence_name` - Name used for logging and tracking (e.g. `"npc_guard_condition_fail"`)
+- `actions` - List of pre-parsed `Action` objects to execute in sequence
+
+**Example:**
+
+```python
+from pedre.actions.registry import ActionRegistry
+
+actions = [ActionRegistry.create({"name": "dialog", "speaker": "Guard", "text": ["Stop!"]})]
+script_plugin.run_actions("guard_warning", actions)
+```
+
+**Notes:**
+
+- Useful for executing ad-hoc action sequences outside of a script trigger (e.g. NPC dialog `on_condition_fail`)
+- The sequence runs frame-by-frame alongside any other active scripts
+- Publishes `ScriptCompleteEvent` with `sequence_name` when the sequence finishes
 
 ### State Queries
 
@@ -278,13 +304,13 @@ Container for action sequences with trigger conditions and metadata.
 ```python
 script = Script(
     trigger={"event": "dialog_closed", "npc": "martin", "dialog_level": 1},
-    conditions=[{"check": "inventory_accessed", "equals": True}],
+    conditions=[{"name": "inventory_accessed", "equals": True}],
     scene="village",
     run_once=True,
     actions=[
-        {"type": "dialog", "speaker": "martin", "text": ["Hello!"]},
-        {"type": "wait_for_dialog_close"},
-        {"type": "move_npc", "npcs": ["martin"], "waypoint": "town_square"}
+        {"name": "dialog", "speaker": "martin", "text": ["Hello!"]},
+        {"name": "wait_for_dialog_close"},
+        {"name": "move_npc", "npcs": ["martin"], "waypoint": "town_square"}
     ]
 )
 ```
@@ -304,17 +330,17 @@ Scripts are defined in JSON files located in `assets/data/scripts/` with the nam
       "dialog_level": 0
     },
     "conditions": [
-      {"check": "inventory_accessed", "equals": true}
+      {"name": "inventory_accessed", "equals": true}
     ],
     "scene": "village",
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "merchant", "text": ["Hello!"]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "advance_dialog", "npc": "merchant"}
+      {"name": "dialog", "speaker": "merchant", "text": ["Hello!"]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "advance_dialog", "npc": "merchant"}
     ],
     "on_condition_fail": [
-      {"type": "dialog", "speaker": "merchant", "text": ["Check your inventory first!"]}
+      {"name": "dialog", "speaker": "merchant", "text": ["Check your inventory first!"]}
     ]
   }
 }
@@ -388,8 +414,8 @@ Conditions must all evaluate to true for the script to execute:
 ```json
 {
   "conditions": [
-    {"check": "inventory_accessed", "equals": true},
-    {"check": "npc_dialog_level", "npc": "merchant", "equals": 2}
+    {"name": "inventory_accessed", "equals": true},
+    {"name": "npc_dialog_level", "npc": "merchant", "equals": 2}
   ]
 }
 ```
@@ -441,10 +467,10 @@ The optional `scene` field controls when a script can execute:
     "scene": "castle",
     "trigger": {"event": "portal_entered", "portal": "gate"},
     "conditions": [
-      {"check": "script_completed", "script": "village_quest_complete"}
+      {"name": "script_completed", "script": "village_quest_complete"}
     ],
     "actions": [
-      {"type": "change_scene", "target_map": "throne_room.tmx"}
+      {"name": "change_scene", "target_map": "throne_room.tmx"}
     ]
   }
 }
@@ -472,7 +498,7 @@ Published when a script completes execution.
       "script": "intro_cutscene"
     },
     "actions": [
-      {"type": "start_appear_animation", "npcs": ["guard"]}
+      {"name": "start_appear_animation", "npcs": ["guard"]}
     ]
   }
 }
@@ -505,7 +531,7 @@ Check if a specific script has fully completed all its actions.
   },
   "conditions": [
     {
-      "check": "script_completed",
+      "name": "script_completed",
       "script": "main_quest_finale"
     }
   ]
@@ -534,9 +560,9 @@ Check if a specific script has fully completed all its actions.
     },
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "Merchant", "text": ["Welcome!"]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "advance_dialog", "npc": "merchant"}
+      {"name": "dialog", "speaker": "Merchant", "text": ["Welcome!"]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "advance_dialog", "npc": "merchant"}
     ]
   }
 }
@@ -554,13 +580,13 @@ Check if a specific script has fully completed all its actions.
       "dialog_level": 1
     },
     "conditions": [
-      {"check": "inventory_accessed", "equals": true}
+      {"name": "inventory_accessed", "equals": true}
     ],
     "actions": [
-      {"type": "dialog", "speaker": "Merchant", "text": ["Good! You found your inventory!"]}
+      {"name": "dialog", "speaker": "Merchant", "text": ["Good! You found your inventory!"]}
     ],
     "on_condition_fail": [
-      {"type": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first."]}
+      {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first."]}
     ]
   }
 }
@@ -578,9 +604,9 @@ Check if a specific script has fully completed all its actions.
     },
     "run_once": true,
     "actions": [
-      {"type": "play_sfx", "file": "magic.wav"},
-      {"type": "start_appear_animation", "npcs": ["spirit"]},
-      {"type": "wait_npcs_appear", "npcs": ["spirit"]}
+      {"name": "play_sfx", "file": "magic.wav"},
+      {"name": "start_appear_animation", "npcs": ["spirit"]},
+      {"name": "wait_npcs_appear", "npcs": ["spirit"]}
     ]
   },
   "cutscene_part2": {
@@ -589,9 +615,9 @@ Check if a specific script has fully completed all its actions.
       "script": "cutscene_part1"
     },
     "actions": [
-      {"type": "dialog", "speaker": "Spirit", "text": ["Who dares summon me?"]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "start_disappear_animation", "npcs": ["spirit"]}
+      {"name": "dialog", "speaker": "Spirit", "text": ["Who dares summon me?"]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "start_disappear_animation", "npcs": ["spirit"]}
     ]
   }
 }
@@ -607,13 +633,13 @@ Check if a specific script has fully completed all its actions.
       "portal": "to_forest"
     },
     "conditions": [
-      {"check": "npc_interacted", "npc": "guard", "equals": true}
+      {"name": "npc_interacted", "npc": "guard", "equals": true}
     ],
     "actions": [
-      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+      {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
     ],
     "on_condition_fail": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["The path is blocked."]}
+      {"name": "dialog", "speaker": "Narrator", "text": ["The path is blocked."]}
     ]
   }
 }
@@ -630,8 +656,8 @@ Check if a specific script has fully completed all its actions.
     },
     "run_once": true,
     "actions": [
-      {"type": "play_music", "file": "village_theme.ogg"},
-      {"type": "dialog", "speaker": "Narrator", "text": ["Welcome to the village!"]}
+      {"name": "play_music", "file": "village_theme.ogg"},
+      {"name": "dialog", "speaker": "Narrator", "text": ["Welcome to the village!"]}
     ]
   }
 }
@@ -652,6 +678,7 @@ The `ScriptBasePlugin` class defines the minimum interface that any script plugi
 Your custom script plugin must implement these abstract methods:
 
 ```python
+from pedre.actions.base import Action
 from pedre.plugins.script.base import ScriptBasePlugin, Script
 
 class CustomScriptPlugin(ScriptBasePlugin):
@@ -662,6 +689,10 @@ class CustomScriptPlugin(ScriptBasePlugin):
 
     def get_scripts(self) -> dict[str, Script]:
         """Get all loaded scripts."""
+        ...
+
+    def run_actions(self, sequence_name: str, actions: list[Action]) -> None:
+        """Queue an ad-hoc list of actions for execution."""
         ...
 ```
 

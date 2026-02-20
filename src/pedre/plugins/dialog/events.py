@@ -7,7 +7,7 @@ from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
 
-@EventRegistry.register("dialog_closed")
+@EventRegistry.register
 @dataclass
 class DialogClosedEvent(Event):
     """Fired when a dialog is closed.
@@ -37,7 +37,9 @@ class DialogClosedEvent(Event):
         dialog_level: Conversation level at the time dialog was shown.
     """
 
+    name: ClassVar[str] = "dialog_closed"
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc", "dialog_level"})
+    reference_fields: ClassVar[dict[str, str]] = {"npc": "npc"}
     npc_name: str
     dialog_level: int
 
@@ -46,7 +48,7 @@ class DialogClosedEvent(Event):
         return {"npc": self.npc_name, "dialog_level": self.dialog_level}
 
 
-@EventRegistry.register("dialog_opened")
+@EventRegistry.register
 @dataclass
 class DialogOpenedEvent(Event):
     """Fired when a dialog is opened.
@@ -76,9 +78,12 @@ class DialogOpenedEvent(Event):
         dialog_level: Conversation level at the time dialog was shown.
     """
 
+    name: ClassVar[str] = "dialog_opened"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"npc", "dialog_level"})
     npc_name: str
     dialog_level: int
+    reference_fields: ClassVar[dict[str, str]] = {"npc": "npc"}
 
     def get_script_data(self) -> dict[str, Any]:
         """Get data for script triggers."""

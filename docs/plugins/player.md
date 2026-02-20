@@ -456,7 +456,7 @@ The player spawns at waypoints during scene transitions. This is typically handl
 
 ```json
 {
-    "type": "change_scene",
+    "name": "change_scene",
     "target_map": "castle.tmx",
     "spawn_waypoint": "main_entrance"
 }

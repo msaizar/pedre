@@ -9,16 +9,18 @@ import uuid
 from typing import TYPE_CHECKING, Any
 
 from pedre.actions import Action, WaitForConditionAction
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
 from pedre.plugins.inventory.base import InventoryItem
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
 
+
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("wait_for_inventory_access")
+@ActionRegistry.register
 class WaitForInventoryAccessAction(WaitForConditionAction):
     """Wait for inventory to be accessed.
 
@@ -31,12 +33,14 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
 
     Example usage in a tutorial sequence:
         [
-            {"type": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "wait_for_inventory_access"},
-            {"type": "dialog", "speaker": "martin", "text": ["Great job!"]}
+            {"name": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "wait_for_inventory_access"},
+            {"name": "dialog", "speaker": "martin", "text": ["Great job!"]}
         ]
     """
+
+    name = "wait_for_inventory_access"
 
     def __init__(self) -> None:
         """Initialize inventory access wait action."""
@@ -48,7 +52,7 @@ class WaitForInventoryAccessAction(WaitForConditionAction):
         return cls()
 
 
-@ActionRegistry.register("acquire_item")
+@ActionRegistry.register
 class AcquireItemAction(Action):
     """Give an item to the player's inventory.
 
@@ -66,16 +70,16 @@ class AcquireItemAction(Action):
 
     Example usage:
         {
-            "type": "acquire_item",
+            "name": "acquire_item",
             "item_id": "rusty_key"
         }
 
         # In a script after finding a treasure chest
         {
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["You found a key!"]},
-                {"type": "acquire_item", "item_id": "tower_key"},
-                {"type": "wait_for_dialog_close"}
+                {"name": "dialog", "speaker": "Narrator", "text": ["You found a key!"]},
+                {"name": "acquire_item", "item_id": "tower_key"},
+                {"name": "wait_for_dialog_close"}
             ]
         }
 
@@ -86,10 +90,12 @@ class AcquireItemAction(Action):
                 "reason": "capacity"
             },
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["Your inventory is full!"]}
+                {"name": "dialog", "speaker": "Narrator", "text": ["Your inventory is full!"]}
             ]
         }
     """
+
+    name = "acquire_item"
 
     def __init__(self, item_id: str) -> None:
         """Initialize acquire item action.
@@ -120,6 +126,10 @@ class AcquireItemAction(Action):
 
         return self.success
 
+    def get_references(self) -> set[EntityReference]:
+        """Return entity references used by this action."""
+        return {EntityReference(type="inventory_item", name=self.item_id)}
+
     def reset(self) -> None:
         """Reset the action."""
         self.started = False
@@ -128,25 +138,17 @@ class AcquireItemAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AcquireItemAction:
         """Create AcquireItemAction from a dictionary."""
-        return cls(item_id=data.get("item_id", ""))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate acquire_item action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         item_id = data.get("item_id")
         if not item_id:
-            errors.append("missing required 'item_id' field")
-        elif not isinstance(item_id, str):
-            errors.append("'item_id' must be a string")
-        return errors
+            msg = "missing required 'item_id' field"
+            raise ActionParseError(msg)
+        if not isinstance(item_id, str):
+            msg = "'item_id' must be a string"
+            raise ActionParseError(msg)
+        return cls(item_id=item_id)
 
 
-@ActionRegistry.register("add_item")
+@ActionRegistry.register
 class AddItemAction(Action):
     """Add a new item to the inventory plugin.
 
@@ -165,7 +167,7 @@ class AddItemAction(Action):
     Example usage:
         # Without item_id - UUID auto-generated for each potion
         {
-            "type": "add_item",
+            "name": "add_item",
             "name": "Health Potion",
             "description": "Restores 50 HP",
             "icon_path": "items/potion.png",
@@ -176,7 +178,7 @@ class AddItemAction(Action):
 
         # With explicit item_id (for unique items)
         {
-            "type": "add_item",
+            "name": "add_item",
             "item_id": "rusty_key",
             "name": "Rusty Key",
             "description": "Opens an old door",
@@ -188,9 +190,9 @@ class AddItemAction(Action):
         # In a script for finding a potion
         {
             "actions": [
-                {"type": "dialog", "speaker": "Narrator", "text": ["You found a health potion!"]},
+                {"name": "dialog", "speaker": "Narrator", "text": ["You found a health potion!"]},
                 {
-                    "type": "add_item",
+                    "name": "add_item",
                     "name": "Health Potion",
                     "description": "Restores 50 HP",
                     "icon_path": "items/icons/potion.png",
@@ -199,14 +201,16 @@ class AddItemAction(Action):
                     "consumable": true,
                     "acquired": true
                 },
-                {"type": "wait_for_dialog_close"}
+                {"name": "wait_for_dialog_close"}
             ]
         }
     """
 
+    name = "add_item"
+
     def __init__(
         self,
-        name: str,
+        item_name: str,
         description: str,
         item_id: str | None = None,
         image_path: str | None = None,
@@ -219,7 +223,7 @@ class AddItemAction(Action):
         """Initialize add item action.
 
         Args:
-            name: Display name of the item.
+            item_name: Display name of the item.
             description: Description text for the item.
             item_id: Optional unique identifier for the item. If not provided or empty,
                     a UUID will be auto-generated to ensure uniqueness.
@@ -231,7 +235,7 @@ class AddItemAction(Action):
             consumable: Whether the item can be consumed from the inventory overlay. Default is False.
         """
         self.item_id = item_id if item_id else str(uuid.uuid4())
-        self.name = name
+        self.item_name = item_name
         self.description = description
         self.image_path = image_path
         self.icon_path = icon_path
@@ -250,7 +254,7 @@ class AddItemAction(Action):
         if not self.started:
             item = InventoryItem(
                 id=self.item_id,
-                name=self.name,
+                name=self.item_name,
                 description=self.description,
                 image_path=self.image_path,
                 icon_path=self.icon_path,
@@ -264,7 +268,7 @@ class AddItemAction(Action):
             self.started = True
 
             if self.success:
-                logger.debug("AddItemAction: Successfully added item %s (%s)", self.item_id, self.name)
+                logger.debug("AddItemAction: Successfully added item %s (%s)", self.item_id, self.item_name)
             else:
                 logger.debug("AddItemAction: Failed to add item %s (may already exist)", self.item_id)
 
@@ -278,56 +282,63 @@ class AddItemAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AddItemAction:
         """Create AddItemAction from a dictionary."""
+        item_name = data.get("item_name")
+        if not item_name:
+            msg = "missing required 'item_name' field"
+            raise ActionParseError(msg)
+
+        if not isinstance(item_name, str):
+            msg = "'item_name' must be a string"
+            raise ActionParseError(msg)
+
+        description = data.get("description", "")
+        if not isinstance(description, str):
+            msg = "'description' must be a string"
+            raise ActionParseError(msg)
+
+        item_id = data.get("item_id")
+        if item_id and not isinstance(item_id, str):
+            msg = "'item_id' must be a string"
+            raise ActionParseError(msg)
+
+        image_path = data.get("image_path")
+        if image_path and not isinstance(image_path, str):
+            msg = "'image_path' must be a string"
+            raise ActionParseError(msg)
+
+        icon_path = data.get("icon_path")
+        if icon_path and not isinstance(icon_path, str):
+            msg = "'icon_path' must be a string"
+            raise ActionParseError(msg)
+
+        category = data.get("category", "general")
+        if not isinstance(category, str):
+            msg = "'category' must be a string"
+            raise ActionParseError(msg)
+
+        acquired = data.get("acquired", True)
+        if not isinstance(acquired, bool):
+            msg = "'acquired' must be a bool"
+            raise ActionParseError(msg)
+
+        consumable = data.get("consumable", False)
+        if not isinstance(consumable, bool):
+            msg = "'consumable' must be a bool"
+            raise ActionParseError(msg)
+
         return cls(
-            name=data.get("name", ""),
-            description=data.get("description", ""),
-            item_id=data.get("item_id") if data.get("item_id") else None,
-            image_path=data.get("image_path"),
-            icon_path=data.get("icon_path"),
-            category=data.get("category", "general"),
-            acquired=data.get("acquired", True),
-            consumable=data.get("consumable", False),
+            item_name=item_name,
+            description=description,
+            item_id=item_id,
+            image_path=image_path,
+            icon_path=icon_path,
+            category=category,
+            acquired=acquired,
+            consumable=consumable,
         )
 
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate add_item action parameters.
 
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
-        name = data.get("name")
-        if not name:
-            errors.append("missing required 'name' field")
-        elif not isinstance(name, str):
-            errors.append("'name' must be a string")
-
-        if "description" in data and not isinstance(data["description"], str):
-            errors.append("'description' must be a string")
-
-        if "item_id" in data and data["item_id"] is not None and not isinstance(data["item_id"], str):
-            errors.append("'item_id' must be a string")
-
-        if "image_path" in data and data["image_path"] is not None and not isinstance(data["image_path"], str):
-            errors.append("'image_path' must be a string")
-
-        if "icon_path" in data and data["icon_path"] is not None and not isinstance(data["icon_path"], str):
-            errors.append("'icon_path' must be a string")
-
-        if "category" in data and not isinstance(data["category"], str):
-            errors.append("'category' must be a string")
-
-        if "acquired" in data and not isinstance(data["acquired"], bool):
-            errors.append("'acquired' must be a bool")
-
-        if "consumable" in data and not isinstance(data["consumable"], bool):
-            errors.append("'consumable' must be a bool")
-
-        return errors
-
-
-@ActionRegistry.register("consume_item")
+@ActionRegistry.register
 class ConsumeItemAction(Action):
     """Consume an item from the player's inventory.
 
@@ -346,19 +357,21 @@ class ConsumeItemAction(Action):
 
     Example usage:
         {
-            "type": "consume_item",
+            "name": "consume_item",
             "item_id": "health_potion"
         }
 
         # In a script for using a consumable
         {
             "actions": [
-                {"type": "consume_item", "item_id": "ancient_key"},
-                {"type": "dialog", "speaker": "Narrator", "text": ["The key dissolves into dust..."]},
-                {"type": "wait_for_dialog_close"}
+                {"name": "consume_item", "item_id": "ancient_key"},
+                {"name": "dialog", "speaker": "Narrator", "text": ["The key dissolves into dust..."]},
+                {"name": "wait_for_dialog_close"}
             ]
         }
     """
+
+    name = "consume_item"
 
     def __init__(self, item_id: str) -> None:
         """Initialize consume item action.
@@ -381,6 +394,10 @@ class ConsumeItemAction(Action):
         # Action completes immediately
         return True
 
+    def get_references(self) -> set[EntityReference]:
+        """Return entity references used by this action."""
+        return {EntityReference(type="inventory_item", name=self.item_id)}
+
     def reset(self) -> None:
         """Reset the action."""
         self.started = False
@@ -388,19 +405,12 @@ class ConsumeItemAction(Action):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ConsumeItemAction:
         """Create ConsumeItemAction from a dictionary."""
-        return cls(item_id=data.get("item_id", ""))
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate consume_item action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
         item_id = data.get("item_id")
         if not item_id:
-            errors.append("missing required 'item_id' field")
-        elif not isinstance(item_id, str):
-            errors.append("'item_id' must be a string")
-        return errors
+            msg = "missing required 'item_id' field"
+            raise ActionParseError(msg)
+        if not isinstance(item_id, str):
+            msg = "'item_id' must be a string"
+            raise ActionParseError(msg)
+
+        return cls(item_id=item_id)

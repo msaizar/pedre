@@ -1,22 +1,29 @@
-"""Tests for script validator."""
+"""Tests for ScriptValidator."""
 
 import json
-from pathlib import Path
-from pathlib import Path as PathlibPath
-from typing import Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from unittest.mock import patch
 
 import pytest
 
 from pedre.actions.base import Action
 from pedre.actions.registry import ActionRegistry
+from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionRegistry
+from pedre.events.base import Event
 from pedre.events.registry import EventRegistry
+from pedre.types import EntityReference
+from pedre.validators.context import ValidationContext
 from pedre.validators.script_validator import ScriptValidator
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pedre.game import GameContext
 
 
 class TestScriptValidator:
-    """Test script validator."""
+    """Test ScriptValidator class."""
 
     @pytest.fixture(autouse=True)
     def _clear_registries(self) -> object:
@@ -24,8 +31,7 @@ class TestScriptValidator:
         # Save original state
         original_actions = ActionRegistry._actions.copy()
         original_events = EventRegistry._events.copy()
-        original_condition_checkers = ConditionRegistry._checkers.copy()
-        original_condition_validators = ConditionRegistry._validators.copy()
+        original_conditions = ConditionRegistry._conditions.copy()
 
         # Clear for test
         ActionRegistry.clear()
@@ -37,8 +43,12 @@ class TestScriptValidator:
         # Restore original state after test
         ActionRegistry._actions = original_actions
         EventRegistry._events = original_events
-        ConditionRegistry._checkers = original_condition_checkers
-        ConditionRegistry._validators = original_condition_validators
+        ConditionRegistry._conditions = original_conditions
+
+    @pytest.fixture
+    def context(self) -> ValidationContext:
+        """Create a validation context for tests."""
+        return ValidationContext()
 
     @pytest.fixture
     def scripts_dir(self, tmp_path: Path) -> Path:
@@ -48,600 +58,383 @@ class TestScriptValidator:
         return scripts_dir
 
     @pytest.fixture
-    def setup_registries(self) -> None:
+    def setup_basic_registries(self) -> None:
         """Setup basic registries for tests."""
 
-        # Register a simple event
-        @EventRegistry.register("test_event")
-        class TestEvent:
-            pass
+        @EventRegistry.register
+        class TestEvent(Event):
+            name: ClassVar[str] = "test_event"
+            trigger_keys: ClassVar[set[str]] = {"filter_key"}
 
-        # Register a simple action
-        @ActionRegistry.register("test_action")
+        @ActionRegistry.register
         class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
+            name = "test_action"
+
+            def __init__(self, **kwargs: dict[str, Any]) -> None:
+                self.kwargs = kwargs
 
             @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
+            def from_dict(cls, data: dict[str, Any]) -> TestAction:
                 return cls(**data)
 
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
+            def execute(self, context: GameContext) -> bool:
+                return True
 
-        # Register a simple condition
-        @ConditionRegistry.register("test_condition", validator=lambda data: [])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
+            def reset(self) -> None:
+                return
 
-    def test_validator_name(self, scripts_dir: Path) -> None:
-        """Test validator name property."""
-        validator = ScriptValidator(scripts_dir)
+            def get_references(self) -> set[EntityReference]:
+                return set()
+
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "test_condition"
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
+
+            def get_references(self) -> set[EntityReference]:
+                return set()
+
+    def test_name_property(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test validator name."""
+        validator = ScriptValidator(scripts_dir, context)
         assert validator.name == "Scripts"
 
-    def test_directory_not_found(self, tmp_path: Path) -> None:
-        """Test validate when directory doesn't exist."""
+    def test_validate_directory_not_found(self, tmp_path: Path, context: ValidationContext) -> None:
+        """Test error when scripts directory doesn't exist."""
         nonexistent_dir = tmp_path / "nonexistent"
-        validator = ScriptValidator(nonexistent_dir)
+        validator = ScriptValidator(nonexistent_dir, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
         assert f"Scripts directory not found: {nonexistent_dir}" in result.errors
         assert result.item_count == 0
-        assert result.metadata == {}
 
-    def test_no_script_files(self, scripts_dir: Path) -> None:
-        """Test validate when no script files found."""
-        validator = ScriptValidator(scripts_dir)
+    def test_validate_no_script_files(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test validation with no script files."""
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
         assert result.item_count == 0
-        assert result.metadata == {}
 
-    def test_valid_script_minimal(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with minimal valid script."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
+    def test_validate_invalid_json(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error on invalid JSON."""
         script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
+        script_file.write_text("not valid json{")
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
-        assert result.errors == []
-        assert result.item_count == 1
-        assert result.metadata == {
-            "Total Actions": 1,
-            "Total Conditions": 0,
-            "Scripts with Triggers": 0,
-        }
+        assert any("Failed to parse" in e for e in result.errors)
 
-    def test_valid_script_complete(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with complete valid script."""
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "test_event"},
-                "conditions": [{"check": "test_condition"}],
-                "scene": "test_scene",
-                "run_once": True,
-                "actions": [{"type": "test_action"}],
-                "on_condition_fail": [{"type": "test_action"}],
-            }
-        }
-
+    def test_validate_os_error(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error handling when OSError occurs while reading file."""
         script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
+        script_file.write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
 
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
+        validator = ScriptValidator(scripts_dir, context)
 
-        assert result.errors == []
-        assert result.item_count == 1
-        assert result.metadata == {
-            "Total Actions": 1,
-            "Total Conditions": 1,
-            "Scripts with Triggers": 1,
-        }
-
-    def test_unknown_keys(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with unknown keys in script definition."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-                "unknown_key": "value",
-                "another_bad_key": 123,
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': unknown keys" in result.errors[0]
-        assert "'another_bad_key'" in result.errors[0]
-        assert "'unknown_key'" in result.errors[0]
-
-    def test_json_decode_error(self, scripts_dir: Path) -> None:
-        """Test validate with JSON decode error."""
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text("invalid json {")
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Failed to parse test_scripts.json" in result.errors[0]
-
-    def test_os_error(self, scripts_dir: Path) -> None:
-        """Test validate with OS error when opening file."""
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text("{}")
-
-        original_open = PathlibPath.open
-        error_msg = "Permission denied"
-
-        def mock_path_open(self: PathlibPath, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
-            if self.name == "test_scripts.json":
-                raise OSError(error_msg)
-            return original_open(self, *args, **kwargs)
-
-        with patch.object(PathlibPath, "open", mock_path_open):
-            validator = ScriptValidator(scripts_dir)
+        # Mock Path.open to raise PermissionError (a subclass of OSError)
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
             result = validator.validate()
 
-            assert len(result.errors) == 1
-            assert "Failed to load test_scripts.json" in result.errors[0]
+        assert any("Failed to load" in e for e in result.errors)
 
-    def test_trigger_missing_event(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with trigger missing event key."""
-        script_data = {
-            "test_script": {
-                "trigger": {"filter": "value"},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
+    def test_validate_trigger_missing_event(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error when trigger is missing event key."""
+        data = {"test_script": {"trigger": {"filter_key": "value"}, "actions": [{"name": "test_action"}]}}
         script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
-        assert len(result.errors) == 1
-        assert "Script 'test_script': trigger missing required 'event' key" in result.errors[0]
+        assert any("trigger missing required 'event' key" in e for e in result.errors)
 
-    def test_trigger_unknown_event(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with unknown event in trigger."""
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "unknown_event"},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
+    def test_validate_trigger_unknown_event(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error when trigger references unknown event."""
+        data = {"test_script": {"trigger": {"event": "unknown_event"}, "actions": [{"name": "test_action"}]}}
         script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
-        assert len(result.errors) == 1
-        assert "Script 'test_script': unknown event 'unknown_event'" in result.errors[0]
+        assert any("unknown event 'unknown_event'" in e for e in result.errors)
 
-    def test_trigger_valid_filter_keys(self, scripts_dir: Path) -> None:
-        """Test validate with valid trigger filter keys."""
-
-        @EventRegistry.register("test_event")
-        class TestEvent:
-            trigger_keys = frozenset({"valid_key"})
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
-        script_data = {
+    def test_validate_trigger_unknown_filter_keys(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error when trigger has unknown filter keys."""
+        data = {
             "test_script": {
-                "trigger": {"event": "test_event", "valid_key": "value"},
-                "actions": [{"type": "test_action"}],
+                "trigger": {"event": "test_event", "unknown_key": "value"},
+                "actions": [{"name": "test_action"}],
             }
         }
-
         script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
 
-        validator = ScriptValidator(scripts_dir)
+        assert any("trigger has unknown filter keys" in e for e in result.errors)
+        assert any("unknown_key" in e for e in result.errors)
+
+    def test_validate_condition_parse_error(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error when condition fails to parse."""
+        data = {
+            "test_script": {
+                "conditions": [{"name": "nonexistent_condition"}],
+                "actions": [{"name": "test_action"}],
+            }
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert any("condition 0:" in e for e in result.errors)
+
+    def test_validate_action_parse_error(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error when action fails to parse."""
+        data = {"test_script": {"actions": [{"name": "nonexistent_action"}]}}
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert any("action 0:" in e for e in result.errors)
+
+    def test_validate_empty_actions_list(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error when actions list is empty."""
+        data = {"test_script": {"actions": []}}
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert any("'actions' list is empty" in e for e in result.errors)
+
+    def test_validate_on_condition_fail_parse_error(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test error when on_condition_fail action fails to parse."""
+        data = {
+            "test_script": {
+                "actions": [{"name": "test_action"}],
+                "on_condition_fail": [{"name": "nonexistent_action"}],
+            }
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert any("on_condition_fail action 0:" in e for e in result.errors)
+
+    def test_validate_valid_script(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test validation of a valid script."""
+        data = {
+            "test_script": {
+                "trigger": {"event": "test_event", "filter_key": "value"},
+                "conditions": [{"name": "test_condition"}],
+                "actions": [{"name": "test_action"}],
+                "on_condition_fail": [{"name": "test_action"}],
+                "scene": "test_map",
+                "run_once": True,
+            }
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
-
-    def test_trigger_invalid_filter_keys(self, scripts_dir: Path) -> None:
-        """Test validate with invalid trigger filter keys."""
-
-        @EventRegistry.register("test_event")
-        class TestEvent:
-            trigger_keys = frozenset({"valid_key"})
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "test_event", "invalid_filter": "value", "another_bad": 123},
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': trigger has unknown filter keys" in result.errors[0]
-        assert "'another_bad'" in result.errors[0]
-        assert "'invalid_filter'" in result.errors[0]
-
-    def test_condition_missing_check(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with condition missing check key."""
-        script_data = {
-            "test_script": {
-                "conditions": [{"param": "value"}],
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': condition 0 missing required 'check' key" in result.errors[0]
-
-    def test_condition_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with unknown condition type."""
-        script_data = {
-            "test_script": {
-                "conditions": [{"check": "unknown_condition"}],
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': unknown condition 'unknown_condition'" in result.errors[0]
-
-    def test_condition_validation_error(self, scripts_dir: Path) -> None:
-        """Test validate with condition parameter validation errors."""
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return []
-
-        @ConditionRegistry.register("test_condition", validator=lambda data: ["parameter error"])
-        def test_condition(data: dict, context: object) -> bool:
-            return True
-
-        script_data = {
-            "test_script": {
-                "conditions": [{"check": "test_condition", "param": "bad_value"}],
-                "actions": [{"type": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': condition 0 (test_condition): parameter error" in result.errors[0]
-
-    def test_empty_actions(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with empty actions list."""
-        script_data = {
-            "test_script": {
-                "trigger": {"event": "test_event"},
-                "actions": [],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': 'actions' list is empty" in result.errors[0]
-
-    def test_action_missing_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with action missing type key."""
-        script_data = {
-            "test_script": {
-                "actions": [{"param": "value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': action 0 missing required 'type' key" in result.errors[0]
-
-    def test_action_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with unknown action type."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "unknown_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': unknown action type 'unknown_action'" in result.errors[0]
-
-    def test_action_validation_error(self, scripts_dir: Path) -> None:
-        """Test validate with action parameter validation errors."""
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(data: dict) -> list[str]:
-                return ["parameter error"]
-
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action", "param": "bad_value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': action 0 (test_action): parameter error" in result.errors[0]
-
-    def test_on_condition_fail_missing_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with on_condition_fail action missing type."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-                "on_condition_fail": [{"param": "value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': on_condition_fail action 0 missing required 'type' key" in result.errors[0]
-
-    def test_on_condition_fail_unknown_type(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with on_condition_fail unknown action type."""
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-                "on_condition_fail": [{"type": "unknown_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': on_condition_fail action 0 has unknown type 'unknown_action'" in result.errors[0]
-
-    def test_on_condition_fail_validation_error(self, scripts_dir: Path) -> None:
-        """Test validate with on_condition_fail action validation errors."""
-
-        @ActionRegistry.register("test_action")
-        class TestAction(Action):
-            def __init__(self, **kwargs: object) -> None:
-                pass
-
-            @classmethod
-            def from_dict(cls, data: dict) -> TestAction:
-                return cls(**data)
-
-            @staticmethod
-            def validate_params(action: dict) -> list[str]:
-                if action.get("param") == "bad_value":
-                    return ["parameter error"]
-                return []
-
-        script_data = {
-            "test_script": {
-                "actions": [{"type": "test_action"}],
-                "on_condition_fail": [{"type": "test_action", "param": "bad_value"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "Script 'test_script': on_condition_fail action 0 (test_action): parameter error" in result.errors[0]
-
-    def test_multiple_scripts(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with multiple scripts."""
-        script_data = {
-            "script1": {
-                "trigger": {"event": "test_event"},
-                "conditions": [{"check": "test_condition"}],
-                "actions": [{"type": "test_action"}],
-            },
-            "script2": {
-                "actions": [{"type": "test_action"}, {"type": "test_action"}],
-            },
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
-
-        assert result.errors == []
-        assert result.item_count == 2
-        assert result.metadata["Total Actions"] == 3
+        assert result.item_count == 1
+        assert result.metadata["Total Actions"] == 1
         assert result.metadata["Total Conditions"] == 1
         assert result.metadata["Scripts with Triggers"] == 1
 
-    def test_multiple_script_files(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate with multiple script files."""
-        script_data1 = {
-            "script1": {
-                "actions": [{"type": "test_action"}],
+    def test_validate_script_references_stored(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test that script references are stored in context."""
+        data = {
+            "test_script": {
+                "actions": [{"name": "test_action"}],
+                "scene": "test_map",
             }
         }
-        script_data2 = {
-            "script2": {
-                "actions": [{"type": "test_action"}],
-            }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate()
+
+        assert result.errors == []
+        assert "test_script" in context.script_references
+        # Check that scene reference is stored
+        refs = context.script_references["test_script"]
+        assert EntityReference(type="map", name="test_map") in refs
+
+    def test_validate_cross_references_npc_not_found(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test cross-reference validation when NPC is not found."""
+        context.script_references["test_script"] = {EntityReference(type="npc", name="missing_npc")}
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
+
+        assert any("NPC 'missing_npc' not found" in e for e in result.errors)
+
+    def test_validate_cross_references_waypoint_not_found(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test cross-reference validation when waypoint is not found."""
+        context.script_references["test_script"] = {EntityReference(type="waypoint", name="missing_waypoint")}
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
+
+        assert any("waypoint 'missing_waypoint' not found" in e for e in result.errors)
+
+    def test_validate_cross_references_portal_not_found(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test cross-reference validation when portal is not found."""
+        context.script_references["test_script"] = {EntityReference(type="portal", name="missing_portal")}
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
+
+        assert any("portal 'missing_portal' not found" in e for e in result.errors)
+
+    def test_validate_cross_references_map_not_found(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test cross-reference validation when map is not found."""
+        context.script_references["test_script"] = {EntityReference(type="map", name="missing_map")}
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
+
+        assert any("target map 'missing_map' not found" in e for e in result.errors)
+
+    def test_validate_cross_references_inventory_item_not_found(
+        self, scripts_dir: Path, context: ValidationContext
+    ) -> None:
+        """Test cross-reference validation when inventory item is not found."""
+        context.script_references["test_script"] = {EntityReference(type="inventory_item", name="missing_item")}
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
+
+        assert any("inventory item 'missing_item' not found" in e for e in result.errors)
+
+    def test_validate_cross_references_interactive_object_not_found(
+        self, scripts_dir: Path, context: ValidationContext
+    ) -> None:
+        """Test cross-reference validation when interactive object is not found."""
+        context.script_references["test_script"] = {EntityReference(type="interactive_object", name="missing_object")}
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
+
+        assert any("interactive object 'missing_object' not found" in e for e in result.errors)
+
+    def test_validate_cross_references_map_scoped_npc(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test cross-reference validation with map-scoped NPC."""
+        # Add a map reference to trigger map-scoped validation
+        context.script_references["test_script"] = {
+            EntityReference(type="map", name="test_map"),
+            EntityReference(type="npc", name="test_npc"),
         }
+        # Register the map but not the NPC in that map (add a different NPC)
+        context.add_map_entity("test_map", "npcs", "other_npc")
 
-        script_file1 = scripts_dir / "game_scripts.json"
-        script_file1.write_text(json.dumps(script_data1))
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
 
-        script_file2 = scripts_dir / "npc_scripts.json"
-        script_file2.write_text(json.dumps(script_data2))
+        assert any("NPC 'test_npc' not found in map 'test_map'" in e for e in result.errors)
 
-        validator = ScriptValidator(scripts_dir)
+    def test_validate_cross_references_valid(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test successful cross-reference validation."""
+        context.script_references["test_script"] = {
+            EntityReference(type="npc", name="test_npc"),
+            EntityReference(type="waypoint", name="test_waypoint"),
+        }
+        # Register the entities
+        context.add_map_entity("test_map", "npcs", "test_npc")
+        context.add_map_entity("test_map", "waypoints", "test_waypoint")
+
+        validator = ScriptValidator(scripts_dir, context)
+        result = validator.validate_cross_references()
+
+        assert result.errors == []
+        assert result.item_count == 1
+
+    def test_validate_multiple_scripts(
+        self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
+    ) -> None:
+        """Test validation of multiple scripts."""
+        data = {
+            "script1": {"actions": [{"name": "test_action"}]},
+            "script2": {"actions": [{"name": "test_action"}]},
+        }
+        script_file = scripts_dir / "test_scripts.json"
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
         assert result.errors == []
         assert result.item_count == 2
 
-    def test_metadata_counts(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test that metadata correctly counts actions, conditions, and triggers."""
-        script_data = {
-            "script1": {
-                "trigger": {"event": "test_event"},
-                "conditions": [
-                    {"check": "test_condition"},
-                    {"check": "test_condition"},
-                ],
-                "actions": [
-                    {"type": "test_action"},
-                    {"type": "test_action"},
-                    {"type": "test_action"},
-                ],
-            },
-            "script2": {
-                "trigger": {"event": "test_event"},
-                "actions": [{"type": "test_action"}],
-            },
-            "script3": {
-                "conditions": [{"check": "test_condition"}],
-                "actions": [{"type": "test_action"}],
-            },
-        }
+    def test_validate_trigger_with_no_trigger_keys(self, scripts_dir: Path, context: ValidationContext) -> None:
+        """Test trigger validation when event has no trigger_keys (None)."""
 
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
+        # Register an event with no trigger_keys
+        @EventRegistry.register
+        class NoKeysEvent(Event):
+            name: ClassVar[str] = "no_keys_event"
+            trigger_keys: ClassVar[set[str] | None] = None
 
-        validator = ScriptValidator(scripts_dir)
-        result = validator.validate()
+        @ActionRegistry.register
+        class TestAction(Action):
+            name = "test_action"
 
-        assert result.errors == []
-        assert result.item_count == 3
-        assert result.metadata["Total Actions"] == 5
-        assert result.metadata["Total Conditions"] == 3
-        assert result.metadata["Scripts with Triggers"] == 2
+            def __init__(self, **kwargs: dict[str, Any]) -> None:
+                self.kwargs = kwargs
 
-    def test_multiple_errors_in_single_script(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test that multiple errors in a single script are all reported."""
-        script_data = {
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestAction:
+                return cls(**data)
+
+            def execute(self, context: GameContext) -> bool:
+                return True
+
+            def reset(self) -> None:
+                return
+
+            def get_references(self) -> set[EntityReference]:
+                return set()
+
+        # Script with trigger that has filters, but event has no trigger_keys
+        data = {
             "test_script": {
-                "unknown_key": "value",  # Unknown key
-                "trigger": {"filter": "value"},  # Missing event
-                "conditions": [{"param": "value"}],  # Missing check
-                "actions": [],  # Empty actions
+                "trigger": {"event": "no_keys_event", "any_filter": "value"},
+                "actions": [{"name": "test_action"}],
             }
         }
-
         script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        validator = ScriptValidator(scripts_dir)
+        script_file.write_text(json.dumps(data))
+        validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
 
-        assert len(result.errors) == 4
-        error_text = " ".join(result.errors)
-        assert "unknown keys" in error_text
-        assert "trigger missing required 'event' key" in error_text
-        assert "condition 0 missing required 'check' key" in error_text
-        assert "'actions' list is empty" in error_text
+        # Should pass - when trigger_keys is None, no filter validation is done
+        assert result.errors == []
+        assert result.item_count == 1

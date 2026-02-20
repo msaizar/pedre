@@ -25,12 +25,12 @@ Every script follows this basic structure:
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Merchant",
         "text": ["Hello, traveler!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "greeting.wav"
       }
     ]
@@ -68,7 +68,7 @@ Every script follows this basic structure:
 
 - Required: Array of actions to execute when script triggers
 - Actions run sequentially in order
-- Each action has a `"type"` and type-specific parameters
+- Each action has a `"name"` and action-specific parameters
 
 ## File Location
 
@@ -208,10 +208,10 @@ Break long action sequences into multiple scripts using `script_complete`:
 // Bad - Too many unrelated actions
 {
   "actions": [
-    {"type": "dialog", ...},
-    {"type": "move_npc", ...},
-    {"type": "play_music", ...},
-    {"type": "start_appear_animation", ...}
+    {"name": "dialog", ...},
+    {"name": "move_npc", ...},
+    {"name": "play_music", ...},
+    {"name": "start_appear_animation", ...}
     // 20 more actions...
   ]
 }
@@ -263,7 +263,7 @@ Break long action sequences into multiple scripts using `script_complete`:
       "event": "item_acquired"
     },
     "actions": [
-      {"type": "play_sfx", "file": "pickup.wav"}
+      {"name": "play_sfx", "file": "pickup.wav"}
     ]
   }
 }
@@ -322,8 +322,8 @@ ScriptValidationError: 5 script validation error(s):
 **Validation Checks:**
 
 - Event types in `trigger.event` must be registered (e.g., "npc_interacted", "dialog_closed")
-- Condition types in `conditions[].check` must be registered (e.g., "inventory_accessed", "script_completed")
-- Action types in `actions[].type` and `on_condition_fail[].type` must be registered (e.g., "dialog", "move_npc")
+- Conditions in `conditions[].check` must be registered (e.g., "inventory_accessed", "script_completed")
+- Action in `actions[].name` and `on_condition_fail[].name` must be registered (e.g., "dialog", "move_npc")
 - Only valid top-level keys are allowed: `trigger`, `conditions`, `scene`, `run_once`, `actions`, `on_condition_fail`
 - The `actions` array must contain at least one action
 - All action, event, and condition parameters must be the correct types:
@@ -354,7 +354,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 **Actions not executing:**
 
-- Verify action type spelling
+- Verify action name spelling
 - Check params match expected format
 - Look for console errors
 - Ensure required NPCs/objects exist

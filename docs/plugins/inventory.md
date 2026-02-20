@@ -506,7 +506,7 @@ Published when player acquires an inventory item for the first time.
         "item_id": "rusty_key"
     },
     "actions": [
-        {"type": "dialog", "speaker": "Narrator", "text": ["You found a key!"]}
+        {"name": "dialog", "speaker": "Narrator", "text": ["You found a key!"]}
     ]
 }
 ```
@@ -534,7 +534,7 @@ Published when an attempt to acquire an item fails.
         "reason": "capacity"
     },
     "actions": [
-        {"type": "dialog", "speaker": "Narrator", "text": ["Your inventory is full!"]}
+        {"name": "dialog", "speaker": "Narrator", "text": ["Your inventory is full!"]}
     ]
 }
 ```
@@ -564,7 +564,7 @@ Published when player consumes an inventory item.
         "item_id": "health_potion_1"
     },
     "actions": [
-        {"type": "dialog", "speaker": "Narrator", "text": ["You feel refreshed!"]}
+        {"name": "dialog", "speaker": "Narrator", "text": ["You feel refreshed!"]}
     ]
 }
 ```
@@ -578,7 +578,7 @@ Published when player consumes an inventory item.
         "category": "consumable"
     },
     "actions": [
-        {"type": "play_sfx", "sound": "potion_drink.wav"}
+        {"name": "play_sfx", "sound": "potion_drink.wav"}
     ]
 }
 ```
@@ -605,12 +605,12 @@ Published when the inventory view is closed by the player.
     },
     "conditions": [
         {
-            "check": "inventory_accessed",
+            "name": "inventory_accessed",
             "equals": true
         }
     ],
     "actions": [
-        {"type": "dialog", "speaker": "Tutorial", "text": ["Good job checking your inventory!"]}
+        {"name": "dialog", "speaker": "Tutorial", "text": ["Good job checking your inventory!"]}
     ]
 }
 ```
@@ -637,7 +637,7 @@ Give an item to the player's inventory.
 
 ```json
 {
-    "type": "acquire_item",
+    "name": "acquire_item",
     "item_id": "rusty_key"
 }
 ```
@@ -647,9 +647,9 @@ Give an item to the player's inventory.
 ```json
 {
     "actions": [
-        {"type": "dialog", "speaker": "Narrator", "text": ["You found a key!"]},
-        {"type": "acquire_item", "item_id": "tower_key"},
-        {"type": "wait_for_dialog_close"}
+        {"name": "dialog", "speaker": "Narrator", "text": ["You found a key!"]},
+        {"name": "acquire_item", "item_id": "tower_key"},
+        {"name": "wait_for_dialog_close"}
     ]
 }
 ```
@@ -682,7 +682,7 @@ Add a new item to the inventory plugin.
 
 ```json
 {
-    "type": "add_item",
+    "name": "add_item",
     "name": "Health Potion",
     "description": "Restores 50 HP",
     "icon_path": "items/potion.png",
@@ -696,7 +696,7 @@ Add a new item to the inventory plugin.
 
 ```json
 {
-    "type": "add_item",
+    "name": "add_item",
     "item_id": "rusty_key",
     "name": "Rusty Key",
     "description": "Opens an old door",
@@ -727,7 +727,7 @@ Consume an item from the player's inventory.
 
 ```json
 {
-    "type": "consume_item",
+    "name": "consume_item",
     "item_id": "health_potion"
 }
 ```
@@ -737,9 +737,9 @@ Consume an item from the player's inventory.
 ```json
 {
     "actions": [
-        {"type": "consume_item", "item_id": "ancient_key"},
-        {"type": "dialog", "speaker": "Narrator", "text": ["The key dissolves into dust..."]},
-        {"type": "wait_for_dialog_close"}
+        {"name": "consume_item", "item_id": "ancient_key"},
+        {"name": "dialog", "speaker": "Narrator", "text": ["The key dissolves into dust..."]},
+        {"name": "wait_for_dialog_close"}
     ]
 }
 ```
@@ -762,10 +762,10 @@ Wait for inventory to be accessed.
 
 ```json
 [
-    {"type": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
-    {"type": "wait_for_dialog_close"},
-    {"type": "wait_for_inventory_access"},
-    {"type": "dialog", "speaker": "martin", "text": ["Great job!"]}
+    {"name": "dialog", "speaker": "martin", "text": ["Check your inventory!"]},
+    {"name": "wait_for_dialog_close"},
+    {"name": "wait_for_inventory_access"},
+    {"name": "dialog", "speaker": "martin", "text": ["Great job!"]}
 ]
 ```
 
@@ -795,7 +795,7 @@ Check if the player has opened their inventory.
     },
     "conditions": [
         {
-            "check": "inventory_accessed",
+            "name": "inventory_accessed",
             "equals": true
         }
     ]
@@ -827,12 +827,12 @@ Check if an inventory item was acquired.
     },
     "conditions": [
         {
-            "check": "item_acquired",
+            "name": "item_acquired",
             "item_id": "dungeon_key"
         }
     ],
     "actions": [
-        {"type": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
+        {"name": "change_scene", "target_map": "dungeon.tmx", "spawn_waypoint": "entrance"}
     ]
 }
 ```
@@ -993,13 +993,13 @@ INSTALLED_PLUGINS = [
             "dialog_level": 0
         },
         "actions": [
-            {"type": "acquire_item", "item_id": "beach_photo"},
-            {"type": "dialog", "speaker": "Martin", "text": ["Check your inventory (press I)!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "wait_for_inventory_access"},
-            {"type": "dialog", "speaker": "Martin", "text": ["Great! You can view the photo by pressing V."]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "advance_dialog", "npc": "martin"}
+            {"name": "acquire_item", "item_id": "beach_photo"},
+            {"name": "dialog", "speaker": "Martin", "text": ["Check your inventory (press I)!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "wait_for_inventory_access"},
+            {"name": "dialog", "speaker": "Martin", "text": ["Great! You can view the photo by pressing V."]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "advance_dialog", "npc": "martin"}
         ]
     }
 }
@@ -1017,14 +1017,14 @@ INSTALLED_PLUGINS = [
         },
         "conditions": [
             {
-                "check": "item_acquired",
+                "name": "item_acquired",
                 "item_id": "iron_key"
             }
         ],
         "actions": [
-            {"type": "dialog", "speaker": "Narrator", "text": ["The door opens with a creak."]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "consume_item", "item_id": "iron_key"}
+            {"name": "dialog", "speaker": "Narrator", "text": ["The door opens with a creak."]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "consume_item", "item_id": "iron_key"}
         ]
     },
     "door_locked": {
@@ -1034,7 +1034,7 @@ INSTALLED_PLUGINS = [
             "object_name": "iron_door"
         },
         "actions": [
-            {"type": "dialog", "speaker": "Narrator", "text": ["The door is locked. You need a key."]}
+            {"name": "dialog", "speaker": "Narrator", "text": ["The door is locked. You need a key."]}
         ]
     }
 }

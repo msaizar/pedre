@@ -5,7 +5,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pedre.conditions.registry import ConditionRegistry
+from pedre.conditions.base import Condition
+from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -34,268 +35,159 @@ def mock_context() -> GameContext:
 class TestConditionRegistryRegister:
     """Tests for the register decorator."""
 
-    def test_register_condition_checker(self, mock_context: GameContext) -> None:
-        """Test registering a simple condition checker."""
+    def test_register_condition_class(self, mock_context: GameContext) -> None:
+        """Test registering a simple condition class."""
 
-        @ConditionRegistry.register("test_condition")
-        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return True
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "test_condition"
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
 
         # Verify condition can be checked
-        result = ConditionRegistry.check("test_condition", {}, mock_context)
+        result = ConditionRegistry.is_registered("test_condition")
         assert result is True
 
     def test_register_multiple_conditions(self, mock_context: GameContext) -> None:
-        """Test registering multiple condition checkers."""
+        """Test registering multiple condition classes."""
 
-        @ConditionRegistry.register("condition1")
-        def checker1(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return True
+        @ConditionRegistry.register
+        class Condition1(Condition):
+            name = "condition1"
 
-        @ConditionRegistry.register("condition2")
-        def checker2(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return False
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> Condition1:
+                return cls()
+
+        @ConditionRegistry.register
+        class Condition2(Condition):
+            name = "condition2"
+
+            def check(self, context: object) -> bool:
+                return False
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> Condition2:
+                return cls()
 
         # Verify both conditions work independently
-        assert ConditionRegistry.check("condition1", {}, mock_context) is True
-        assert ConditionRegistry.check("condition2", {}, mock_context) is False
+        assert ConditionRegistry.is_registered("condition1") is True
+        assert ConditionRegistry.is_registered("condition2") is True
 
-    def test_register_returns_function(self) -> None:
-        """Test that register decorator returns the original function."""
+    def test_register_returns_class(self) -> None:
+        """Test that register decorator returns the original class."""
 
-        @ConditionRegistry.register("return_test")
-        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return True
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "return_test"
 
-        # The decorator should return the function unchanged
-        assert test_checker.__name__ == "test_checker"
-        # And the function should still be callable
-        assert test_checker({}, MagicMock()) is True
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
+
+        # The decorator should return the class unchanged
+        assert TestCondition.__name__ == "TestCondition"
+        # And the class should still be instantiable
+        instance = TestCondition()
+        assert isinstance(instance, TestCondition)
 
     def test_register_logs_debug_message(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that registration logs a debug message."""
         caplog.set_level("DEBUG")
 
-        @ConditionRegistry.register("debug_condition")
-        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return True
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "debug_condition"
 
-        assert "Registered condition checker: debug_condition" in caplog.text
+            def check(self, context: object) -> bool:
+                return True
 
-    def test_register_condition_can_override(self, mock_context: GameContext) -> None:
-        """Test that re-registering a condition replaces the previous checker."""
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
 
-        @ConditionRegistry.register("override_condition")
-        def first_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return True
+        assert "Registered condition: debug_condition" in caplog.text
 
-        @ConditionRegistry.register("override_condition")
-        def second_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return False
+    def test_register_duplicate_raises_error(self) -> None:
+        """Test that registering a condition with a duplicate name raises ValueError."""
 
-        # Verify the second registration took precedence
-        result = ConditionRegistry.check("override_condition", {}, mock_context)
-        assert result is False
+        @ConditionRegistry.register
+        class TestCondition1(Condition):
+            name = "duplicate_condition"
 
+            def check(self, context: object) -> bool:
+                return True
 
-class TestConditionRegistryCheck:
-    """Tests for the check method."""
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition1:
+                return cls()
 
-    def test_check_registered_condition_returns_true(self, mock_context: GameContext) -> None:
-        """Test checking a registered condition that returns True."""
+        # Try to register another condition with the same name
+        with pytest.raises(ValueError, match="Condition 'duplicate_condition' already registered"):
 
-        @ConditionRegistry.register("true_condition")
-        def true_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return True
+            @ConditionRegistry.register
+            class TestCondition2(Condition):
+                name = "duplicate_condition"
 
-        result = ConditionRegistry.check("true_condition", {}, mock_context)
-        assert result is True
+                def check(self, context: object) -> bool:
+                    return False
 
-    def test_check_registered_condition_returns_false(self, mock_context: GameContext) -> None:
-        """Test checking a registered condition that returns False."""
-
-        @ConditionRegistry.register("false_condition")
-        def false_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in simple test
-            return False
-
-        result = ConditionRegistry.check("false_condition", {}, mock_context)
-        assert result is False
-
-    def test_check_passes_condition_data(self, mock_context: GameContext) -> None:
-        """Test that check passes condition_data to the checker function."""
-        received_data: dict[str, Any] = {}
-
-        @ConditionRegistry.register("data_condition")
-        def data_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in this test
-            received_data.update(condition_data)
-            return True
-
-        test_data = {"key": "value", "number": 42}
-        ConditionRegistry.check("data_condition", test_data, mock_context)
-
-        assert received_data == test_data
-
-    def test_check_passes_context(self, mock_context: GameContext) -> None:
-        """Test that check passes context to the checker function."""
-        received_context: GameContext | None = None
-
-        @ConditionRegistry.register("context_condition")
-        def context_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data  # Unused in this test
-            nonlocal received_context
-            received_context = context
-            return True
-
-        ConditionRegistry.check("context_condition", {}, mock_context)
-
-        assert received_context is mock_context
-
-    def test_check_unregistered_condition_returns_false(self, mock_context: GameContext) -> None:
-        """Test that checking an unregistered condition returns False."""
-        result = ConditionRegistry.check("unknown_condition", {}, mock_context)
-        assert result is False
-
-    def test_check_unregistered_condition_logs_warning(
-        self, mock_context: GameContext, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """Test that checking an unregistered condition logs a warning."""
-        ConditionRegistry.check("unknown_condition", {}, mock_context)
-
-        assert "ConditionRegistry: Unknown condition type: unknown_condition" in caplog.text
-
-    def test_check_with_exception_returns_false(self, mock_context: GameContext) -> None:
-        """Test that check returns False when checker raises an exception."""
-
-        @ConditionRegistry.register("failing_condition")
-        def failing_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            msg = "Test exception"
-            raise ValueError(msg)
-
-        result = ConditionRegistry.check("failing_condition", {}, mock_context)
-        assert result is False
-
-    def test_check_with_exception_logs_error(self, mock_context: GameContext, caplog: pytest.LogCaptureFixture) -> None:
-        """Test that check logs exception when checker raises an error."""
-
-        @ConditionRegistry.register("error_condition")
-        def error_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            msg = "Test exception"
-            raise ValueError(msg)
-
-        ConditionRegistry.check("error_condition", {}, mock_context)
-
-        assert "ConditionRegistry: Error evaluating condition 'error_condition'" in caplog.text
-
-    def test_check_with_runtime_error(self, mock_context: GameContext, caplog: pytest.LogCaptureFixture) -> None:
-        """Test that check handles RuntimeError gracefully."""
-
-        @ConditionRegistry.register("runtime_error_condition")
-        def runtime_error_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            msg = "Runtime error"
-            raise RuntimeError(msg)
-
-        result = ConditionRegistry.check("runtime_error_condition", {}, mock_context)
-        assert result is False
-        assert "ConditionRegistry: Error evaluating condition 'runtime_error_condition'" in caplog.text
-
-    def test_check_with_type_error(self, mock_context: GameContext, caplog: pytest.LogCaptureFixture) -> None:
-        """Test that check handles TypeError gracefully."""
-
-        @ConditionRegistry.register("type_error_condition")
-        def type_error_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            msg = "Type error"
-            raise TypeError(msg)
-
-        result = ConditionRegistry.check("type_error_condition", {}, mock_context)
-        assert result is False
-        assert "ConditionRegistry: Error evaluating condition 'type_error_condition'" in caplog.text
-
-    def test_check_with_key_error(self, mock_context: GameContext, caplog: pytest.LogCaptureFixture) -> None:
-        """Test that check handles KeyError gracefully."""
-
-        @ConditionRegistry.register("key_error_condition")
-        def key_error_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            # Try to access a key that doesn't exist
-            return condition_data["missing_key"]
-
-        result = ConditionRegistry.check("key_error_condition", {}, mock_context)
-        assert result is False
-        assert "ConditionRegistry: Error evaluating condition 'key_error_condition'" in caplog.text
-
-    def test_check_with_empty_condition_data(self, mock_context: GameContext) -> None:
-        """Test checking a condition with empty condition_data dict."""
-
-        @ConditionRegistry.register("empty_data_condition")
-        def empty_data_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            return len(condition_data) == 0
-
-        result = ConditionRegistry.check("empty_data_condition", {}, mock_context)
-        assert result is True
-
-    def test_check_with_complex_condition_data(self, mock_context: GameContext) -> None:
-        """Test checking a condition with complex nested condition_data."""
-
-        @ConditionRegistry.register("complex_data_condition")
-        def complex_data_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            return condition_data.get("level") == 5 and condition_data.get("items", {}).get("sword") is True
-
-        complex_data = {
-            "level": 5,
-            "items": {"sword": True, "shield": False},
-            "flags": ["completed_quest1", "completed_quest2"],
-        }
-
-        result = ConditionRegistry.check("complex_data_condition", complex_data, mock_context)
-        assert result is True
+                @classmethod
+                def from_dict(cls, data: dict[str, Any]) -> TestCondition2:
+                    return cls()
 
 
 class TestConditionRegistryClear:
     """Tests for the clear method."""
 
     def test_clear_removes_all_conditions(self, mock_context: GameContext, caplog: pytest.LogCaptureFixture) -> None:
-        """Test that clear removes all registered condition checkers."""
+        """Test that clear removes all registered condition classes."""
         caplog.set_level("DEBUG")
 
-        @ConditionRegistry.register("condition1")
-        def checker1(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            return True
+        @ConditionRegistry.register
+        class Condition1(Condition):
+            name = "condition1"
 
-        @ConditionRegistry.register("condition2")
-        def checker2(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            return False
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> Condition1:
+                return cls()
+
+        @ConditionRegistry.register
+        class Condition2(Condition):
+            name = "condition2"
+
+            def check(self, context: object) -> bool:
+                return False
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> Condition2:
+                return cls()
 
         # Verify conditions are registered
-        assert ConditionRegistry.check("condition1", {}, mock_context) is True
-        assert ConditionRegistry.check("condition2", {}, mock_context) is False
+        assert ConditionRegistry.is_registered("condition1") is True
+        assert ConditionRegistry.is_registered("condition2") is True
 
         # Clear the registry
         ConditionRegistry.clear()
 
         # Verify conditions are no longer registered (should return False and log warnings)
         caplog.clear()
-        assert ConditionRegistry.check("condition1", {}, mock_context) is False
-        assert ConditionRegistry.check("condition2", {}, mock_context) is False
-        assert "Unknown condition type: condition1" in caplog.text
-        assert "Unknown condition type: condition2" in caplog.text
+        assert ConditionRegistry.is_registered("condition1") is False
+        assert ConditionRegistry.is_registered("condition2") is False
 
     def test_clear_on_empty_registry(self, caplog: pytest.LogCaptureFixture) -> None:
         """Test that clear works on an already empty registry."""
@@ -318,22 +210,96 @@ class TestConditionRegistryClear:
     def test_clear_allows_re_registration(self, mock_context: GameContext) -> None:
         """Test that conditions can be re-registered after clear."""
 
-        @ConditionRegistry.register("reusable_condition")
-        def first_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            return True
+        @ConditionRegistry.register
+        class FirstCondition(Condition):
+            name = "reusable_condition"
 
-        assert ConditionRegistry.check("reusable_condition", {}, mock_context) is True
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> FirstCondition:
+                return cls()
+
+        assert ConditionRegistry.is_registered("reusable_condition") is True
 
         # Clear and re-register
         ConditionRegistry.clear()
+        assert ConditionRegistry.is_registered("reusable_condition") is False
 
-        @ConditionRegistry.register("reusable_condition")
-        def second_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context  # Unused in test
-            return False
+        @ConditionRegistry.register
+        class SecondCondition(Condition):
+            name = "reusable_condition"
 
-        assert ConditionRegistry.check("reusable_condition", {}, mock_context) is False
+            def check(self, context: object) -> bool:
+                return False
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> SecondCondition:
+                return cls()
+
+        assert ConditionRegistry.is_registered("reusable_condition") is True
+
+
+class TestConditionRegistryGet:
+    """Tests for the get method."""
+
+    def test_get_registered_condition(self) -> None:
+        """Test getting a registered condition class."""
+
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "test_condition"
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
+
+        condition_class = ConditionRegistry.get("test_condition")
+        assert condition_class == TestCondition
+
+    def test_get_unregistered_condition(self) -> None:
+        """Test getting an unregistered condition class returns None."""
+        condition_class = ConditionRegistry.get("unknown_condition")
+        assert condition_class is None
+
+
+class TestConditionRegistryCreate:
+    """Tests for the create method."""
+
+    def test_create_missing_name_field(self) -> None:
+        """Test that create raises ConditionParseError when 'name' field is missing."""
+        with pytest.raises(ConditionParseError, match="Condition missing 'name' field"):
+            ConditionRegistry.create({"other_field": "value"})
+
+    def test_create_unknown_condition(self) -> None:
+        """Test that create raises ConditionParseError for unknown condition name."""
+        with pytest.raises(ConditionParseError, match="Unknown condition 'nonexistent_condition'"):
+            ConditionRegistry.create({"name": "nonexistent_condition"})
+
+    def test_create_success(self) -> None:
+        """Test successful condition creation."""
+
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "test_create"
+
+            def __init__(self, value: str = "default") -> None:
+                self.value = value
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls(value=data.get("value", "default"))
+
+        condition = ConditionRegistry.create({"name": "test_create", "value": "test_value"})
+        assert isinstance(condition, TestCondition)
+        assert condition.value == "test_value"
 
 
 class TestConditionRegistryIntrospection:
@@ -342,10 +308,16 @@ class TestConditionRegistryIntrospection:
     def test_is_registered_returns_true_for_registered_condition(self) -> None:
         """Test is_registered returns True for registered conditions."""
 
-        @ConditionRegistry.register("test_condition")
-        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context
-            return True
+        @ConditionRegistry.register
+        class TestCondition(Condition):
+            name = "test_condition"
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TestCondition:
+                return cls()
 
         assert ConditionRegistry.is_registered("test_condition") is True
 
@@ -355,22 +327,34 @@ class TestConditionRegistryIntrospection:
 
     def test_get_all_types_returns_empty_list_initially(self) -> None:
         """Test get_all_types returns empty list when no conditions registered."""
-        assert ConditionRegistry.get_all_types() == []
+        assert ConditionRegistry.get_all_names() == []
 
     def test_get_all_types_returns_registered_conditions(self) -> None:
         """Test get_all_types returns all registered condition names."""
 
-        @ConditionRegistry.register("condition1")
-        def checker1(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context
-            return True
+        @ConditionRegistry.register
+        class Condition1(Condition):
+            name = "condition1"
 
-        @ConditionRegistry.register("condition2")
-        def checker2(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context
-            return True
+            def check(self, context: object) -> bool:
+                return True
 
-        types = ConditionRegistry.get_all_types()
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> Condition1:
+                return cls()
+
+        @ConditionRegistry.register
+        class Condition2(Condition):
+            name = "condition2"
+
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> Condition2:
+                return cls()
+
+        types = ConditionRegistry.get_all_names()
         assert len(types) == 2
         assert "condition1" in types
         assert "condition2" in types
@@ -378,181 +362,23 @@ class TestConditionRegistryIntrospection:
     def test_get_all_types_after_clear_returns_empty_list(self) -> None:
         """Test get_all_types returns empty list after clear."""
 
-        @ConditionRegistry.register("temp_condition")
-        def temp_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context
-            return True
+        @ConditionRegistry.register
+        class TempCondition(Condition):
+            name = "temp_condition"
 
-        assert len(ConditionRegistry.get_all_types()) == 1
+            def check(self, context: object) -> bool:
+                return True
+
+            @classmethod
+            def from_dict(cls, data: dict[str, Any]) -> TempCondition:
+                return cls()
+
+            @staticmethod
+            def validate_params(data: dict[str, Any]) -> list[str]:
+                return []
+
+        assert len(ConditionRegistry.get_all_names()) == 1
 
         ConditionRegistry.clear()
 
-        assert ConditionRegistry.get_all_types() == []
-
-
-class TestConditionRegistryIntegration:
-    """Integration tests for ConditionRegistry."""
-
-    def test_realistic_condition_checker(self) -> None:
-        """Test a realistic condition checker that uses context."""
-        # Create a fresh mock for this test to avoid type issues
-        mock_context = MagicMock()
-
-        @ConditionRegistry.register("inventory_has_item")
-        def inventory_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            item_name = condition_data.get("item")
-            if not item_name:
-                return False
-
-            # Mock inventory plugin check
-            inventory_plugin = context.inventory_plugin
-            return inventory_plugin.has_item(item_name)
-
-        # Set up mock
-        mock_context.inventory_plugin.has_item.return_value = True
-
-        result = ConditionRegistry.check("inventory_has_item", {"item": "sword"}, mock_context)
-        assert result is True
-        mock_context.inventory_plugin.has_item.assert_called_once_with("sword")
-
-    def test_multiple_conditions_in_sequence(self, mock_context: GameContext) -> None:
-        """Test checking multiple conditions in sequence."""
-
-        @ConditionRegistry.register("quest_completed")
-        def quest_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            return condition_data.get("quest_id") == "main_quest"
-
-        @ConditionRegistry.register("level_requirement")
-        def level_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            return condition_data.get("level", 0) >= 10
-
-        @ConditionRegistry.register("item_acquired")
-        def item_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            return condition_data.get("has_item") is True
-
-        # Check all conditions
-        quest_result = ConditionRegistry.check("quest_completed", {"quest_id": "main_quest"}, mock_context)
-        level_result = ConditionRegistry.check("level_requirement", {"level": 15}, mock_context)
-        item_result = ConditionRegistry.check("item_acquired", {"has_item": True}, mock_context)
-
-        assert quest_result is True
-        assert level_result is True
-        assert item_result is True
-
-    def test_condition_with_default_values(self, mock_context: GameContext) -> None:
-        """Test condition checker that provides default values for missing data."""
-
-        @ConditionRegistry.register("level_check")
-        def level_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            required_level = condition_data.get("required", 1)
-            current_level = condition_data.get("current", 0)
-            return current_level >= required_level
-
-        # Test with all data provided
-        assert ConditionRegistry.check("level_check", {"required": 5, "current": 10}, mock_context) is True
-
-        # Test with partial data (should use defaults)
-        assert ConditionRegistry.check("level_check", {"current": 10}, mock_context) is True
-
-        # Test with missing current level (should fail)
-        assert ConditionRegistry.check("level_check", {"required": 5}, mock_context) is False
-
-    def test_condition_with_boolean_logic(self, mock_context: GameContext) -> None:
-        """Test condition checker with complex boolean logic."""
-
-        @ConditionRegistry.register("complex_condition")
-        def complex_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del context  # Unused in test
-            has_key = condition_data.get("has_key", False)
-            level = condition_data.get("level", 0)
-            quest_complete = condition_data.get("quest_complete", False)
-
-            # Must have key OR (level >= 10 AND quest complete)
-            return has_key or (level >= 10 and quest_complete)
-
-        # Test various combinations
-        assert (
-            ConditionRegistry.check(
-                "complex_condition",
-                {"has_key": True, "level": 5, "quest_complete": False},
-                mock_context,
-            )
-            is True
-        )
-        assert (
-            ConditionRegistry.check(
-                "complex_condition",
-                {"has_key": False, "level": 15, "quest_complete": True},
-                mock_context,
-            )
-            is True
-        )
-        assert (
-            ConditionRegistry.check(
-                "complex_condition",
-                {"has_key": False, "level": 15, "quest_complete": False},
-                mock_context,
-            )
-            is False
-        )
-        assert (
-            ConditionRegistry.check(
-                "complex_condition",
-                {"has_key": False, "level": 5, "quest_complete": True},
-                mock_context,
-            )
-            is False
-        )
-
-
-class TestConditionRegistryValidate:
-    """Tests for the validate method."""
-
-    def test_validate_with_validator(self) -> None:
-        """Test validate with a registered validator."""
-        ConditionRegistry.clear()
-
-        def validator(data: dict[str, Any]) -> list[str]:
-            errors = []
-            if not data.get("required_field"):
-                errors.append("missing required 'required_field' field")
-            return errors
-
-        @ConditionRegistry.register("test_condition", validator=validator)
-        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context
-            return True
-
-        # Valid data
-        errors = ConditionRegistry.validate("test_condition", {"required_field": "value"})
-        assert errors == []
-
-        # Invalid data
-        errors = ConditionRegistry.validate("test_condition", {})
-        assert len(errors) == 1
-        assert "missing required 'required_field' field" in errors[0]
-
-    def test_validate_without_validator(self) -> None:
-        """Test validate with no registered validator."""
-        ConditionRegistry.clear()
-
-        @ConditionRegistry.register("test_condition")
-        def test_checker(condition_data: dict[str, Any], context: GameContext) -> bool:
-            del condition_data, context
-            return True
-
-        # Should return empty list when no validator exists
-        errors = ConditionRegistry.validate("test_condition", {"any": "data"})
-        assert errors == []
-
-    def test_validate_unregistered_condition(self) -> None:
-        """Test validate with unregistered condition type."""
-        ConditionRegistry.clear()
-
-        # Should return empty list for unregistered condition
-        errors = ConditionRegistry.validate("nonexistent_condition", {"data": "value"})
-        assert errors == []
+        assert ConditionRegistry.get_all_names() == []

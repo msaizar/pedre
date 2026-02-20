@@ -56,8 +56,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.constants import asset_path
-from pedre.helpers import compute_ui_scale, matches_key, scale, scale_font
+from pedre.helpers import asset_path, compute_ui_scale, matches_key, scale, scale_font
 from pedre.plugins.inventory.base import InventoryBasePlugin, InventoryItem
 from pedre.plugins.inventory.events import (
     InventoryClosedEvent,
@@ -236,7 +235,7 @@ class InventoryPlugin(InventoryBasePlugin):
 
         # Load background image if not already loaded
         if self.background_texture is None and settings.INVENTORY_BACKGROUND_IMAGE:
-            background_path = asset_path(settings.INVENTORY_BACKGROUND_IMAGE, settings.ASSETS_HANDLE)
+            background_path = asset_path(settings.INVENTORY_BACKGROUND_IMAGE)
             try:
                 self.background_texture = arcade.load_texture(background_path)
                 logger.info("Loaded inventory background: %s", background_path)
@@ -288,13 +287,10 @@ class InventoryPlugin(InventoryBasePlugin):
         if self.consume_item(item.id):
             logger.info("Consumed item from inventory overlay: %s", item.name)
 
-            self.context.event_bus.publish(
-                ItemConsumedEvent(item_id=item.id, item_name=item.name, category=item.category)
-            )
+            self.context.event_bus.publish(ItemConsumedEvent(item_id=item.id, category=item.category))
             logger.info(
-                "Published ItemConsumedEvent (item_id=%s, item_name=%s, category=%s)",
+                "Published ItemConsumedEvent (item_id=%s, category=%s)",
                 item.id,
-                item.name,
                 item.category,
             )
 
@@ -793,8 +789,8 @@ class InventoryPlugin(InventoryBasePlugin):
                 del self.items[item.id]
                 return False
 
-            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item.id, item_name=item.name))
-            logger.info("Published ItemAcquiredEvent (item_id=%s, item_name=%s)", item.id, item.name)
+            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item.id))
+            logger.info("Published ItemAcquiredEvent (item_id=%s)", item.id)
 
         return True
 
@@ -867,8 +863,8 @@ class InventoryPlugin(InventoryBasePlugin):
             logger.info("Player acquired item: %s (%s)", item_id, item.name)
 
             # Publish event if event bus is available
-            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id, item_name=item.name))
-            logger.info("Published ItemAcquiredEvent (item_id=%s, item_name=%s)", item_id, item.name)
+            self.context.event_bus.publish(ItemAcquiredEvent(item_id=item_id))
+            logger.info("Published ItemAcquiredEvent (item_id=%s)", item_id)
 
             return True
 

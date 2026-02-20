@@ -4,7 +4,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action, WaitForConditionAction
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
 from pedre.conf import settings
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("dialog")
+@ActionRegistry.register
 class DialogAction(Action):
     """Show a dialog to the player.
 
@@ -27,14 +27,14 @@ class DialogAction(Action):
 
     Example usage:
         {
-            "type": "dialog",
+            "name": "dialog",
             "speaker": "martin",
             "text": ["Hello there!", "Welcome to the game."]
         }
 
         # With instant display (no letter-by-letter reveal)
         {
-            "type": "dialog",
+            "name": "dialog",
             "speaker": "Narrator",
             "text": ["The world fades to black..."],
             "instant": true
@@ -42,12 +42,14 @@ class DialogAction(Action):
 
         # With auto-close for cutscenes
         {
-            "type": "dialog",
+            "name": "dialog",
             "speaker": "Narrator",
             "text": ["The adventure begins..."],
             "auto_close": true
         }
     """
+
+    name = "dialog"
 
     def __init__(
         self,
@@ -95,45 +97,51 @@ class DialogAction(Action):
         Note: This handles basic dialog creation. For text_from references,
         the ScriptPlugin handles resolution before calling this method.
         """
+        speaker = data.get("speaker")
+        if speaker is None:
+            msg = "dialog: missing required 'speaker' field"
+            raise ActionParseError(msg)
+
+        if not isinstance(speaker, str):
+            msg = "dialog: 'speaker' must be a string"
+            raise ActionParseError(msg)
+
+        text = data.get("text")
+        if text is None:
+            msg = "dialog: missing required 'text' field"
+            raise ActionParseError(msg)
+
+        if not isinstance(text, list):
+            msg = "dialog: 'text' must be a list"
+            raise ActionParseError(msg)
+
+        if not text:
+            msg = "dialog: 'text' must not be empty"
+            raise ActionParseError(msg)
+
+        if not all(isinstance(item, str) for item in text):
+            msg = "dialog: all items in 'text' must be strings"
+            raise ActionParseError(msg)
+
+        instant = data.get("instant", settings.DIALOG_INSTANT_TEXT_DEFAULT)
+        if not isinstance(instant, bool):
+            msg = "dialog: 'instant' must be a bool"
+            raise ActionParseError(msg)
+
+        auto_close = data.get("auto_close", settings.DIALOG_AUTO_CLOSE_DEFAULT)
+        if not isinstance(auto_close, bool):
+            msg = "dialog: 'auto_close' must be a bool"
+            raise ActionParseError(msg)
+
         return cls(
-            speaker=data.get("speaker", ""),
-            text=data.get("text", []),
-            instant=data.get("instant", settings.DIALOG_INSTANT_TEXT_DEFAULT),
-            auto_close=data.get("auto_close", settings.DIALOG_AUTO_CLOSE_DEFAULT),
+            speaker=speaker,
+            text=text,
+            instant=instant,
+            auto_close=auto_close,
         )
 
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate dialog action parameters.
 
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
-        text = data.get("text")
-        if not text:
-            errors.append("missing required 'text' field")
-        elif not isinstance(text, list):
-            errors.append("'text' must be a list")
-        elif not all(isinstance(item, str) for item in text):
-            errors.append("'text' items must be strings")
-
-        speaker = data.get("speaker")
-        if not speaker:
-            errors.append("missing required 'speaker' field")
-        elif not isinstance(speaker, str):
-            errors.append("'speaker' must be a string")
-
-        if "instant" in data and not isinstance(data["instant"], bool):
-            errors.append("'instant' must be a bool")
-
-        if "auto_close" in data and not isinstance(data["auto_close"], bool):
-            errors.append("'auto_close' must be a bool")
-
-        return errors
-
-
-@ActionRegistry.register("wait_for_dialog_close")
+@ActionRegistry.register
 class WaitForDialogCloseAction(WaitForConditionAction):
     """Wait for dialog to be closed.
 
@@ -146,11 +154,13 @@ class WaitForDialogCloseAction(WaitForConditionAction):
 
     Example usage in a sequence:
         [
-            {"type": "dialog", "speaker": "martin", "text": ["Hello!"]},
-            {"type": "wait_for_dialog_close"},
-            {"type": "dialog", "speaker": "yema", "text": ["Hi there!"]}
+            {"name": "dialog", "speaker": "martin", "text": ["Hello!"]},
+            {"name": "wait_for_dialog_close"},
+            {"name": "dialog", "speaker": "yema", "text": ["Hi there!"]}
         ]
     """
+
+    name = "wait_for_dialog_close"
 
     def __init__(self) -> None:
         """Initialize dialog wait action."""

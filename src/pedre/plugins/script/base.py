@@ -1,10 +1,16 @@
 """Base class for ScriptPlugin."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, Protocol
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
+from pedre.events.registry import EventRegistry
 from pedre.plugins.base import BasePlugin
+
+if TYPE_CHECKING:
+    from pedre.actions.base import Action
+    from pedre.conditions.base import Condition
+    from pedre.types import EntityReference
 
 
 class ScriptValidationError(Exception):
@@ -28,39 +34,32 @@ class ScriptValidationError(Exception):
         super().__init__(summary)
 
 
-class ScriptEvent(Protocol):
-    """Protocol for events that support script data extraction."""
+@dataclass(frozen=True)
+class ScriptTrigger:
+    """Data class for script trigger."""
 
-    def get_script_data(self) -> dict[str, Any]:
-        """Get data formatted for script trigger evaluation."""
-        ...
+    event_name: str
+    filters: dict[str, Any]
+
+    def get_references(self) -> set[EntityReference]:
+        """Get references for the event."""
+        event_cls = EventRegistry.get(self.event_name)
+        if not event_cls:
+            return set()
+
+        return event_cls.get_references(self.filters)
 
 
 @dataclass
 class Script:
-    """Represents a game script with triggers, conditions, and actions.
+    """Data class for Script."""
 
-    A script encapsulates a sequence of actions that can be triggered by events
-    or manual calls. Scripts support conditional execution, scene restrictions,
-    and one-time execution for story progression control.
-
-    Attributes:
-        trigger: Event specification that triggers this script.
-        conditions: List of condition dictionaries that must all be true.
-        scene: Optional scene name where this script can run.
-        run_once: If True, script only executes once per game session.
-        actions: List of action dictionaries to execute in sequence.
-        on_condition_fail: Optional actions to execute when conditions fail.
-        has_run: Tracks if this script has started (for run_once prevention).
-        completed: Tracks if this script has fully completed all actions.
-    """
-
-    trigger: dict[str, Any] | None = None
-    conditions: list[dict[str, Any]] = field(default_factory=list)
-    scene: str | None = None
-    run_once: bool = False
-    actions: list[dict[str, Any]] = field(default_factory=list)
-    on_condition_fail: list[dict[str, Any]] = field(default_factory=list)
+    trigger: ScriptTrigger | None
+    conditions: list[Condition]
+    scene: str | None
+    run_once: bool
+    actions: list[Action]
+    on_condition_fail: list[Action]
     has_run: bool = False
     completed: bool = False
 
@@ -73,4 +72,14 @@ class ScriptBasePlugin(BasePlugin, ABC):
     @abstractmethod
     def get_scripts(self) -> dict[str, Script]:
         """Get scripts."""
+        ...
+
+    @abstractmethod
+    def run_actions(self, sequence_name: str, actions: list[Action]) -> None:
+        """Queue an ad-hoc list of actions for execution.
+
+        Args:
+            sequence_name: Name used for logging and tracking.
+            actions: Pre-parsed Action objects to execute.
+        """
         ...

@@ -10,7 +10,7 @@ from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
 
-@EventRegistry.register("scene_start")
+@EventRegistry.register
 @dataclass
 class SceneStartEvent(Event):
     """Fired when a new scene/map starts loading.
@@ -35,7 +35,10 @@ class SceneStartEvent(Event):
         scene_name: Name of the scene/map that just started (e.g., "casa", "forest").
     """
 
+    name: ClassVar[str] = "scene_start"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"scene"})
+    reference_fields: ClassVar[dict[str, str]] = {"scene_name": "scene"}
     scene_name: str
 
     def get_script_data(self) -> dict[str, Any]:

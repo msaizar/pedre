@@ -23,9 +23,9 @@ def test_condition_loader_imports_modules(monkeypatch: pytest.MonkeyPatch) -> No
     loader = ConditionLoader()
     loader.load_modules()
 
-    # Verify inventory conditions were registered (may already be registered from earlier tests)
-    assert "inventory_accessed" in ConditionRegistry._checkers
-    assert "item_acquired" in ConditionRegistry._checkers
+    # Verify inventory conditions were registered using public API
+    assert ConditionRegistry.is_registered("inventory_accessed")
+    assert ConditionRegistry.is_registered("item_acquired")
 
 
 def test_condition_loader_with_empty_list(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -36,7 +36,7 @@ def test_condition_loader_with_empty_list(monkeypatch: pytest.MonkeyPatch) -> No
     loader = ConditionLoader()
     loader.load_modules()  # Should not raise
 
-    assert not ConditionRegistry._checkers
+    assert not ConditionRegistry.get_all_names()
 
 
 def test_condition_loader_raises_on_invalid_module(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -75,4 +75,4 @@ def test_condition_loader_loads_multiple_modules(monkeypatch: pytest.MonkeyPatch
     loader.load_modules()
 
     # Verify script conditions were registered
-    assert "script_completed" in ConditionRegistry._checkers
+    assert ConditionRegistry.is_registered("script_completed")

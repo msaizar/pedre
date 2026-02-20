@@ -11,7 +11,7 @@ from pedre.events import Event
 from pedre.events.registry import EventRegistry
 
 
-@EventRegistry.register("portal_entered")
+@EventRegistry.register
 @dataclass
 class PortalEnteredEvent(Event):
     """Fired when player enters a portal zone.
@@ -31,7 +31,7 @@ class PortalEnteredEvent(Event):
                 "portal": "forest_gate"
             },
             "actions": [
-                {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+                {"name": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
             ]
         }
 
@@ -42,7 +42,10 @@ class PortalEnteredEvent(Event):
         portal_name: Name of the portal the player entered.
     """
 
+    name: ClassVar[str] = "portal_entered"
+
     trigger_keys: ClassVar[frozenset[str]] = frozenset({"portal"})
+    reference_fields: ClassVar[dict[str, str]] = {"portal_name": "portal"}
     portal_name: str
 
     def get_script_data(self) -> dict[str, Any]:

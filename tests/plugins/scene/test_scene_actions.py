@@ -1,12 +1,14 @@
 """Unit tests for scene action classes."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
 from pedre.plugins.scene.actions import ChangeSceneAction
 
 
-class TestChangeSceneAction(unittest.TestCase):
+class TestChangeSceneAction:
     """Unit test class for ChangeSceneAction."""
 
     def test_init_with_target_map_only(self) -> None:
@@ -103,7 +105,7 @@ class TestChangeSceneAction(unittest.TestCase):
 
         assert isinstance(action, ChangeSceneAction)
         assert action.target_map == "Beach.tmx"
-        assert action.spawn_waypoint == ""
+        assert action.spawn_waypoint is None
 
     def test_from_dict_with_spawn_waypoint(self) -> None:
         """Test creating ChangeSceneAction with spawn_waypoint."""
@@ -119,21 +121,14 @@ class TestChangeSceneAction(unittest.TestCase):
         """Test creating ChangeSceneAction with missing target_map key."""
         data = {"spawn_waypoint": "entrance"}
 
-        action = ChangeSceneAction.from_dict(data)
-
-        assert isinstance(action, ChangeSceneAction)
-        assert action.target_map == ""
-        assert action.spawn_waypoint == "entrance"
+        with pytest.raises(ActionParseError):
+            ChangeSceneAction.from_dict(data)
 
     def test_from_dict_empty_dict(self) -> None:
         """Test creating ChangeSceneAction from empty dictionary."""
         data = {}
-
-        action = ChangeSceneAction.from_dict(data)
-
-        assert isinstance(action, ChangeSceneAction)
-        assert action.target_map == ""
-        assert action.spawn_waypoint == ""
+        with pytest.raises(ActionParseError):
+            ChangeSceneAction.from_dict(data)
 
     def test_from_dict_with_extra_keys(self) -> None:
         """Test that from_dict ignores extra keys."""
@@ -176,44 +171,67 @@ class TestChangeSceneAction(unittest.TestCase):
         action.reset()
         assert action.executed is False
 
-
-class TestChangeSceneActionValidation(unittest.TestCase):
-    """Test ChangeSceneAction parameter validation."""
-
-    def test_validate_params_success(self) -> None:
-        """Test validate_params with valid data."""
-        data = {"target_map": "Village.tmx"}
-        errors = ChangeSceneAction.validate_params(data)
-        assert errors == []
-
-    def test_validate_params_missing_target_map(self) -> None:
-        """Test validate_params detects missing target_map field."""
-        data = {}
-        errors = ChangeSceneAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'target_map' field" in errors[0]
-
-    def test_validate_params_empty_target_map(self) -> None:
-        """Test validate_params detects empty target_map field."""
-        data = {"target_map": ""}
-        errors = ChangeSceneAction.validate_params(data)
-        assert len(errors) == 1
-        assert "missing required 'target_map' field" in errors[0]
-
-    def test_validate_params_target_map_not_string(self) -> None:
-        """Test validate_params detects non-string target_map field."""
+    def test_from_dict_target_map_not_string(self) -> None:
+        """Test from_dict with target_map that is not a string."""
         data = {"target_map": 123}
-        errors = ChangeSceneAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'target_map' must be a string" in errors[0]
 
-    def test_validate_params_spawn_waypoint_not_string(self) -> None:
-        """Test validate_params detects non-string spawn_waypoint field."""
-        data = {"target_map": "Village.tmx", "spawn_waypoint": 123}
-        errors = ChangeSceneAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'spawn_waypoint' must be a string" in errors[0]
+        with pytest.raises(ActionParseError, match="'target_map' must be a string"):
+            ChangeSceneAction.from_dict(data)
 
+    def test_from_dict_spawn_waypoint_not_string(self) -> None:
+        """Test from_dict with spawn_waypoint that is not a string."""
+        data = {"target_map": "Forest.tmx", "spawn_waypoint": 456}
 
-if __name__ == "__main__":
-    unittest.main()
+        with pytest.raises(ActionParseError, match="'spawn_waypoint' must be a string"):
+            ChangeSceneAction.from_dict(data)
+
+    def test_get_references_with_target_map_only(self) -> None:
+        """Test get_references with only target_map."""
+        action = ChangeSceneAction("Forest.tmx")
+        refs = action.get_references()
+
+        assert len(refs) == 1
+        ref = next(iter(refs))
+        assert ref.type == "map"
+        assert ref.name == "Forest"
+
+    def test_get_references_with_spawn_waypoint(self) -> None:
+        """Test get_references with target_map and spawn_waypoint."""
+        action = ChangeSceneAction("Tower.tmx", spawn_waypoint="entrance")
+        refs = action.get_references()
+
+        assert len(refs) == 2
+
+        # Check map reference
+        map_refs = [r for r in refs if r.type == "map"]
+        assert len(map_refs) == 1
+        assert map_refs[0].name == "Tower"
+
+        # Check waypoint reference
+        waypoint_refs = [r for r in refs if r.type == "waypoint"]
+        assert len(waypoint_refs) == 1
+        assert waypoint_refs[0].name == "entrance"
+        assert waypoint_refs[0].scope == "map"
+        assert waypoint_refs[0].target_map == "Tower"
+
+    def test_get_references_removes_tmx_suffix(self) -> None:
+        """Test that get_references properly removes .tmx suffix."""
+        action = ChangeSceneAction("Village.tmx", spawn_waypoint="square")
+        refs = action.get_references()
+
+        map_refs = [r for r in refs if r.type == "map"]
+        assert map_refs[0].name == "Village"  # Not "Village.tmx"
+
+        waypoint_refs = [r for r in refs if r.type == "waypoint"]
+        assert waypoint_refs[0].target_map == "Village"  # Not "Village.tmx"
+
+    def test_get_references_with_non_string_target_map(self) -> None:
+        """Test get_references when target_map is not a string (edge case)."""
+        action = ChangeSceneAction("Forest.tmx")
+        # Manually set target_map to a non-string to test the isinstance check
+        action.target_map = 123
+
+        refs = action.get_references()
+
+        # Should return empty set since target_map is not a string
+        assert len(refs) == 0

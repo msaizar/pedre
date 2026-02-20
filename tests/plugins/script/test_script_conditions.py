@@ -3,12 +3,15 @@
 import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.script.base import Script
-from pedre.plugins.script.conditions import _validate_script_completed, check_script_completed
+from pedre.plugins.script.conditions import ScriptCompletedCondition
 
 
-class TestCheckScriptCompleted(unittest.TestCase):
-    """Test cases for check_script_completed condition."""
+class TestScriptCompletedCondition(unittest.TestCase):
+    """Test cases for ScriptCompletedCondition."""
 
     def setUp(self) -> None:
         """Set up test fixtures."""
@@ -16,63 +19,48 @@ class TestCheckScriptCompleted(unittest.TestCase):
         self.mock_script_plugin = MagicMock()
         self.mock_context.script_plugin = self.mock_script_plugin
 
-    def test_check_script_completed_returns_true(self) -> None:
-        """Test that check_script_completed returns True when script is completed."""
+    def test_check_returns_true(self) -> None:
+        """Test that check returns True when script is completed."""
         mock_script = MagicMock()
         mock_script.completed = True
         self.mock_script_plugin.get_scripts.return_value = {"test_script": mock_script}
 
-        condition_data = {"script": "test_script"}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="test_script")
+        result = condition.check(self.mock_context)
 
         assert result is True
         self.mock_script_plugin.get_scripts.assert_called_once()
 
-    def test_check_script_completed_returns_false_not_completed(self) -> None:
-        """Test that check_script_completed returns False when script is not completed."""
+    def test_check_returns_false_not_completed(self) -> None:
+        """Test that check returns False when script is not completed."""
         mock_script = MagicMock()
         mock_script.completed = False
         self.mock_script_plugin.get_scripts.return_value = {"test_script": mock_script}
 
-        condition_data = {"script": "test_script"}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="test_script")
+        result = condition.check(self.mock_context)
 
         assert result is False
 
-    def test_check_script_completed_script_not_found(self) -> None:
-        """Test that check_script_completed returns False when script is not found."""
+    def test_check_script_not_found(self) -> None:
+        """Test that check returns False when script is not found."""
         self.mock_script_plugin.get_scripts.return_value = {}
 
-        condition_data = {"script": "nonexistent_script"}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="nonexistent_script")
+        result = condition.check(self.mock_context)
 
         assert result is False
         self.mock_script_plugin.get_scripts.assert_called_once()
 
-    def test_check_script_completed_missing_script_name(self) -> None:
+    def test_check_missing_script_name(self) -> None:
         """Test that missing script name returns False."""
-        condition_data = {}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="")
+        result = condition.check(self.mock_context)
 
         assert result is False
         self.mock_script_plugin.get_scripts.assert_not_called()
 
-    def test_check_script_completed_empty_script_name(self) -> None:
-        """Test that empty script name returns False."""
-        condition_data = {"script": ""}
-        result = check_script_completed(condition_data, self.mock_context)
-
-        assert result is False
-        self.mock_script_plugin.get_scripts.assert_not_called()
-
-    def test_check_script_completed_default_empty_string(self) -> None:
-        """Test that script defaults to empty string when not provided."""
-        condition_data = {"other_key": "value"}
-        result = check_script_completed(condition_data, self.mock_context)
-
-        assert result is False
-
-    def test_check_script_completed_with_multiple_scripts(self) -> None:
+    def test_check_with_multiple_scripts(self) -> None:
         """Test checking a specific script when multiple scripts exist."""
         mock_script_completed = MagicMock()
         mock_script_completed.completed = True
@@ -86,25 +74,36 @@ class TestCheckScriptCompleted(unittest.TestCase):
         }
 
         # Check the completed script
-        condition_data = {"script": "completed_script"}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="completed_script")
+        result = condition.check(self.mock_context)
         assert result is True
 
         # Check the not completed script
-        condition_data = {"script": "running_script"}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="running_script")
+        result = condition.check(self.mock_context)
         assert result is False
 
-    def test_check_script_completed_with_real_script_object(self) -> None:
+    def test_check_with_real_script_object(self) -> None:
         """Test with actual Script dataclass instance."""
         # Create a real Script instance
+        mock_action = MagicMock()
         completed_script = Script(
-            actions=[{"type": "wait", "duration": 1.0}],
+            trigger=None,
+            conditions=[],
+            scene=None,
+            run_once=False,
+            actions=[mock_action],
+            on_condition_fail=[],
             completed=True,
         )
 
         not_completed_script = Script(
-            actions=[{"type": "wait", "duration": 1.0}],
+            trigger=None,
+            conditions=[],
+            scene=None,
+            run_once=False,
+            actions=[mock_action],
+            on_condition_fail=[],
             completed=False,
         )
 
@@ -114,58 +113,37 @@ class TestCheckScriptCompleted(unittest.TestCase):
         }
 
         # Test completed script
-        condition_data = {"script": "script1"}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="script1")
+        result = condition.check(self.mock_context)
         assert result is True
 
         # Test not completed script
-        condition_data = {"script": "script2"}
-        result = check_script_completed(condition_data, self.mock_context)
+        condition = ScriptCompletedCondition(script_name="script2")
+        result = condition.check(self.mock_context)
         assert result is False
 
-    def test_check_script_completed_none_script_name(self) -> None:
-        """Test that None script name is handled correctly."""
-        # When using .get() with default "", None as a value still returns None
-        # The code will evaluate `if not script_name:` which catches None
-        mock_script = MagicMock()
-        mock_script.completed = True
-        self.mock_script_plugin.get_scripts.return_value = {"some_script": mock_script}
-
-        condition_data = {"script": None}
-        result = check_script_completed(condition_data, self.mock_context)
-
-        assert result is False
-
-
-class TestValidateScriptCompleted(unittest.TestCase):
-    """Test cases for _validate_script_completed validator."""
-
-    def test_validate_script_completed_success(self) -> None:
+    def test_validate_success(self) -> None:
         """Test validator passes with valid data."""
         data = {"script": "test_script"}
-        errors = _validate_script_completed(data)
-        assert errors == []
+        ScriptCompletedCondition.from_dict(data)
 
-    def test_validate_script_completed_missing_script(self) -> None:
+    def test_validate_missing_script(self) -> None:
         """Test validator detects missing script field."""
         data = {}
-        errors = _validate_script_completed(data)
-        assert len(errors) == 1
-        assert "missing required 'script' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'script' field"):
+            ScriptCompletedCondition.from_dict(data)
 
-    def test_validate_script_completed_empty_script(self) -> None:
+    def test_validate_empty_script(self) -> None:
         """Test validator detects empty script field."""
         data = {"script": ""}
-        errors = _validate_script_completed(data)
-        assert len(errors) == 1
-        assert "missing required 'script' field" in errors[0]
+        with pytest.raises(ConditionParseError, match="missing required 'script' field"):
+            ScriptCompletedCondition.from_dict(data)
 
-    def test_validate_script_completed_script_not_string(self) -> None:
+    def test_validate_script_not_string(self) -> None:
         """Test validator detects non-string script field."""
         data = {"script": 123}
-        errors = _validate_script_completed(data)
-        assert len(errors) == 1
-        assert "'script' must be a string" in errors[0]
+        with pytest.raises(ConditionParseError, match="'script' must be a string"):
+            ScriptCompletedCondition.from_dict(data)
 
 
 if __name__ == "__main__":

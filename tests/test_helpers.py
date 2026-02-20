@@ -1,6 +1,5 @@
 """Unit tests for helper functions in src/pedre/helpers.py."""
 
-import logging
 import sys
 import unittest
 from pathlib import Path
@@ -9,77 +8,14 @@ from unittest.mock import MagicMock, patch
 import arcade
 
 from pedre.helpers import (
+    asset_exists,
     calculate_responsive_value,
     compute_ui_scale,
-    create_game,
     get_app_data_dir,
     matches_key,
-    run_game,
     scale,
     scale_font,
-    setup_logging,
-    setup_resources,
 )
-
-
-class TestSetupLogging(unittest.TestCase):
-    """Test Suite for setup_logging function."""
-
-    @patch("pedre.helpers.logging.basicConfig")
-    def test_setup_logging_default_debug(self, mock_basic_config: MagicMock) -> None:
-        """Test setup_logging with default DEBUG level."""
-        setup_logging()
-
-        mock_basic_config.assert_called_once()
-        _args, kwargs = mock_basic_config.call_args
-        assert kwargs["level"] == logging.DEBUG
-        assert kwargs["format"] == "%(message)s"
-        assert len(kwargs["handlers"]) == 1
-
-    @patch("pedre.helpers.logging.basicConfig")
-    def test_setup_logging_info_level(self, mock_basic_config: MagicMock) -> None:
-        """Test setup_logging with INFO level."""
-        setup_logging("INFO")
-
-        mock_basic_config.assert_called_once()
-        _args, kwargs = mock_basic_config.call_args
-        assert kwargs["level"] == logging.INFO
-
-    @patch("pedre.helpers.logging.basicConfig")
-    def test_setup_logging_warning_level(self, mock_basic_config: MagicMock) -> None:
-        """Test setup_logging with WARNING level."""
-        setup_logging("WARNING")
-
-        mock_basic_config.assert_called_once()
-        _args, kwargs = mock_basic_config.call_args
-        assert kwargs["level"] == logging.WARNING
-
-    @patch("pedre.helpers.logging.basicConfig")
-    def test_setup_logging_error_level(self, mock_basic_config: MagicMock) -> None:
-        """Test setup_logging with ERROR level."""
-        setup_logging("ERROR")
-
-        mock_basic_config.assert_called_once()
-        _args, kwargs = mock_basic_config.call_args
-        assert kwargs["level"] == logging.ERROR
-
-    @patch("pedre.helpers.logging.basicConfig")
-    def test_setup_logging_critical_level(self, mock_basic_config: MagicMock) -> None:
-        """Test setup_logging with CRITICAL level."""
-        setup_logging("CRITICAL")
-
-        mock_basic_config.assert_called_once()
-        _args, kwargs = mock_basic_config.call_args
-        assert kwargs["level"] == logging.CRITICAL
-
-    @patch("pedre.helpers.logging.basicConfig")
-    def test_setup_logging_lowercase_level(self, mock_basic_config: MagicMock) -> None:
-        """Test setup_logging converts lowercase to uppercase."""
-        setup_logging("info")
-
-        mock_basic_config.assert_called_once()
-        _args, kwargs = mock_basic_config.call_args
-        assert kwargs["level"] == logging.INFO
 
 
 class TestGetAppDataDir(unittest.TestCase):
@@ -158,89 +94,6 @@ class TestGetAppDataDir(unittest.TestCase):
         get_app_data_dir()
 
         mock_user_data_dir.assert_called_once_with("Game-Version", appauthor=False)
-
-
-class TestSetupResources(unittest.TestCase):
-    """Test Suite for setup_resources function."""
-
-    @patch("pedre.helpers.arcade.resources.add_resource_handle")
-    @patch("pedre.helpers.Path.cwd")
-    @patch("pedre.helpers.settings")
-    @patch.object(sys, "frozen", new=False, create=True)
-    def test_setup_resources_not_frozen(
-        self,
-        mock_settings: MagicMock,
-        mock_cwd: MagicMock,
-        mock_add_resource_handle: MagicMock,
-    ) -> None:
-        """Test setup_resources when not running from PyInstaller bundle."""
-        mock_settings.ASSETS_DIRECTORY = "assets"
-        mock_cwd.return_value = Path("/path/to/project")
-
-        setup_resources("game_assets")
-
-        expected_path = Path("/path/to/project/assets").resolve()
-        mock_add_resource_handle.assert_called_once_with("game_assets", expected_path)
-
-    @patch("pedre.helpers.arcade.resources.add_resource_handle")
-    @patch("pedre.helpers.settings")
-    @patch.object(sys, "_MEIPASS", new="/var/app/_MEI12345", create=True)
-    @patch.object(sys, "frozen", new=True, create=True)
-    def test_setup_resources_frozen(self, mock_settings: MagicMock, mock_add_resource_handle: MagicMock) -> None:
-        """Test setup_resources when running from PyInstaller bundle."""
-        mock_settings.ASSETS_DIRECTORY = "assets"
-
-        setup_resources("game_assets")
-
-        expected_path = Path("/var/app/_MEI12345/assets").resolve()
-        mock_add_resource_handle.assert_called_once_with("game_assets", expected_path)
-
-
-class TestCreateGame(unittest.TestCase):
-    """Test Suite for create_game function."""
-
-    @patch("pedre.helpers.Game")
-    @patch("pedre.helpers.arcade.Window")
-    @patch("pedre.helpers.setup_resources")
-    @patch("pedre.helpers.setup_logging")
-    @patch("pedre.helpers.settings")
-    def test_create_game(
-        self,
-        mock_settings: MagicMock,
-        mock_setup_logging: MagicMock,
-        mock_setup_resources: MagicMock,
-        mock_window_class: MagicMock,
-        mock_game_class: MagicMock,
-    ) -> None:
-        """Test create_game creates window and attaches game."""
-        mock_settings.SCREEN_WIDTH = 1920
-        mock_settings.SCREEN_HEIGHT = 1080
-        mock_settings.WINDOW_TITLE = "Test Game"
-        mock_settings.ASSETS_HANDLE = "game_assets"
-
-        mock_window = MagicMock()
-        mock_window_class.return_value = mock_window
-
-        mock_game = MagicMock()
-        mock_game_class.return_value = mock_game
-
-        result = create_game()
-
-        # Verify setup functions were called
-        mock_setup_logging.assert_called_once()
-        mock_setup_resources.assert_called_once_with("game_assets")
-
-        # Verify window was created with correct settings
-        mock_window_class.assert_called_once_with(1920, 1080, "Test Game")
-
-        # Verify game was created with window
-        mock_game_class.assert_called_once_with(mock_window)
-
-        # Verify game was attached to window
-        assert mock_window.game == mock_game
-
-        # Verify window is returned
-        assert result == mock_window
 
 
 class TestMatchesKey(unittest.TestCase):
@@ -435,30 +288,6 @@ class TestScaleFont(unittest.TestCase):
         assert result == 13
 
 
-class TestRunGame(unittest.TestCase):
-    """Test Suite for run_game function."""
-
-    @patch("pedre.helpers.arcade.run")
-    @patch("pedre.helpers.create_game")
-    def test_run_game(self, mock_create_game: MagicMock, mock_arcade_run: MagicMock) -> None:
-        """Test run_game creates game, starts it, and runs arcade loop."""
-        mock_window = MagicMock(spec=arcade.Window)
-        mock_game = MagicMock()
-        mock_window.game = mock_game
-        mock_create_game.return_value = mock_window
-
-        run_game()
-
-        # Verify game was created
-        mock_create_game.assert_called_once()
-
-        # Verify game was started
-        mock_game.start_game_or_load.assert_called_once()
-
-        # Verify arcade.run() was called
-        mock_arcade_run.assert_called_once()
-
-
 class TestScale(unittest.TestCase):
     """Test Suite for scale function."""
 
@@ -500,6 +329,31 @@ class TestScale(unittest.TestCase):
         result = scale(10, 1.99, floor=1)
         # 10 * 1.99 = 19.9, int() = 19
         assert result == 19
+
+
+class TestAssetExists(unittest.TestCase):
+    """Tests for asset_exists."""
+
+    def test_asset_exists_success_and_failure(self) -> None:
+        """Test asset_exists method branches."""
+        # Test success (file exists)
+        with (
+            patch("pedre.helpers.asset_path", return_value="/mock/assets/exists.png"),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_file", return_value=True),
+        ):
+            assert asset_exists("exists.png") is True
+
+        # Test failure (file does not exist)
+        with (
+            patch("pedre.helpers.asset_path", return_value="/mock/assets/missing.png"),
+            patch("pathlib.Path.exists", return_value=False),
+        ):
+            assert asset_exists("missing.png") is False
+
+        # Test exception
+        with patch("pedre.helpers.asset_path", side_effect=ValueError("Invalid path")):
+            assert asset_exists("trigger_exception") is False
 
 
 if __name__ == "__main__":

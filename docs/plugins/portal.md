@@ -229,7 +229,7 @@ Published when player enters a portal zone.
         "portal": "forest_gate"
     },
     "actions": [
-        {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
+        {"name": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "entrance"}
     ]
 }
 ```
@@ -269,7 +269,7 @@ Script JSON:
   "forest_entrance_portal": {
     "trigger": {"event": "portal_entered", "portal": "forest_entrance"},
     "actions": [
-      {"type": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "forest_start"}
+      {"name": "change_scene", "target_map": "Forest.tmx", "spawn_waypoint": "forest_start"}
     ]
   }
 }
@@ -283,16 +283,16 @@ Portal that requires a condition to be met:
 {
   "tower_gate_open": {
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "gte": 2}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "gte": 2}],
     "actions": [
-      {"type": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "tower_entrance"}
+      {"name": "change_scene", "target_map": "Tower.tmx", "spawn_waypoint": "tower_entrance"}
     ]
   },
   "tower_gate_locked": {
     "trigger": {"event": "portal_entered", "portal": "tower_gate"},
-    "conditions": [{"check": "npc_dialog_level", "npc": "guard", "lt": 2}],
+    "conditions": [{"name": "npc_dialog_level", "npc": "guard", "lt": 2}],
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["The gate is sealed. Perhaps the guard knows something..."]}
+      {"name": "dialog", "speaker": "Narrator", "text": ["The gate is sealed. Perhaps the guard knows something..."]}
     ]
   }
 }
@@ -308,17 +308,17 @@ Portal that plays a cutscene on first entry:
     "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
     "run_once": true,
     "actions": [
-      {"type": "dialog", "speaker": "Narrator", "text": ["A cold wind blows from the depths..."]},
-      {"type": "wait_for_dialog_close"},
-      {"type": "play_sfx", "file": "wind.wav"},
-      {"type": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "dungeon_entrance"}
+      {"name": "dialog", "speaker": "Narrator", "text": ["A cold wind blows from the depths..."]},
+      {"name": "wait_for_dialog_close"},
+      {"name": "play_sfx", "file": "wind.wav"},
+      {"name": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "dungeon_entrance"}
     ]
   },
   "dungeon_return": {
     "trigger": {"event": "portal_entered", "portal": "dungeon_portal"},
-    "conditions": [{"check": "script_completed", "script": "dungeon_cutscene"}],
+    "conditions": [{"name": "script_completed", "script": "dungeon_cutscene"}],
     "actions": [
-      {"type": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "dungeon_entrance"}
+      {"name": "change_scene", "target_map": "Dungeon.tmx", "spawn_waypoint": "dungeon_entrance"}
     ]
   }
 }
@@ -429,7 +429,7 @@ for portal_object in portal_layer:
       "portal": "forest_entrance"
     },
     "actions": [
-      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -446,7 +446,7 @@ Create matching portals in both maps:
   "to_forest": {
     "trigger": {"event": "portal_entered", "portal": "forest_gate"},
     "actions": [
-      {"type": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
+      {"name": "change_scene", "target_map": "forest.tmx", "spawn_waypoint": "from_village"}
     ]
   }
 }
@@ -459,7 +459,7 @@ Create matching portals in both maps:
   "to_village": {
     "trigger": {"event": "portal_entered", "portal": "village_gate"},
     "actions": [
-      {"type": "change_scene", "target_map": "village.tmx", "spawn_waypoint": "from_forest"}
+      {"name": "change_scene", "target_map": "village.tmx", "spawn_waypoint": "from_forest"}
     ]
   }
 }
@@ -472,19 +472,19 @@ Create matching portals in both maps:
   "castle_open": {
     "trigger": {"event": "portal_entered", "portal": "castle_gate"},
     "conditions": [
-      {"check": "npc_interacted", "npc": "king", "scene": "throne_room"}
+      {"name": "npc_interacted", "npc": "king", "scene": "throne_room"}
     ],
     "actions": [
-      {"type": "change_scene", "target_map": "castle_interior.tmx", "spawn_waypoint": "entrance"}
+      {"name": "change_scene", "target_map": "castle_interior.tmx", "spawn_waypoint": "entrance"}
     ]
   },
   "castle_locked": {
     "trigger": {"event": "portal_entered", "portal": "castle_gate"},
     "conditions": [
-      {"check": "npc_interacted", "npc": "king", "scene": "throne_room", "equals": false}
+      {"name": "npc_interacted", "npc": "king", "scene": "throne_room", "equals": false}
     ],
     "actions": [
-      {"type": "dialog", "speaker": "Guard", "text": ["The castle is closed to visitors."]}
+      {"name": "dialog", "speaker": "Guard", "text": ["The castle is closed to visitors."]}
     ]
   }
 }
@@ -497,9 +497,9 @@ Create matching portals in both maps:
   "enter_cave": {
     "trigger": {"event": "portal_entered", "portal": "cave_entrance"},
     "actions": [
-      {"type": "play_sfx", "file": "cave_echo.wav"},
-      {"type": "wait", "duration": 0.5},
-      {"type": "change_scene", "target_map": "cave.tmx", "spawn_waypoint": "entrance"}
+      {"name": "play_sfx", "file": "cave_echo.wav"},
+      {"name": "wait", "duration": 0.5},
+      {"name": "change_scene", "target_map": "cave.tmx", "spawn_waypoint": "entrance"}
     ]
   }
 }
@@ -569,7 +569,7 @@ Waypoints define spawn positions:
 
 ```python
 # Scene transition with waypoint
-{"type": "change_scene", "target_map": "castle.tmx", "spawn_waypoint": "main_gate"}
+{"name": "change_scene", "target_map": "castle.tmx", "spawn_waypoint": "main_gate"}
 
 # Player spawns at waypoint location
 waypoint = context.waypoint_plugin.get_waypoint("main_gate")

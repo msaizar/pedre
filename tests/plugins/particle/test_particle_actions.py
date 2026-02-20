@@ -1,12 +1,14 @@
 """Unit tests for particle action classes."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
+
+from pedre.actions.registry import ActionParseError
 from pedre.plugins.particle.actions import EmitParticlesAction
 
 
-class TestEmitParticlesAction(unittest.TestCase):
+class TestEmitParticlesAction:
     """Unit test class for EmitParticlesAction."""
 
     def test_init(self) -> None:
@@ -413,15 +415,6 @@ class TestEmitParticlesAction(unittest.TestCase):
         assert action.particle_type == "burst"
         assert action.color == (255, 215, 0)
 
-    def test_from_dict_default_particle_type(self) -> None:
-        """Test creating EmitParticlesAction with default particle type."""
-        data = {"player": True}
-
-        action = EmitParticlesAction.from_dict(data)
-
-        assert isinstance(action, EmitParticlesAction)
-        assert action.particle_type == "burst"
-
     def test_from_dict_default_player(self) -> None:
         """Test creating EmitParticlesAction with default player value."""
         data = {"particle_type": "hearts", "npc": "yema"}
@@ -567,132 +560,106 @@ class TestEmitParticlesAction(unittest.TestCase):
         assert action.executed is True
 
 
-class TestEmitParticlesActionValidation(unittest.TestCase):
-    """Test EmitParticlesAction parameter validation."""
+class TestEmitParticlesActionFromDict:
+    """Unit test class for EmitParticlesAction.from_dict validation."""
 
-    def test_validate_params_success_with_npc(self) -> None:
-        """Test validate_params with valid npc location."""
-        data = {"particle_type": "hearts", "npc": "martin"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert errors == []
+    def test_from_dict_missing_particle_type(self) -> None:
+        """Test from_dict with missing particle_type field."""
+        data = {"npc": "yema"}
 
-    def test_validate_params_success_with_player(self) -> None:
-        """Test validate_params with valid player location."""
-        data = {"particle_type": "sparkles", "player": True}
-        errors = EmitParticlesAction.validate_params(data)
-        assert errors == []
+        with pytest.raises(ActionParseError, match="missing required 'particle_type' field"):
+            EmitParticlesAction.from_dict(data)
 
-    def test_validate_params_success_with_interactive_object(self) -> None:
-        """Test validate_params with valid interactive_object location."""
-        data = {"particle_type": "burst", "interactive_object": "portal"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert errors == []
+    def test_from_dict_particle_type_not_string(self) -> None:
+        """Test from_dict with particle_type that is not a string."""
+        data = {"particle_type": 123, "npc": "yema"}
 
-    def test_validate_params_success_default_particle_type(self) -> None:
-        """Test validate_params with default particle_type (burst)."""
-        data = {"npc": "martin"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert errors == []
+        with pytest.raises(ActionParseError, match="'particle_type' must be a string"):
+            EmitParticlesAction.from_dict(data)
 
-    def test_validate_params_invalid_particle_type(self) -> None:
-        """Test validate_params detects invalid particle_type."""
-        data = {"particle_type": "invalid_type", "npc": "martin"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "unknown particle_type 'invalid_type'" in errors[0]
-        assert "valid: " in errors[0]
+    def test_from_dict_unknown_particle_type(self) -> None:
+        """Test from_dict with unknown particle_type value."""
+        data = {"particle_type": "invalid_type", "npc": "yema"}
 
-    def test_validate_params_no_location(self) -> None:
-        """Test validate_params detects missing location."""
+        with pytest.raises(
+            ActionParseError,
+            match="unknown particle_type 'invalid_type' \\(valid: burst, hearts, sparkles, trail\\)",
+        ):
+            EmitParticlesAction.from_dict(data)
+
+    def test_from_dict_no_location(self) -> None:
+        """Test from_dict with no location specified."""
         data = {"particle_type": "hearts"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "must specify one location" in errors[0]
 
-    def test_validate_params_multiple_locations_npc_and_player(self) -> None:
-        """Test validate_params detects multiple locations (npc and player)."""
-        data = {"particle_type": "hearts", "npc": "martin", "player": True}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "only one location allowed" in errors[0]
+        with pytest.raises(
+            ActionParseError, match="must specify one location \\(npc, player, or interactive_object\\)"
+        ):
+            EmitParticlesAction.from_dict(data)
 
-    def test_validate_params_multiple_locations_all_three(self) -> None:
-        """Test validate_params detects all three locations specified."""
-        data = {"particle_type": "hearts", "npc": "martin", "player": True, "interactive_object": "portal"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "only one location allowed" in errors[0]
+    def test_from_dict_multiple_locations(self) -> None:
+        """Test from_dict with multiple locations specified."""
+        data = {"particle_type": "hearts", "npc": "yema", "player": True}
 
-    def test_validate_params_multiple_errors(self) -> None:
-        """Test validate_params detects multiple errors at once."""
-        data = {"particle_type": "invalid_type"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 2
-        assert any("unknown particle_type" in e for e in errors)
-        assert any("must specify one location" in e for e in errors)
+        with pytest.raises(
+            ActionParseError, match="only one location allowed \\(npc, player, or interactive_object\\)"
+        ):
+            EmitParticlesAction.from_dict(data)
 
-    def test_validate_params_particle_type_not_string(self) -> None:
-        """Test validate_params detects non-string particle_type."""
-        data = {"particle_type": 123, "npc": "martin"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'particle_type' must be a string" in errors[0]
+    def test_from_dict_npc_not_string(self) -> None:
+        """Test from_dict with npc field that is not a string."""
+        data = {"particle_type": "hearts", "npc": 123}
 
-    def test_validate_params_npc_not_string(self) -> None:
-        """Test validate_params detects non-string npc field."""
-        data = {"npc": 123}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'npc' must be a string" in errors[0]
+        with pytest.raises(ActionParseError, match="'npc' must be a string"):
+            EmitParticlesAction.from_dict(data)
 
-    def test_validate_params_player_not_bool(self) -> None:
-        """Test validate_params detects non-bool player field."""
-        data = {"player": "yes"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'player' must be a bool" in errors[0]
+    def test_from_dict_player_not_bool(self) -> None:
+        """Test from_dict with player field that is not a bool."""
+        data = {"particle_type": "hearts", "player": "yes"}
 
-    def test_validate_params_interactive_object_not_string(self) -> None:
-        """Test validate_params detects non-string interactive_object field."""
-        data = {"interactive_object": 123}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'interactive_object' must be a string" in errors[0]
+        with pytest.raises(ActionParseError, match="'player' must be a bool"):
+            EmitParticlesAction.from_dict(data)
 
-    def test_validate_params_color_not_list(self) -> None:
-        """Test validate_params detects non-list color field."""
-        data = {"npc": "martin", "color": "red"}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'color' must be a list of 3 integers" in errors[0]
+    def test_from_dict_interactive_object_not_string(self) -> None:
+        """Test from_dict with interactive_object field that is not a string."""
+        data = {"particle_type": "hearts", "interactive_object": 456}
 
-    def test_validate_params_color_wrong_length(self) -> None:
-        """Test validate_params detects color list with wrong length."""
-        data = {"npc": "martin", "color": [255, 0]}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'color' must be a list of 3 integers" in errors[0]
+        with pytest.raises(ActionParseError, match="'interactive_object' must be a string"):
+            EmitParticlesAction.from_dict(data)
 
-    def test_validate_params_color_non_integers(self) -> None:
-        """Test validate_params detects color list with non-integers."""
-        data = {"npc": "martin", "color": [255, "green", 0]}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'color' must be a list of 3 integers" in errors[0]
+    def test_from_dict_color_invalid_format(self) -> None:
+        """Test from_dict with invalid color format."""
+        data = {"particle_type": "hearts", "npc": "yema", "color": "red"}
 
-    def test_validate_params_color_with_bools(self) -> None:
-        """Test validate_params detects color list with bools."""
-        data = {"npc": "martin", "color": [True, False, 0]}
-        errors = EmitParticlesAction.validate_params(data)
-        assert len(errors) == 1
-        assert "'color' must be a list of 3 integers" in errors[0]
-
-    def test_validate_params_color_valid(self) -> None:
-        """Test validate_params accepts valid color list."""
-        data = {"npc": "martin", "color": [255, 128, 0]}
-        errors = EmitParticlesAction.validate_params(data)
-        assert errors == []
+        with pytest.raises(ActionParseError, match="'color' must be a list of 3 integers"):
+            EmitParticlesAction.from_dict(data)
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestEmitParticlesActionGetReferences:
+    """Unit test class for EmitParticlesAction.get_references."""
+
+    def test_get_references_with_npc(self) -> None:
+        """Test get_references returns NPC reference."""
+        action = EmitParticlesAction("hearts", npc_name="yema")
+        refs = action.get_references()
+
+        assert len(refs) == 1
+        ref = next(iter(refs))
+        assert ref.type == "npc"
+        assert ref.name == "yema"
+
+    def test_get_references_with_interactive_object(self) -> None:
+        """Test get_references returns interactive object reference."""
+        action = EmitParticlesAction("hearts", interactive_object="chest")
+        refs = action.get_references()
+
+        assert len(refs) == 1
+        ref = next(iter(refs))
+        assert ref.type == "interactive_object"
+        assert ref.name == "chest"
+
+    def test_get_references_with_player(self) -> None:
+        """Test get_references returns empty set for player."""
+        action = EmitParticlesAction("hearts", player=True)
+        refs = action.get_references()
+
+        assert len(refs) == 0

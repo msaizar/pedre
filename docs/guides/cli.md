@@ -122,7 +122,7 @@ from pedre.commands.base import Command
 from pedre.commands.registry import CommandRegistry
 
 
-@CommandRegistry.register()
+@CommandRegistry.register
 class BuildCommand(Command):
     """Build and package the game for distribution."""
 
@@ -173,7 +173,7 @@ from pedre.commands.base import Command
 from pedre.commands.registry import CommandRegistry
 
 
-@CommandRegistry.register()
+@CommandRegistry.register
 class BalanceCommand(Command):
     """Balance combat statistics."""
 
@@ -189,7 +189,7 @@ class BalanceCommand(Command):
         # Implementation here
 
 
-@CommandRegistry.register()
+@CommandRegistry.register
 class SpawnCommand(Command):
     """Spawn enemies for testing."""
 
@@ -415,7 +415,7 @@ if TYPE_CHECKING:
 console = Console()
 
 
-@CommandRegistry.register()
+@CommandRegistry.register
 class TestCommand(Command):
     """Run game tests with pytest."""
 

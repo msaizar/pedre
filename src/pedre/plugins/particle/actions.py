@@ -8,7 +8,8 @@ import logging
 from typing import TYPE_CHECKING, Any, Self, cast
 
 from pedre.actions import Action
-from pedre.actions.registry import ActionRegistry
+from pedre.actions.registry import ActionParseError, ActionRegistry
+from pedre.types import EntityReference
 
 if TYPE_CHECKING:
     from pedre.plugins.game_context import GameContext
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-@ActionRegistry.register("emit_particles")
+@ActionRegistry.register
 class EmitParticlesAction(Action):
     """Emit particle effects.
 
@@ -29,33 +30,35 @@ class EmitParticlesAction(Action):
     Example usage:
         # Hearts at NPC location
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "hearts",
             "npc": "yema"
         }
 
         # Sparkles at player location
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "sparkles",
             "player": true
         }
 
         # Trail at interactive object location
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "trail",
             "interactive_object": "waypoint"
         }
 
         # Burst at interactive object location with custom color
         {
-            "type": "emit_particles",
+            "name": "emit_particles",
             "particle_type": "burst",
             "interactive_object": "treasure_chest",
             "color": [255, 215, 0]
         }
     """
+
+    name = "emit_particles"
 
     def __init__(
         self,
@@ -190,30 +193,18 @@ class EmitParticlesAction(Action):
         color_data = data.get("color")
         color = tuple(color_data) if color_data else None
 
-        return cls(
-            particle_type=data.get("particle_type", "burst"),
-            npc_name=data.get("npc"),
-            player=data.get("player", False),
-            interactive_object=data.get("interactive_object"),
-            color=color,
-        )
-
-    @classmethod
-    def validate_params(cls, data: dict[str, Any]) -> list[str]:
-        """Validate emit_particles action parameters.
-
-        Returns:
-            List of error messages. Empty list means valid.
-        """
-        errors = []
-
         # Validate particle_type enum
         valid_types = {"hearts", "sparkles", "trail", "burst"}
-        particle_type = data.get("particle_type", "burst")
+        particle_type = data.get("particle_type")
+        if not particle_type:
+            msg = "missing required 'particle_type' field"
+            raise ActionParseError(msg)
         if not isinstance(particle_type, str):
-            errors.append("'particle_type' must be a string")
-        elif particle_type not in valid_types:
-            errors.append(f"unknown particle_type '{particle_type}' (valid: {', '.join(sorted(valid_types))})")
+            msg = "'particle_type' must be a string"
+            raise ActionParseError(msg)
+        if particle_type not in valid_types:
+            msg = f"unknown particle_type '{particle_type}' (valid: {', '.join(sorted(valid_types))})"
+            raise ActionParseError(msg)
 
         # Validate exactly one location is specified
         has_npc = "npc" in data
@@ -222,29 +213,49 @@ class EmitParticlesAction(Action):
         locations = sum([has_npc, bool(has_player), has_object])
 
         if locations == 0:
-            errors.append("must specify one location (npc, player, or interactive_object)")
-        elif locations > 1:
-            errors.append("only one location allowed (npc, player, or interactive_object)")
+            msg = "must specify one location (npc, player, or interactive_object)"
+            raise ActionParseError(msg)
+        if locations > 1:
+            msg = "only one location allowed (npc, player, or interactive_object)"
+            raise ActionParseError(msg)
 
         # Type checks for location fields
-        if "npc" in data and not isinstance(data["npc"], str):
-            errors.append("'npc' must be a string")
+        if has_npc and not isinstance(data["npc"], str):
+            msg = "'npc' must be a string"
+            raise ActionParseError(msg)
 
-        if "player" in data and not isinstance(data["player"], bool):
-            errors.append("'player' must be a bool")
+        if has_player and not isinstance(data["player"], bool):
+            msg = "'player' must be a bool"
+            raise ActionParseError(msg)
 
-        if "interactive_object" in data and not isinstance(data["interactive_object"], str):
-            errors.append("'interactive_object' must be a string")
+        if has_object and not isinstance(data["interactive_object"], str):
+            msg = "'interactive_object' must be a string"
+            raise ActionParseError(msg)
 
         # Type check for color
-        if "color" in data:
-            color = data["color"]
+        if color_data:
             is_valid_color = (
-                isinstance(color, list)
-                and len(color) == 3
-                and all(isinstance(c, int) and not isinstance(c, bool) for c in color)
+                isinstance(color_data, list)
+                and len(color_data) == 3
+                and all(isinstance(c, int) and not isinstance(c, bool) for c in color_data)
             )
             if not is_valid_color:
-                errors.append("'color' must be a list of 3 integers")
+                msg = "'color' must be a list of 3 integers"
+                raise ActionParseError(msg)
 
-        return errors
+        return cls(
+            particle_type=particle_type,
+            npc_name=data.get("npc"),
+            player=data.get("player", False),
+            interactive_object=data.get("interactive_object"),
+            color=color,
+        )
+
+    def get_references(self) -> set[EntityReference]:
+        """Extract references for validation."""
+        refs = set()
+        if self.npc_name:
+            refs.add(EntityReference(type="npc", name=self.npc_name))
+        elif self.interactive_object:
+            refs.add(EntityReference(type="interactive_object", name=self.interactive_object))
+        return refs

@@ -261,11 +261,11 @@ Create `assets/data/scripts/village_scripts.json`:
     "run_once": true,
     "actions": [
       {
-        "type": "advance_dialog",
+        "name": "advance_dialog",
         "npc": "merchant"
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "greeting.wav"
       }
     ]
@@ -424,16 +424,16 @@ Add to `assets/data/scripts/forest_scripts.json`:
     "run_once": true,
     "actions": [
       {
-        "type": "dialog",
+        "name": "dialog",
         "speaker": "Info",
         "text": ["You found a Golden Key!"]
       },
       {
-        "type": "play_sfx",
+        "name": "play_sfx",
         "file": "chest_open.wav"
       },
       {
-        "type": "emit_particles",
+        "name": "emit_particles",
         "particle_type": "sparkles",
         "interactive_object": "treasure_chest"
       }
@@ -475,7 +475,7 @@ Add to `assets/data/scripts/village_scripts.json`:
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["merchant"],
         "waypoint": "market_spot"
       }
@@ -490,7 +490,7 @@ Add to `assets/data/scripts/village_scripts.json`:
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["merchant"],
         "waypoint": "well_spot"
       }
@@ -505,7 +505,7 @@ Add to `assets/data/scripts/village_scripts.json`:
     },
     "actions": [
       {
-        "type": "move_npc",
+        "name": "move_npc",
         "npcs": ["merchant"],
         "waypoint": "home_spot"
       }

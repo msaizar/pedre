@@ -499,14 +499,14 @@ Play background music.
 
 ```json
 {
-    "type": "play_music",
+    "name": "play_music",
     "file": "town_theme.ogg"
 }
 ```
 
 ```json
 {
-    "type": "play_music",
+    "name": "play_music",
     "file": "victory_fanfare.ogg",
     "loop": false,
     "volume": 0.8
@@ -532,7 +532,7 @@ Play a sound effect.
 
 ```json
 {
-    "type": "play_sfx",
+    "name": "play_sfx",
     "file": "door_open.wav"
 }
 ```
@@ -687,10 +687,10 @@ audio_plugin.play_sfx("click.wav", volume=0.3)
             "portal": "throne_room"
         },
         "actions": [
-            {"type": "play_music", "file": "throne_room.ogg"},
-            {"type": "play_sfx", "file": "door_open.wav"},
-            {"type": "dialog", "speaker": "King", "text": ["Welcome to my court!"]},
-            {"type": "wait_for_dialog_close"}
+            {"name": "play_music", "file": "throne_room.ogg"},
+            {"name": "play_sfx", "file": "door_open.wav"},
+            {"name": "dialog", "speaker": "King", "text": ["Welcome to my court!"]},
+            {"name": "wait_for_dialog_close"}
         ]
     }
 }

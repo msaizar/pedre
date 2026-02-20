@@ -38,8 +38,8 @@ Usage from Code:
 
 Usage from Scripts:
     [
-        {"type": "play_music", "music": "beach.ogg", "loop": true},
-        {"type": "play_sfx", "sfx": "feliz_cumple.mp3"}
+        {"name": "play_music", "music": "beach.ogg", "loop": true},
+        {"name": "play_sfx", "sfx": "feliz_cumple.mp3"}
     ]
 
 Integration:
@@ -55,7 +55,7 @@ from typing import Any, ClassVar
 import arcade
 
 from pedre.conf import settings
-from pedre.constants import asset_path
+from pedre.helpers import asset_path
 from pedre.plugins.audio.base import AudioBasePlugin
 from pedre.plugins.registry import PluginRegistry
 
@@ -205,7 +205,8 @@ class AudioPlugin(AudioBasePlugin):
                 logger.debug("Using cached music: %s", filename)
             else:
                 # Load and cache new music
-                music_file = asset_path(f"audio/music/{filename}")
+                # settings.MUSIC_PATH
+                music_file = asset_path(f"{settings.AUDIO_MUSIC_DIRECTORY}/{filename}")
 
                 # Use streaming for non-looping music to avoid loading delays
                 # Note: streaming=True disables looping, so only use it when loop=False
