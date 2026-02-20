@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 console = Console()
 
 
-@CommandRegistry.register()
+@CommandRegistry.register
 class ValidateCommand(Command):
     """Validate game scripts and dialogs for errors."""
 

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 console = Console()
 
 
-@CommandRegistry.register()
+@CommandRegistry.register
 class InitCommand(Command):
     """Initialize a new Pedre project with the recommended directory structure."""
 

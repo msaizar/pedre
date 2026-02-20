@@ -170,7 +170,7 @@ class TestAutodiscoverProjectCommands:
 from pedre.commands.base import Command
 from pedre.commands.registry import CommandRegistry
 
-@CommandRegistry.register()
+@CommandRegistry.register
 class TestProjectCommand(Command):
     name = "testproject"
     help = "Test project command"

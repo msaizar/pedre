@@ -28,7 +28,7 @@ class Command(ABC):
             from pedre.commands.base import Command
             from pedre.commands.registry import CommandRegistry
 
-            @CommandRegistry.register()
+            @CommandRegistry.register
             class MyCommand(Command):
                 name = "mycommand"
                 help = "Does something useful"

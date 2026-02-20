@@ -1,7 +1,8 @@
 """Tests for command registry."""
 
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+
+import pytest
 
 from pedre.commands.base import Command
 from pedre.commands.registry import CommandRegistry
@@ -24,7 +25,7 @@ class TestCommandRegistry:
     def test_register_command(self) -> None:
         """Test registering a command."""
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class TestCommand(Command):
             name = "test"
             help = "Test command"
@@ -40,28 +41,34 @@ class TestCommandRegistry:
         assert CommandRegistry.is_registered("test")
         assert CommandRegistry.get_command("test") is TestCommand
 
-    def test_register_command_without_name(self) -> None:
-        """Test registering a command without a name logs warning."""
-        with patch("pedre.commands.registry.logger") as mock_logger:
+    def test_register_duplicate_command_raises(self) -> None:
+        """Test registering a command with a duplicate name raises ValueError."""
 
-            @CommandRegistry.register()
-            class NamelessCommand(Command):
-                name = ""  # Empty name
-                help = "Test command"
-                description = "Test description"
+        @CommandRegistry.register
+        class TestCommand(Command):
+            name = "test"
+            help = "Test command"
+            description = "Test description"
+
+            def add_arguments(self, parser: argparse.ArgumentParser) -> None:
+                pass
+
+            def execute(self, args: argparse.Namespace) -> None:
+                pass
+
+        with pytest.raises(ValueError, match="already registered"):
+
+            @CommandRegistry.register
+            class DuplicateCommand(Command):
+                name = "test"
+                help = "Duplicate"
+                description = "Duplicate"
 
                 def add_arguments(self, parser: argparse.ArgumentParser) -> None:
                     pass
 
                 def execute(self, args: argparse.Namespace) -> None:
                     pass
-
-            # Verify warning was logged (covers lines 111-115)
-            mock_logger.warning.assert_called_once()
-            assert "has no name" in mock_logger.warning.call_args[0][0]
-
-            # Command should not be registered
-            assert not CommandRegistry.is_registered("")
 
     def test_get_command_returns_none_for_unregistered(self) -> None:
         """Test get_command returns None for unregistered command."""
@@ -72,7 +79,7 @@ class TestCommandRegistry:
     def test_get_all_commands(self) -> None:
         """Test getting all registered commands."""
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class Command1(Command):
             name = "cmd1"
             help = "Command 1"
@@ -84,7 +91,7 @@ class TestCommandRegistry:
             def execute(self, args: argparse.Namespace) -> None:
                 pass
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class Command2(Command):
             name = "cmd2"
             help = "Command 2"
@@ -107,7 +114,7 @@ class TestCommandRegistry:
     def test_get_all_commands_returns_copy(self) -> None:
         """Test that get_all_commands returns a copy."""
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class TestCommand(Command):
             name = "test"
             help = "Test command"
@@ -140,7 +147,7 @@ class TestCommandRegistry:
     def test_is_registered(self) -> None:
         """Test checking if a command is registered."""
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class TestCommand(Command):
             name = "test"
             help = "Test command"
@@ -158,7 +165,7 @@ class TestCommandRegistry:
     def test_clear(self) -> None:
         """Test clearing the registry."""
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class TestCommand(Command):
             name = "test"
             help = "Test command"

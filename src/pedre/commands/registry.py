@@ -10,7 +10,7 @@ Example:
         from pedre.commands.base import Command
         from pedre.commands.registry import CommandRegistry
 
-        @CommandRegistry.register()
+        @CommandRegistry.register
         class BuildCommand(Command):
             name = "build"
             help = "Build the project"
@@ -39,8 +39,6 @@ import logging
 from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from pedre.commands.base import Command
 
 logger = logging.getLogger(__name__)
@@ -62,7 +60,7 @@ class CommandRegistry:
     Example:
         Registering and using a command::
 
-            @CommandRegistry.register()
+            @CommandRegistry.register
             class TestCommand(Command):
                 name = "test"
                 help = "Run tests"
@@ -80,19 +78,19 @@ class CommandRegistry:
     _commands: ClassVar[dict[str, type[Command]]] = {}
 
     @classmethod
-    def register(cls) -> Callable[[type[Command]], type[Command]]:
+    def register(cls, command_class: type[Command]) -> type[Command]:
         """Decorator to register a command class.
 
         The command class must have a `name` attribute that identifies the command
         in the CLI (e.g., "init", "validate", "build").
 
-        Returns:
-            Decorator function that registers the command class.
+        Raises:
+            ValueError: If a command with the same name is already registered.
 
         Example:
             Using the decorator::
 
-                @CommandRegistry.register()
+                @CommandRegistry.register
                 class ServeCommand(Command):
                     name = "serve"
                     help = "Start development server"
@@ -105,20 +103,13 @@ class CommandRegistry:
 
                 pedre serve
         """
+        if command_class.name in cls._commands:
+            msg = f"Command '{command_class.name}' already registered"
+            raise ValueError(msg)
 
-        def decorator(command_class: type[Command]) -> type[Command]:
-            if not command_class.name:
-                logger.warning(
-                    "Command class %s has no name, skipping registration",
-                    command_class.__name__,
-                )
-                return command_class
-
-            cls._commands[command_class.name] = command_class
-            logger.debug("Registered command: %s", command_class.name)
-            return command_class
-
-        return decorator
+        cls._commands[command_class.name] = command_class
+        logger.debug("Registered command: %s", command_class.name)
+        return command_class
 
     @classmethod
     def get_command(cls, command_name: str) -> type[Command] | None:
