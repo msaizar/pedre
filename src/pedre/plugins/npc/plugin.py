@@ -77,6 +77,7 @@ from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
     from pedre.actions.base import Action
+    from pedre.conditions.base import Condition
     from pedre.plugins.npc.types import NPCInitKwargs
 
 logger = logging.getLogger(__name__)
@@ -281,6 +282,21 @@ class NPCPlugin(NPCBasePlugin):
                     except ValueError:
                         level = level_str
 
+                    # Parse conditions through ConditionRegistry
+                    parsed_conditions = None
+                    if condition_defs := dialog_data.get("conditions"):
+                        parsed_conditions = []
+                        for condition_def in condition_defs:
+                            try:
+                                parsed_conditions.append(ConditionRegistry.create(condition_def))
+                            except ConditionParseError as e:
+                                logger.warning(
+                                    "Failed to parse condition for NPC '%s' level %s: %s",
+                                    npc_name,
+                                    level_str,
+                                    e,
+                                )
+
                     # Parse on_condition_fail actions through ActionRegistry
                     parsed_fail_actions = None
                     if fail_action_defs := dialog_data.get("on_condition_fail"):
@@ -300,7 +316,7 @@ class NPCPlugin(NPCBasePlugin):
                     self.dialogs[scene][npc_name][level] = NPCDialogConfig(
                         text=dialog_data["text"],
                         name=dialog_data.get("name"),
-                        conditions=dialog_data.get("conditions"),
+                        conditions=parsed_conditions,
                         on_condition_fail=parsed_fail_actions,
                     )
 
@@ -473,27 +489,16 @@ class NPCPlugin(NPCBasePlugin):
 
         return npc_name in self.interacted_npcs.get(scene_name, set())
 
-    def _check_dialog_conditions(self, conditions: list[dict[str, Any]]) -> bool:
-        """Check if all dialog conditions are met using ConditionRegistry.
+    def _check_dialog_conditions(self, conditions: list[Condition]) -> bool:
+        """Check if all dialog conditions are met.
 
         Args:
-            conditions: List of condition dictionaries.
-            context: Game context for accessing plugins.
+            conditions: List of parsed Condition objects.
 
         Returns:
             True if all conditions are met.
         """
-        for condition_data in conditions:
-            try:
-                condition = ConditionRegistry.create(condition_data)
-            except ConditionParseError as e:
-                logger.warning("Failed to parse condition: %s", e)
-                return False
-
-            if not condition.check(self.context):
-                return False
-
-        return True
+        return all(condition.check(self.context) for condition in conditions)
 
     def get_dialog(
         self, npc_name: str, dialog_level: int, scene: str = "default"

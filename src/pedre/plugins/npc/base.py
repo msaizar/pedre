@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     import arcade
 
     from pedre.actions.base import Action
+    from pedre.conditions.base import Condition
 
 
 @dataclass
@@ -31,10 +32,8 @@ class NPCDialogConfig:
         name: Optional display name for the speaker. If provided, this name is shown in the
              dialog box instead of the NPC's key name. Useful for proper capitalization or
              titles (e.g., "Merchant" instead of "merchant").
-        conditions: Optional list of condition dictionaries that must ALL be true for this
-                   dialog to display. Each condition has a "name" type and expected values.
-                   Common checks: "npc_dialog_level", "inventory_accessed", "object_interacted".
-                   If None or empty, dialog always shows.
+        conditions: Optional list of parsed Condition objects that must ALL be true for this
+                   dialog to display. If None or empty, dialog always shows.
         on_condition_fail: Optional list of parsed Action objects to execute if conditions fail.
                           Allows fallback behavior like showing reminder text or triggering
                           alternative sequences. If None, condition failure silently falls back
@@ -61,7 +60,7 @@ class NPCDialogConfig:
 
     text: list[str]
     name: str | None = None
-    conditions: list[dict[str, Any]] | None = None
+    conditions: list[Condition] | None = None
     on_condition_fail: list[Action] | None = None  # List of actions to execute if conditions fail
 
 
