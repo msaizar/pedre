@@ -64,7 +64,7 @@ from pedre.conf import settings
 from pedre.events.registry import EventRegistry
 from pedre.helpers import asset_path
 from pedre.plugins.registry import PluginRegistry
-from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptEvent, ScriptTrigger
+from pedre.plugins.script.base import Script, ScriptBasePlugin, ScriptTrigger
 from pedre.plugins.script.events import ScriptCompleteEvent
 
 if TYPE_CHECKING:
@@ -415,10 +415,7 @@ class ScriptPlugin(ScriptBasePlugin):
         if not event_name:
             return
 
-        # Extract data using the protocol if available
-        # cast to ScriptEvent to satisfy type checker for get_script_data call
-        script_event = cast("ScriptEvent", event)
-        event_data = script_event.get_script_data() if hasattr(event, "get_script_data") else asdict(event)
+        event_data = event.get_script_data() if hasattr(event, "get_script_data") else asdict(event)
 
         logger.debug("ScriptPlugin: Handling event '%s' with data: %s", event_name, event_data)
 

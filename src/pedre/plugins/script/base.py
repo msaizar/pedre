@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any
 
 from pedre.events.registry import EventRegistry
 from pedre.plugins.base import BasePlugin
@@ -32,14 +32,6 @@ class ScriptValidationError(Exception):
         self.errors = errors
         summary = f"{len(errors)} script validation error(s):\n" + "\n".join(f"  - {e}" for e in errors)
         super().__init__(summary)
-
-
-class ScriptEvent(Protocol):
-    """Protocol for events that support script data extraction."""
-
-    def get_script_data(self) -> dict[str, Any]:
-        """Get data formatted for script trigger evaluation."""
-        ...
 
 
 @dataclass(frozen=True)

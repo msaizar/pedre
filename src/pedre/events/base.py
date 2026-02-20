@@ -64,6 +64,10 @@ class Event:
                 refs.add(EntityReference(type=entity_type, name=value))
         return refs
 
+    def get_script_data(self) -> dict[str, Any]:
+        """Return script data."""
+        return {}
+
 
 class EventBus:
     """Central event bus for publish/subscribe event handling.
