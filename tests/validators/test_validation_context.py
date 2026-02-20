@@ -246,6 +246,57 @@ class TestValidationContext:
         assert "dungeon" in all_portals
         assert "cave" in all_portals
 
+    def test_get_map_interactive_objects_exists(self, context: ValidationContext) -> None:
+        """Test retrieving interactive objects from a specific map that exists."""
+        context.add_map_entity("village", "interactive_objects", "chest")
+        context.add_map_entity("village", "interactive_objects", "lever")
+
+        objects = context.get_map_interactive_objects("village")
+
+        assert len(objects) == 2
+        assert "chest" in objects
+        assert "lever" in objects
+
+    def test_get_map_interactive_objects_not_found(self, context: ValidationContext) -> None:
+        """Test retrieving interactive objects from a non-existent map returns empty set."""
+        objects = context.get_map_interactive_objects("nonexistent_map")
+
+        assert objects == set()
+        assert isinstance(objects, set)
+
+    def test_get_all_interactive_objects_multiple_maps(self, context: ValidationContext) -> None:
+        """Test aggregating interactive objects across all maps."""
+        context.add_map_entity("village", "interactive_objects", "chest")
+        context.add_map_entity("forest", "interactive_objects", "shrine")
+        context.add_map_entity("castle", "interactive_objects", "throne")
+
+        all_objects = context.get_all_interactive_objects()
+
+        assert len(all_objects) == 3
+        assert "chest" in all_objects
+        assert "shrine" in all_objects
+        assert "throne" in all_objects
+
+    def test_get_all_maps_empty(self, context: ValidationContext) -> None:
+        """Test getting all maps when context is empty."""
+        all_maps = context.get_all_maps()
+
+        assert all_maps == set()
+        assert isinstance(all_maps, set)
+
+    def test_get_all_maps_multiple_maps(self, context: ValidationContext) -> None:
+        """Test getting all map names registered in the context."""
+        context.add_map_entity("village", "npcs", "merchant")
+        context.add_map_entity("forest", "waypoints", "clearing")
+        context.add_map_entity("castle", "portals", "gate")
+
+        all_maps = context.get_all_maps()
+
+        assert len(all_maps) == 3
+        assert "village" in all_maps
+        assert "forest" in all_maps
+        assert "castle" in all_maps
+
 
 class TestValidationContextInventoryItems:
     """Test inventory item methods on ValidationContext."""
