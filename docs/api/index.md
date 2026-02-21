@@ -8,32 +8,25 @@ The Pedre framework is built on several core architectural components that work 
 
 ## Architecture
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│                        Game                             │
-│  (Coordinates game lifecycle & plugin initialization)   │
-└─────────────────┬───────────────────────────────────────┘
-                  │
-                  ▼
-           ┌───────────────┐
-           │   GameView    │
-           └───────┬───────┘
-                   │
-                   ▼
-           ┌───────────────┐
-           │ GameContext   │
-           │  ┌─────────┐  │
-           │  │EventBus │  │
-           │  └─────────┘  │
-           └───────┬───────┘
-                   │
-      ┌────────────┼────────────┐
-      │            │            │
-      ▼            ▼            ▼
-┌──────────┐ ┌──────────┐ ┌──────────┐
-│ Plugins  │ │ Actions  │ │  Events  │
-│          │ │(Scripts) │ │(EventBus)│
-└──────────┘ └──────────┘ └──────────┘
+```mermaid
+graph TD
+    Game["<b>Game</b><br/><i>Coordinates lifecycle &amp; plugin initialization</i>"]
+    EventBus["EventBus"]
+    GameContext["GameContext<br/><i>(plugin registry)</i>"]
+    GameView["GameView<br/><i>(arcade.View)</i>"]
+    Actions["Actions"]
+    Events["Events"]
+    Conditions["Conditions"]
+    Plugins["Plugins"]
+
+    Game --> EventBus
+    Game --> GameContext
+    Game --> Actions
+    Game --> Events
+    Game --> Conditions
+    Game --> GameView
+    EventBus --> GameContext
+    GameContext --> Plugins
 ```
 
 ## Core Components
@@ -62,7 +55,6 @@ Primary game screen.
 **GameView:**
 
 - `GameView` - Main gameplay with all plugins active
-- Only one view exists (the "pause menu" is a plugin overlay, not a view)
 - Managed by the Game coordinator
 
 ### [GameContext](game-context.md)
