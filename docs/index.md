@@ -47,22 +47,6 @@ WINDOW_TITLE="My RPG"
 INITIAL_MAP="my_map.tmx"
 ```
 
-### Framework Architecture
-
-The framework uses `PluginLoader` to initialize plugins and `GameContext` to coordinate them:
-
-```python
-from pedre.plugins.loader import PluginLoader
-
-# Loader handles initialization and dependency injection
-loader = PluginLoader()
-loader.setup_all(context)
-
-# Plugins access each other via context
-def update(self, delta_time):
-    audio = self.context.get_plugin("audio")
-```
-
 ## Documentation Overview
 
 <div class="grid cards" markdown>

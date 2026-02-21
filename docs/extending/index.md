@@ -66,6 +66,19 @@ Build entire game plugins that integrate with the framework lifecycle.
 
 **Learn More:** [Custom Plugins](custom-plugins.md)
 
+### CLI Commands
+
+Create project-specific CLI commands or distribute commands as installable packages.
+
+**Use Cases:**
+
+- Build and packaging scripts
+- Deployment automation
+- Testing utilities
+- Development tools
+
+**Learn More:** [Custom Commands](custom-commands.md)
+
 ## Extension Workflow
 
 ### 1. Create Your Extension
@@ -293,22 +306,13 @@ class IsWeatherCondition(Condition):
         return weather_plugin.current_weather == self.weather
 ```
 
-## Plugin Loader
-
-The [PluginLoader](plugin-loader.md) handles automatic loading and initialization of all extensions. It manages:
-
-- Dependency resolution
-- Initialization order
-- Lifecycle management (setup, reset, cleanup)
-- Event bus wiring
-
 ## Next Steps
 
 - [Custom Actions](custom-actions.md) - Create script actions
 - [Custom Events](custom-events.md) - Define game events
 - [Custom Conditions](custom-conditions.md) - Add conditional checks
 - [Custom Plugins](custom-plugins.md) - Build complete game plugins
-- [Plugin Loader](plugin-loader.md) - Understand the loading process
+- [Custom Commands](custom-commands.md) - Add CLI commands
 
 ## See Also
 

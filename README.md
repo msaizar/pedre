@@ -127,8 +127,7 @@ Pedre uses a **plugin-based architecture** where plugins communicate via a centr
 - **GameView** - Single view managing gameplay (pause menu and inventory are plugin overlays, not separate views)
 - **GameContext** - Central coordinator providing plugins access to each other
 - **EventBus** - Powers the event-driven scripting system (triggers and actions)
-- **Plugins** - Modular, replaceable components for different game aspects
-  - See [Plugin Reference](https://msaizar.github.io/pedre/plugins/) for complete list
+- **Plugins** - Modular, replaceable components for different game aspects. See [Plugin Reference](https://msaizar.github.io/pedre/plugins/) for complete list
 - **Extensible scripting system** - Create custom actions, events, and conditions
 - **Sprites** - AnimatedPlayer and AnimatedNPC with multi-directional sprite sheet support
 
