@@ -57,6 +57,7 @@ nav = [
         "extending/custom-events.md",
         "extending/custom-conditions.md",
         "extending/custom-plugins.md",
+        "extending/custom-commands.md",
         "extending/plugin-loader.md",
     ]},
 ]
@@ -88,7 +89,9 @@ features = [
 
 [markdown_extensions]
 pymdownx.highlight = { use_pygments = true }
-pymdownx.superfences = true
+pymdownx.superfences = { custom_fences = [
+    { name = "mermaid", class = "mermaid", format = "!!python/name:pymdownx.superfences.fence_code_format" }
+] }
 pymdownx.inlinehilite = true
 pymdownx.snippets = true
 pymdownx.tabbed = { alternate_style = true }

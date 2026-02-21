@@ -66,6 +66,19 @@ Build entire game plugins that integrate with the framework lifecycle.
 
 **Learn More:** [Custom Plugins](custom-plugins.md)
 
+### CLI Commands
+
+Create project-specific CLI commands or distribute commands as installable packages.
+
+**Use Cases:**
+
+- Build and packaging scripts
+- Deployment automation
+- Testing utilities
+- Development tools
+
+**Learn More:** [Custom Commands](custom-commands.md)
+
 ## Extension Workflow
 
 ### 1. Create Your Extension
@@ -308,6 +321,7 @@ The [PluginLoader](plugin-loader.md) handles automatic loading and initializatio
 - [Custom Events](custom-events.md) - Define game events
 - [Custom Conditions](custom-conditions.md) - Add conditional checks
 - [Custom Plugins](custom-plugins.md) - Build complete game plugins
+- [Custom Commands](custom-commands.md) - Add CLI commands
 - [Plugin Loader](plugin-loader.md) - Understand the loading process
 
 ## See Also
