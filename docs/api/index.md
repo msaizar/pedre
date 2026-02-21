@@ -87,6 +87,16 @@ Publish-subscribe event system for decoupled communication.
 - `publish(event)`
 - `unsubscribe(event_type, callback)`
 
+### [PluginLoader](plugin-loader.md)
+
+Handles dynamic loading, dependency resolution, and lifecycle management for all plugins.
+
+**Responsibilities:**
+
+- Instantiate plugins in dependency order (topological sort)
+- Detect circular dependencies
+- Manage plugin lifecycle (setup, reset, cleanup)
+
 ### [Sprites](sprites.md)
 
 Animated character sprites for player and NPCs.

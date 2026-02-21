@@ -306,15 +306,6 @@ class IsWeatherCondition(Condition):
         return weather_plugin.current_weather == self.weather
 ```
 
-## Plugin Loader
-
-The [PluginLoader](plugin-loader.md) handles automatic loading and initialization of all extensions. It manages:
-
-- Dependency resolution
-- Initialization order
-- Lifecycle management (setup, reset, cleanup)
-- Event bus wiring
-
 ## Next Steps
 
 - [Custom Actions](custom-actions.md) - Create script actions
@@ -322,7 +313,6 @@ The [PluginLoader](plugin-loader.md) handles automatic loading and initializatio
 - [Custom Conditions](custom-conditions.md) - Add conditional checks
 - [Custom Plugins](custom-plugins.md) - Build complete game plugins
 - [Custom Commands](custom-commands.md) - Add CLI commands
-- [Plugin Loader](plugin-loader.md) - Understand the loading process
 
 ## See Also
 
