@@ -476,6 +476,4 @@ class AnimatedSprite(arcade.Sprite):
                 self.texture = self.animation_textures[name][0]
                 return
 
-        logger.warning("No animation textures loaded; using placeholder")
-        placeholder = Image.new("RGBA", (self.tile_size, self.tile_size), (0, 255, 0, 255))
-        self.texture = arcade.Texture(name="sprite_placeholder", image=placeholder)
+        logger.warning("No animation textures loaded")
