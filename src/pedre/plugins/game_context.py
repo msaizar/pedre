@@ -102,7 +102,7 @@ class GameContext:
         self,
         event_bus: EventBus,
         window: arcade.Window,
-        content_registry: ContentRegistry | None = None,
+        content_registry: ContentRegistry,
     ) -> None:
         """Initialize game context with game state.
 
@@ -115,9 +115,8 @@ class GameContext:
                       Actions can publish events to trigger scripts or notify other plugins.
             window: Reference to the arcade Window instance. Used by plugins that need
                    to access window properties (size, rendering context, etc).
-            content_registry: Optional content registry holding sprite and NPC definitions
+            content_registry: Content registry holding sprite and NPC definitions
                               loaded from JSON. Provided by the Game coordinator.
-
         """
         self.event_bus = event_bus
         self.window = window

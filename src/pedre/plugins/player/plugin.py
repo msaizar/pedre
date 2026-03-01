@@ -119,13 +119,13 @@ class PlayerPlugin(PlayerBasePlugin):
             )
             scale = None
 
-        # Resolve sprite definition via content registry if available
-        content_registry = getattr(self.context, "content_registry", None)
+        # Resolve sprite definition via content registry
+        content_registry = self.context.content_registry
         sprite_id = player_obj.properties.get("sprite_id")
-        if sprite_id is None and content_registry is not None and content_registry.sprites.has("player"):
+        if sprite_id is None and content_registry.sprites.has("player"):
             sprite_id = "player"
 
-        if sprite_id and content_registry is not None and content_registry.sprites.has(sprite_id):
+        if sprite_id and content_registry.sprites.has(sprite_id):
             sprite_def = dict(content_registry.sprites.get(sprite_id))
             sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
             self.player_sprite = create_sprite_from_definition(

@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from pedre.content.registry import ContentRegistry
 from pedre.events import EventBus
 from pedre.plugins.base import BasePlugin
 from pedre.plugins.game_context import GameContext
@@ -88,7 +89,7 @@ def game_context(event_bus: EventBus, mock_window: Mock) -> GameContext:
     Returns:
         GameContext instance.
     """
-    return GameContext(event_bus=event_bus, window=mock_window)
+    return GameContext(event_bus=event_bus, window=mock_window, content_registry=ContentRegistry())
 
 
 class TestGameContextInit:
@@ -96,20 +97,20 @@ class TestGameContextInit:
 
     def test_init_with_event_bus_and_window(self, event_bus: EventBus, mock_window: Mock) -> None:
         """Test creating a GameContext with event bus and window."""
-        context = GameContext(event_bus=event_bus, window=mock_window)
+        context = GameContext(event_bus=event_bus, window=mock_window, content_registry=ContentRegistry())
 
         assert context.event_bus is event_bus
         assert context.window is mock_window
 
     def test_init_creates_empty_plugins_registry(self, event_bus: EventBus, mock_window: Mock) -> None:
         """Test that initialization creates an empty plugins registry."""
-        context = GameContext(event_bus=event_bus, window=mock_window)
+        context = GameContext(event_bus=event_bus, window=mock_window, content_registry=ContentRegistry())
 
         assert context.get_plugins() == {}
 
     def test_init_creates_pending_save_data_as_none(self, event_bus: EventBus, mock_window: Mock) -> None:
         """Test that initialization sets pending save data to None."""
-        context = GameContext(event_bus=event_bus, window=mock_window)
+        context = GameContext(event_bus=event_bus, window=mock_window, content_registry=ContentRegistry())
 
         assert context.get_pending_save_data() is None
 

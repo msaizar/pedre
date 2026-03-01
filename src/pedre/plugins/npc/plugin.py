@@ -842,7 +842,7 @@ class NPCPlugin(NPCBasePlugin):
             scene: The arcade Scene to add NPC sprites to.
         """
         npc_sprite_list = arcade.SpriteList()
-        content_registry = getattr(self.context, "content_registry", None)
+        content_registry = self.context.content_registry
 
         for npc_obj in npc_objects:
             if not npc_obj.properties:
@@ -899,7 +899,7 @@ class NPCPlugin(NPCBasePlugin):
         npc_obj: object,
         spawn_x: float,
         spawn_y: float,
-        content_registry: ContentRegistry | None,
+        content_registry: ContentRegistry,
     ) -> AnimatedSprite | None:
         """Resolve sprite definition and create an AnimatedSprite for an NPC.
 
@@ -912,38 +912,36 @@ class NPCPlugin(NPCBasePlugin):
             npc_obj: Tiled object with properties dict.
             spawn_x: World X position.
             spawn_y: World Y position.
-            content_registry: ContentRegistry instance or None.
+            content_registry: ContentRegistry instance.
 
         Returns:
             AnimatedSprite instance, or None if the sprite could not be created.
         """
         props = getattr(npc_obj, "properties", {}) or {}
 
-        # --- Registry path ---
-        if content_registry is not None:
-            # Allow a per-object sprite_id override; otherwise resolve via npcs registry
-            sprite_id = props.get("sprite_id")
-            npc_def: dict = {}
-            if content_registry.npcs.has(npc_name):
-                npc_def = content_registry.npcs.get(npc_name)
-                if sprite_id is None:
-                    sprite_id = npc_def.get("sprite_id")
+        # Allow a per-object sprite_id override; otherwise resolve via npcs registry
+        sprite_id = props.get("sprite_id")
+        npc_def: dict = {}
+        if content_registry.npcs.has(npc_name):
+            npc_def = content_registry.npcs.get(npc_name)
+            if sprite_id is None:
+                sprite_id = npc_def.get("sprite_id")
 
-            if sprite_id and content_registry.sprites.has(sprite_id):
-                sprite_def = content_registry.sprites.get(sprite_id)
-                # Resolve sprite_sheet path via asset_path helper
-                sprite_def = dict(sprite_def)
-                sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
-                sprite = create_sprite_from_definition(
-                    sprite_def,
-                    center_x=spawn_x,
-                    center_y=spawn_y,
-                    scale=npc_def.get("scale"),
-                    tile_size=npc_def.get("tile_size"),
-                )
-                if npc_def.get("initially_hidden", False):
-                    sprite.visible = False
-                return sprite
+        if sprite_id and content_registry.sprites.has(sprite_id):
+            sprite_def = content_registry.sprites.get(sprite_id)
+            # Resolve sprite_sheet path via asset_path helper
+            sprite_def = dict(sprite_def)
+            sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
+            sprite = create_sprite_from_definition(
+                sprite_def,
+                center_x=spawn_x,
+                center_y=spawn_y,
+                scale=npc_def.get("scale"),
+                tile_size=npc_def.get("tile_size"),
+            )
+            if npc_def.get("initially_hidden", False):
+                sprite.visible = False
+            return sprite
 
         logger.warning(
             "NPC '%s': no registry definition found. Skipping.",
