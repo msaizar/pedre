@@ -19,7 +19,7 @@ from pedre.plugins.npc.actions import (
     WaitForNPCsAppearAction,
     WaitForNPCsDisappearAction,
 )
-from pedre.plugins.npc.sprites import AnimatedNPC
+from pedre.sprites import AnimatedSprite
 from pedre.types import EntityReference
 
 
@@ -457,10 +457,11 @@ class TestWaitForNPCsAppearAction:
         assert result is True
 
     def test_execute_animated_npc_still_appearing(self) -> None:
-        """Test executing when AnimatedNPC is still appearing."""
+        """Test executing when AnimatedSprite is still appearing."""
         context = MagicMock()
-        mock_sprite = MagicMock(spec=AnimatedNPC)
-        mock_sprite.appear_complete = False
+        mock_sprite = MagicMock(spec=AnimatedSprite)
+        mock_sprite.has_state.return_value = True
+        mock_sprite.is_state_complete.return_value = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
@@ -471,10 +472,11 @@ class TestWaitForNPCsAppearAction:
         assert result is False
 
     def test_execute_animated_npc_appear_complete(self) -> None:
-        """Test executing when AnimatedNPC has completed appearing."""
+        """Test executing when AnimatedSprite has completed appearing."""
         context = MagicMock()
-        mock_sprite = MagicMock(spec=AnimatedNPC)
-        mock_sprite.appear_complete = True
+        mock_sprite = MagicMock(spec=AnimatedSprite)
+        mock_sprite.has_state.return_value = True
+        mock_sprite.is_state_complete.return_value = True
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
@@ -485,7 +487,7 @@ class TestWaitForNPCsAppearAction:
         assert result is True
 
     def test_execute_non_animated_npc(self) -> None:
-        """Test executing with non-AnimatedNPC sprite."""
+        """Test executing with non-AnimatedSprite sprite."""
         context = MagicMock()
         mock_sprite = MagicMock()
         mock_npc_state = MagicMock()
@@ -500,13 +502,15 @@ class TestWaitForNPCsAppearAction:
     def test_execute_multiple_npcs_mixed(self) -> None:
         """Test executing with multiple NPCs in different states."""
         context = MagicMock()
-        mock_sprite1 = MagicMock(spec=AnimatedNPC)
-        mock_sprite1.appear_complete = False
+        mock_sprite1 = MagicMock(spec=AnimatedSprite)
+        mock_sprite1.has_state.return_value = True
+        mock_sprite1.is_state_complete.return_value = False
         mock_npc_state1 = MagicMock()
         mock_npc_state1.sprite = mock_sprite1
 
-        mock_sprite2 = MagicMock(spec=AnimatedNPC)
-        mock_sprite2.appear_complete = True
+        mock_sprite2 = MagicMock(spec=AnimatedSprite)
+        mock_sprite2.has_state.return_value = True
+        mock_sprite2.is_state_complete.return_value = True
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
@@ -520,13 +524,15 @@ class TestWaitForNPCsAppearAction:
     def test_execute_multiple_npcs_all_complete(self) -> None:
         """Test executing with multiple NPCs all completed."""
         context = MagicMock()
-        mock_sprite1 = MagicMock(spec=AnimatedNPC)
-        mock_sprite1.appear_complete = True
+        mock_sprite1 = MagicMock(spec=AnimatedSprite)
+        mock_sprite1.has_state.return_value = True
+        mock_sprite1.is_state_complete.return_value = True
         mock_npc_state1 = MagicMock()
         mock_npc_state1.sprite = mock_sprite1
 
-        mock_sprite2 = MagicMock(spec=AnimatedNPC)
-        mock_sprite2.appear_complete = True
+        mock_sprite2 = MagicMock(spec=AnimatedSprite)
+        mock_sprite2.has_state.return_value = True
+        mock_sprite2.is_state_complete.return_value = True
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
@@ -571,10 +577,11 @@ class TestWaitForNPCsDisappearAction:
         assert result is True
 
     def test_execute_animated_npc_still_disappearing(self) -> None:
-        """Test executing when AnimatedNPC is still disappearing."""
+        """Test executing when AnimatedSprite is still disappearing."""
         context = MagicMock()
-        mock_sprite = MagicMock(spec=AnimatedNPC)
-        mock_sprite.disappear_complete = False
+        mock_sprite = MagicMock(spec=AnimatedSprite)
+        mock_sprite.has_state.return_value = True
+        mock_sprite.is_state_complete.return_value = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
@@ -585,10 +592,11 @@ class TestWaitForNPCsDisappearAction:
         assert result is False
 
     def test_execute_animated_npc_disappear_complete(self) -> None:
-        """Test executing when AnimatedNPC has completed disappearing."""
+        """Test executing when AnimatedSprite has completed disappearing."""
         context = MagicMock()
-        mock_sprite = MagicMock(spec=AnimatedNPC)
-        mock_sprite.disappear_complete = True
+        mock_sprite = MagicMock(spec=AnimatedSprite)
+        mock_sprite.has_state.return_value = True
+        mock_sprite.is_state_complete.return_value = True
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
@@ -599,7 +607,7 @@ class TestWaitForNPCsDisappearAction:
         assert result is True
 
     def test_execute_non_animated_npc(self) -> None:
-        """Test executing with non-AnimatedNPC sprite."""
+        """Test executing with non-AnimatedSprite sprite."""
         context = MagicMock()
         mock_sprite = MagicMock()
         mock_npc_state = MagicMock()
@@ -614,13 +622,15 @@ class TestWaitForNPCsDisappearAction:
     def test_execute_multiple_npcs_mixed(self) -> None:
         """Test executing with multiple NPCs in different states."""
         context = MagicMock()
-        mock_sprite1 = MagicMock(spec=AnimatedNPC)
-        mock_sprite1.disappear_complete = False
+        mock_sprite1 = MagicMock(spec=AnimatedSprite)
+        mock_sprite1.has_state.return_value = True
+        mock_sprite1.is_state_complete.return_value = False
         mock_npc_state1 = MagicMock()
         mock_npc_state1.sprite = mock_sprite1
 
-        mock_sprite2 = MagicMock(spec=AnimatedNPC)
-        mock_sprite2.disappear_complete = True
+        mock_sprite2 = MagicMock(spec=AnimatedSprite)
+        mock_sprite2.has_state.return_value = True
+        mock_sprite2.is_state_complete.return_value = True
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
@@ -634,13 +644,15 @@ class TestWaitForNPCsDisappearAction:
     def test_execute_multiple_npcs_all_complete(self) -> None:
         """Test executing with multiple NPCs all completed."""
         context = MagicMock()
-        mock_sprite1 = MagicMock(spec=AnimatedNPC)
-        mock_sprite1.disappear_complete = True
+        mock_sprite1 = MagicMock(spec=AnimatedSprite)
+        mock_sprite1.has_state.return_value = True
+        mock_sprite1.is_state_complete.return_value = True
         mock_npc_state1 = MagicMock()
         mock_npc_state1.sprite = mock_sprite1
 
-        mock_sprite2 = MagicMock(spec=AnimatedNPC)
-        mock_sprite2.disappear_complete = True
+        mock_sprite2 = MagicMock(spec=AnimatedSprite)
+        mock_sprite2.has_state.return_value = True
+        mock_sprite2.is_state_complete.return_value = True
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
@@ -678,8 +690,9 @@ class TestStartDisappearAnimationAction:
     def test_execute_starts_animation(self) -> None:
         """Test executing starts the disappear animation."""
         context = MagicMock()
-        mock_sprite = MagicMock(spec=AnimatedNPC)
-        mock_sprite.disappear_complete = False
+        mock_sprite = MagicMock(spec=AnimatedSprite)
+        mock_sprite.has_state.return_value = True
+        mock_sprite.is_state_complete.return_value = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         mock_npc_state.disappear_event_emitted = True
@@ -690,14 +703,15 @@ class TestStartDisappearAnimationAction:
 
         assert action.animation_started is True
         assert result is False
-        mock_sprite.start_disappear_animation.assert_called_once()
+        mock_sprite.request_state.assert_called_once_with("disappear")
         assert mock_npc_state.disappear_event_emitted is False
 
     def test_execute_waits_for_completion(self) -> None:
         """Test executing waits for animation completion."""
         context = MagicMock()
-        mock_sprite = MagicMock(spec=AnimatedNPC)
-        mock_sprite.disappear_complete = True
+        mock_sprite = MagicMock(spec=AnimatedSprite)
+        mock_sprite.has_state.return_value = True
+        mock_sprite.is_state_complete.return_value = True
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         mock_npc_state.disappear_event_emitted = True
@@ -712,13 +726,15 @@ class TestStartDisappearAnimationAction:
     def test_execute_multiple_npcs(self) -> None:
         """Test executing with multiple NPCs."""
         context = MagicMock()
-        mock_sprite1 = MagicMock(spec=AnimatedNPC)
-        mock_sprite1.disappear_complete = True
+        mock_sprite1 = MagicMock(spec=AnimatedSprite)
+        mock_sprite1.has_state.return_value = True
+        mock_sprite1.is_state_complete.return_value = True
         mock_npc_state1 = MagicMock()
         mock_npc_state1.sprite = mock_sprite1
 
-        mock_sprite2 = MagicMock(spec=AnimatedNPC)
-        mock_sprite2.disappear_complete = True
+        mock_sprite2 = MagicMock(spec=AnimatedSprite)
+        mock_sprite2.has_state.return_value = True
+        mock_sprite2.is_state_complete.return_value = True
         mock_npc_state2 = MagicMock()
         mock_npc_state2.sprite = mock_sprite2
 
@@ -728,12 +744,12 @@ class TestStartDisappearAnimationAction:
         result = action.execute(context)
 
         assert result is True
-        mock_sprite1.start_disappear_animation.assert_called_once()
-        mock_sprite2.start_disappear_animation.assert_called_once()
+        mock_sprite1.request_state.assert_called_once_with("disappear")
+        mock_sprite2.request_state.assert_called_once_with("disappear")
         assert context.scene_plugin.remove_from_wall_list.call_count == 2
 
     def test_execute_non_animated_npc(self) -> None:
-        """Test executing with non-AnimatedNPC sprite."""
+        """Test executing with non-AnimatedSprite sprite."""
         context = MagicMock()
         mock_sprite = MagicMock()
         mock_npc_state = MagicMock()
@@ -758,8 +774,9 @@ class TestStartDisappearAnimationAction:
     def test_execute_animation_in_progress(self) -> None:
         """Test executing while animation is in progress."""
         context = MagicMock()
-        mock_sprite = MagicMock(spec=AnimatedNPC)
-        mock_sprite.disappear_complete = False
+        mock_sprite = MagicMock(spec=AnimatedSprite)
+        mock_sprite.has_state.return_value = True
+        mock_sprite.is_state_complete.return_value = False
         mock_npc_state = MagicMock()
         mock_npc_state.sprite = mock_sprite
         context.npc_plugin.get_npcs.return_value = {"martin": mock_npc_state}
@@ -771,7 +788,7 @@ class TestStartDisappearAnimationAction:
         result2 = action.execute(context)
         assert result2 is False
 
-        mock_sprite.start_disappear_animation.assert_called_once()
+        mock_sprite.request_state.assert_called_once_with("disappear")
 
     def test_reset(self) -> None:
         """Test resetting the action."""

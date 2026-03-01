@@ -34,20 +34,24 @@ class TestPlayerPlugin:
         plugin.player_sprite = mock_sprite
         assert plugin.get_player_sprite() == mock_sprite
 
-    @patch("pedre.plugins.player.plugin.AnimatedPlayer")
+    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_basic(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
-        mock_player_cls: MagicMock,
+        mock_create_sprite: MagicMock,
     ) -> None:
         """Test loading player from Tiled map."""
-        plugin, _ = _make_plugin()
+        plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
+
+        # Set up content registry mock
+        context.content_registry.sprites.has.return_value = True
+        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -61,31 +65,34 @@ class TestPlayerPlugin:
         mock_sprite_list_cls.return_value = mock_sprite_list
 
         mock_sprite = MagicMock()
-        mock_player_cls.return_value = mock_sprite
+        mock_create_sprite.return_value = mock_sprite
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        mock_player_cls.assert_called_once()
-        call_kwargs = mock_player_cls.call_args[1]
+        mock_create_sprite.assert_called_once()
+        call_kwargs = mock_create_sprite.call_args[1]
         assert call_kwargs["center_x"] == 100.0
         assert call_kwargs["center_y"] == 200.0
         mock_sprite_list.append.assert_called_once_with(mock_sprite)
         mock_arcade_scene.add_sprite_list.assert_called_once()
 
-    @patch("pedre.plugins.player.plugin.AnimatedPlayer")
+    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_with_waypoint(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
-        mock_player_cls: MagicMock,
+        mock_create_sprite: MagicMock,
     ) -> None:
         """Test loading player with waypoint spawn override."""
         plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
+
+        context.content_registry.sprites.has.return_value = True
+        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -96,6 +103,7 @@ class TestPlayerPlugin:
         mock_tile_map.object_lists.get.return_value = [mock_player_obj]
 
         mock_sprite_list_cls.return_value = MagicMock()
+        mock_create_sprite.return_value = MagicMock()
 
         context.scene_plugin.get_next_spawn_waypoint.return_value = "entrance"
         context.waypoint_plugin.get_waypoints.return_value = {
@@ -104,25 +112,28 @@ class TestPlayerPlugin:
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        call_kwargs = mock_player_cls.call_args[1]
+        call_kwargs = mock_create_sprite.call_args[1]
         assert call_kwargs["center_x"] == 176.0
         assert call_kwargs["center_y"] == 336.0
         context.scene_plugin.clear_next_spawn_waypoint.assert_called_once()
 
-    @patch("pedre.plugins.player.plugin.AnimatedPlayer")
+    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_with_incorrect_waypoint(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
-        mock_player_cls: MagicMock,
+        mock_create_sprite: MagicMock,
     ) -> None:
         """Test loading player with incorrect waypoint."""
         plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
+
+        context.content_registry.sprites.has.return_value = True
+        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -133,6 +144,7 @@ class TestPlayerPlugin:
         mock_tile_map.object_lists.get.return_value = [mock_player_obj]
 
         mock_sprite_list_cls.return_value = MagicMock()
+        mock_create_sprite.return_value = MagicMock()
 
         context.scene_plugin.get_next_spawn_waypoint.return_value = "entrance"
         context.waypoint_plugin.get_waypoints.return_value = {
@@ -141,27 +153,30 @@ class TestPlayerPlugin:
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        call_kwargs = mock_player_cls.call_args[1]
+        call_kwargs = mock_create_sprite.call_args[1]
         assert call_kwargs["center_x"] == 100.0
         assert call_kwargs["center_y"] == 200.0
         context.scene_plugin.clear_next_spawn_waypoint.assert_not_called()
 
     @patch("pedre.plugins.player.plugin.logger")
-    @patch("pedre.plugins.player.plugin.AnimatedPlayer")
+    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_wrong_tile_size_type(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
-        mock_player_cls: MagicMock,
+        mock_create_sprite: MagicMock,
         mock_logger: MagicMock,
     ) -> None:
-        """Test loading player with waypoint spawn override."""
+        """Test loading player with invalid tile_size type logs a warning."""
         plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
+
+        context.content_registry.sprites.has.return_value = True
+        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -169,6 +184,7 @@ class TestPlayerPlugin:
         mock_tile_map.object_lists.get.return_value = [mock_player_obj]
 
         mock_sprite_list_cls.return_value = MagicMock()
+        mock_create_sprite.return_value = MagicMock()
 
         context.scene_plugin.get_next_spawn_waypoint.return_value = "entrance"
         context.waypoint_plugin.get_waypoints.return_value = {
@@ -177,7 +193,7 @@ class TestPlayerPlugin:
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        call_kwargs = mock_player_cls.call_args[1]
+        call_kwargs = mock_create_sprite.call_args[1]
         assert call_kwargs["center_x"] == 176.0
         assert call_kwargs["center_y"] == 336.0
         assert mock_logger.warning.called
@@ -271,37 +287,14 @@ class TestPlayerPlugin:
         assert plugin.player_sprite is None
         assert plugin.player_list is None
 
-    def test_get_animation_properties(self) -> None:
-        """Test extracting animation properties."""
-        plugin, _ = _make_plugin()
-        properties = {
-            "idle_down_frames": 4,
-            "idle_down_row": 0,
-            "walk_right_frames": 4,
-            "walk_right_row": 2,
-            "invalid_prop": "not_an_int",
-            "non_anim_prop": 999,
-        }
-
-        result = plugin._get_animation_properties(properties)
-
-        assert "idle_down_frames" in result
-        assert result["idle_down_frames"] == 4
-        assert "walk_right_frames" in result
-        assert "invalid_prop" not in result
-        assert "non_anim_prop" not in result
-
-    def test_get_animation_properties_empty(self) -> None:
-        """Test extracting animation properties from empty dict."""
-        plugin, _ = _make_plugin()
-        result = plugin._get_animation_properties({})
-        assert result == {}
-
     def test_load_from_tiled_missing_sprite_sheet(self) -> None:
         """Test loading player when sprite_sheet property is missing."""
-        plugin, _ = _make_plugin()
+        plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
+
+        # No content registry entry → plugin returns early
+        context.content_registry.sprites.has.return_value = False
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -313,21 +306,24 @@ class TestPlayerPlugin:
         assert plugin.player_sprite is None
 
     @patch("pedre.plugins.player.plugin.logger")
-    @patch("pedre.plugins.player.plugin.AnimatedPlayer")
+    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_invalid_scale_type(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
-        mock_player_cls: MagicMock,
+        mock_create_sprite: MagicMock,
         mock_logger: MagicMock,
     ) -> None:
         """Test loading player with invalid scale type."""
-        plugin, _ = _make_plugin()
+        plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
+
+        context.content_registry.sprites.has.return_value = True
+        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -339,30 +335,34 @@ class TestPlayerPlugin:
         mock_tile_map.object_lists.get.return_value = [mock_player_obj]
 
         mock_sprite_list_cls.return_value = MagicMock()
+        mock_create_sprite.return_value = MagicMock()
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         assert mock_logger.warning.called
         warning_call = mock_logger.warning.call_args[0][0]
         assert "scale" in warning_call
-        mock_player_cls.assert_called_once()
-        call_kwargs = mock_player_cls.call_args[1]
-        assert "scale" not in call_kwargs
+        mock_create_sprite.assert_called_once()
+        call_kwargs = mock_create_sprite.call_args[1]
+        assert call_kwargs.get("scale") is None
 
-    @patch("pedre.plugins.player.plugin.AnimatedPlayer")
+    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_with_scale_and_tile_size(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
-        mock_player_cls: MagicMock,
+        mock_create_sprite: MagicMock,
     ) -> None:
         """Test loading player with valid scale and tile_size parameters."""
-        plugin, _ = _make_plugin()
+        plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
+
+        context.content_registry.sprites.has.return_value = True
+        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -375,29 +375,33 @@ class TestPlayerPlugin:
         mock_tile_map.object_lists.get.return_value = [mock_player_obj]
 
         mock_sprite_list_cls.return_value = MagicMock()
+        mock_create_sprite.return_value = MagicMock()
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        mock_player_cls.assert_called_once()
-        call_kwargs = mock_player_cls.call_args[1]
+        mock_create_sprite.assert_called_once()
+        call_kwargs = mock_create_sprite.call_args[1]
         assert call_kwargs["scale"] == 2.5
         assert call_kwargs["tile_size"] == 32
 
-    @patch("pedre.plugins.player.plugin.AnimatedPlayer")
+    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_replaces_existing_player_in_scene(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
-        mock_player_cls: MagicMock,
+        mock_create_sprite: MagicMock,
     ) -> None:
         """Test loading player removes existing Player sprite list from scene."""
-        plugin, _ = _make_plugin()
+        plugin, context = _make_plugin()
         mock_tile_map = MagicMock()
         mock_arcade_scene = MagicMock()
         mock_arcade_scene.__contains__ = MagicMock(return_value=True)
         mock_asset_path.return_value = "/path/to/sprite.png"
+
+        context.content_registry.sprites.has.return_value = True
+        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -408,11 +412,11 @@ class TestPlayerPlugin:
         mock_tile_map.object_lists.get.return_value = [mock_player_obj]
 
         mock_sprite_list_cls.return_value = MagicMock()
-        mock_player_cls.return_value = MagicMock()
+        mock_create_sprite.return_value = MagicMock()
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        mock_player_cls.assert_called_once()
+        mock_create_sprite.assert_called_once()
         mock_arcade_scene.remove_sprite_list_by_name.assert_called_once_with("Player")
         mock_arcade_scene.add_sprite_list.assert_called_once()
 
@@ -526,22 +530,6 @@ class TestPlayerPlugin:
         plugin.from_dict({})
         assert mock_sprite.center_x == 50.0
         assert mock_sprite.center_y == 50.0
-
-    @patch("pedre.plugins.player.plugin.logger")
-    def test_get_animation_properties_invalid_type(self, mock_logger: MagicMock) -> None:
-        """Test animation property with invalid type triggers warning."""
-        plugin, _ = _make_plugin()
-        properties = {
-            "idle_down_frames": "not_an_int",
-            "walk_right_row": 2,
-        }
-
-        result = plugin._get_animation_properties(properties)
-
-        assert "idle_down_frames" not in result
-        assert "walk_right_row" in result
-        assert result["walk_right_row"] == 2
-        assert mock_logger.warning.called
 
     def test_update_no_movement(self) -> None:
         """Test update when there's no movement (dx=0, dy=0)."""

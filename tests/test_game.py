@@ -74,10 +74,10 @@ class TestGame:
         assert game.event_bus == mock_event_bus
 
         # Verify game context created with correct args
-        mock_game_context_class.assert_called_once_with(
-            event_bus=mock_event_bus,
-            window=mock_window,
-        )
+        call_kwargs = mock_game_context_class.call_args[1]
+        assert call_kwargs["event_bus"] == mock_event_bus
+        assert call_kwargs["window"] == mock_window
+        assert "content_registry" in call_kwargs
         assert game.game_context == mock_game_context
 
         # Verify action loader created and loaded

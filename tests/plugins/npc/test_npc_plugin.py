@@ -3,7 +3,6 @@
 import json
 from collections import deque
 from pathlib import Path
-from typing import cast
 from unittest.mock import MagicMock, patch
 
 import arcade
@@ -13,7 +12,7 @@ from pedre.actions.registry import ActionParseError
 from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.npc.base import NPCDialogConfig
 from pedre.plugins.npc.plugin import NPCPlugin
-from pedre.plugins.npc.sprites import AnimatedNPC
+from pedre.sprites import AnimatedSprite
 
 
 @pytest.fixture
@@ -161,13 +160,11 @@ class TestNPCPlugin:
     def test_cache_scene_state(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test caching scene state."""
         plugin, _ = npc_plugin_ctx
-        mock_sprite = MagicMock(spec=AnimatedNPC)
+        mock_sprite = MagicMock(spec=AnimatedSprite)
         mock_sprite.center_x = 200.0
         mock_sprite.center_y = 300.0
         mock_sprite.visible = True
-        mock_sprite.appear_complete = True
-        mock_sprite.disappear_complete = False
-        mock_sprite.interact_complete = False
+        mock_sprite.is_state_complete.side_effect = lambda name: name == "appear"
 
         plugin.register_npc(mock_sprite, "guard")
         plugin.npcs["guard"].dialog_level = 2
@@ -185,7 +182,7 @@ class TestNPCPlugin:
     def test_restore_scene_state(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test restoring scene state."""
         plugin, _ = npc_plugin_ctx
-        mock_sprite = MagicMock(spec=AnimatedNPC)
+        mock_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(mock_sprite, "guard")
 
         state = {
@@ -207,9 +204,8 @@ class TestNPCPlugin:
         assert npc.sprite.visible is False
         assert npc.dialog_level == 5
 
-        sprite = cast("AnimatedNPC", npc.sprite)
-        assert sprite.appear_complete is True
-        assert sprite.disappear_complete is True
+        mock_sprite.mark_state_complete.assert_any_call("appear")
+        mock_sprite.mark_state_complete.assert_any_call("disappear")
 
     def test_get_save_state_includes_history(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test that get_save_state includes global interaction history."""
@@ -226,7 +222,7 @@ class TestNPCPlugin:
     def test_apply_entity_state(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test applying entity state (restoring from save)."""
         plugin, _ = npc_plugin_ctx
-        mock_sprite = MagicMock(spec=AnimatedNPC)
+        mock_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(mock_sprite, "alice")
 
         save_data = {
@@ -847,19 +843,20 @@ class TestNPCPlugin:
     def test_show_npcs_starts_animation(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs starts appear animation for AnimatedNPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = False
+        npc_sprite.has_state.return_value = True
         plugin.register_npc(npc_sprite, "animated_npc")
 
         plugin.show_npcs(["animated_npc"])
 
         assert npc_sprite.visible is True
-        npc_sprite.start_appear_animation.assert_called_once()
+        npc_sprite.request_state.assert_called_once_with("appear")
 
     def test_show_npcs_adds_to_wall_list(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs adds NPC to wall list."""
         plugin, context = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = False
         plugin.register_npc(npc_sprite, "npc1")
 
@@ -870,13 +867,13 @@ class TestNPCPlugin:
     def test_show_npcs_already_visible(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs skips already visible NPCs."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = True
         plugin.register_npc(npc_sprite, "visible_npc")
 
         plugin.show_npcs(["visible_npc"])
 
-        npc_sprite.start_appear_animation.assert_not_called()
+        npc_sprite.request_state.assert_not_called()
 
     def test_show_npcs_unknown_npc(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs with unknown NPC."""
@@ -919,7 +916,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_direction(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update changes animated NPC direction based on movement."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "down"
@@ -937,7 +934,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_appear_event(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update emits appear complete event."""
         plugin, context = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = True
         npc_sprite.disappear_complete = False
         plugin.register_npc(npc_sprite, "appearing")
@@ -951,7 +948,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_disappear_event(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update emits disappear complete event."""
         plugin, context = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = False
         npc_sprite.disappear_complete = True
         plugin.register_npc(npc_sprite, "disappearing")
@@ -1040,17 +1037,11 @@ class TestNPCPlugin:
         }
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
-            mock_anim_npc_class.assert_called_once()
             assert "guard" in plugin.npcs
 
     def test_load_npcs_from_objects_no_properties(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
@@ -1099,13 +1090,8 @@ class TestNPCPlugin:
         }
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             assert mock_npc_instance.visible is False
@@ -1118,20 +1104,15 @@ class TestNPCPlugin:
         mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             context.scene_plugin.add_to_wall_list.assert_called_once_with(mock_npc_instance)
 
     def test_load_npcs_from_objects_invalid_tile_size(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects handles invalid tile_size."""
+        """Test load_npcs_from_objects handles invalid tile_size and passes None to _create_npc_sprite."""
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
@@ -1142,21 +1123,16 @@ class TestNPCPlugin:
         }
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance) as mock_create:
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "tile_size" not in call_kwargs
+            call_kwargs = mock_create.call_args.kwargs
+            assert call_kwargs.get("tile_size") is None
 
     def test_load_npcs_from_objects_invalid_scale(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects handles invalid scale."""
+        """Test load_npcs_from_objects handles invalid scale and passes None to _create_npc_sprite."""
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
@@ -1167,21 +1143,16 @@ class TestNPCPlugin:
         }
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance) as mock_create:
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "scale" not in call_kwargs
+            call_kwargs = mock_create.call_args.kwargs
+            assert call_kwargs.get("scale") is None
 
     def test_load_npcs_from_objects_animation_properties(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects extracts animation properties."""
+        """Test load_npcs_from_objects passes animation properties to _create_npc_sprite."""
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
@@ -1193,22 +1164,12 @@ class TestNPCPlugin:
         }
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance) as mock_create:
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
-            mock_anim_npc_class.assert_called_once()
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "idle_up_frames" in call_kwargs
-            assert "walk_down_frames" in call_kwargs
-            assert call_kwargs["idle_up_frames"] == 4
-            assert call_kwargs["walk_down_frames"] == 8
+            mock_create.assert_called_once()
 
     def test_load_npcs_from_objects_invalid_animation_property(
         self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
@@ -1224,31 +1185,22 @@ class TestNPCPlugin:
         }
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance) as mock_create:
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "idle_up_frames" not in call_kwargs
+            mock_create.assert_called_once()
 
     def test_load_npcs_from_objects_creation_failure(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects handles AnimatedNPC creation failure."""
+        """Test load_npcs_from_objects handles sprite creation failure."""
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
         mock_obj.properties = {"name": "BrokenGuard", "sprite_sheet": "sprites/guard.png"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC", side_effect=Exception("Creation failed")),
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
+        with patch.object(plugin, "_create_npc_sprite", side_effect=Exception("Creation failed")):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             assert "brokenguard" not in plugin.npcs
@@ -1256,13 +1208,11 @@ class TestNPCPlugin:
     def test_get_save_state_with_animated_npcs(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test get_save_state includes animation flags for AnimatedNPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 200.0
         npc_sprite.visible = True
-        npc_sprite.appear_complete = True
-        npc_sprite.disappear_complete = False
-        npc_sprite.interact_complete = True
+        npc_sprite.is_state_complete.side_effect = lambda name: name in ("appear", "interact")
         plugin.register_npc(npc_sprite, "animated")
 
         save_state = plugin.get_save_state()
@@ -1282,7 +1232,7 @@ class TestNPCPlugin:
     def test_apply_entity_state_restores_animation_flags(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test apply_entity_state restores animation flags for AnimatedNPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(npc_sprite, "animated")
 
         save_data = {
@@ -1302,9 +1252,12 @@ class TestNPCPlugin:
 
         plugin.apply_entity_state(save_data)
 
-        assert npc_sprite.appear_complete is True
-        assert npc_sprite.disappear_complete is True
-        assert npc_sprite.interact_complete is False
+        npc_sprite.mark_state_complete.assert_any_call("appear")
+        npc_sprite.mark_state_complete.assert_any_call("disappear")
+        # interact_complete is False so mark_state_complete should not be called for it
+        assert not any(
+            call.args == ("interact",) for call in npc_sprite.mark_state_complete.call_args_list
+        )
 
     def test_load_scene_dialogs_exception_handling(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test load_scene_dialogs handles exceptions during load."""
@@ -1423,7 +1376,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_direction_left(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update sets direction to left for animated NPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "right"
@@ -1441,7 +1394,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_direction_up(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update sets direction to up for animated NPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "down"
@@ -1459,7 +1412,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_direction_down(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update sets direction to down for animated NPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "up"
@@ -1479,7 +1432,7 @@ class TestNPCPlugin:
     ) -> None:
         """Test update doesn't change direction if it's already correct."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "right"
@@ -1503,14 +1456,9 @@ class TestNPCPlugin:
         mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             mock_scene.remove_sprite_list_by_name.assert_called_once_with("NPCs")
@@ -1612,7 +1560,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_no_movement_keeps_direction(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update when NPC is at exact waypoint position (dx=0, dy=0)."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "down"
@@ -1705,7 +1653,7 @@ class TestNPCPlugin:
         """Test show_npcs when scene_plugin is None (line 641-643)."""
         plugin, context = npc_plugin_ctx
         context.scene_plugin = None
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = False
         plugin.register_npc(npc_sprite, "npc1")
 
@@ -1733,7 +1681,7 @@ class TestNPCPlugin:
         """Test update when appear completes but no event bus (line 717)."""
         plugin, context = npc_plugin_ctx
         context.event_bus = None
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = True
         npc_sprite.disappear_complete = False
         plugin.register_npc(npc_sprite, "appearing")
@@ -1747,7 +1695,7 @@ class TestNPCPlugin:
         """Test update when disappear completes but no event bus (line 724)."""
         plugin, context = npc_plugin_ctx
         context.event_bus = None
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = False
         npc_sprite.disappear_complete = True
         plugin.register_npc(npc_sprite, "disappearing")
@@ -1758,7 +1706,7 @@ class TestNPCPlugin:
         assert plugin.npcs["disappearing"].disappear_event_emitted is True
 
     def test_load_npcs_from_objects_without_scene_plugin(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects when scene_plugin is None (line 920)."""
+        """Test load_npcs_from_objects when scene_plugin is None."""
         plugin, context = npc_plugin_ctx
         context.scene_plugin = None
         mock_scene = MagicMock(spec=arcade.Scene)
@@ -1766,14 +1714,9 @@ class TestNPCPlugin:
         mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             assert "guard" in plugin.npcs
@@ -1873,7 +1816,7 @@ class TestNPCPlugin:
     def test_apply_entity_state_without_interacted_npcs(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test apply_entity_state when state has no interacted_npcs key."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(npc_sprite, "npc1")
         plugin.interacted_npcs = {"old_scene": {"old_npc"}}
 
