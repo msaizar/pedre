@@ -34,7 +34,7 @@ class TestPlayerPlugin:
         plugin.player_sprite = mock_sprite
         assert plugin.get_player_sprite() == mock_sprite
 
-    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_basic(
@@ -76,7 +76,7 @@ class TestPlayerPlugin:
         mock_sprite_list.append.assert_called_once_with(mock_sprite)
         mock_arcade_scene.add_sprite_list.assert_called_once()
 
-    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_with_waypoint(
@@ -117,7 +117,7 @@ class TestPlayerPlugin:
         assert call_kwargs["center_y"] == 336.0
         context.scene_plugin.clear_next_spawn_waypoint.assert_called_once()
 
-    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_with_incorrect_waypoint(
@@ -159,7 +159,7 @@ class TestPlayerPlugin:
         context.scene_plugin.clear_next_spawn_waypoint.assert_not_called()
 
     @patch("pedre.plugins.player.plugin.logger")
-    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_wrong_tile_size_type(
@@ -306,7 +306,7 @@ class TestPlayerPlugin:
         assert plugin.player_sprite is None
 
     @patch("pedre.plugins.player.plugin.logger")
-    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_invalid_scale_type(
@@ -346,7 +346,7 @@ class TestPlayerPlugin:
         call_kwargs = mock_create_sprite.call_args[1]
         assert call_kwargs.get("scale") is None
 
-    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_with_scale_and_tile_size(
@@ -384,7 +384,7 @@ class TestPlayerPlugin:
         assert call_kwargs["scale"] == 2.5
         assert call_kwargs["tile_size"] == 32
 
-    @patch("pedre.plugins.player.plugin.create_sprite_from_definition")
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
     def test_load_from_tiled_replaces_existing_player_in_scene(

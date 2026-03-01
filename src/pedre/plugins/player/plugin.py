@@ -14,7 +14,6 @@ from pedre.helpers import asset_path
 from pedre.plugins.player.base import PlayerBasePlugin
 from pedre.plugins.registry import PluginRegistry
 from pedre.sprites import AnimatedSprite
-from pedre.sprites.factory import create_sprite_from_definition
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +127,7 @@ class PlayerPlugin(PlayerBasePlugin):
         if sprite_id and content_registry.sprites.has(sprite_id):
             sprite_def = dict(content_registry.sprites.get(sprite_id))
             sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
-            self.player_sprite = create_sprite_from_definition(
+            self.player_sprite = AnimatedSprite.from_definition(
                 sprite_def,
                 center_x=spawn_x,
                 center_y=spawn_y,

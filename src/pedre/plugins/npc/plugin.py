@@ -73,7 +73,6 @@ from pedre.plugins.npc.events import (
 )
 from pedre.plugins.registry import PluginRegistry
 from pedre.sprites import AnimatedSprite
-from pedre.sprites.factory import create_sprite_from_definition
 
 if TYPE_CHECKING:
     from pedre.actions.base import Action
@@ -932,7 +931,7 @@ class NPCPlugin(NPCBasePlugin):
             # Resolve sprite_sheet path via asset_path helper
             sprite_def = dict(sprite_def)
             sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
-            sprite = create_sprite_from_definition(
+            sprite = AnimatedSprite.from_definition(
                 sprite_def,
                 center_x=spawn_x,
                 center_y=spawn_y,
