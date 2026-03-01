@@ -836,9 +836,6 @@ class NPCPlugin(NPCBasePlugin):
 
         Tiled object properties used:
             name (required): NPC identifier (lowercased).
-            scale (optional float): Override sprite scale.
-            tile_size (optional int): Override tile/frame size.
-            initially_hidden (optional bool): Start invisible.
 
         Args:
             npc_objects: List of Tiled objects from tile_map.object_lists["NPCs"].
@@ -861,25 +858,12 @@ class NPCPlugin(NPCBasePlugin):
             spawn_x = float(npc_obj.shape[0])
             spawn_y = float(npc_obj.shape[1])
 
-            # Optional overrides
-            scale = npc_obj.properties.get("scale")
-            if scale is not None and not isinstance(scale, (int, float)):
-                logger.warning("NPC '%s': 'scale' must be a number, ignoring", npc_name)
-                scale = None
-
-            tile_size = npc_obj.properties.get("tile_size")
-            if tile_size is not None and not isinstance(tile_size, int):
-                logger.warning("NPC '%s': 'tile_size' must be an int, ignoring", npc_name)
-                tile_size = None
-
             try:
                 animated_sprite = self._create_npc_sprite(
                     npc_name=npc_name,
                     npc_obj=npc_obj,
                     spawn_x=spawn_x,
                     spawn_y=spawn_y,
-                    scale=scale,
-                    tile_size=tile_size,
                     content_registry=content_registry,
                 )
             except Exception:
@@ -891,9 +875,6 @@ class NPCPlugin(NPCBasePlugin):
 
             # Store Tiled properties on the sprite for downstream access
             animated_sprite.properties = npc_obj.properties
-
-            if npc_obj.properties.get("initially_hidden", False):
-                animated_sprite.visible = False
 
             self.register_npc(animated_sprite, npc_name)
             npc_sprite_list.append(animated_sprite)
@@ -918,23 +899,19 @@ class NPCPlugin(NPCBasePlugin):
         npc_obj: object,
         spawn_x: float,
         spawn_y: float,
-        scale: float | None,
-        tile_size: int | None,
         content_registry: ContentRegistry | None,
     ) -> AnimatedSprite | None:
         """Resolve sprite definition and create an AnimatedSprite for an NPC.
 
-        Looks up the NPC in the content registry (if available) and builds a sprite
-        from the matching sprite definition.  Falls back to a warning if neither
-        the registry nor a direct ``sprite_sheet`` Tiled property is found.
+        Looks up the NPC in the content registry and builds a sprite from the
+        matching sprite definition.  Scale, tile_size, and initially_hidden are
+        read from the NPC registry definition (npcs.json).
 
         Args:
             npc_name: NPC identifier.
             npc_obj: Tiled object with properties dict.
             spawn_x: World X position.
             spawn_y: World Y position.
-            scale: Optional scale override.
-            tile_size: Optional tile-size override.
             content_registry: ContentRegistry instance or None.
 
         Returns:
@@ -946,22 +923,27 @@ class NPCPlugin(NPCBasePlugin):
         if content_registry is not None:
             # Allow a per-object sprite_id override; otherwise resolve via npcs registry
             sprite_id = props.get("sprite_id")
-            if sprite_id is None and content_registry.npcs.has(npc_name):
+            npc_def: dict = {}
+            if content_registry.npcs.has(npc_name):
                 npc_def = content_registry.npcs.get(npc_name)
-                sprite_id = npc_def.get("sprite_id")
+                if sprite_id is None:
+                    sprite_id = npc_def.get("sprite_id")
 
             if sprite_id and content_registry.sprites.has(sprite_id):
                 sprite_def = content_registry.sprites.get(sprite_id)
                 # Resolve sprite_sheet path via asset_path helper
                 sprite_def = dict(sprite_def)
                 sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
-                return create_sprite_from_definition(
+                sprite = create_sprite_from_definition(
                     sprite_def,
                     center_x=spawn_x,
                     center_y=spawn_y,
-                    scale=scale,
-                    tile_size=tile_size,
+                    scale=npc_def.get("scale"),
+                    tile_size=npc_def.get("tile_size"),
                 )
+                if npc_def.get("initially_hidden", False):
+                    sprite.visible = False
+                return sprite
 
         logger.warning(
             "NPC '%s': no registry definition found. Skipping.",
