@@ -6,19 +6,15 @@ from the main GameView.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import arcade
 
 from pedre.helpers import asset_path
 from pedre.plugins.player.base import PlayerBasePlugin
-from pedre.plugins.player.sprites import AnimatedPlayer
 from pedre.plugins.registry import PluginRegistry
-from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
-
-if TYPE_CHECKING:
-    from pedre.plugins.player.types import PlayerInitKwargs
-
+from pedre.sprites import AnimatedSprite
+from pedre.sprites.factory import create_sprite_from_definition
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +35,10 @@ class PlayerPlugin(PlayerBasePlugin):
 
     def __init__(self) -> None:
         """Initialize the player plugin."""
-        self.player_sprite: AnimatedPlayer | None = None
+        self.player_sprite: AnimatedSprite | None = None
         self.player_list: arcade.SpriteList | None = None
 
-    def get_player_sprite(self) -> AnimatedPlayer | None:
+    def get_player_sprite(self) -> AnimatedSprite | None:
         """Get the player sprite."""
         return self.player_sprite
 
@@ -101,7 +97,7 @@ class PlayerPlugin(PlayerBasePlugin):
             logger.error("Player object missing required 'sprite_sheet' property")
             return
 
-        sprite_sheet_path = asset_path(sprite_sheet)
+        asset_path(sprite_sheet)
 
         # Validate tile_size if present (optional)
         tile_size = player_obj.properties.get("tile_size")
@@ -123,25 +119,25 @@ class PlayerPlugin(PlayerBasePlugin):
             )
             scale = None
 
-        # Helper to extract animation props
-        anim_props = self._get_animation_properties(player_obj.properties)
+        # Resolve sprite definition via content registry if available
+        content_registry = getattr(self.context, "content_registry", None)
+        sprite_id = player_obj.properties.get("sprite_id")
+        if sprite_id is None and content_registry is not None and content_registry.sprites.has("player"):
+            sprite_id = "player"
 
-        # Build sprite kwargs
-        kwargs: PlayerInitKwargs = {
-            "center_x": spawn_x,
-            "center_y": spawn_y,
-        }
-        if scale is not None:
-            kwargs["scale"] = scale
-        if tile_size is not None:
-            kwargs["tile_size"] = tile_size
-
-        # Create sprite
-        self.player_sprite = AnimatedPlayer(
-            sprite_sheet_path,
-            **kwargs,
-            **anim_props,
-        )
+        if sprite_id and content_registry is not None and content_registry.sprites.has(sprite_id):
+            sprite_def = dict(content_registry.sprites.get(sprite_id))
+            sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
+            self.player_sprite = create_sprite_from_definition(
+                sprite_def,
+                center_x=spawn_x,
+                center_y=spawn_y,
+                scale=scale,
+                tile_size=tile_size,
+            )
+        else:
+            logger.warning("Player: no content registry sprite definition found. Cannot create player sprite.")
+            return
 
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player_sprite)
@@ -178,7 +174,7 @@ class PlayerPlugin(PlayerBasePlugin):
         self.player_sprite.change_y = dy
 
         # Update direction state logic
-        if isinstance(self.player_sprite, AnimatedPlayer):
+        if isinstance(self.player_sprite, AnimatedSprite):
             # Determine direction based on movement
             new_direction = self.player_sprite.current_direction
 
@@ -196,7 +192,11 @@ class PlayerPlugin(PlayerBasePlugin):
                 self.player_sprite.set_direction(new_direction)
 
             # Update animation
-            self.player_sprite.update_animation(delta_time, moving=moving)
+            if moving:
+                self.player_sprite.request_state("walk")
+            else:
+                self.player_sprite.release_state("walk")
+            self.player_sprite.update_animation(delta_time)
 
     def get_save_state(self) -> dict[str, Any]:
         """Get save state."""
@@ -233,23 +233,3 @@ class PlayerPlugin(PlayerBasePlugin):
         if self.player_sprite:
             return {"player_x": self.player_sprite.center_x, "player_y": self.player_sprite.center_y}
         return {}
-
-    def _get_animation_properties(self, properties: dict) -> dict[str, int]:
-        """Extract animation properties from dictionary."""
-        animation_props: dict[str, int] = {}
-        if not properties:
-            return animation_props
-
-        for key in BASE_ANIMATION_PROPERTIES:
-            if key in properties:
-                if isinstance(properties[key], int):
-                    animation_props[key] = properties[key]
-                else:
-                    logger.warning(
-                        "Animation property '%s' must be of type int, got %s: %s. Skipping.",
-                        key,
-                        type(properties[key]).__name__,
-                        properties[key],
-                    )
-
-        return animation_props

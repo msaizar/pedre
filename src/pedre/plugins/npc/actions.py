@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Self
 
 from pedre.actions import Action, WaitForConditionAction
 from pedre.actions.registry import ActionParseError, ActionRegistry
-from pedre.plugins.npc.sprites import AnimatedNPC
+from pedre.sprites import AnimatedSprite
 from pedre.types import EntityReference
 
 if TYPE_CHECKING:
@@ -541,8 +541,13 @@ class WaitForNPCsAppearAction(WaitForConditionAction):
                 npc_state = npc_plugin.get_npcs().get(npc_name)
                 if not npc_state:
                     continue
-                # Check if it's an AnimatedNPC and if appear animation is complete
-                if isinstance(npc_state.sprite, AnimatedNPC) and not npc_state.sprite.appear_complete:
+                # Check if sprite has an appear state and if it's not yet complete
+                sprite = npc_state.sprite
+                if (
+                    isinstance(sprite, AnimatedSprite)
+                    and sprite.has_state("appear")
+                    and not sprite.is_state_complete("appear")
+                ):
                     return False
             # All NPCs have completed their appear animations
             return True
@@ -611,8 +616,13 @@ class WaitForNPCsDisappearAction(WaitForConditionAction):
                 npc_state = npc_plugin.get_npcs().get(npc_name)
                 if not npc_state:
                     continue
-                # Check if it's an AnimatedNPC and if disappear animation is complete
-                if isinstance(npc_state.sprite, AnimatedNPC) and not npc_state.sprite.disappear_complete:
+                # Check if sprite has a disappear state and if it's not yet complete
+                sprite = npc_state.sprite
+                if (
+                    isinstance(sprite, AnimatedSprite)
+                    and sprite.has_state("disappear")
+                    and not sprite.is_state_complete("disappear")
+                ):
                     return False
             # All NPCs have completed their disappear animations
             return True
@@ -689,14 +699,15 @@ class StartDisappearAnimationAction(Action):
             npc_plugin = context.npc_plugin
             for npc_name in self.npc_names:
                 npc_state = npc_plugin.get_npcs().get(npc_name)
-                if npc_state and isinstance(npc_state.sprite, AnimatedNPC):
-                    npc_state.sprite.start_disappear_animation()
+                sprite = npc_state.sprite if npc_state else None
+                if npc_state and isinstance(sprite, AnimatedSprite) and sprite.has_state("disappear"):
+                    sprite.request_state("disappear")
                     # Reset the disappear event flag so event can be emitted
                     npc_state.disappear_event_emitted = False
                     logger.debug("StartDisappearAnimationAction: Started disappear animation for %s", npc_name)
                 else:
                     logger.warning(
-                        "StartDisappearAnimationAction: NPC %s not found or not AnimatedNPC",
+                        "StartDisappearAnimationAction: NPC %s not found or has no disappear animation",
                         npc_name,
                     )
             self.animation_started = True
@@ -707,8 +718,13 @@ class StartDisappearAnimationAction(Action):
             npc_state = npc_plugin.get_npcs().get(npc_name)
             if not npc_state:
                 continue
-            # Check if it's an AnimatedNPC and if disappear animation is still running
-            if isinstance(npc_state.sprite, AnimatedNPC) and not npc_state.sprite.disappear_complete:
+            # Check if the disappear animation is still running
+            sprite = npc_state.sprite
+            if (
+                isinstance(sprite, AnimatedSprite)
+                and sprite.has_state("disappear")
+                and not sprite.is_state_complete("disappear")
+            ):
                 return False
         scene_plugin = context.scene_plugin
         # All animations complete - remove NPCs from walls

@@ -28,14 +28,18 @@ Example usage:
 """
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import arcade
 
 from pedre.actions.loader import ActionLoader
 from pedre.conditions.loader import ConditionLoader
+from pedre.conf import settings
+from pedre.content.registry import ContentRegistry
 from pedre.events import EventBus
 from pedre.events.loader import EventLoader
+from pedre.helpers import asset_path
 from pedre.plugins.game_context import GameContext
 from pedre.plugins.loader import PluginLoader
 from pedre.views.game_view import GameView
@@ -83,10 +87,14 @@ class Game:
         # Create event bus (outlives individual views)
         self.event_bus = EventBus()
 
+        # Load content registry (sprite/NPC definitions from JSON)
+        content_registry = self._load_content_registry()
+
         # Create game context (outlives individual views)
         self.game_context = GameContext(
             event_bus=self.event_bus,
             window=self.window,
+            content_registry=content_registry,
         )
 
         # Load actions, events, and conditions BEFORE plugins (plugins may depend on them)
@@ -115,6 +123,31 @@ class Game:
 
         # Lazy-loaded views
         self._game_view: GameView | None = None
+
+    def _load_content_registry(self) -> ContentRegistry:
+        """Load content registry from the configured content directory.
+
+        Reads sprites.json and npcs.json from CONTENT_DIRECTORY (relative to the
+        assets directory) if they exist, and validates cross-references.
+
+        Returns:
+            Populated ContentRegistry (may be empty if directory/files are absent).
+        """
+        registry = ContentRegistry()
+        try:
+            content_dir = Path(asset_path(settings.CONTENT_DIRECTORY))
+        except (OSError, ValueError, TypeError):
+            logger.debug("Content directory '%s' could not be resolved", settings.CONTENT_DIRECTORY)
+            return registry
+
+        if not content_dir.exists():
+            logger.debug("Content directory not found: %s", content_dir)
+            return registry
+
+        registry.load_from_directory(content_dir)
+        registry.validate_cross_references()
+        logger.debug("Loaded content registry from %s", content_dir)
+        return registry
 
     @property
     def game_view(self) -> GameView:

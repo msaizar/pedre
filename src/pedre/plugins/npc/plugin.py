@@ -66,19 +66,19 @@ from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 from pedre.conf import settings
 from pedre.helpers import asset_path, matches_key
 from pedre.plugins.npc.base import NPCBasePlugin, NPCDialogConfig, NPCState
-from pedre.plugins.npc.constants import ALL_ANIMATION_PROPERTIES
 from pedre.plugins.npc.events import (
     NPCAppearCompleteEvent,
     NPCDisappearCompleteEvent,
     NPCMovementCompleteEvent,
 )
-from pedre.plugins.npc.sprites import AnimatedNPC
 from pedre.plugins.registry import PluginRegistry
+from pedre.sprites import AnimatedSprite
+from pedre.sprites.factory import create_sprite_from_definition
 
 if TYPE_CHECKING:
     from pedre.actions.base import Action
     from pedre.conditions.base import Condition
-    from pedre.plugins.npc.types import NPCInitKwargs
+    from pedre.content.registry import ContentRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -643,9 +643,9 @@ class NPCPlugin(NPCBasePlugin):
             if npc and not npc.sprite.visible:
                 npc.sprite.visible = True
 
-                # Start appear animation for animated NPCs
-                if isinstance(npc.sprite, AnimatedNPC):
-                    npc.sprite.start_appear_animation()
+                # Start appear animation for sprites that support it
+                if isinstance(npc.sprite, AnimatedSprite) and npc.sprite.has_state("appear"):
+                    npc.sprite.request_state("appear")
                 scene_plugin = self.context.scene_plugin
                 if scene_plugin:
                     scene_plugin.add_to_wall_list(npc.sprite)
@@ -671,8 +671,8 @@ class NPCPlugin(NPCBasePlugin):
                 dy = target_y - npc.sprite.center_y
                 distance = (dx**2 + dy**2) ** 0.5
 
-                # Update direction for animated NPCs based on movement (prioritize horizontal)
-                if isinstance(npc.sprite, AnimatedNPC):
+                # Update direction based on movement vector (prioritize horizontal)
+                if isinstance(npc.sprite, AnimatedSprite):
                     # Determine new direction from movement vector
                     if dx > 0:
                         new_direction = "right"
@@ -716,19 +716,23 @@ class NPCPlugin(NPCBasePlugin):
                     npc.sprite.center_y += (dy / distance) * move_distance
                     moving = True  # NPC is actively moving
 
-            # Update animation for animated NPCs (after movement logic)
-            if isinstance(npc.sprite, AnimatedNPC):
-                npc.sprite.update_animation(delta_time, moving=moving)
+            # Update animation (after movement logic)
+            if isinstance(npc.sprite, AnimatedSprite):
+                if moving:
+                    npc.sprite.request_state("walk")
+                else:
+                    npc.sprite.release_state("walk")
+                npc.sprite.update_animation(delta_time)
 
                 # Check if appear animation just completed
-                if npc.sprite.appear_complete and not npc.appear_event_emitted:
+                if npc.sprite.is_state_complete("appear") and not npc.appear_event_emitted:
                     if self.context.event_bus:
                         self.context.event_bus.publish(NPCAppearCompleteEvent(npc_name=npc.name))
                         logger.info("%s appear animation complete, event emitted", npc.name)
                     npc.appear_event_emitted = True
 
                 # Check if disappear animation just completed
-                if npc.sprite.disappear_complete and not npc.disappear_event_emitted:
+                if npc.sprite.is_state_complete("disappear") and not npc.disappear_event_emitted:
                     if self.context.event_bus:
                         self.context.event_bus.publish(NPCDisappearCompleteEvent(npc_name=npc.name))
                         logger.info("%s disappear animation complete, event emitted", npc.name)
@@ -824,16 +828,24 @@ class NPCPlugin(NPCBasePlugin):
         return any(npc.is_moving for npc in self.npcs.values())
 
     def load_npcs_from_objects(self, npc_objects: list, scene: arcade.Scene | None) -> None:
-        """Load NPCs from Tiled object layer (like Player, Portals, etc.).
+        """Load NPCs from Tiled object layer.
 
-        Creates AnimatedNPC instances from object layer data and adds them to the scene.
+        For each NPC object the method looks up the NPC definition in the content
+        registry (via ``sprite_id`` or ``npc_name``), resolves the sprite definition,
+        and builds an AnimatedSprite using the factory.
+
+        Tiled object properties used:
+            name (required): NPC identifier (lowercased).
+            scale (optional float): Override sprite scale.
+            tile_size (optional int): Override tile/frame size.
+            initially_hidden (optional bool): Start invisible.
 
         Args:
             npc_objects: List of Tiled objects from tile_map.object_lists["NPCs"].
             scene: The arcade Scene to add NPC sprites to.
         """
-        # Create NPCs sprite list for the scene if needed
         npc_sprite_list = arcade.SpriteList()
+        content_registry = getattr(self.context, "content_registry", None)
 
         for npc_obj in npc_objects:
             if not npc_obj.properties:
@@ -849,90 +861,48 @@ class NPCPlugin(NPCBasePlugin):
             spawn_x = float(npc_obj.shape[0])
             spawn_y = float(npc_obj.shape[1])
 
-            # Get sprite sheet properties
-            sprite_sheet = npc_obj.properties.get("sprite_sheet")
-            if not sprite_sheet:
-                logger.error("NPC '%s' missing required 'sprite_sheet' property, skipping", npc_name)
-                continue
-
-            sprite_sheet_path = asset_path(sprite_sheet)
-
-            # Validate tile_size if present (optional)
-            tile_size = npc_obj.properties.get("tile_size")
-            if tile_size is not None and not isinstance(tile_size, int):
-                logger.warning(
-                    "NPC '%s': Property 'tile_size' must be of type int, got %s: %s. Using default.",
-                    npc_name,
-                    type(tile_size).__name__,
-                    tile_size,
-                )
-                tile_size = None
-
-            # Validate scale if present (optional)
+            # Optional overrides
             scale = npc_obj.properties.get("scale")
             if scale is not None and not isinstance(scale, (int, float)):
-                logger.warning(
-                    "NPC '%s': Property 'scale' must be of type float, got %s: %s. Using default.",
-                    npc_name,
-                    type(scale).__name__,
-                    scale,
-                )
+                logger.warning("NPC '%s': 'scale' must be a number, ignoring", npc_name)
                 scale = None
 
-            # Extract animation props
-            anim_props = {}
-            for key, val in npc_obj.properties.items():
-                if key in ALL_ANIMATION_PROPERTIES:
-                    if isinstance(val, int):
-                        anim_props[key] = val
-                    else:
-                        logger.warning(
-                            "NPC '%s': Animation property '%s' must be of type int, got %s: %s. Skipping.",
-                            npc_name,
-                            key,
-                            type(val).__name__,
-                            val,
-                        )
-
-            # Build sprite kwargs
-            kwargs: NPCInitKwargs = {
-                "center_x": spawn_x,
-                "center_y": spawn_y,
-            }
-            if scale is not None:
-                kwargs["scale"] = scale
-            if tile_size is not None:
-                kwargs["tile_size"] = tile_size
+            tile_size = npc_obj.properties.get("tile_size")
+            if tile_size is not None and not isinstance(tile_size, int):
+                logger.warning("NPC '%s': 'tile_size' must be an int, ignoring", npc_name)
+                tile_size = None
 
             try:
-                animated_npc = AnimatedNPC(
-                    sprite_sheet_path,
-                    **kwargs,
-                    **anim_props,
+                animated_sprite = self._create_npc_sprite(
+                    npc_name=npc_name,
+                    npc_obj=npc_obj,
+                    spawn_x=spawn_x,
+                    spawn_y=spawn_y,
+                    scale=scale,
+                    tile_size=tile_size,
+                    content_registry=content_registry,
                 )
-
-                # Store properties for later use
-                animated_npc.properties = npc_obj.properties
-
-                # Handle initial visibility
-                if npc_obj.properties.get("initially_hidden", False):
-                    animated_npc.visible = False
-
-                # Register with plugin
-                self.register_npc(animated_npc, npc_name)
-
-                # Add to sprite list
-                npc_sprite_list.append(animated_npc)
-
-                # Add to wall list if visible
-                scene_plugin = self.context.scene_plugin
-                if scene_plugin and animated_npc.visible:
-                    scene_plugin.add_to_wall_list(animated_npc)
-
-                logger.debug("Loaded NPC %s at (%.1f, %.1f)", npc_name, spawn_x, spawn_y)
-
             except Exception:
-                logger.exception("Failed to create AnimatedNPC for %s", npc_name)
+                logger.exception("Failed to create sprite for NPC '%s'", npc_name)
+                continue
+
+            if animated_sprite is None:
+                continue
+
+            # Store Tiled properties on the sprite for downstream access
+            animated_sprite.properties = npc_obj.properties
+
+            if npc_obj.properties.get("initially_hidden", False):
+                animated_sprite.visible = False
+
+            self.register_npc(animated_sprite, npc_name)
+            npc_sprite_list.append(animated_sprite)
+
+            scene_plugin = self.context.scene_plugin
+            if scene_plugin and animated_sprite.visible:
+                scene_plugin.add_to_wall_list(animated_sprite)
+
+            logger.debug("Loaded NPC '%s' at (%.1f, %.1f)", npc_name, spawn_x, spawn_y)
 
         # Add NPCs layer to scene
         if scene is not None and len(npc_sprite_list) > 0:
@@ -940,6 +910,64 @@ class NPCPlugin(NPCBasePlugin):
                 scene.remove_sprite_list_by_name("NPCs")
             scene.add_sprite_list("NPCs", sprite_list=npc_sprite_list)
             logger.info("Added %d NPCs to scene", len(npc_sprite_list))
+
+    def _create_npc_sprite(
+        self,
+        *,
+        npc_name: str,
+        npc_obj: object,
+        spawn_x: float,
+        spawn_y: float,
+        scale: float | None,
+        tile_size: int | None,
+        content_registry: ContentRegistry | None,
+    ) -> AnimatedSprite | None:
+        """Resolve sprite definition and create an AnimatedSprite for an NPC.
+
+        Looks up the NPC in the content registry (if available) and builds a sprite
+        from the matching sprite definition.  Falls back to a warning if neither
+        the registry nor a direct ``sprite_sheet`` Tiled property is found.
+
+        Args:
+            npc_name: NPC identifier.
+            npc_obj: Tiled object with properties dict.
+            spawn_x: World X position.
+            spawn_y: World Y position.
+            scale: Optional scale override.
+            tile_size: Optional tile-size override.
+            content_registry: ContentRegistry instance or None.
+
+        Returns:
+            AnimatedSprite instance, or None if the sprite could not be created.
+        """
+        props = getattr(npc_obj, "properties", {}) or {}
+
+        # --- Registry path ---
+        if content_registry is not None:
+            # Allow a per-object sprite_id override; otherwise resolve via npcs registry
+            sprite_id = props.get("sprite_id")
+            if sprite_id is None and content_registry.npcs.has(npc_name):
+                npc_def = content_registry.npcs.get(npc_name)
+                sprite_id = npc_def.get("sprite_id")
+
+            if sprite_id and content_registry.sprites.has(sprite_id):
+                sprite_def = content_registry.sprites.get(sprite_id)
+                # Resolve sprite_sheet path via asset_path helper
+                sprite_def = dict(sprite_def)
+                sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
+                return create_sprite_from_definition(
+                    sprite_def,
+                    center_x=spawn_x,
+                    center_y=spawn_y,
+                    scale=scale,
+                    tile_size=tile_size,
+                )
+
+        logger.warning(
+            "NPC '%s': no registry definition found. Skipping.",
+            npc_name,
+        )
+        return None
 
     def get_save_state(self) -> dict[str, Any]:
         """Return serializable state for saving NPC data.
@@ -958,11 +986,11 @@ class NPCPlugin(NPCBasePlugin):
                 "dialog_level": npc.dialog_level,
             }
 
-            # Save animation flags for AnimatedNPC sprites
-            if isinstance(npc.sprite, AnimatedNPC):
-                npc_state["appear_complete"] = npc.sprite.appear_complete
-                npc_state["disappear_complete"] = npc.sprite.disappear_complete
-                npc_state["interact_complete"] = npc.sprite.interact_complete
+            # Save animation completion flags for animated sprites
+            if isinstance(npc.sprite, AnimatedSprite):
+                npc_state["appear_complete"] = npc.sprite.is_state_complete("appear")
+                npc_state["disappear_complete"] = npc.sprite.is_state_complete("disappear")
+                npc_state["interact_complete"] = npc.sprite.is_state_complete("interact")
 
             npc_states[npc_name] = npc_state
 
@@ -1004,11 +1032,14 @@ class NPCPlugin(NPCBasePlugin):
             npc.sprite.visible = npc_state.get("visible", True)
             npc.dialog_level = npc_state.get("dialog_level", 0)
 
-            # Restore animation flags for AnimatedNPC sprites
-            if isinstance(npc.sprite, AnimatedNPC):
-                npc.sprite.appear_complete = npc_state.get("appear_complete", False)
-                npc.sprite.disappear_complete = npc_state.get("disappear_complete", False)
-                npc.sprite.interact_complete = npc_state.get("interact_complete", False)
+            # Restore animation completion flags for animated sprites
+            if isinstance(npc.sprite, AnimatedSprite):
+                if npc_state.get("appear_complete", False):
+                    npc.sprite.mark_state_complete("appear")
+                if npc_state.get("disappear_complete", False):
+                    npc.sprite.mark_state_complete("disappear")
+                if npc_state.get("interact_complete", False):
+                    npc.sprite.mark_state_complete("interact")
 
         logger.info("Applied state for %d NPCs", len(state))
 
@@ -1027,11 +1058,11 @@ class NPCPlugin(NPCBasePlugin):
                 "dialog_level": npc.dialog_level,
             }
 
-            # Save animation flags for AnimatedNPC sprites
-            if isinstance(npc.sprite, AnimatedNPC):
-                npc_state["appear_complete"] = npc.sprite.appear_complete
-                npc_state["disappear_complete"] = npc.sprite.disappear_complete
-                npc_state["interact_complete"] = npc.sprite.interact_complete
+            # Save animation completion flags for animated sprites
+            if isinstance(npc.sprite, AnimatedSprite):
+                npc_state["appear_complete"] = npc.sprite.is_state_complete("appear")
+                npc_state["disappear_complete"] = npc.sprite.is_state_complete("disappear")
+                npc_state["interact_complete"] = npc.sprite.is_state_complete("interact")
 
             npc_states[npc_name] = npc_state
 

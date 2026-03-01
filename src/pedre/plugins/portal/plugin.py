@@ -76,7 +76,7 @@ from pedre.plugins.portal.events import PortalEnteredEvent
 from pedre.plugins.registry import PluginRegistry
 
 if TYPE_CHECKING:
-    from pedre.plugins.player.sprites import AnimatedPlayer
+    from pedre.sprites import AnimatedSprite
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +201,7 @@ class PortalPlugin(BasePlugin):
         self.portals.append(portal)
         logger.info("Registered portal '%s'", name)
 
-    def check_portals(self, player_sprite: AnimatedPlayer | None) -> None:
+    def check_portals(self, player_sprite: AnimatedSprite | None) -> None:
         """Check if player is near any portal and publish events.
 
         Checks all registered portals to see if the player is within activation range.

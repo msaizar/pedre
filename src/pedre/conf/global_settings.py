@@ -448,6 +448,11 @@ INVENTORY_COLOR_PHOTO_BACKGROUND = (0, 0, 0)
 INVENTORY_EMPTY_BOX_ALPHA = 180
 """Transparency of empty inventory slot backgrounds (0-255)."""
 
+# Content registry settings
+CONTENT_DIRECTORY = "data/content"
+"""Directory where content registry JSON files (sprites.json, npcs.json) are stored
+(relative to assets directory)."""
+
 # Dialog settings
 DIALOGS_DIRECTORY = "data/dialogs"
 """Directory where NPC dialog files are stored (relative to assets directory)."""

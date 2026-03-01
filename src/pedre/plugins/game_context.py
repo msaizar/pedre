@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import arcade
 
+    from pedre.content.registry import ContentRegistry
     from pedre.events import EventBus
     from pedre.plugins.audio import AudioBasePlugin
     from pedre.plugins.base import BasePlugin
@@ -101,6 +102,7 @@ class GameContext:
         self,
         event_bus: EventBus,
         window: arcade.Window,
+        content_registry: ContentRegistry | None = None,
     ) -> None:
         """Initialize game context with game state.
 
@@ -113,10 +115,13 @@ class GameContext:
                       Actions can publish events to trigger scripts or notify other plugins.
             window: Reference to the arcade Window instance. Used by plugins that need
                    to access window properties (size, rendering context, etc).
+            content_registry: Optional content registry holding sprite and NPC definitions
+                              loaded from JSON. Provided by the Game coordinator.
 
         """
         self.event_bus = event_bus
         self.window = window
+        self.content_registry = content_registry
 
         # Registry for all pluggable plugins (accessed via get_plugin)
         self._plugins: dict[str, BasePlugin] = {}

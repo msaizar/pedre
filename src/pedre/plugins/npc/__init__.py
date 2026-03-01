@@ -8,8 +8,6 @@ The NPC plugin consists of:
 - NPCPlugin: Main plugin for managing NPC state and behavior
 - NPCState: Runtime state tracking for individual NPCs
 - NPCDialogConfig: Configuration for NPC dialog at specific levels
-- AnimatedNPC: Animated sprite class for NPCs with special animations
-
 Actions (registered via INSTALLED_ACTIONS):
 - AdvanceDialogAction, MoveNPCAction, StartAppearAnimationAction, SetCurrentNPCAction
 - SetDialogLevelAction, StartDisappearAnimationAction, WaitForNPCMovementAction
