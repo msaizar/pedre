@@ -120,12 +120,13 @@ class PlayerPlugin(PlayerBasePlugin):
 
         # Resolve sprite definition via content registry
         content_registry = self.context.content_registry
+        sprites = content_registry.get_sub_registry("sprites")
         sprite_id = player_obj.properties.get("sprite_id")
-        if sprite_id is None and content_registry.sprites.has("player"):
+        if sprite_id is None and sprites and sprites.has("player"):
             sprite_id = "player"
 
-        if sprite_id and content_registry.sprites.has(sprite_id):
-            sprite_def = dict(content_registry.sprites.get(sprite_id))
+        if sprite_id and sprites and sprites.has(sprite_id):
+            sprite_def = dict(sprites.get(sprite_id))
             sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
             self.player_sprite = AnimatedSprite.from_definition(
                 sprite_def,

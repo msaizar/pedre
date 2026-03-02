@@ -921,13 +921,15 @@ class NPCPlugin(NPCBasePlugin):
         # Allow a per-object sprite_id override; otherwise resolve via npcs registry
         sprite_id = props.get("sprite_id")
         npc_def: dict = {}
-        if content_registry.npcs.has(npc_name):
-            npc_def = content_registry.npcs.get(npc_name)
+        npcs = content_registry.get_sub_registry("npcs")
+        sprites = content_registry.get_sub_registry("sprites")
+        if npcs and npcs.has(npc_name):
+            npc_def = npcs.get(npc_name)
             if sprite_id is None:
                 sprite_id = npc_def.get("sprite_id")
 
-        if sprite_id and content_registry.sprites.has(sprite_id):
-            sprite_def = content_registry.sprites.get(sprite_id)
+        if sprite_id and sprites and sprites.has(sprite_id):
+            sprite_def = sprites.get(sprite_id)
             # Resolve sprite_sheet path via asset_path helper
             sprite_def = dict(sprite_def)
             sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])

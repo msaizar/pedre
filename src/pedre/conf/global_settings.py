@@ -453,6 +453,22 @@ CONTENT_DIRECTORY = "data/content"
 """Directory where content registry JSON files (sprites.json, npcs.json) are stored
 (relative to assets directory)."""
 
+INSTALLED_CONTENT = [
+    "pedre.content.registries.npc",
+    "pedre.content.registries.sprite",
+]
+"""Modules containing @ContentTypeRegistry.register decorators to load.
+
+Users can extend this list to add custom content types:
+
+    from pedre.conf import global_settings
+
+    INSTALLED_CONTENT = [
+        *global_settings.INSTALLED_CONTENT,
+        "myproject.content.enemies",
+    ]
+"""
+
 # Dialog settings
 DIALOGS_DIRECTORY = "data/dialogs"
 """Directory where NPC dialog files are stored (relative to assets directory)."""

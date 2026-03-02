@@ -144,6 +144,7 @@ SAVE_SFX_FILE: str
 
 # Content registry settings
 CONTENT_DIRECTORY: str
+INSTALLED_CONTENT: list[str]
 
 # Dialog settings
 DIALOGS_DIRECTORY: str

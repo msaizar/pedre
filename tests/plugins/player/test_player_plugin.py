@@ -50,8 +50,10 @@ class TestPlayerPlugin:
         mock_asset_path.return_value = "/path/to/sprite.png"
 
         # Set up content registry mock
-        context.content_registry.sprites.has.return_value = True
-        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = True
+        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -91,8 +93,10 @@ class TestPlayerPlugin:
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
 
-        context.content_registry.sprites.has.return_value = True
-        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = True
+        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -132,8 +136,10 @@ class TestPlayerPlugin:
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
 
-        context.content_registry.sprites.has.return_value = True
-        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = True
+        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -175,8 +181,10 @@ class TestPlayerPlugin:
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
 
-        context.content_registry.sprites.has.return_value = True
-        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = True
+        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -294,7 +302,9 @@ class TestPlayerPlugin:
         mock_arcade_scene = MagicMock()
 
         # No content registry entry → plugin returns early
-        context.content_registry.sprites.has.return_value = False
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = False
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -322,8 +332,10 @@ class TestPlayerPlugin:
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
 
-        context.content_registry.sprites.has.return_value = True
-        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = True
+        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -361,8 +373,10 @@ class TestPlayerPlugin:
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
 
-        context.content_registry.sprites.has.return_value = True
-        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = True
+        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]
@@ -400,8 +414,10 @@ class TestPlayerPlugin:
         mock_arcade_scene.__contains__ = MagicMock(return_value=True)
         mock_asset_path.return_value = "/path/to/sprite.png"
 
-        context.content_registry.sprites.has.return_value = True
-        context.content_registry.sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        mock_sprites = MagicMock()
+        mock_sprites.has.return_value = True
+        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+        context.content_registry.get_sub_registry.return_value = mock_sprites
 
         mock_player_obj = MagicMock()
         mock_player_obj.shape = [100.0, 200.0]

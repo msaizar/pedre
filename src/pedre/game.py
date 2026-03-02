@@ -36,6 +36,7 @@ import arcade
 from pedre.actions.loader import ActionLoader
 from pedre.conditions.loader import ConditionLoader
 from pedre.conf import settings
+from pedre.content.loader import ContentLoader
 from pedre.content.registry import ContentRegistry
 from pedre.events import EventBus
 from pedre.events.loader import EventLoader
@@ -127,12 +128,17 @@ class Game:
     def _load_content_registry(self) -> ContentRegistry:
         """Load content registry from the configured content directory.
 
-        Reads sprites.json and npcs.json from CONTENT_DIRECTORY (relative to the
-        assets directory) if they exist, and validates cross-references.
+        Loads content type modules from settings.INSTALLED_CONTENT, then reads
+        JSON files from CONTENT_DIRECTORY (relative to the assets directory) if
+        they exist, and validates cross-references.
 
         Returns:
             Populated ContentRegistry (may be empty if directory/files are absent).
         """
+        content_loader = ContentLoader()
+        content_loader.load_modules()
+        logger.debug("Loaded content modules from settings.INSTALLED_CONTENT")
+
         registry = ContentRegistry()
         try:
             content_dir = Path(asset_path(settings.CONTENT_DIRECTORY))

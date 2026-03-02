@@ -15,7 +15,7 @@ import logging
 
 import arcade
 from PIL import Image
-from PIL.Image import Transpose as _Transpose
+from PIL.Image import Transpose
 
 from pedre.conf import settings
 from pedre.sprites.types import AnimationStateConfig
@@ -490,7 +490,7 @@ class AnimatedSprite(arcade.Sprite):
             top = row_index * tile_size
             frame_image = sprite_sheet.crop((left, top, left + tile_size, top + tile_size))
             if flip:
-                frame_image = frame_image.transpose(_Transpose.FLIP_LEFT_RIGHT)
+                frame_image = frame_image.transpose(Transpose.FLIP_LEFT_RIGHT)
             texture = arcade.Texture(
                 name=f"{texture_name_prefix}_{frame_num}",
                 image=frame_image,
