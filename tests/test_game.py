@@ -1,11 +1,16 @@
 """Unit tests for Game class in src/pedre/game.py."""
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import arcade
 import pytest
 
+from pedre.content.registry import ContentRegistry
 from pedre.game import Game
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture
@@ -1061,3 +1066,77 @@ class TestGame:
 
         # Window show_view should not be called
         mock_window.show_view.assert_not_called()
+
+    @patch("pedre.game.PluginLoader")
+    @patch("pedre.game.ConditionLoader")
+    @patch("pedre.game.EventLoader")
+    @patch("pedre.game.ActionLoader")
+    @patch("pedre.game.GameContext")
+    @patch("pedre.game.EventBus")
+    @patch("pedre.game.ContentLoader")
+    @patch("pedre.game.asset_path")
+    def test_load_content_registry_directory_not_found(
+        self,
+        mock_asset_path: MagicMock,
+        mock_content_loader_class: MagicMock,
+        mock_event_bus_class: MagicMock,
+        mock_game_context_class: MagicMock,
+        mock_action_loader_class: MagicMock,
+        mock_event_loader_class: MagicMock,
+        mock_condition_loader_class: MagicMock,
+        mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """Test _load_content_registry returns empty registry when content dir does not exist."""
+        mock_plugin_loader = MagicMock()
+        mock_plugin_loader.instantiate_all.return_value = {}
+        mock_plugin_loader_class.return_value = mock_plugin_loader
+
+        # Point asset_path at a path that does not exist
+        mock_asset_path.return_value = str(tmp_path / "nonexistent")
+
+        Game(mock_window)
+
+        # _load_content_registry was called during __init__; GameContext received an empty registry
+        call_kwargs = mock_game_context_class.call_args[1]
+        registry = call_kwargs["content_registry"]
+        assert isinstance(registry, ContentRegistry)
+
+    @patch("pedre.game.PluginLoader")
+    @patch("pedre.game.ConditionLoader")
+    @patch("pedre.game.EventLoader")
+    @patch("pedre.game.ActionLoader")
+    @patch("pedre.game.GameContext")
+    @patch("pedre.game.EventBus")
+    @patch("pedre.game.ContentLoader")
+    @patch("pedre.game.asset_path")
+    def test_load_content_registry_loads_and_validates(
+        self,
+        mock_asset_path: MagicMock,
+        mock_content_loader_class: MagicMock,
+        mock_event_bus_class: MagicMock,
+        mock_game_context_class: MagicMock,
+        mock_action_loader_class: MagicMock,
+        mock_event_loader_class: MagicMock,
+        mock_condition_loader_class: MagicMock,
+        mock_plugin_loader_class: MagicMock,
+        mock_window: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        """Test _load_content_registry loads and validates when content dir exists."""
+        mock_plugin_loader = MagicMock()
+        mock_plugin_loader.instantiate_all.return_value = {}
+        mock_plugin_loader_class.return_value = mock_plugin_loader
+
+        # Point asset_path at a real (empty) directory
+        content_dir = tmp_path / "content"
+        content_dir.mkdir()
+        mock_asset_path.return_value = str(content_dir)
+
+        mock_content_registry = MagicMock(spec=ContentRegistry)
+        with patch("pedre.game.ContentRegistry", return_value=mock_content_registry):
+            Game(mock_window)
+
+        mock_content_registry.load_from_directory.assert_called_once()
+        mock_content_registry.validate_cross_references.assert_called_once()
