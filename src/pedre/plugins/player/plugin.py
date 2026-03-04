@@ -90,14 +90,6 @@ class PlayerPlugin(PlayerBasePlugin):
                     next_spawn_waypoint,
                 )
 
-        # Get sprite sheet properties
-        sprite_sheet = player_obj.properties.get("sprite_sheet")
-        if not sprite_sheet:
-            logger.error("Player object missing required 'sprite_sheet' property")
-            return
-
-        asset_path(sprite_sheet)
-
         # Validate tile_size if present (optional)
         tile_size = player_obj.properties.get("tile_size")
         if tile_size is not None and not isinstance(tile_size, int):
