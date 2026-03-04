@@ -179,7 +179,7 @@ The `run_game()` function automatically:
 
 ### Define the NPC in the Content Registry
 
-NPC appearance is configured in JSON files, not in Tiled. You'll need a character sprite sheet — save it as `assets/images/characters/merchant.png`. You can find free sprites at [OpenGameArt.org](https://opengameart.org/).
+NPC appearance is configured in JSON files. You'll need a character sprite sheet — save it as `assets/images/characters/merchant.png`. You can find free sprites at [OpenGameArt.org](https://opengameart.org/).
 
 Add the merchant's sprite definition to `assets/data/content/sprites.json`:
 
