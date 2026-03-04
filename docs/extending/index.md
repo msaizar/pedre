@@ -66,6 +66,19 @@ Build entire game plugins that integrate with the framework lifecycle.
 
 **Learn More:** [Custom Plugins](custom-plugins.md)
 
+### Content Types
+
+Register custom content type registries for loading and validating JSON-driven game data.
+
+**Use Cases:**
+
+- Enemy definitions (stats, spawn rules, loot tables)
+- Quest data (objectives, rewards, requirements)
+- Equipment and weapon schemas
+- Level or map configuration data
+
+**Learn More:** [Custom Content Types](content-registry.md)
+
 ### CLI Commands
 
 Create project-specific CLI commands or distribute commands as installable packages.

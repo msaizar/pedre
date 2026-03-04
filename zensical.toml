@@ -59,6 +59,7 @@ nav = [
         "extending/custom-conditions.md",
         "extending/custom-plugins.md",
         "extending/custom-commands.md",
+        "extending/content-registry.md",
     ]},
 ]
 
