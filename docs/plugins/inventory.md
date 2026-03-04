@@ -63,7 +63,6 @@ The inventory UI uses a design dictionary that scales proportionally to screen s
 
 ### Data and Input Settings
 
-- `INVENTORY_ITEMS_FILE` - Path to JSON file with item definitions (default: "data/inventory_items.json")
 - `INVENTORY_BACKGROUND_IMAGE` - Path to background image (optional, default: "")
 - `INVENTORY_KEY_TOGGLE` - Key to open/close the inventory overlay (default: "I")
 - `INVENTORY_KEY_VIEW` - Key to view selected item in detail (default: "V")
@@ -96,8 +95,6 @@ INVENTORY_COLOR_OVERLAY = (20, 20, 40)  # Dark blue overlay
 INVENTORY_COLOR_BOX_FILLED = (60, 80, 100)  # Blue-gray slots
 INVENTORY_COLOR_BOX_BORDER_SELECTED = (100, 200, 255)  # Cyan selection
 
-# Use custom items file
-INVENTORY_ITEMS_FILE = "data/items.json"
 ```
 
 ## Public API
@@ -205,7 +202,7 @@ if inventory_plugin.add_item(potion):
 
 **Notes:**
 
-- Allows dynamically adding items not defined in `inventory_items.json`
+- Allows dynamically adding items not defined in `items.json`
 - Useful for consumable items obtained through gameplay
 - If `acquired=True`, publishes `ItemAcquiredEvent`
 - Checks inventory capacity before adding
@@ -325,7 +322,7 @@ Initialize the inventory plugin with game context.
 **Notes:**
 
 - Called automatically by the PluginLoader
-- Loads items from `INVENTORY_ITEMS_FILE`
+- Loads items from the content registry (`assets/data/content/items.json`)
 
 ### cleanup
 
@@ -444,45 +441,40 @@ potion = InventoryItem(
 
 ### Item Definition File
 
-Items are typically loaded from a JSON file specified by `INVENTORY_ITEMS_FILE`:
+Items are loaded from `assets/data/content/items.json` via the content registry. Each top-level key is the item ID:
 
 ```json
 {
-  "items": [
-    {
-      "id": "golden_key",
-      "name": "Golden Key",
-      "description": "A shiny key that opens the tower door.",
-      "image_path": "items/golden_key.png",
-      "icon_path": "items/icons/key_icon.png",
-      "category": "key",
-      "acquired": false
-    },
-    {
-      "id": "beach_photo",
-      "name": "Beach Memory",
-      "description": "A sunny day at the coast.",
-      "image_path": "photos/beach.jpg",
-      "icon_path": "photos/icons/beach_icon.png",
-      "category": "photo",
-      "acquired": false
-    },
-    {
-      "id": "health_potion",
-      "name": "Health Potion",
-      "description": "Restores 50 HP",
-      "icon_path": "items/icons/potion.png",
-      "category": "consumable",
-      "acquired": false,
-      "consumable": true
-    }
-  ]
+  "golden_key": {
+    "name": "Golden Key",
+    "description": "A shiny key that opens the tower door.",
+    "image_path": "images/items/golden_key.png",
+    "icon_path": "images/items/icons/key_icon.png",
+    "category": "key",
+    "acquired": false
+  },
+  "beach_photo": {
+    "name": "Beach Memory",
+    "description": "A sunny day at the coast.",
+    "image_path": "images/photos/beach.jpg",
+    "icon_path": "images/photos/icons/beach_icon.png",
+    "category": "photo",
+    "acquired": false
+  },
+  "health_potion": {
+    "name": "Health Potion",
+    "description": "Restores 50 HP",
+    "icon_path": "images/items/icons/potion.png",
+    "category": "consumable",
+    "acquired": false,
+    "consumable": true
+  }
 }
 ```
 
 **Notes:**
 
-- All fields except `id`, `name`, and `description` are optional
+- All fields except `name` and `description` are optional
 - Items default to `acquired=false` and `consumable=false`
 - Paths are relative to the assets directory
 
