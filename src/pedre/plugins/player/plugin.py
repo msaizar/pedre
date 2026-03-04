@@ -90,26 +90,6 @@ class PlayerPlugin(PlayerBasePlugin):
                     next_spawn_waypoint,
                 )
 
-        # Validate tile_size if present (optional)
-        tile_size = player_obj.properties.get("tile_size")
-        if tile_size is not None and not isinstance(tile_size, int):
-            logger.warning(
-                "Player property 'tile_size' must be of type int, got %s: %s. Using default.",
-                type(tile_size).__name__,
-                tile_size,
-            )
-            tile_size = None
-
-        # Validate scale if present (optional)
-        scale = player_obj.properties.get("scale")
-        if scale is not None and not isinstance(scale, (int, float)):
-            logger.warning(
-                "Player property 'scale' must be of type float, got %s: %s. Using default.",
-                type(scale).__name__,
-                scale,
-            )
-            scale = None
-
         # Resolve sprite definition via content registry
         content_registry = self.context.content_registry
         sprites = content_registry.get_sub_registry("sprites")
@@ -124,8 +104,6 @@ class PlayerPlugin(PlayerBasePlugin):
                 sprite_def,
                 center_x=spawn_x,
                 center_y=spawn_y,
-                scale=scale,
-                tile_size=tile_size,
             )
         else:
             logger.warning("Player: no content registry sprite definition found. Cannot create player sprite.")

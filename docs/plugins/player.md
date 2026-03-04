@@ -242,8 +242,6 @@ The player is placed in Tiled maps using the "Player" object layer:
 **Optional Tiled Object Properties:**
 
 - `sprite_id` (string) - Override which sprite definition to use from the `sprites` content registry (default: `"player"`)
-- `tile_size` (int) - Override tile size from the sprite definition
-- `scale` (float) - Override scale from the sprite definition
 - `spawn_at_portal` (bool) - Whether to use portal spawn waypoint (default: true)
 
 All animation configuration (sprite sheet, frames, rows) comes from the sprite definition in the content registry.
@@ -260,7 +258,7 @@ spawn_at_portal: true
 {
   "player": {
     "sprite_sheet": "characters/player.png",
-    "tile_size": 32,
+    "frame_width": 32,
     "states": {
       "idle": {"row": 0, "frames": 4},
       "walk": {"row": 1, "frames": 6}
