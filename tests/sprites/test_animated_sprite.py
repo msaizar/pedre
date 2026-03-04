@@ -1,5 +1,6 @@
 """Tests for AnimatedSprite."""
 
+import logging
 from typing import TYPE_CHECKING
 
 import pytest
@@ -595,3 +596,349 @@ class TestAnimatedSpriteAutoFrom:
         assert len(sprite.animation_textures["disappear"]) == 5
         # Disappear should be the reverse of appear
         assert sprite.animation_textures["disappear"] == list(reversed(sprite.animation_textures["appear"]))
+
+    def test_auto_from_directional_generates_reversed_frames(self, sprite_sheet_path: Path) -> None:
+        """Test that directional auto_from generates reversed frames per direction."""
+        walk_cfg = AnimationStateConfig(
+            name="walk",
+            directional=True,
+            loop=True,
+            priority=1,
+            directions={
+                "down": {"frames": 4, "row": 1},
+                "right": {"frames": 4, "row": 2},
+            },
+        )
+        walk_back_cfg = AnimationStateConfig(
+            name="walk_back",
+            directional=True,
+            loop=True,
+            priority=2,
+            auto_from="walk",
+        )
+        states = {
+            "idle": make_idle_state(row=0),
+            "walk": walk_cfg,
+            "walk_back": walk_back_cfg,
+        }
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert sprite.animation_textures["walk_back_down"] == list(reversed(sprite.animation_textures["walk_down"]))
+        assert sprite.animation_textures["walk_back_right"] == list(reversed(sprite.animation_textures["walk_right"]))
+
+    def test_auto_from_missing_source_produces_empty_list(self, sprite_sheet_path: Path) -> None:
+        """Test that auto_from with missing source leaves empty texture list."""
+        ghost_cfg = AnimationStateConfig(
+            name="ghost",
+            directional=False,
+            loop=False,
+            priority=2,
+            auto_from="nonexistent",
+        )
+        states = {
+            "idle": make_idle_state(row=0),
+            "ghost": ghost_cfg,
+        }
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert sprite.animation_textures.get("ghost") == []
+
+
+class TestFromDefinition:
+    """Tests for AnimatedSprite.from_definition classmethod."""
+
+    def test_from_definition_basic(self, sprite_sheet_path: Path) -> None:
+        """Test creating a sprite from a definition dict."""
+        sprite_def = {
+            "sprite_sheet": str(sprite_sheet_path),
+            "frame_width": 16,
+            "states": {
+                "idle": {
+                    "directional": True,
+                    "loop": True,
+                    "priority": 0,
+                    "directions": {"down": {"frames": 4, "row": 0}},
+                }
+            },
+        }
+        sprite = AnimatedSprite.from_definition(sprite_def)
+        assert "idle_down" in sprite.animation_textures
+
+    def test_from_definition_with_scale_override(self, sprite_sheet_path: Path) -> None:
+        """Test that scale override works in from_definition."""
+        sprite_def = {
+            "sprite_sheet": str(sprite_sheet_path),
+            "frame_width": 16,
+            "states": {
+                "idle": {
+                    "directional": True,
+                    "loop": True,
+                    "priority": 0,
+                    "directions": {"down": {"frames": 4, "row": 0}},
+                }
+            },
+        }
+        sprite = AnimatedSprite.from_definition(sprite_def, scale=2.0, center_x=10.0, center_y=20.0)
+        assert sprite.scale == (2.0, 2.0)
+        assert sprite.center_x == 10.0
+        assert sprite.center_y == 20.0
+
+    def test_from_definition_with_tile_size_override(self, sprite_sheet_path: Path) -> None:
+        """Test that tile_size override works in from_definition."""
+        sprite_def = {
+            "sprite_sheet": str(sprite_sheet_path),
+            "frame_width": 32,
+            "states": {
+                "idle": {
+                    "directional": True,
+                    "loop": True,
+                    "priority": 0,
+                    "directions": {"down": {"frames": 2, "row": 0}},
+                }
+            },
+        }
+        sprite = AnimatedSprite.from_definition(sprite_def, tile_size=16)
+        assert sprite.tile_size == 16
+
+    def test_from_definition_uses_frame_width_when_no_tile_size(self, sprite_sheet_path: Path) -> None:
+        """Test that frame_width is used as tile_size when tile_size is not given."""
+        sprite_def = {
+            "sprite_sheet": str(sprite_sheet_path),
+            "frame_width": 16,
+            "states": {
+                "idle": {
+                    "directional": True,
+                    "loop": True,
+                    "priority": 0,
+                    "directions": {"down": {"frames": 4, "row": 0}},
+                }
+            },
+        }
+        sprite = AnimatedSprite.from_definition(sprite_def)
+        assert sprite.tile_size == 16
+
+
+class TestResolvingAndEdgeCases:
+    """Tests for edge cases in state resolution and animation."""
+
+    def test_update_animation_with_empty_active_states_returns_none(self, sprite_sheet_path: Path) -> None:
+        """Test update_animation returns early when no active states resolve."""
+        sprite = AnimatedSprite(
+            str(sprite_sheet_path),
+            tile_size=16,
+            states={"idle": make_idle_state()},
+        )
+        # Force empty active states to hit the _resolve_playing_state None branch
+        sprite._active_states.clear()
+        result = sprite.update_animation()
+        assert result is None
+
+    def test_request_state_same_playing_does_not_reset_frame(self, sprite_sheet_path: Path) -> None:
+        """Test that request_state doesn't reset frame if playing state doesn't change."""
+        sprite = AnimatedSprite(
+            str(sprite_sheet_path),
+            tile_size=16,
+            states={"idle": make_idle_state(row=0, frames=4)},
+        )
+        sprite.animation_speed = 0.1
+        # Advance to frame 2
+        for _ in range(2):
+            sprite.update_animation(delta_time=0.11)
+        assert sprite.current_frame == 2
+
+        # Request idle again — playing state stays "idle", frame should not reset
+        sprite.request_state("idle")
+        assert sprite.current_frame == 2
+
+    def test_reset_state_for_nonexistent_state_is_noop(self, sprite_sheet_path: Path) -> None:
+        """Test that reset_state for an undefined state is a no-op."""
+        sprite = AnimatedSprite(
+            str(sprite_sheet_path),
+            tile_size=16,
+            states={"idle": make_idle_state()},
+        )
+        sprite.reset_state("nonexistent")  # should not raise
+
+    def test_mark_state_complete_for_nonexistent_state_is_noop(self, sprite_sheet_path: Path) -> None:
+        """Test that mark_state_complete for an undefined state is a no-op."""
+        sprite = AnimatedSprite(
+            str(sprite_sheet_path),
+            tile_size=16,
+            states={"idle": make_idle_state()},
+        )
+        sprite.mark_state_complete("nonexistent")  # should not raise
+
+    def test_update_animation_clamps_frame_after_direction_change(self, sprite_sheet_path: Path) -> None:
+        """Test frame clamping when switching to a shorter animation mid-playback."""
+        states = {
+            "idle": AnimationStateConfig(
+                name="idle",
+                directional=True,
+                loop=True,
+                priority=0,
+                directions={
+                    "down": {"frames": 4, "row": 0},
+                    "up": {"frames": 2, "row": 1},
+                },
+            ),
+        }
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        # Establish idle as the current playing state
+        sprite.update_animation(delta_time=0.01)
+        assert sprite._current_playing == "idle"
+        # Simulate a direction change mid-playback: set direction directly then force frame out of bounds
+        sprite.current_direction = "up"
+        sprite.current_frame = 3  # valid for down (4 frames) but not up (2 frames)
+        sprite.update_animation(delta_time=0.01)
+        assert sprite.current_frame == 0  # clamped
+
+
+class TestLoadDirectionalEdgeCases:
+    """Tests for directional loading edge cases."""
+
+    def test_load_directional_state_no_directions_skips(self, sprite_sheet_path: Path) -> None:
+        """Test that a directional state with no directions dict is skipped."""
+        idle_cfg = AnimationStateConfig(
+            name="idle",
+            directional=True,
+            loop=True,
+            priority=0,
+            directions=None,  # explicitly no directions
+        )
+        # Should not crash; no textures loaded for idle
+        sprite = AnimatedSprite(
+            str(sprite_sheet_path),
+            tile_size=16,
+            states={"idle": idle_cfg},
+        )
+        assert sprite.animation_textures.get("idle_down") == []
+
+    def test_reverse_load_loads_frames_in_reverse_order(self, sprite_sheet_path: Path) -> None:
+        """Test that reverse_load loads frames in reverse order from the sprite sheet."""
+        appear_cfg = AnimationStateConfig(
+            name="appear",
+            directional=False,
+            loop=False,
+            priority=3,
+            frames=4,
+            row=5,
+            reverse_load=True,
+        )
+        normal_cfg = AnimationStateConfig(
+            name="normal",
+            directional=False,
+            loop=False,
+            priority=2,
+            frames=4,
+            row=5,
+        )
+        states = {
+            "idle": make_idle_state(row=0),
+            "appear": appear_cfg,
+            "normal": normal_cfg,
+        }
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        # reverse_load should produce the same frames as normal load but in reverse order
+        assert len(sprite.animation_textures["appear"]) == 4
+        appear_images = [t.image.tobytes() for t in sprite.animation_textures["appear"]]
+        normal_images = [t.image.tobytes() for t in sprite.animation_textures["normal"]]
+        assert appear_images == list(reversed(normal_images))
+
+    def test_load_nondirectional_state_no_frames_skips(self, sprite_sheet_path: Path) -> None:
+        """Test that a non-directional state with no frames/row is skipped."""
+        appear_cfg = AnimationStateConfig(
+            name="appear",
+            directional=False,
+            loop=False,
+            priority=3,
+            frames=None,
+            row=None,
+        )
+        sprite = AnimatedSprite(
+            str(sprite_sheet_path),
+            tile_size=16,
+            states={"idle": make_idle_state(), "appear": appear_cfg},
+        )
+        assert sprite.animation_textures.get("appear") == []
+
+    def test_load_paired_both_sides_defined(self, sprite_sheet_path: Path) -> None:
+        """Test that when both left and right rows are defined, both are loaded independently."""
+        idle_cfg = AnimationStateConfig(
+            name="idle",
+            directional=True,
+            loop=True,
+            priority=0,
+            directions={
+                "left": {"frames": 4, "row": 0},
+                "right": {"frames": 4, "row": 1},
+            },
+        )
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states={"idle": idle_cfg})
+
+        # Both loaded from distinct rows — pixels should differ
+        assert len(sprite.animation_textures["idle_left"]) == 4
+        assert len(sprite.animation_textures["idle_right"]) == 4
+        # They come from different rows so the image data should differ
+        left_img = sprite.animation_textures["idle_left"][0].image
+        right_img = sprite.animation_textures["idle_right"][0].image
+        assert left_img.tobytes() != right_img.tobytes()
+
+
+class TestSetInitialTextureFallbacks:
+    """Tests for _set_initial_texture fallback logic."""
+
+    def test_initial_texture_falls_back_to_walk_down(self, sprite_sheet_path: Path) -> None:
+        """Test _set_initial_texture falls back to walk_down when no idle."""
+        walk_cfg = AnimationStateConfig(
+            name="walk",
+            directional=True,
+            loop=True,
+            priority=1,
+            directions={"down": {"frames": 4, "row": 1}},
+        )
+        idle_cfg = AnimationStateConfig(
+            name="idle",
+            directional=True,
+            loop=True,
+            priority=0,
+            directions=None,  # no textures
+        )
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states={"idle": idle_cfg, "walk": walk_cfg})
+        assert sprite.texture == sprite.animation_textures["walk_down"][0]
+
+    def test_initial_texture_falls_back_to_nondirectional_state(self, sprite_sheet_path: Path) -> None:
+        """Test _set_initial_texture falls back to any non-directional state."""
+        idle_cfg = AnimationStateConfig(
+            name="idle",
+            directional=True,
+            loop=True,
+            priority=0,
+            directions=None,  # no textures
+        )
+        appear_cfg = AnimationStateConfig(
+            name="appear",
+            directional=False,
+            loop=False,
+            priority=3,
+            frames=3,
+            row=8,
+        )
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states={"idle": idle_cfg, "appear": appear_cfg})
+        assert sprite.texture == sprite.animation_textures["appear"][0]
+
+    def test_initial_texture_logs_warning_when_no_textures(
+        self, sprite_sheet_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test _set_initial_texture logs a warning when no textures can be found."""
+        idle_cfg = AnimationStateConfig(
+            name="idle",
+            directional=True,
+            loop=True,
+            priority=0,
+            directions=None,
+        )
+        with caplog.at_level(logging.WARNING, logger="pedre.sprites.animated_sprite"):
+            AnimatedSprite(str(sprite_sheet_path), tile_size=16, states={"idle": idle_cfg})
+
+        assert any("No animation textures" in r.message for r in caplog.records)
