@@ -134,9 +134,6 @@ INVENTORY_BACKGROUND_IMAGE = ""
 INVENTORY_MAX_SPACE = 12
 """Maximum number of items that can be held in inventory."""
 
-INVENTORY_ITEMS_FILE = "data/inventory_items.json"
-"""Path to the inventory items JSON data file."""
-
 INVENTORY_KEY_TOGGLE = "I"
 """Key to open/close the inventory overlay."""
 
@@ -456,6 +453,7 @@ CONTENT_DIRECTORY = "data/content"
 INSTALLED_CONTENT = [
     "pedre.content.registries.npc",
     "pedre.content.registries.sprite",
+    "pedre.content.registries.item",
 ]
 """Modules containing @ContentTypeRegistry.register decorators to load.
 

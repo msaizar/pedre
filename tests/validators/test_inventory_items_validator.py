@@ -1,15 +1,18 @@
 """Tests for InventoryItemsValidator."""
 
+from __future__ import annotations
+
 import json
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-if TYPE_CHECKING:
-    from pathlib import Path
 import pytest
 
 from pedre.validators.context import ValidationContext
 from pedre.validators.inventory_items_validator import InventoryItemsValidator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestInventoryItemsValidator:
@@ -22,24 +25,22 @@ class TestInventoryItemsValidator:
 
     @pytest.fixture
     def valid_items_file(self, tmp_path: Path) -> Path:
-        """Create a valid inventory_items.json file."""
+        """Create a valid items.json file in content registry dict format."""
         data = {
-            "items": [
-                {"id": "rusty_key", "name": "Rusty Key"},
-                {"id": "health_potion", "name": "Health Potion"},
-            ]
+            "rusty_key": {"name": "Rusty Key", "description": "Opens the old lock."},
+            "health_potion": {"name": "Health Potion", "description": "Restores health."},
         }
-        items_file = tmp_path / "inventory_items.json"
+        items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps(data))
         return items_file
 
     def test_name_property(self, context: ValidationContext, valid_items_file: Path) -> None:
-        """Test validator name."""
+        """Validator name is 'Inventory Items'."""
         validator = InventoryItemsValidator(valid_items_file, context)
         assert validator.name == "Inventory Items"
 
     def test_validate_valid_file_registers_items(self, context: ValidationContext, valid_items_file: Path) -> None:
-        """Test that valid items are registered in context."""
+        """Valid items are registered in context after validation."""
         validator = InventoryItemsValidator(valid_items_file, context)
         result = validator.validate()
 
@@ -49,7 +50,7 @@ class TestInventoryItemsValidator:
         assert "health_potion" in context.get_inventory_items()
 
     def test_validate_file_not_found(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when file does not exist."""
+        """Missing file produces a 'not found' error."""
         validator = InventoryItemsValidator(tmp_path / "nonexistent.json", context)
         result = validator.validate()
 
@@ -58,8 +59,8 @@ class TestInventoryItemsValidator:
         assert result.item_count == 0
 
     def test_validate_invalid_json(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error on invalid JSON."""
-        items_file = tmp_path / "inventory_items.json"
+        """Malformed JSON produces a 'Failed to parse' error."""
+        items_file = tmp_path / "items.json"
         items_file.write_text("not valid json{")
         validator = InventoryItemsValidator(items_file, context)
         result = validator.validate()
@@ -68,57 +69,38 @@ class TestInventoryItemsValidator:
         assert "Failed to parse" in result.errors[0]
 
     def test_validate_root_not_dict(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when root is not a dictionary."""
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps([{"id": "key"}]))
+        """Root JSON value that is not a dict produces a 'root must be a dictionary' error."""
+        items_file = tmp_path / "items.json"
+        items_file.write_text(json.dumps([{"name": "Key", "description": "A key."}]))
         validator = InventoryItemsValidator(items_file, context)
         result = validator.validate()
 
         assert any("root must be a dictionary" in e for e in result.errors)
 
-    def test_validate_missing_items_key(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when 'items' key is missing."""
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps({"other_key": []}))
-        validator = InventoryItemsValidator(items_file, context)
-        result = validator.validate()
-
-        assert any("missing required 'items' key" in e for e in result.errors)
-
-    def test_validate_items_not_list(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when 'items' is not a list."""
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps({"items": "not a list"}))
-        validator = InventoryItemsValidator(items_file, context)
-        result = validator.validate()
-
-        assert any("'items' must be a list" in e for e in result.errors)
-
-    def test_validate_item_missing_id(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when item is missing 'id' field."""
-        data = {"items": [{"name": "Key"}]}
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps(data))
-        validator = InventoryItemsValidator(items_file, context)
-        result = validator.validate()
-
-        assert any("missing required 'id' field" in e for e in result.errors)
-        assert result.item_count == 0
-
     def test_validate_item_missing_name(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when item is missing 'name' field."""
-        data = {"items": [{"id": "key"}]}
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps(data))
+        """Item missing 'name' field produces an error and is not registered."""
+        items_file = tmp_path / "items.json"
+        items_file.write_text(json.dumps({"key_01": {"description": "A key."}}))
         validator = InventoryItemsValidator(items_file, context)
         result = validator.validate()
 
         assert any("missing required 'name' field" in e for e in result.errors)
+        assert result.item_count == 0
 
-    def test_validate_empty_items_list(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test validation with empty items list is valid."""
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps({"items": []}))
+    def test_validate_item_missing_description(self, context: ValidationContext, tmp_path: Path) -> None:
+        """Item missing 'description' field produces an error and is not registered."""
+        items_file = tmp_path / "items.json"
+        items_file.write_text(json.dumps({"key_01": {"name": "Key"}}))
+        validator = InventoryItemsValidator(items_file, context)
+        result = validator.validate()
+
+        assert any("missing required 'description' field" in e for e in result.errors)
+        assert result.item_count == 0
+
+    def test_validate_empty_file_is_valid(self, context: ValidationContext, tmp_path: Path) -> None:
+        """An empty items dict is valid and registers no items."""
+        items_file = tmp_path / "items.json"
+        items_file.write_text(json.dumps({}))
         validator = InventoryItemsValidator(items_file, context)
         result = validator.validate()
 
@@ -129,15 +111,13 @@ class TestInventoryItemsValidator:
     def test_validate_partial_errors_still_registers_valid_items(
         self, context: ValidationContext, tmp_path: Path
     ) -> None:
-        """Test that valid items are still registered even when some items have errors."""
+        """Valid items are registered even when other items in the file have errors."""
         data = {
-            "items": [
-                {"id": "valid_item", "name": "Valid Item"},
-                {"name": "Missing ID"},
-                {"id": "another_valid", "name": "Another Valid"},
-            ]
+            "valid_item": {"name": "Valid Item", "description": "All good."},
+            "missing_desc": {"name": "No Description"},
+            "another_valid": {"name": "Another Valid", "description": "Also good."},
         }
-        items_file = tmp_path / "inventory_items.json"
+        items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps(data))
         validator = InventoryItemsValidator(items_file, context)
         result = validator.validate()
@@ -148,7 +128,7 @@ class TestInventoryItemsValidator:
         assert "another_valid" in context.get_inventory_items()
 
     def test_validate_cross_references_returns_empty(self, context: ValidationContext, valid_items_file: Path) -> None:
-        """Test that validate_cross_references returns empty result (items are the authority)."""
+        """validate_cross_references returns an empty result (items are the authority)."""
         validator = InventoryItemsValidator(valid_items_file, context)
         validator.validate()
         result = validator.validate_cross_references()
@@ -157,13 +137,11 @@ class TestInventoryItemsValidator:
         assert result.item_count == 0
 
     def test_validate_os_error(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error handling when OSError occurs while reading file."""
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps({"items": []}))
-
+        """OSError while reading the file produces a 'Failed to load' error."""
+        items_file = tmp_path / "items.json"
+        items_file.write_text(json.dumps({}))
         validator = InventoryItemsValidator(items_file, context)
 
-        # Mock Path.open to raise PermissionError (a subclass of OSError)
         with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
             result = validator.validate()
 
@@ -172,9 +150,12 @@ class TestInventoryItemsValidator:
         assert result.item_count == 0
 
     def test_validate_item_not_dict(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when item is not a dictionary."""
-        data = {"items": ["not_a_dict", {"id": "valid_item", "name": "Valid"}]}
-        items_file = tmp_path / "inventory_items.json"
+        """Item value that is not a dict produces an error; other valid items are still registered."""
+        data = {
+            "bad_item": "not_a_dict",
+            "valid_item": {"name": "Valid", "description": "Good."},
+        }
+        items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps(data))
         validator = InventoryItemsValidator(items_file, context)
         result = validator.validate()
@@ -182,25 +163,3 @@ class TestInventoryItemsValidator:
         assert any("must be a dictionary" in e for e in result.errors)
         assert result.item_count == 1
         assert "valid_item" in context.get_inventory_items()
-
-    def test_validate_item_id_not_string(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when item id is not a string."""
-        data = {"items": [{"id": 123, "name": "Invalid ID Type"}]}
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps(data))
-        validator = InventoryItemsValidator(items_file, context)
-        result = validator.validate()
-
-        assert any("'id' must be a string" in e for e in result.errors)
-        assert result.item_count == 0
-
-    def test_validate_item_name_not_string(self, context: ValidationContext, tmp_path: Path) -> None:
-        """Test error when item name is not a string."""
-        data = {"items": [{"id": "test_item", "name": 456}]}
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps(data))
-        validator = InventoryItemsValidator(items_file, context)
-        result = validator.validate()
-
-        assert any("'name' must be a string" in e for e in result.errors)
-        assert result.item_count == 0

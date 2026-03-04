@@ -69,7 +69,10 @@ class ValidateCommand(Command):
             "--inventory-items-path",
             type=Path,
             default=None,
-            help=f"Path to inventory items file (default: {settings.INVENTORY_ITEMS_FILE})",
+            help=(
+                f"Path to inventory items file (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}"
+                "/items.json)"
+            ),
         )
 
     def execute(self, args: argparse.Namespace) -> None:
@@ -123,7 +126,8 @@ class ValidateCommand(Command):
 
         # Always create InventoryItemsValidator to populate context, same pattern as MapValidator
         inventory_items_file = (
-            inventory_items_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.INVENTORY_ITEMS_FILE
+            inventory_items_path_arg
+            or Path.cwd() / settings.ASSETS_DIRECTORY / settings.CONTENT_DIRECTORY / "items.json"
         )
         inventory_items_validator = InventoryItemsValidator(inventory_items_file, context)
 

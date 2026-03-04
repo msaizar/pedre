@@ -86,9 +86,9 @@ class TestValidateCommand:
 
     @pytest.fixture
     def inventory_items_file(self, tmp_path: Path) -> Path:
-        """Create a temporary inventory_items.json file with no items."""
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps({"items": []}))
+        """Create a temporary items.json file in content registry dict format."""
+        items_file = tmp_path / "items.json"
+        items_file.write_text(json.dumps({}))
         return items_file
 
     @pytest.fixture
