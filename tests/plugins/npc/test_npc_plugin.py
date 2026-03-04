@@ -1737,6 +1737,145 @@ class TestNPCPlugin:
 
         assert plugin.interacted_npcs == {"old_scene": {"old_npc"}}
 
+    def test_apply_entity_state_restores_interact_complete(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test apply_entity_state marks interact state complete when interact_complete is True."""
+        plugin, _ = npc_plugin_ctx
+        npc_sprite = MagicMock(spec=AnimatedSprite)
+        plugin.register_npc(npc_sprite, "npc1")
+
+        save_data = {
+            "npcs": {
+                "npc1": {
+                    "x": 10.0,
+                    "y": 20.0,
+                    "visible": True,
+                    "dialog_level": 1,
+                    "interact_complete": True,
+                }
+            },
+            "interacted_npcs": {},
+        }
+
+        plugin.apply_entity_state(save_data)
+
+        npc_sprite.mark_state_complete.assert_any_call("interact")
+
+    def test_update_animated_npc_no_completed_animations(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test update with animated NPC when no animations are complete (branches 727->734, 734->660)."""
+        plugin, context = npc_plugin_ctx
+        npc_sprite = MagicMock(spec=AnimatedSprite)
+        npc_sprite.is_state_complete.return_value = False
+        plugin.register_npc(npc_sprite, "idle_npc")
+
+        plugin.update(0.1)
+
+        context.event_bus.publish.assert_not_called()
+        assert plugin.npcs["idle_npc"].appear_event_emitted is False
+        assert plugin.npcs["idle_npc"].disappear_event_emitted is False
+
+    def test_load_npcs_from_objects_sprite_is_none(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test load_npcs_from_objects skips NPC when _create_npc_sprite returns None (line 873)."""
+        plugin, _ = npc_plugin_ctx
+        mock_scene = MagicMock(spec=arcade.Scene)
+        mock_obj = MagicMock()
+        mock_obj.properties = {"name": "Ghost"}
+        mock_obj.shape = [100.0, 200.0]
+
+        with patch.object(plugin, "_create_npc_sprite", return_value=None):
+            plugin.load_npcs_from_objects([mock_obj], mock_scene)
+
+        assert "ghost" not in plugin.npcs
+
+    def test_create_npc_sprite_no_npcs_registry(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _create_npc_sprite when npcs sub-registry is None (branch 926->931)."""
+        plugin, _ = npc_plugin_ctx
+        mock_obj = MagicMock()
+        mock_obj.properties = {}
+
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.return_value = None
+
+        result = plugin._create_npc_sprite(
+            npc_name="unknown",
+            npc_obj=mock_obj,
+            spawn_x=100.0,
+            spawn_y=200.0,
+            content_registry=content_registry,
+        )
+
+        assert result is None
+
+    def test_create_npc_sprite_sprite_id_from_props(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _create_npc_sprite uses sprite_id from props without overriding (branch 928->931)."""
+        plugin, _ = npc_plugin_ctx
+        mock_obj = MagicMock()
+        mock_obj.properties = {"sprite_id": "hero_sprite"}
+
+        npcs_registry = MagicMock()
+        npcs_registry.has.return_value = True
+        npcs_registry.get.return_value = {"sprite_id": "other_sprite"}
+
+        sprites_registry = MagicMock()
+        sprites_registry.has.return_value = True
+        sprites_registry.get.return_value = {"sprite_sheet": "hero.png", "frame_width": 32, "frame_height": 32}
+
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.side_effect = (
+            lambda name: npcs_registry if name == "npcs" else sprites_registry
+        )
+
+        with (
+            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/hero.png"),
+            patch("pedre.plugins.npc.plugin.AnimatedSprite.from_definition") as mock_from_def,
+        ):
+            mock_from_def.return_value = MagicMock()
+            result = plugin._create_npc_sprite(
+                npc_name="hero",
+                npc_obj=mock_obj,
+                spawn_x=100.0,
+                spawn_y=200.0,
+                content_registry=content_registry,
+            )
+
+        # sprite_id from props ("hero_sprite") should be used, not the npc_def one ("other_sprite")
+        sprites_registry.has.assert_called_with("hero_sprite")
+        assert result is not None
+
+    def test_create_npc_sprite_initially_hidden(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _create_npc_sprite sets sprite invisible when initially_hidden is True (lines 936-944)."""
+        plugin, _ = npc_plugin_ctx
+        mock_obj = MagicMock()
+        mock_obj.properties = {}
+
+        npcs_registry = MagicMock()
+        npcs_registry.has.return_value = True
+        npcs_registry.get.return_value = {"sprite_id": "guard_sprite", "initially_hidden": True, "scale": 1.0}
+
+        sprites_registry = MagicMock()
+        sprites_registry.has.return_value = True
+        sprites_registry.get.return_value = {"sprite_sheet": "guard.png", "frame_width": 32, "frame_height": 32}
+
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.side_effect = (
+            lambda name: npcs_registry if name == "npcs" else sprites_registry
+        )
+
+        mock_sprite = MagicMock()
+        with (
+            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/guard.png"),
+            patch("pedre.plugins.npc.plugin.AnimatedSprite.from_definition", return_value=mock_sprite),
+        ):
+            result = plugin._create_npc_sprite(
+                npc_name="guard",
+                npc_obj=mock_obj,
+                spawn_x=100.0,
+                spawn_y=200.0,
+                content_registry=content_registry,
+            )
+
+        assert result is mock_sprite
+        assert mock_sprite.visible is False
+
 
 class TestCheckDialogConditions:
     """Test NPCPlugin._check_dialog_conditions."""
