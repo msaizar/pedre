@@ -9,7 +9,6 @@ Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 - Events: [src/pedre/plugins/npc/events.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/events.py)
 - Actions: [src/pedre/plugins/npc/actions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/actions.py)
 - Conditions: [src/pedre/plugins/npc/conditions.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/conditions.py)
-- Sprites: [src/pedre/plugins/npc/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/npc/sprites.py)
 
 ## Configuration
 
@@ -55,19 +54,14 @@ Register an NPC sprite for management.
 
 **Parameters:**
 
-- `sprite` - The NPC sprite (typically AnimatedNPC)
+- `sprite` - The NPC sprite (typically an `AnimatedSprite` created by `load_from_tiled`)
 - `name` - Unique identifier for the NPC
 
 **Example:**
 
 ```python
-# Create and register an NPC
-npc_sprite = AnimatedNPC(
-    sprite_sheet="characters/merchant.png",
-    center_x=320,
-    center_y=240
-)
-npc_plugin.register_npc(npc_sprite, "merchant")
+# Register an NPC sprite (typically called automatically by load_from_tiled)
+npc_plugin.register_npc(animated_sprite, "merchant")
 ```
 
 **Notes:**
@@ -111,7 +105,7 @@ npc_plugin.load_dialogs_from_json("assets/dialogs/")
 
 #### get_dialog
 
-`get_dialog(npc_name: str, dialog_level: int, scene: str = "default") -> tuple[NPCDialogConfig | None, list[dict[str, Any]] | None]`
+`get_dialog(npc_name: str, dialog_level: int, scene: str = "default") -> tuple[NPCDialogConfig | None, list[Action] | None]`
 
 Get dialog for an NPC at a specific conversation level in a scene.
 
@@ -125,7 +119,7 @@ Get dialog for an NPC at a specific conversation level in a scene.
 
 - Tuple of `(dialog_config, on_condition_fail_actions)`:
   - `dialog_config`: NPCDialogConfig if conditions met, None if no dialog found
-  - `on_condition_fail_actions`: List of actions if conditions failed, None otherwise
+  - `on_condition_fail_actions`: List of parsed `Action` objects if conditions failed, None otherwise
 
 **Example:**
 
@@ -221,7 +215,7 @@ def on_update(self, delta_time):
 
 - Called automatically by PluginLoader each frame
 - Updates NPC positions along paths
-- Updates AnimatedNPC animations
+- Updates `AnimatedSprite` animations
 - Publishes movement/animation complete events
 
 ### Interaction
@@ -362,7 +356,7 @@ npc_plugin.show_npcs(["guard", "captain", "merchant"])
 **Notes:**
 
 - Makes sprite.visible = True
-- Starts appear animation for AnimatedNPCs
+- Starts appear animation for `AnimatedSprite` NPCs
 - Adds NPC to wall collision list
 - Used by `start_appear_animation` action
 
@@ -487,7 +481,7 @@ npc_plugin.apply_entity_state(save_data["npc"])
 **Notes:**
 
 - Restores positions, visibility, dialog levels
-- Restores animation flags for AnimatedNPCs
+- Restores animation flags for `AnimatedSprite` NPCs
 - Restores per-scene interaction history
 
 ### Scene Caching
@@ -598,7 +592,8 @@ Load NPCs from Tiled map object layer.
 
 - Called automatically by PluginLoader
 - Looks for "NPCs" object layer
-- Creates AnimatedNPC sprites from object data
+- Resolves each NPC's sprite via the content registry (`npcs` and `sprites` sub-registries)
+- Each Tiled object only needs a `name` property; sprite configuration comes from the content registry
 
 ## NPC Data Structures
 
@@ -633,21 +628,10 @@ Configuration for NPC dialog at a specific conversation level.
 
 - `text: list[str]` - Dialog text pages to display
 - `name: str | None` - Optional display name for speaker
-- `conditions: list[dict[str, Any]] | None` - Optional conditions to check
-- `on_condition_fail: list[dict[str, Any]] | None` - Actions to execute if conditions fail
+- `conditions: list[Condition] | None` - Optional parsed conditions to check
+- `on_condition_fail: list[Action] | None` - Parsed actions to execute if conditions fail
 
-**Example:**
-
-```python
-dialog_config = NPCDialogConfig(
-    text=["Hello!", "Welcome to my shop."],
-    name="Merchant",
-    conditions=[{"name": "inventory_accessed", "equals": True}],
-    on_condition_fail=[
-        {"name": "dialog", "speaker": "Merchant", "text": ["Check your inventory first!"]}
-    ]
-)
-```
+Conditions and actions are parsed from JSON at load time via `ConditionRegistry` and `ActionRegistry`. You define them as JSON in dialog files; they are stored as parsed objects at runtime.
 
 ## Dialog Plugin
 
@@ -731,99 +715,48 @@ When conditions fail:
 2. Returns on_condition_fail actions
 3. Scripts can execute fallback actions
 
-## AnimatedNPC Sprites
+## NPC Sprites and Content Registry
 
-AnimatedNPCs are specialized sprites with multi-directional animations and special effects.
-
-### Creating AnimatedNPC
-
-```python
-from pedre.plugins.npc.sprites import AnimatedNPC
-
-npc = AnimatedNPC(
-    sprite_sheet="characters/merchant.png",
-    center_x=320,
-    center_y=240,
-    scale=2.0,
-    tile_size=32,
-    # Walk animations (4 directions)
-    walk_up_frames=4,
-    walk_up_row=0,
-    walk_down_frames=4,
-    walk_down_row=1,
-    walk_left_frames=4,
-    walk_left_row=2,
-    walk_right_frames=4,
-    walk_right_row=3,
-    # Idle animations
-    idle_up_frames=1,
-    idle_up_row=4,
-    idle_down_frames=1,
-    idle_down_row=5,
-    # Special animations
-    appear_frames=6,
-    appear_row=8,
-    disappear_frames=6,
-    disappear_row=9
-)
-```
-
-### Animation Properties
-
-**Base Animation Properties (from sprite sheet):**
-
-- `walk_up_frames`, `walk_up_row` - Walk upward animation
-- `walk_down_frames`, `walk_down_row` - Walk downward animation
-- `walk_left_frames`, `walk_left_row` - Walk left animation
-- `walk_right_frames`, `walk_right_row` - Walk right animation
-- `idle_up_frames`, `idle_up_row` - Idle facing up
-- `idle_down_frames`, `idle_down_row` - Idle facing down
-- `idle_left_frames`, `idle_left_row` - Idle facing left
-- `idle_right_frames`, `idle_right_row` - Idle facing right
-
-**NPC-Specific Special Animations:**
-
-- `appear_frames`, `appear_row` - Appear/spawn animation
-- `disappear_frames`, `disappear_row` - Disappear/fade animation
-- `interact_up_frames`, `interact_up_row` - Interaction facing up
-- `interact_down_frames`, `interact_down_row` - Interaction facing down
-- `interact_left_frames`, `interact_left_row` - Interaction facing left
-- `interact_right_frames`, `interact_right_row` - Interaction facing right
+NPC sprites are defined via the content registry rather than inline Tiled properties. The plugin looks up each NPC by name in the `npcs` sub-registry, resolves its associated sprite from the `sprites` sub-registry, and creates an `AnimatedSprite` from that definition.
 
 ### Tiled Map Integration
 
-NPCs can be placed in Tiled maps using object layers:
+NPCs are placed in Tiled maps using object layers:
 
 1. Create an "NPCs" object layer
 2. Add point objects where NPCs should spawn
-3. Set custom properties on each object:
+3. Set the `name` property on each object matching an entry in your NPC content registry
 
-**Required Properties:**
+**Required Tiled Object Properties:**
 
-- `name` (string) - Unique NPC identifier (e.g., "merchant")
-- `sprite_sheet` (string) - Path to sprite sheet (relative to assets)
+- `name` (string) - NPC identifier (lowercased), must match an entry in the `npcs` content registry
 
-**Optional Properties:**
+**Optional Tiled Object Properties:**
 
-- `tile_size` (int) - Size of each tile in sprite sheet (default: from sheet)
-- `scale` (float) - Sprite scale multiplier (default: 1.0)
-- `initially_hidden` (bool) - Start invisible (default: false)
-- Animation properties (see above)
+- `sprite_id` (string) - Override the sprite definition from the content registry
 
-**Example Tiled Properties:**
+All other configuration (sprite sheet, tile size, scale, animation rows/frames, `initially_hidden`) comes from the NPC and sprite definitions in the content registry (`npcs.json` / `sprites.json`).
+
+**Example Tiled Object:**
 
 ```yaml
 name: merchant
-sprite_sheet: characters/merchant.png
-tile_size: 32
-scale: 2.0
-walk_up_frames: 4
-walk_up_row: 0
-walk_down_frames: 4
-walk_down_row: 1
-appear_frames: 6
-appear_row: 8
 ```
+
+**Example NPC content registry entry (`npcs.json`):**
+
+```json
+{
+  "merchant": {
+    "sprite_id": "merchant_sprite",
+    "scale": 2.0,
+    "tile_size": 32,
+    "initially_hidden": false
+  }
+}
+```
+
+See the [Content Registry](../content-registry.md) documentation for full details on defining NPC and sprite entries.
 
 ## Events
 
@@ -908,7 +841,7 @@ Published when an NPC completes appear animation.
 
 **Notes:**
 
-- Only AnimatedNPCs have appear animations
+- Only `AnimatedSprite` NPCs have appear animations
 - Used internally by WaitForNPCsAppearAction
 - The `npc` filter is optional (omit to trigger for any NPC)
 - Useful for triggering dialog or effects after dramatic entrances
@@ -937,7 +870,7 @@ Published when an NPC completes disappear animation.
 
 **Notes:**
 
-- Only AnimatedNPCs have disappear animations
+- Only `AnimatedSprite` NPCs have disappear animations
 - NPC automatically hidden after animation
 - The `npc` filter is optional
 
@@ -993,7 +926,7 @@ Start the appear animation for one or more NPCs.
 **Notes:**
 
 - Makes sprite.visible = True
-- Starts appear animation for AnimatedNPCs
+- Starts appear animation for `AnimatedSprite` NPCs
 - Adds to collision wall list
 - Publishes `NPCAppearCompleteEvent` when animation done
 
@@ -1122,7 +1055,7 @@ Wait for multiple NPCs to complete appear animations.
 
 **Notes:**
 
-- Only AnimatedNPCs have appear animations
+- Only `AnimatedSprite` NPCs have appear animations
 - Waits for all NPCs in list
 - Regular sprites complete immediately
 
@@ -1148,7 +1081,7 @@ Wait for multiple NPCs to complete disappear animations.
 
 **Notes:**
 
-- Only AnimatedNPCs have disappear animations
+- Only `AnimatedSprite` NPCs have disappear animations
 - Waits for all NPCs in list
 - Regular sprites complete immediately
 
@@ -1173,7 +1106,7 @@ Start the disappear animation for one or more NPCs.
 
 **Notes:**
 
-- Only AnimatedNPCs have disappear animations
+- Only `AnimatedSprite` NPCs have disappear animations
 - Waits for animations to complete before finishing
 - Removes NPCs from wall collision list when done
 - Publishes `NPCDisappearCompleteEvent` for each NPC
