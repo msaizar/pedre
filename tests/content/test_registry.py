@@ -12,6 +12,7 @@ from pedre.content.registry import (
     DuplicateIDError,
     InvalidDefinitionError,
     MissingDefinitionError,
+    RegistryError,
 )
 
 if TYPE_CHECKING:
@@ -359,6 +360,13 @@ class TestBaseContentRegistry:
         f.write_text(json.dumps({"item": "not a dict"}))
         reg = MinimalRegistry()
         with pytest.raises(InvalidDefinitionError):
+            reg.load_from_file(f)
+
+    def test_load_from_file_missing_file_raises(self, tmp_path: pathlib.Path) -> None:
+        """Test that load_from_file() raises RegistryError when the file does not exist."""
+        f = tmp_path / "nonexistent.json"
+        reg = MinimalRegistry()
+        with pytest.raises(RegistryError):
             reg.load_from_file(f)
 
 
