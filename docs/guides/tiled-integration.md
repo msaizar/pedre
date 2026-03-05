@@ -350,8 +350,6 @@ The player sprite is driven entirely by the **content registry**. Animation stat
 | Property    | Type   | Required | Description                                                                       |
 | ----------- | ------ | -------- | --------------------------------------------------------------------------------- |
 | `sprite_id` | string | No       | ID of the sprite definition in `sprites.json`. Defaults to `"player"`             |
-| `tile_size` | int    | No       | Override frame size in pixels (defaults to `frame_width` from sprite definition)  |
-| `scale`     | float  | No       | Override sprite scale (defaults to `1.0`)                                         |
 
 **Example Player Object (minimal):**
 
