@@ -85,7 +85,7 @@ class TestValidateCommand:
         return maps_dir
 
     @pytest.fixture
-    def inventory_items_file(self, tmp_path: Path) -> Path:
+    def items_file(self, tmp_path: Path) -> Path:
         """Create a temporary items.json file in content registry dict format."""
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps({}))
@@ -234,7 +234,7 @@ class TestValidateCommand:
         command.execute(args)
 
     def test_validate_type_all_with_both(
-        self, scripts_dir: Path, dialogs_dir: Path, maps_dir: Path, inventory_items_file: Path, setup_registries: None
+        self, scripts_dir: Path, dialogs_dir: Path, maps_dir: Path, items_file: Path, setup_registries: None
     ) -> None:
         """Test --type all validates both scripts and dialogs."""
         # Create a map file with the merchant NPC
@@ -276,12 +276,12 @@ class TestValidateCommand:
             type="all",
             dialogs_path=dialogs_dir,
             maps_path=maps_dir,
-            inventory_items_path=inventory_items_file,
+            items_path=items_file,
         )
         command.execute(args)
 
     def test_validate_with_custom_dialogs_dir(
-        self, scripts_dir: Path, tmp_path: Path, maps_dir: Path, inventory_items_file: Path, setup_registries: None
+        self, scripts_dir: Path, tmp_path: Path, maps_dir: Path, items_file: Path, setup_registries: None
     ) -> None:
         """Test validate uses custom dialogs directory when provided."""
         dialogs_dir = tmp_path / "custom_dialogs"
@@ -318,7 +318,7 @@ class TestValidateCommand:
             type="all",
             dialogs_path=dialogs_dir,
             maps_path=maps_dir,
-            inventory_items_path=inventory_items_file,
+            items_path=items_file,
         )
         command.execute(args)
 
@@ -380,7 +380,7 @@ class TestValidateCommand:
         scripts_dir: Path,
         dialogs_dir: Path,
         maps_dir: Path,
-        inventory_items_file: Path,
+        items_file: Path,
         setup_registries: None,
     ) -> None:
         """Test validate succeeds with empty directories (no files to validate)."""
@@ -390,7 +390,7 @@ class TestValidateCommand:
             type="all",
             dialogs_path=dialogs_dir,
             maps_path=maps_dir,
-            inventory_items_path=inventory_items_file,
+            items_path=items_file,
         )
         # Should not raise
         command.execute(args)
@@ -413,7 +413,7 @@ class TestValidateCommand:
 
         command = ValidateCommand()
         args = argparse.Namespace(
-            scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=None, inventory_items_path=None
+            scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=None, items_path=None
         )
         with pytest.raises(SystemExit) as exc_info:
             command.execute(args)

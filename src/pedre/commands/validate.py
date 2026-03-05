@@ -20,7 +20,7 @@ from pedre.events.registry import EventRegistry
 from pedre.main import setup_resources
 from pedre.validators.context import ValidationContext
 from pedre.validators.dialog_validator import DialogValidator
-from pedre.validators.inventory_items_validator import InventoryItemsValidator
+from pedre.validators.items_validator import ItemsValidator
 from pedre.validators.map_validator import MapValidator
 from pedre.validators.script_validator import ScriptValidator
 
@@ -49,7 +49,7 @@ class ValidateCommand(Command):
         parser.add_argument(
             "--type",
             "-t",
-            choices=["all", "scripts", "dialogs", "maps", "inventory_items"],
+            choices=["all", "scripts", "dialogs", "maps", "items"],
             default="all",
             help="Type of validation to run (default: all)",
         )
@@ -66,7 +66,7 @@ class ValidateCommand(Command):
             help=f"Path to maps directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_DIRECTORY})",
         )
         parser.add_argument(
-            "--inventory-items-path",
+            "---items-path",
             type=Path,
             default=None,
             help=(
@@ -118,18 +118,17 @@ class ValidateCommand(Command):
         dialogs_path_arg = getattr(args, "dialogs_path", None)
         scripts_path_arg = getattr(args, "scripts_path", None)
         maps_path_arg = getattr(args, "maps_path", None)
-        inventory_items_path_arg = getattr(args, "inventory_items_path", None)
+        items_path_arg = getattr(args, "items_path", None)
 
         # Always create MapValidator to populate context, but only add to validators list if needed for validation
         maps_dir = maps_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCENE_MAPS_DIRECTORY
         map_validator = MapValidator(maps_dir, context)
 
-        # Always create InventoryItemsValidator to populate context, same pattern as MapValidator
-        inventory_items_file = (
-            inventory_items_path_arg
-            or Path.cwd() / settings.ASSETS_DIRECTORY / settings.CONTENT_DIRECTORY / "items.json"
+        # Always create ItemsValidator to populate context, same pattern as MapValidator
+        items_file = (
+            items_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.CONTENT_DIRECTORY / "items.json"
         )
-        inventory_items_validator = InventoryItemsValidator(inventory_items_file, context)
+        items_validator = ItemsValidator(items_file, context)
 
         # Determine which validators to run
         validators = []
@@ -145,16 +144,16 @@ class ValidateCommand(Command):
             dialogs_dir = dialogs_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.DIALOGS_DIRECTORY
             validators.append(DialogValidator(dialogs_dir, context))
 
-        if validation_type in ["all", "inventory_items"]:
-            validators.append(inventory_items_validator)
+        if validation_type in ["all", "items"]:
+            validators.append(items_validator)
 
         # Always populate context from maps and inventory items (needed for cross-reference validation)
         # Run silently if not in the validators list
         if validation_type not in {"all", "maps"}:
             map_validator.validate()  # Populates context but we don't report errors
 
-        if validation_type not in {"all", "inventory_items"}:
-            inventory_items_validator.validate()  # Populates context but we don't report errors
+        if validation_type not in {"all", "items"}:
+            items_validator.validate()  # Populates context but we don't report errors
 
         # Phase 1: Structural validation (also populates context)
         console.print("\n[bold]Phase 1: Structural Validation[/bold]")
