@@ -206,60 +206,6 @@ class TestMapValidator:
         assert len(result.errors) == 1
         assert "NPC missing required 'name' property" in result.errors[0]
 
-    def test_npc_missing_sprite_sheet(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC without sprite_sheet property."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(name="merchant", properties={})
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "missing required 'sprite_sheet' property" in result.errors[0]
-
-    def test_npc_invalid_tile_size_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC with tile_size that is not an int."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(
-            name="merchant",
-            properties={"sprite_sheet": "merchant.png", "tile_size": "not_an_int"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'tile_size' must be int" in result.errors[0]
-
-    def test_npc_invalid_scale_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC with scale that is not int or float."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(
-            name="merchant",
-            properties={"sprite_sheet": "merchant.png", "scale": "not_numeric"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'scale' must be int or float" in result.errors[0]
-
     def test_npc_invalid_initially_hidden_type(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test NPC with initially_hidden that is not bool."""
         map_file = maps_dir / "test.tmx"
@@ -470,66 +416,6 @@ class TestMapValidator:
             result = validator.validate()
 
         assert result.errors == []
-
-    def test_player_missing_sprite_sheet(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player without sprite_sheet property."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(name="player", properties={})
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "missing required 'sprite_sheet' property" in result.errors[0]
-
-    def test_player_invalid_tile_size_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with tile_size that is not an int."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(
-            name="player",
-            properties={"sprite_sheet": "player.png", "tile_size": "not_int"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'tile_size' must be int" in result.errors[0]
-
-    def test_player_invalid_scale_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with scale that is not int or float."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(
-            name="player",
-            properties={"sprite_sheet": "player.png", "scale": "not_numeric"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'scale' must be int or float" in result.errors[0]
 
     def test_player_invalid_spawn_at_portal_type(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test player with spawn_at_portal that is not bool."""
@@ -848,41 +734,6 @@ class TestMapValidator:
             result = validator.validate()
 
         assert result.errors == []
-
-    def test_player_invalid_sprite_sheet_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with sprite_sheet that is not a string."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(name="player", properties={"sprite_sheet": 123})
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "sprite_sheet' must be string" in result.errors[0]
-
-    def test_player_sprite_sheet_not_found(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with sprite_sheet that does not exist."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(name="player", properties={"sprite_sheet": "missing.png"})
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=False),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "sprite_sheet 'missing.png' not found" in result.errors[0]
 
     def test_map_music_not_found(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test map with music file that does not exist."""

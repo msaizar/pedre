@@ -171,23 +171,7 @@ class MapValidator(Validator):
                 errors.append(f"Map '{map_name}': NPCs layer: NPC missing required 'name' property")
                 continue
 
-            # Validate required 'sprite_sheet' property
-            if not hasattr(npc, "properties") or npc.properties is None or "sprite_sheet" not in npc.properties:
-                errors.append(f"Map '{map_name}': NPCs layer: '{name}': missing required 'sprite_sheet' property")
-                continue
-
-            # Validate optional properties have correct types
-            if "tile_size" in npc.properties:
-                error = self._validate_property_type(npc.properties["tile_size"], int, "tile_size", f"NPC '{name}'")
-                if error:
-                    errors.append(f"Map '{map_name}': NPCs layer: {error}")
-
-            if "scale" in npc.properties:
-                error = self._validate_property_type(npc.properties["scale"], (int, float), "scale", f"NPC '{name}'")
-                if error:
-                    errors.append(f"Map '{map_name}': NPCs layer: {error}")
-
-            if "initially_hidden" in npc.properties:
+            if npc.properties and "initially_hidden" in npc.properties:
                 error = self._validate_property_type(
                     npc.properties["initially_hidden"], bool, "initially_hidden", f"NPC '{name}'"
                 )
@@ -282,34 +266,7 @@ class MapValidator(Validator):
             return errors  # Player is optional
 
         for player in tile_map.object_lists["Player"]:
-            # Validate required 'sprite_sheet' property
-            if (
-                not hasattr(player, "properties")
-                or player.properties is None
-                or "sprite_sheet" not in player.properties
-            ):
-                errors.append(f"Map '{map_name}': Player layer: missing required 'sprite_sheet' property")
-                continue
-
-            # Validate sprite_sheet file exists
-            sprite_sheet = player.properties["sprite_sheet"]
-            if not isinstance(sprite_sheet, str):
-                errors.append(f"Map '{map_name}': Player layer: 'sprite_sheet' must be string")
-            elif not asset_exists(sprite_sheet):
-                errors.append(f"Map '{map_name}': Player layer: sprite_sheet '{sprite_sheet}' not found")
-
-            # Validate optional properties have correct types
-            if "tile_size" in player.properties:
-                error = self._validate_property_type(player.properties["tile_size"], int, "tile_size", "Player")
-                if error:
-                    errors.append(f"Map '{map_name}': Player layer: {error}")
-
-            if "scale" in player.properties:
-                error = self._validate_property_type(player.properties["scale"], (int, float), "scale", "Player")
-                if error:
-                    errors.append(f"Map '{map_name}': Player layer: {error}")
-
-            if "spawn_at_portal" in player.properties:
+            if player.properties and "spawn_at_portal" in player.properties:
                 error = self._validate_property_type(
                     player.properties["spawn_at_portal"], bool, "spawn_at_portal", "Player"
                 )
