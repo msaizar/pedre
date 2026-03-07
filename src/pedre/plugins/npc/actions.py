@@ -710,6 +710,8 @@ class StartDisappearAnimationAction(Action):
                         "StartDisappearAnimationAction: NPC %s not found or has no disappear animation",
                         npc_name,
                     )
+                    if npc_state and npc_state.sprite:
+                        npc_state.sprite.visible = False
             self.animation_started = True
 
         # Check if all animations have completed
@@ -730,8 +732,9 @@ class StartDisappearAnimationAction(Action):
         # All animations complete - remove NPCs from walls
         for npc_name in self.npc_names:
             npc_state = npc_plugin.get_npcs().get(npc_name)
-            if npc_state and npc_state.sprite:
-                scene_plugin.remove_from_wall_list(npc_state.sprite)
+            sprite = npc_state.sprite if npc_state else None
+            if sprite and sprite.sprite_lists:
+                scene_plugin.remove_from_wall_list(sprite)
                 logger.debug("StartDisappearAnimationAction: Removed %s from wall list", npc_name)
 
         return True
