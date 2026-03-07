@@ -543,6 +543,8 @@ class ScriptPlugin(ScriptBasePlugin):
         if not self.context:
             return
 
+        for action in action_data_list:
+            action.reset()
         sequence = ActionSequence(action_data_list)
         self.active_sequences.append((sequence_name, sequence))
         logger.info(
