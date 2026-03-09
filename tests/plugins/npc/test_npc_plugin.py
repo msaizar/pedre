@@ -1029,7 +1029,7 @@ class TestNPCPlugin:
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
-        mock_obj.properties = {"name": "Guard"}
+        mock_obj.name = "Guard"
         mock_obj.shape = [100.0, 200.0]
 
         mock_npc_instance = MagicMock()
@@ -1055,7 +1055,7 @@ class TestNPCPlugin:
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock()
         mock_obj = MagicMock()
-        mock_obj.properties = {"sprite_sheet": "test.png"}
+        mock_obj.name = ""
 
         plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
@@ -1620,7 +1620,7 @@ class TestNPCPlugin:
         context.scene_plugin = None
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
-        mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
+        mock_obj.name = "Guard"
         mock_obj.shape = [100.0, 200.0]
 
         mock_npc_instance = MagicMock()
@@ -1805,42 +1805,6 @@ class TestNPCPlugin:
 
         assert result is None
 
-    def test_create_npc_sprite_sprite_id_from_props(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test _create_npc_sprite uses sprite_id from props without overriding (branch 928->931)."""
-        plugin, _ = npc_plugin_ctx
-        mock_obj = MagicMock()
-        mock_obj.properties = {"sprite_id": "hero_sprite"}
-
-        npcs_registry = MagicMock()
-        npcs_registry.has.return_value = True
-        npcs_registry.get.return_value = {"sprite_id": "other_sprite"}
-
-        sprites_registry = MagicMock()
-        sprites_registry.has.return_value = True
-        sprites_registry.get.return_value = {"sprite_sheet": "hero.png", "frame_width": 32, "frame_height": 32}
-
-        content_registry = MagicMock()
-        content_registry.get_sub_registry.side_effect = (
-            lambda name: npcs_registry if name == "npcs" else sprites_registry
-        )
-
-        with (
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/hero.png"),
-            patch("pedre.plugins.npc.plugin.AnimatedSprite.from_definition") as mock_from_def,
-        ):
-            mock_from_def.return_value = MagicMock()
-            result = plugin._create_npc_sprite(
-                npc_name="hero",
-                npc_obj=mock_obj,
-                spawn_x=100.0,
-                spawn_y=200.0,
-                content_registry=content_registry,
-            )
-
-        # sprite_id from props ("hero_sprite") should be used, not the npc_def one ("other_sprite")
-        sprites_registry.has.assert_called_with("hero_sprite")
-        assert result is not None
-
     def test_create_npc_sprite_initially_hidden(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test _create_npc_sprite sets sprite invisible when initially_hidden is True (lines 936-944)."""
         plugin, _ = npc_plugin_ctx
@@ -1875,6 +1839,41 @@ class TestNPCPlugin:
 
         assert result is mock_sprite
         assert mock_sprite.visible is False
+
+    def test_create_npc_sprite_not_initially_hidden(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _create_npc_sprite does not set visible=False when initially_hidden is False."""
+        plugin, _ = npc_plugin_ctx
+        mock_obj = MagicMock()
+        mock_obj.properties = {}
+
+        npcs_registry = MagicMock()
+        npcs_registry.has.return_value = True
+        npcs_registry.get.return_value = {"sprite_id": "guard_sprite", "scale": 1.0}
+
+        sprites_registry = MagicMock()
+        sprites_registry.has.return_value = True
+        sprites_registry.get.return_value = {"sprite_sheet": "guard.png", "frame_width": 32, "frame_height": 32}
+
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.side_effect = (
+            lambda name: npcs_registry if name == "npcs" else sprites_registry
+        )
+
+        mock_sprite = MagicMock()
+        with (
+            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/guard.png"),
+            patch("pedre.plugins.npc.plugin.AnimatedSprite.from_definition", return_value=mock_sprite),
+        ):
+            result = plugin._create_npc_sprite(
+                npc_name="guard",
+                npc_obj=mock_obj,
+                spawn_x=100.0,
+                spawn_y=200.0,
+                content_registry=content_registry,
+            )
+
+        assert result is mock_sprite
+        assert mock_sprite.visible is not False
 
 
 class TestCheckDialogConditions:

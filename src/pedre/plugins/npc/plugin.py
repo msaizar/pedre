@@ -844,10 +844,7 @@ class NPCPlugin(NPCBasePlugin):
         content_registry = self.context.content_registry
 
         for npc_obj in npc_objects:
-            if not npc_obj.properties:
-                continue
-
-            npc_name = npc_obj.properties.get("name")
+            npc_name = npc_obj.name
             if not npc_name:
                 continue
 
@@ -871,9 +868,6 @@ class NPCPlugin(NPCBasePlugin):
 
             if animated_sprite is None:
                 continue
-
-            # Store Tiled properties on the sprite for downstream access
-            animated_sprite.properties = npc_obj.properties
 
             self.register_npc(animated_sprite, npc_name)
             npc_sprite_list.append(animated_sprite)
@@ -916,17 +910,13 @@ class NPCPlugin(NPCBasePlugin):
         Returns:
             AnimatedSprite instance, or None if the sprite could not be created.
         """
-        props = getattr(npc_obj, "properties", {}) or {}
-
-        # Allow a per-object sprite_id override; otherwise resolve via npcs registry
-        sprite_id = props.get("sprite_id")
         npc_def: dict = {}
         npcs = content_registry.get_sub_registry("npcs")
         sprites = content_registry.get_sub_registry("sprites")
+        sprite_id = None
         if npcs and npcs.has(npc_name):
             npc_def = npcs.get(npc_name)
-            if sprite_id is None:
-                sprite_id = npc_def.get("sprite_id")
+            sprite_id = npc_def.get("sprite_id")
 
         if sprite_id and sprites and sprites.has(sprite_id):
             sprite_def = sprites.get(sprite_id)

@@ -218,6 +218,18 @@ class TestPlayerValidator:
         assert len(result.errors) == 1
         assert "Failed to parse" in result.errors[0]
 
+    def test_validate_cross_references_os_error(self, context_with_sprites: ValidationContext, tmp_path: Path) -> None:
+        """OSError during cross-reference reports a load error."""
+        players_file = tmp_path / "players.json"
+        players_file.write_text("{}")
+        validator = PlayerValidator(players_file, context_with_sprites)
+
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
+            result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "Failed to load" in result.errors[0]
+
     def test_validate_cross_references_root_not_dict(
         self, context_with_sprites: ValidationContext, tmp_path: Path
     ) -> None:

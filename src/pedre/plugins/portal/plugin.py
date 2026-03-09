@@ -141,8 +141,8 @@ class PortalPlugin(BasePlugin):
             return
 
         for portal in portal_layer:
-            if not portal.name or not portal.properties or not portal.shape:
-                logger.warning("Portal object missing name, properties, or shape, skipping")
+            if not portal.name or not portal.shape:
+                logger.warning("Portal object missing name, or shape, skipping")
                 continue
 
             # Extract shape geometry

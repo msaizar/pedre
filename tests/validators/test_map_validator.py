@@ -281,26 +281,6 @@ class TestMapValidator:
         assert len(result.errors) == 1
         assert "portal missing required 'name' property" in result.errors[0]
 
-    def test_portal_missing_properties(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test portal without properties."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        portal = Mock()
-        portal.name = "exit_portal"
-        portal.properties = None
-        portal.shape = [100.0, 200.0]
-
-        tile_map = self._create_mock_tilemap(object_lists={"Portals": [portal]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "missing required properties" in result.errors[0]
-
     def test_portal_missing_shape(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test portal without shape."""
         map_file = maps_dir / "test.tmx"
@@ -540,6 +520,20 @@ class TestMapValidator:
 
         assert len(result.errors) == 1
         assert "Failed to parse" in result.errors[0]
+
+    def test_validate_cross_references_os_error(self, maps_dir: Path, context: ValidationContext) -> None:
+        """OSError reading maps.json during cross-reference reports a load error."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text("{}")
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
+            result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "Failed to load" in result.errors[0]
 
     def test_validate_cross_references_root_not_dict(self, maps_dir: Path, context: ValidationContext) -> None:
         """Non-dict root in maps.json during cross-reference returns empty result."""

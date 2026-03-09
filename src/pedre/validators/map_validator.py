@@ -201,10 +201,6 @@ class MapValidator(Validator):
                 errors.append(f"Map '{map_name}': Portals layer: portal missing required 'name' property")
                 continue
 
-            # Validate required 'properties'
-            if not hasattr(portal, "properties") or not portal.properties:
-                errors.append(f"Map '{map_name}': Portals layer: '{name}': missing required properties")
-
             # Validate shape exists
             if not hasattr(portal, "shape") or not portal.shape:
                 errors.append(f"Map '{map_name}': Portals layer: '{name}': missing shape")
