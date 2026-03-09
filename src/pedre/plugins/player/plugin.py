@@ -60,8 +60,19 @@ class PlayerPlugin(PlayerBasePlugin):
         spawn_x = float(player_obj.shape[0])
         spawn_y = float(player_obj.shape[1])
 
-        # Check for portal spawn override (defaults to True)
-        spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
+        # Resolve player definition from content registry
+        content_registry = self.context.content_registry
+        players = content_registry.get_sub_registry("players")
+        if players is None or not players.has("player"):
+            logger.warning("PlayerPlugin: No 'player' definition found in players registry.")
+            return
+        player_def = players.get("player")
+
+        # Determine spawn behavior from registry definition
+        spawn_at_position_maps = player_def.get("spawn_at_position", [])
+        current_map = self.context.scene_plugin.get_current_scene()
+        spawn_at_portal = current_map not in spawn_at_position_maps
+
         next_spawn_waypoint = self.context.scene_plugin.get_next_spawn_waypoint()
         logger.debug(
             "PlayerPlugin: spawn_at_portal=%s, next_spawn_waypoint=%s",
@@ -91,11 +102,8 @@ class PlayerPlugin(PlayerBasePlugin):
                 )
 
         # Resolve sprite definition via content registry
-        content_registry = self.context.content_registry
         sprites = content_registry.get_sub_registry("sprites")
-        sprite_id = player_obj.properties.get("sprite_id")
-        if sprite_id is None and sprites and sprites.has("player"):
-            sprite_id = "player"
+        sprite_id = player_def["sprite_id"]
 
         if sprite_id and sprites and sprites.has(sprite_id):
             sprite_def = dict(sprites.get(sprite_id))

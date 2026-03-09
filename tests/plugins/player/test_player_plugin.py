@@ -13,6 +13,42 @@ def _make_plugin() -> tuple[PlayerPlugin, MagicMock]:
     return plugin, context
 
 
+def _make_tile_map() -> MagicMock:
+    """Return a mock TileMap with a Player layer at (100, 200)."""
+    mock_tile_map = MagicMock()
+    mock_player_obj = MagicMock()
+    mock_player_obj.shape = [100.0, 200.0]
+    mock_player_obj.properties = {}
+    mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+    return mock_tile_map
+
+
+def _setup_players_registry(
+    context: MagicMock, sprite_id: str = "player_sprite", spawn_at_position: list[str] | None = None
+) -> None:
+    """Wire the context's content registry to return a players and sprites sub-registry."""
+    player_def: dict = {"sprite_id": sprite_id}
+    if spawn_at_position is not None:
+        player_def["spawn_at_position"] = spawn_at_position
+
+    mock_players = MagicMock()
+    mock_players.has.return_value = True
+    mock_players.get.return_value = player_def
+
+    mock_sprites = MagicMock()
+    mock_sprites.has.return_value = True
+    mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
+
+    def get_sub_registry(name: str) -> MagicMock:
+        if name == "players":
+            return mock_players
+        if name == "sprites":
+            return mock_sprites
+        return MagicMock()
+
+    context.content_registry.get_sub_registry.side_effect = get_sub_registry
+
+
 class TestPlayerPlugin:
     """Test Suite for PlayerPlugin."""
 
@@ -43,28 +79,16 @@ class TestPlayerPlugin:
         mock_sprite_list_cls: MagicMock,
         mock_create_sprite: MagicMock,
     ) -> None:
-        """Test loading player from Tiled map."""
+        """Test loading player from Tiled map spawns at object position when map is in spawn_at_position."""
         plugin, context = _make_plugin()
-        mock_tile_map = MagicMock()
+        mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
-
-        # Set up content registry mock
-        mock_sprites = MagicMock()
-        mock_sprites.has.return_value = True
-        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
-        context.content_registry.get_sub_registry.return_value = mock_sprites
-
-        mock_player_obj = MagicMock()
-        mock_player_obj.shape = [100.0, 200.0]
-        mock_player_obj.properties = {
-            "spawn_at_portal": False,
-        }
-        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+        context.scene_plugin.get_current_scene.return_value = "dungeon"
+        _setup_players_registry(context, spawn_at_position=["dungeon"])
 
         mock_sprite_list = MagicMock()
         mock_sprite_list_cls.return_value = mock_sprite_list
-
         mock_sprite = MagicMock()
         mock_create_sprite.return_value = mock_sprite
 
@@ -86,23 +110,13 @@ class TestPlayerPlugin:
         mock_sprite_list_cls: MagicMock,
         mock_create_sprite: MagicMock,
     ) -> None:
-        """Test loading player with waypoint spawn override."""
+        """Test loading player with waypoint spawn override when not in spawn_at_position."""
         plugin, context = _make_plugin()
-        mock_tile_map = MagicMock()
+        mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
-
-        mock_sprites = MagicMock()
-        mock_sprites.has.return_value = True
-        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
-        context.content_registry.get_sub_registry.return_value = mock_sprites
-
-        mock_player_obj = MagicMock()
-        mock_player_obj.shape = [100.0, 200.0]
-        mock_player_obj.properties = {
-            "spawn_at_portal": True,
-        }
-        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+        context.scene_plugin.get_current_scene.return_value = "world"
+        _setup_players_registry(context, spawn_at_position=[])
 
         mock_sprite_list_cls.return_value = MagicMock()
         mock_create_sprite.return_value = MagicMock()
@@ -128,23 +142,13 @@ class TestPlayerPlugin:
         mock_sprite_list_cls: MagicMock,
         mock_create_sprite: MagicMock,
     ) -> None:
-        """Test loading player with incorrect waypoint."""
+        """Test loading player with incorrect waypoint falls back to object position."""
         plugin, context = _make_plugin()
-        mock_tile_map = MagicMock()
+        mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
-
-        mock_sprites = MagicMock()
-        mock_sprites.has.return_value = True
-        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
-        context.content_registry.get_sub_registry.return_value = mock_sprites
-
-        mock_player_obj = MagicMock()
-        mock_player_obj.shape = [100.0, 200.0]
-        mock_player_obj.properties = {
-            "spawn_at_portal": True,
-        }
-        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+        context.scene_plugin.get_current_scene.return_value = "world"
+        _setup_players_registry(context, spawn_at_position=[])
 
         mock_sprite_list_cls.return_value = MagicMock()
         mock_create_sprite.return_value = MagicMock()
@@ -250,24 +254,35 @@ class TestPlayerPlugin:
         assert plugin.player_sprite is None
         assert plugin.player_list is None
 
-    def test_load_from_tiled_no_registry_entry(self) -> None:
-        """Test loading player when no matching sprite in content registry."""
+    @patch("pedre.plugins.player.plugin.logger")
+    def test_load_from_tiled_no_players_registry(self, mock_logger: MagicMock) -> None:
+        """Test loading player when players sub-registry is absent."""
         plugin, context = _make_plugin()
-        mock_tile_map = MagicMock()
+        mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
 
-        mock_sprites = MagicMock()
-        mock_sprites.has.return_value = False
-        context.content_registry.get_sub_registry.return_value = mock_sprites
-
-        mock_player_obj = MagicMock()
-        mock_player_obj.shape = [100.0, 200.0]
-        mock_player_obj.properties = {"spawn_at_portal": False}
-        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+        context.content_registry.get_sub_registry.return_value = None
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         assert plugin.player_sprite is None
+        mock_logger.warning.assert_called()
+
+    @patch("pedre.plugins.player.plugin.logger")
+    def test_load_from_tiled_no_player_definition(self, mock_logger: MagicMock) -> None:
+        """Test loading player when 'player' definition is missing from the registry."""
+        plugin, context = _make_plugin()
+        mock_tile_map = _make_tile_map()
+        mock_arcade_scene = MagicMock()
+
+        mock_players = MagicMock()
+        mock_players.has.return_value = False
+        context.content_registry.get_sub_registry.return_value = mock_players
+
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+
+        assert plugin.player_sprite is None
+        mock_logger.warning.assert_called()
 
     @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
@@ -280,22 +295,12 @@ class TestPlayerPlugin:
     ) -> None:
         """Test loading player removes existing Player sprite list from scene."""
         plugin, context = _make_plugin()
-        mock_tile_map = MagicMock()
+        mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
         mock_arcade_scene.__contains__ = MagicMock(return_value=True)
         mock_asset_path.return_value = "/path/to/sprite.png"
-
-        mock_sprites = MagicMock()
-        mock_sprites.has.return_value = True
-        mock_sprites.get.return_value = {"sprite_sheet": "player.png", "states": {}}
-        context.content_registry.get_sub_registry.return_value = mock_sprites
-
-        mock_player_obj = MagicMock()
-        mock_player_obj.shape = [100.0, 200.0]
-        mock_player_obj.properties = {
-            "spawn_at_portal": False,
-        }
-        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+        context.scene_plugin.get_current_scene.return_value = "dungeon"
+        _setup_players_registry(context, spawn_at_position=["dungeon"])
 
         mock_sprite_list_cls.return_value = MagicMock()
         mock_create_sprite.return_value = MagicMock()
@@ -437,7 +442,7 @@ class TestPlayerPlugin:
         mock_sprite.update_animation.assert_called_once()
 
     def test_apply_entity_state_no_sprite(self) -> None:
-        """Test apply_entity_state when player_sprite is None (branch 213->exit)."""
+        """Test apply_entity_state when player_sprite is None."""
         plugin, _ = _make_plugin()
         plugin.player_sprite = None
 
@@ -446,7 +451,7 @@ class TestPlayerPlugin:
         assert plugin.player_sprite is None
 
     def test_apply_entity_state_missing_player_x(self) -> None:
-        """Test apply_entity_state when player_x is missing (branch 213->exit)."""
+        """Test apply_entity_state when player_x is missing."""
         plugin, _ = _make_plugin()
         mock_sprite = MagicMock()
         mock_sprite.center_x = 50.0
@@ -461,59 +466,65 @@ class TestPlayerPlugin:
     @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
     @patch("pedre.plugins.player.plugin.arcade.SpriteList")
     @patch("pedre.plugins.player.plugin.asset_path")
-    def test_load_from_tiled_sprite_id_from_props(
+    def test_load_from_tiled_spawn_at_position_current_map(
         self,
         mock_asset_path: MagicMock,
         mock_sprite_list_cls: MagicMock,
         mock_create_sprite: MagicMock,
     ) -> None:
-        """Test load_from_tiled uses sprite_id from props, skipping the default lookup (branch 125->128)."""
+        """Test spawn_at_position: current map in list → skip portal, spawn at object position."""
         plugin, context = _make_plugin()
-        mock_tile_map = MagicMock()
+        mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
         mock_asset_path.return_value = "/path/to/sprite.png"
-
-        mock_sprites = MagicMock()
-        mock_sprites.has.return_value = True
-        mock_sprites.get.return_value = {"sprite_sheet": "custom.png", "states": {}}
-        context.content_registry.get_sub_registry.return_value = mock_sprites
-
-        mock_player_obj = MagicMock()
-        mock_player_obj.shape = [100.0, 200.0]
-        mock_player_obj.properties = {
-            "spawn_at_portal": False,
-            "sprite_id": "custom_player",
-        }
-        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+        context.scene_plugin.get_current_scene.return_value = "cave"
+        _setup_players_registry(context, spawn_at_position=["cave", "dungeon"])
 
         mock_sprite_list_cls.return_value = MagicMock()
         mock_create_sprite.return_value = MagicMock()
 
+        # Even if waypoint exists, map is in spawn_at_position → portal spawn skipped
+        context.scene_plugin.get_next_spawn_waypoint.return_value = "entrance"
+
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
-        mock_sprites.has.assert_called_with("custom_player")
-        mock_create_sprite.assert_called_once()
+        call_kwargs = mock_create_sprite.call_args[1]
+        assert call_kwargs["center_x"] == 100.0
+        assert call_kwargs["center_y"] == 200.0
+        context.scene_plugin.clear_next_spawn_waypoint.assert_not_called()
 
     @patch("pedre.plugins.player.plugin.logger")
-    def test_load_from_tiled_no_sprite_definition_returns_early(self, mock_logger: MagicMock) -> None:
-        """Test load_from_tiled logs warning and returns when sprite_id is set but not in registry (lines 139-140)."""
+    @patch("pedre.plugins.player.plugin.AnimatedSprite.from_definition")
+    @patch("pedre.plugins.player.plugin.arcade.SpriteList")
+    @patch("pedre.plugins.player.plugin.asset_path")
+    def test_load_from_tiled_no_sprite_definition(
+        self,
+        mock_asset_path: MagicMock,
+        mock_sprite_list_cls: MagicMock,
+        mock_create_sprite: MagicMock,
+        mock_logger: MagicMock,
+    ) -> None:
+        """Test load_from_tiled logs warning and returns when sprite_id not in sprites registry."""
         plugin, context = _make_plugin()
-        mock_tile_map = MagicMock()
+        mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
+
+        mock_players = MagicMock()
+        mock_players.has.return_value = True
+        mock_players.get.return_value = {"sprite_id": "missing_sprite"}
 
         mock_sprites = MagicMock()
         mock_sprites.has.return_value = False
-        context.content_registry.get_sub_registry.return_value = mock_sprites
 
-        mock_player_obj = MagicMock()
-        mock_player_obj.shape = [100.0, 200.0]
-        mock_player_obj.properties = {
-            "spawn_at_portal": False,
-            "sprite_id": "missing_sprite",
-        }
-        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+        def get_sub_registry(name: str) -> MagicMock:
+            if name == "players":
+                return mock_players
+            return mock_sprites
+
+        context.content_registry.get_sub_registry.side_effect = get_sub_registry
+        mock_tile_map.object_lists.get.return_value = [MagicMock(shape=[100.0, 200.0], properties={})]
 
         plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
         assert plugin.player_sprite is None
-        mock_logger.warning.assert_called_once()
+        mock_logger.warning.assert_called()

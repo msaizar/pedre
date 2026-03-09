@@ -265,14 +265,6 @@ class MapValidator(Validator):
         if "Player" not in tile_map.object_lists:
             return errors  # Player is optional
 
-        for player in tile_map.object_lists["Player"]:
-            if player.properties and "spawn_at_portal" in player.properties:
-                error = self._validate_property_type(
-                    player.properties["spawn_at_portal"], bool, "spawn_at_portal", "Player"
-                )
-                if error:
-                    errors.append(f"Map '{map_name}': Player layer: {error}")
-
         return errors
 
     def _validate_map_properties(self, tile_map: arcade.TileMap, map_name: str) -> list[str]:

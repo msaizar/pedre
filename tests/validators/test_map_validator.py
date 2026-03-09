@@ -417,28 +417,6 @@ class TestMapValidator:
 
         assert result.errors == []
 
-    def test_player_invalid_spawn_at_portal_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with spawn_at_portal that is not bool."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(
-            name="player",
-            properties={"sprite_sheet": "player.png", "spawn_at_portal": "not_bool"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'spawn_at_portal' must be bool" in result.errors[0]
-
     def test_player_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test that map without Player layer is valid."""
         map_file = maps_dir / "test.tmx"

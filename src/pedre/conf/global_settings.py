@@ -452,6 +452,7 @@ CONTENT_DIRECTORY = "data/content"
 
 INSTALLED_CONTENT = [
     "pedre.content.registries.npc",
+    "pedre.content.registries.player",
     "pedre.content.registries.sprite",
     "pedre.content.registries.item",
 ]
