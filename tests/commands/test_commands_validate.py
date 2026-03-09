@@ -133,6 +133,7 @@ class TestValidateCommand:
             "items_path": None,
             "sprites_path": None,
             "npcs_path": None,
+            "players_path": None,
         }
         defaults.update(kwargs)
         return argparse.Namespace(**defaults)
@@ -345,3 +346,11 @@ class TestValidateCommand:
         command = ValidateCommand()
         # Should not raise — explicit paths trigger the validators even if files are otherwise absent
         command.execute(self._make_args(sprites_path=sprites_file, npcs_path=npcs_file))
+
+    def test_validate_with_explicit_players_path(self, tmp_path: Path) -> None:
+        """Test validate includes players validator when path is explicitly provided."""
+        players_file = tmp_path / "players.json"
+        players_file.write_text(json.dumps({}))
+
+        command = ValidateCommand()
+        command.execute(self._make_args(players_path=players_file))

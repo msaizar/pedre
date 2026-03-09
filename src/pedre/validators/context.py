@@ -48,6 +48,7 @@ class ValidationContext:
     inventory_items: set[str] = field(default_factory=set)
     sprite_ids: set[str] = field(default_factory=set)
     npc_ids: set[str] = field(default_factory=set)
+    player_ids: set[str] = field(default_factory=set)
 
     def add_map_entity(
         self,
@@ -159,3 +160,15 @@ class ValidationContext:
     def get_npc_ids(self) -> set[str]:
         """Return all known NPC IDs registered in the context."""
         return self.npc_ids
+
+    def add_player_id(self, player_id: str) -> None:
+        """Register a player ID discovered in the players file.
+
+        Args:
+            player_id: Unique identifier of the player definition.
+        """
+        self.player_ids.add(player_id)
+
+    def get_player_ids(self) -> set[str]:
+        """Return all known player IDs registered in the context."""
+        return self.player_ids

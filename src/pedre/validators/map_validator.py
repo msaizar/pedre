@@ -1,8 +1,12 @@
 """Map validator for Tiled TMX map files."""
 
+import json
+
 import arcade
 
 from pedre.conf import settings
+from pedre.content.registries.map import MapRegistry
+from pedre.content.registry import InvalidDefinitionError
 from pedre.helpers import asset_exists
 from pedre.validators.base import ValidationResult, Validator
 
@@ -69,14 +73,6 @@ class MapValidator(Validator):
                 # Validate Interactive layer
                 interactive_errors = self._validate_interactive_layer(tile_map, map_name)
                 errors.extend(interactive_errors)
-
-                # Validate Player layer
-                player_errors = self._validate_player_layer(tile_map, map_name)
-                errors.extend(player_errors)
-
-                # Validate map properties
-                map_prop_errors = self._validate_map_properties(tile_map, map_name)
-                errors.extend(map_prop_errors)
 
                 # Count entities for metadata
                 if "Waypoints" in tile_map.object_lists:
@@ -250,63 +246,6 @@ class MapValidator(Validator):
 
         return errors
 
-    def _validate_player_layer(self, tile_map: arcade.TileMap, map_name: str) -> list[str]:
-        """Validate Player object layer.
-
-        Args:
-            tile_map: Loaded tilemap
-            map_name: Name of the map for error messages
-
-        Returns:
-            List of error messages
-        """
-        errors = []
-
-        if "Player" not in tile_map.object_lists:
-            return errors  # Player is optional
-
-        return errors
-
-    def _validate_map_properties(self, tile_map: arcade.TileMap, map_name: str) -> list[str]:
-        """Validate map-level properties.
-
-        Args:
-            tile_map: Loaded tilemap
-            map_name: Name of the map for error messages
-
-        Returns:
-            List of error messages
-        """
-        errors = []
-
-        if not hasattr(tile_map, "properties") or not tile_map.properties:
-            return errors  # Map properties are optional
-
-        # Validate optional map properties
-        if "music" in tile_map.properties:
-            error = self._validate_property_type(tile_map.properties["music"], str, "music", "Map")
-            if error:
-                errors.append(f"Map '{map_name}': {error}")
-            else:
-                # Validate music file exists
-                music_file = tile_map.properties["music"]
-                if not asset_exists(f"{settings.AUDIO_MUSIC_DIRECTORY}/{music_file}"):
-                    errors.append(
-                        f"Map '{map_name}': music file '{settings.AUDIO_MUSIC_DIRECTORY}/{music_file}' not found"
-                    )
-
-        if "camera_follow" in tile_map.properties:
-            error = self._validate_property_type(tile_map.properties["camera_follow"], str, "camera_follow", "Map")
-            if error:
-                errors.append(f"Map '{map_name}': {error}")
-
-        if "camera_smooth" in tile_map.properties:
-            error = self._validate_property_type(tile_map.properties["camera_smooth"], bool, "camera_smooth", "Map")
-            if error:
-                errors.append(f"Map '{map_name}': {error}")
-
-        return errors
-
     def _validate_property_type(
         self, value: object, expected_type: type | tuple[type, ...], property_name: str, entity_name: str
     ) -> str | None:
@@ -329,12 +268,63 @@ class MapValidator(Validator):
         return None
 
     def validate_cross_references(self) -> ValidationResult:
-        """Validate cross-references (no cross-validation needed for maps).
+        """Validate that maps.json entries reference scene names with existing TMX files.
 
-        Maps are the source of truth for NPCs and waypoints, so they don't
-        need to validate references to other assets.
+        Loads maps.json from the content directory and checks that each map ID
+        matches a TMX file in the maps directory. Also validates structural
+        correctness of each maps.json entry via MapRegistry.validate().
 
         Returns:
-            Empty ValidationResult
+            ValidationResult with cross-reference errors
         """
-        return ValidationResult(errors=[], item_count=0, metadata={})
+        content_dir = self.path.parent / settings.CONTENT_DIRECTORY
+        maps_file = content_dir / "maps.json"
+
+        if not maps_file.exists():
+            return ValidationResult(errors=[], item_count=0, metadata={})
+
+        try:
+            with maps_file.open() as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return ValidationResult(errors=[], item_count=0, metadata={})
+
+        if not isinstance(data, dict):
+            return ValidationResult(errors=[], item_count=0, metadata={})
+
+        known_maps = self.context.get_all_maps()
+        registry = MapRegistry()
+        errors: list[str] = []
+
+        for map_id, map_data in data.items():
+            if not isinstance(map_data, dict):
+                errors.append(f"Map entry '{map_id}': must be a dictionary")
+                continue
+
+            try:
+                registry.validate(map_id, map_data)
+            except InvalidDefinitionError as e:
+                errors.append(str(e))
+                continue
+
+            if map_id not in known_maps:
+                errors.append(f"Map entry '{map_id}' in maps.json has no corresponding TMX file in the maps directory.")
+
+            if "music" in map_data:
+                music_file = map_data["music"]
+                if not asset_exists(f"{settings.AUDIO_MUSIC_DIRECTORY}/{music_file}"):
+                    errors.append(
+                        f"Map '{map_id}': music file '{settings.AUDIO_MUSIC_DIRECTORY}/{music_file}' not found."
+                    )
+
+            if "camera_follow" in map_data:
+                camera_follow = map_data["camera_follow"].strip().lower()
+                if camera_follow not in ("player", "none") and not (
+                    camera_follow.startswith("npc:") and camera_follow[4:].strip()
+                ):
+                    errors.append(
+                        f"Map '{map_id}': 'camera_follow' must be 'player', 'none', or 'npc:<name>', "
+                        f"got '{map_data['camera_follow']}'."
+                    )
+
+        return ValidationResult(errors=errors, item_count=0, metadata={})

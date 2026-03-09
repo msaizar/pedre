@@ -23,6 +23,7 @@ from pedre.validators.dialog_validator import DialogValidator
 from pedre.validators.items_validator import ItemsValidator
 from pedre.validators.map_validator import MapValidator
 from pedre.validators.npcs_validator import NPCsValidator
+from pedre.validators.player_validator import PlayerValidator
 from pedre.validators.script_validator import ScriptValidator
 from pedre.validators.sprites_validator import SpritesValidator
 
@@ -83,6 +84,14 @@ class ValidateCommand(Command):
             default=None,
             help=(f"Path to NPCs file (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}/npcs.json)"),
         )
+        parser.add_argument(
+            "--players-path",
+            type=Path,
+            default=None,
+            help=(
+                f"Path to players file (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}/players.json)"
+            ),
+        )
 
     def execute(self, args: argparse.Namespace) -> None:
         """Validate all game assets for errors.
@@ -126,9 +135,11 @@ class ValidateCommand(Command):
         items_path_arg = getattr(args, "items_path", None)
         sprites_path_arg = getattr(args, "sprites_path", None)
         npcs_path_arg = getattr(args, "npcs_path", None)
+        players_path_arg = getattr(args, "players_path", None)
         items_file = items_path_arg or content_dir / "items.json"
         sprites_file = sprites_path_arg or content_dir / "sprites.json"
         npcs_file = npcs_path_arg or content_dir / "npcs.json"
+        players_file = players_path_arg or content_dir / "players.json"
 
         # Create shared validation context
         context = ValidationContext()
@@ -144,6 +155,8 @@ class ValidateCommand(Command):
             validators.append(SpritesValidator(sprites_file, context))
         if npcs_path_arg or npcs_file.exists():
             validators.append(NPCsValidator(npcs_file, context))
+        if players_path_arg or players_file.exists():
+            validators.append(PlayerValidator(players_file, context))
         if scripts_path_arg or scripts_dir.exists():
             validators.append(ScriptValidator(scripts_dir, context))
         if dialogs_path_arg or dialogs_dir.exists():
