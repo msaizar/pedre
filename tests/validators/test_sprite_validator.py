@@ -1,4 +1,4 @@
-"""Tests for SpritesValidator."""
+"""Tests for SpriteValidator."""
 
 import json
 from typing import TYPE_CHECKING
@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from pedre.validators.context import ValidationContext
-from pedre.validators.sprites_validator import SpritesValidator
+from pedre.validators.sprite_validator import SpriteValidator
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -46,8 +46,8 @@ VALID_DIRECTIONAL_SPRITE = {
 }
 
 
-class TestSpritesValidator:
-    """Test SpritesValidator."""
+class TestSpriteValidator:
+    """Test SpriteValidator."""
 
     @pytest.fixture
     def context(self) -> ValidationContext:
@@ -67,12 +67,12 @@ class TestSpritesValidator:
 
     def test_name_property(self, context: ValidationContext, valid_sprites_file: Path) -> None:
         """Validator name is 'Sprites'."""
-        validator = SpritesValidator(valid_sprites_file, context)
+        validator = SpriteValidator(valid_sprites_file, context)
         assert validator.name == "Sprites"
 
     def test_validate_valid_file_registers_sprites(self, context: ValidationContext, valid_sprites_file: Path) -> None:
         """Valid sprites are registered in context after validation."""
-        validator = SpritesValidator(valid_sprites_file, context)
+        validator = SpriteValidator(valid_sprites_file, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -82,7 +82,7 @@ class TestSpritesValidator:
 
     def test_validate_file_not_found(self, context: ValidationContext, tmp_path: Path) -> None:
         """Missing file produces a 'not found' error."""
-        validator = SpritesValidator(tmp_path / "nonexistent.json", context)
+        validator = SpriteValidator(tmp_path / "nonexistent.json", context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -93,7 +93,7 @@ class TestSpritesValidator:
         """Malformed JSON produces a 'Failed to parse' error."""
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text("not valid json{")
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -103,7 +103,7 @@ class TestSpritesValidator:
         """Root JSON value that is not a dict produces a 'root must be a dictionary' error."""
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text(json.dumps([VALID_SPRITE]))
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
         result = validator.validate()
 
         assert any("root must be a dictionary" in e for e in result.errors)
@@ -116,7 +116,7 @@ class TestSpritesValidator:
         }
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text(json.dumps(data))
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
         result = validator.validate()
 
         assert any("must be a dictionary" in e for e in result.errors)
@@ -128,7 +128,7 @@ class TestSpritesValidator:
         data = {"incomplete": {"sprite_sheet": "path.png", "frame_width": 32}}
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text(json.dumps(data))
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -154,7 +154,7 @@ class TestSpritesValidator:
         }
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text(json.dumps({"bad": sprite}))
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -164,7 +164,7 @@ class TestSpritesValidator:
         """An empty sprites dict is valid and registers no sprites."""
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text(json.dumps({}))
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -181,7 +181,7 @@ class TestSpritesValidator:
         }
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text(json.dumps(data))
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -193,7 +193,7 @@ class TestSpritesValidator:
         self, context: ValidationContext, valid_sprites_file: Path
     ) -> None:
         """validate_cross_references returns an empty result (sprites are the authority)."""
-        validator = SpritesValidator(valid_sprites_file, context)
+        validator = SpriteValidator(valid_sprites_file, context)
         validator.validate()
         result = validator.validate_cross_references()
 
@@ -204,7 +204,7 @@ class TestSpritesValidator:
         """OSError while reading the file produces a 'Failed to load' error."""
         sprites_file = tmp_path / "sprites.json"
         sprites_file.write_text(json.dumps({}))
-        validator = SpritesValidator(sprites_file, context)
+        validator = SpriteValidator(sprites_file, context)
 
         with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
             result = validator.validate()

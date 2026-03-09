@@ -5,7 +5,7 @@ import json
 from pedre.validators.base import ValidationResult, Validator
 
 
-class ItemsValidator(Validator):
+class ItemValidator(Validator):
     """Validates items.json (content registry format) and registers items in context."""
 
     @property

@@ -7,7 +7,7 @@ from pedre.content.registry import InvalidDefinitionError
 from pedre.validators.base import ValidationResult, Validator
 
 
-class SpritesValidator(Validator):
+class SpriteValidator(Validator):
     """Validates sprites.json (content registry format) and registers sprite IDs in context."""
 
     @property

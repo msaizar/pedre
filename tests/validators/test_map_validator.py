@@ -530,7 +530,7 @@ class TestMapValidator:
         assert result.errors == []
 
     def test_validate_cross_references_invalid_json(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Invalid JSON in maps.json during cross-reference returns empty result."""
+        """Invalid JSON in maps.json during cross-reference reports a parse error."""
         content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
         content_dir.mkdir(parents=True)
         (content_dir / "maps.json").write_text("not valid json{")
@@ -538,7 +538,8 @@ class TestMapValidator:
         validator = MapValidator(maps_dir, context)
         result = validator.validate_cross_references()
 
-        assert result.errors == []
+        assert len(result.errors) == 1
+        assert "Failed to parse" in result.errors[0]
 
     def test_validate_cross_references_root_not_dict(self, maps_dir: Path, context: ValidationContext) -> None:
         """Non-dict root in maps.json during cross-reference returns empty result."""

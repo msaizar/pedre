@@ -1,4 +1,4 @@
-"""Tests for NPCsValidator."""
+"""Tests for NPCValidator."""
 
 import json
 from typing import TYPE_CHECKING
@@ -7,14 +7,14 @@ from unittest.mock import patch
 import pytest
 
 from pedre.validators.context import ValidationContext
-from pedre.validators.npcs_validator import NPCsValidator
+from pedre.validators.npc_validator import NPCValidator
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestNPCsValidator:
-    """Test NPCsValidator."""
+class TestNPCValidator:
+    """Test NPCValidator."""
 
     @pytest.fixture
     def context(self) -> ValidationContext:
@@ -42,12 +42,12 @@ class TestNPCsValidator:
 
     def test_name_property(self, context: ValidationContext, valid_npcs_file: Path) -> None:
         """Validator name is 'NPCs'."""
-        validator = NPCsValidator(valid_npcs_file, context)
+        validator = NPCValidator(valid_npcs_file, context)
         assert validator.name == "NPCs"
 
     def test_validate_valid_file_registers_npcs(self, context: ValidationContext, valid_npcs_file: Path) -> None:
         """Valid NPCs are registered in context after validation."""
-        validator = NPCsValidator(valid_npcs_file, context)
+        validator = NPCValidator(valid_npcs_file, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -57,7 +57,7 @@ class TestNPCsValidator:
 
     def test_validate_file_not_found(self, context: ValidationContext, tmp_path: Path) -> None:
         """Missing file produces a 'not found' error."""
-        validator = NPCsValidator(tmp_path / "nonexistent.json", context)
+        validator = NPCValidator(tmp_path / "nonexistent.json", context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -68,7 +68,7 @@ class TestNPCsValidator:
         """Malformed JSON produces a 'Failed to parse' error."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text("not valid json{")
-        validator = NPCsValidator(npcs_file, context)
+        validator = NPCValidator(npcs_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -78,7 +78,7 @@ class TestNPCsValidator:
         """Root JSON value that is not a dict produces a 'root must be a dictionary' error."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps([{"sprite_id": "villager"}]))
-        validator = NPCsValidator(npcs_file, context)
+        validator = NPCValidator(npcs_file, context)
         result = validator.validate()
 
         assert any("root must be a dictionary" in e for e in result.errors)
@@ -91,7 +91,7 @@ class TestNPCsValidator:
         }
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps(data))
-        validator = NPCsValidator(npcs_file, context)
+        validator = NPCValidator(npcs_file, context)
         result = validator.validate()
 
         assert any("must be a dictionary" in e for e in result.errors)
@@ -102,7 +102,7 @@ class TestNPCsValidator:
         """NPC missing sprite_id produces an error and is not registered."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps({"npc_01": {}}))
-        validator = NPCsValidator(npcs_file, context)
+        validator = NPCValidator(npcs_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -113,7 +113,7 @@ class TestNPCsValidator:
         """An empty NPCs dict is valid and registers no NPCs."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps({}))
-        validator = NPCsValidator(npcs_file, context)
+        validator = NPCValidator(npcs_file, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -124,7 +124,7 @@ class TestNPCsValidator:
         """OSError while reading the file produces a 'Failed to load' error."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps({}))
-        validator = NPCsValidator(npcs_file, context)
+        validator = NPCValidator(npcs_file, context)
 
         with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
             result = validator.validate()
@@ -137,7 +137,7 @@ class TestNPCsValidator:
         self, context_with_sprites: ValidationContext, valid_npcs_file: Path
     ) -> None:
         """NPCs referencing valid sprites pass cross-reference validation."""
-        validator = NPCsValidator(valid_npcs_file, context_with_sprites)
+        validator = NPCValidator(valid_npcs_file, context_with_sprites)
         validator.validate()
         result = validator.validate_cross_references()
 
@@ -147,7 +147,7 @@ class TestNPCsValidator:
         """NPC referencing an unknown sprite produces a cross-reference error."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps({"npc_01": {"sprite_id": "ghost"}}))
-        validator = NPCsValidator(npcs_file, context)
+        validator = NPCValidator(npcs_file, context)
         validator.validate()
         result = validator.validate_cross_references()
 
@@ -159,7 +159,7 @@ class TestNPCsValidator:
         self, context: ValidationContext, valid_npcs_file: Path
     ) -> None:
         """When no sprites are in context, all sprite references fail cross-reference."""
-        validator = NPCsValidator(valid_npcs_file, context)
+        validator = NPCValidator(valid_npcs_file, context)
         validator.validate()
         result = validator.validate_cross_references()
 
@@ -169,7 +169,7 @@ class TestNPCsValidator:
         self, context_with_sprites: ValidationContext, tmp_path: Path
     ) -> None:
         """Missing file during cross-reference returns empty result."""
-        validator = NPCsValidator(tmp_path / "nonexistent.json", context_with_sprites)
+        validator = NPCValidator(tmp_path / "nonexistent.json", context_with_sprites)
         result = validator.validate_cross_references()
 
         assert result.errors == []
@@ -177,13 +177,14 @@ class TestNPCsValidator:
     def test_validate_cross_references_invalid_json(
         self, context_with_sprites: ValidationContext, tmp_path: Path
     ) -> None:
-        """Invalid JSON during cross-reference returns empty result."""
+        """Invalid JSON during cross-reference reports a parse error."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text("not valid json{")
-        validator = NPCsValidator(npcs_file, context_with_sprites)
+        validator = NPCValidator(npcs_file, context_with_sprites)
         result = validator.validate_cross_references()
 
-        assert result.errors == []
+        assert len(result.errors) == 1
+        assert "Failed to parse" in result.errors[0]
 
     def test_validate_cross_references_root_not_dict(
         self, context_with_sprites: ValidationContext, tmp_path: Path
@@ -191,7 +192,7 @@ class TestNPCsValidator:
         """Non-dict root during cross-reference returns empty result."""
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps([{"sprite_id": "villager"}]))
-        validator = NPCsValidator(npcs_file, context_with_sprites)
+        validator = NPCValidator(npcs_file, context_with_sprites)
         result = validator.validate_cross_references()
 
         assert result.errors == []
@@ -203,7 +204,7 @@ class TestNPCsValidator:
         npcs_file = tmp_path / "npcs.json"
         npcs_file.write_text(json.dumps({"other_npc": {"sprite_id": "villager"}}))
         context_with_sprites.add_npc_id("ghost_npc")  # registered but not in file
-        validator = NPCsValidator(npcs_file, context_with_sprites)
+        validator = NPCValidator(npcs_file, context_with_sprites)
         result = validator.validate_cross_references()
 
         assert result.errors == []

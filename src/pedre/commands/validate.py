@@ -20,12 +20,12 @@ from pedre.events.registry import EventRegistry
 from pedre.main import setup_resources
 from pedre.validators.context import ValidationContext
 from pedre.validators.dialog_validator import DialogValidator
-from pedre.validators.items_validator import ItemsValidator
+from pedre.validators.item_validator import ItemValidator
 from pedre.validators.map_validator import MapValidator
-from pedre.validators.npcs_validator import NPCsValidator
+from pedre.validators.npc_validator import NPCValidator
 from pedre.validators.player_validator import PlayerValidator
 from pedre.validators.script_validator import ScriptValidator
-from pedre.validators.sprites_validator import SpritesValidator
+from pedre.validators.sprite_validator import SpriteValidator
 
 if TYPE_CHECKING:
     import argparse
@@ -150,11 +150,11 @@ class ValidateCommand(Command):
         if maps_path_arg or maps_dir.exists():
             validators.append(MapValidator(maps_dir, context))
         if items_path_arg or items_file.exists():
-            validators.append(ItemsValidator(items_file, context))
+            validators.append(ItemValidator(items_file, context))
         if sprites_path_arg or sprites_file.exists():
-            validators.append(SpritesValidator(sprites_file, context))
+            validators.append(SpriteValidator(sprites_file, context))
         if npcs_path_arg or npcs_file.exists():
-            validators.append(NPCsValidator(npcs_file, context))
+            validators.append(NPCValidator(npcs_file, context))
         if players_path_arg or players_file.exists():
             validators.append(PlayerValidator(players_file, context))
         if scripts_path_arg or scripts_dir.exists():

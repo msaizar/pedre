@@ -1,4 +1,4 @@
-"""Tests for ItemsValidator."""
+"""Tests for ItemValidator."""
 
 import json
 from typing import TYPE_CHECKING
@@ -7,14 +7,14 @@ from unittest.mock import patch
 import pytest
 
 from pedre.validators.context import ValidationContext
-from pedre.validators.items_validator import ItemsValidator
+from pedre.validators.item_validator import ItemValidator
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
-class TestItemsValidator:
-    """Test ItemsValidator."""
+class TestItemValidator:
+    """Test ItemValidator."""
 
     @pytest.fixture
     def context(self) -> ValidationContext:
@@ -34,12 +34,12 @@ class TestItemsValidator:
 
     def test_name_property(self, context: ValidationContext, valid_items_file: Path) -> None:
         """Validator name is 'Inventory Items'."""
-        validator = ItemsValidator(valid_items_file, context)
+        validator = ItemValidator(valid_items_file, context)
         assert validator.name == "Inventory Items"
 
     def test_validate_valid_file_registers_items(self, context: ValidationContext, valid_items_file: Path) -> None:
         """Valid items are registered in context after validation."""
-        validator = ItemsValidator(valid_items_file, context)
+        validator = ItemValidator(valid_items_file, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -49,7 +49,7 @@ class TestItemsValidator:
 
     def test_validate_file_not_found(self, context: ValidationContext, tmp_path: Path) -> None:
         """Missing file produces a 'not found' error."""
-        validator = ItemsValidator(tmp_path / "nonexistent.json", context)
+        validator = ItemValidator(tmp_path / "nonexistent.json", context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -60,7 +60,7 @@ class TestItemsValidator:
         """Malformed JSON produces a 'Failed to parse' error."""
         items_file = tmp_path / "items.json"
         items_file.write_text("not valid json{")
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -70,7 +70,7 @@ class TestItemsValidator:
         """Root JSON value that is not a dict produces a 'root must be a dictionary' error."""
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps([{"name": "Key", "description": "A key."}]))
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
         result = validator.validate()
 
         assert any("root must be a dictionary" in e for e in result.errors)
@@ -79,7 +79,7 @@ class TestItemsValidator:
         """Item missing 'name' field produces an error and is not registered."""
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps({"key_01": {"description": "A key."}}))
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
         result = validator.validate()
 
         assert any("missing required 'name' field" in e for e in result.errors)
@@ -89,7 +89,7 @@ class TestItemsValidator:
         """Item missing 'description' field produces an error and is not registered."""
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps({"key_01": {"name": "Key"}}))
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
         result = validator.validate()
 
         assert any("missing required 'description' field" in e for e in result.errors)
@@ -99,7 +99,7 @@ class TestItemsValidator:
         """An empty items dict is valid and registers no items."""
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps({}))
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
         result = validator.validate()
 
         assert result.errors == []
@@ -117,7 +117,7 @@ class TestItemsValidator:
         }
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps(data))
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
         result = validator.validate()
 
         assert len(result.errors) == 1
@@ -127,7 +127,7 @@ class TestItemsValidator:
 
     def test_validate_cross_references_returns_empty(self, context: ValidationContext, valid_items_file: Path) -> None:
         """validate_cross_references returns an empty result (items are the authority)."""
-        validator = ItemsValidator(valid_items_file, context)
+        validator = ItemValidator(valid_items_file, context)
         validator.validate()
         result = validator.validate_cross_references()
 
@@ -138,7 +138,7 @@ class TestItemsValidator:
         """OSError while reading the file produces a 'Failed to load' error."""
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps({}))
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
 
         with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
             result = validator.validate()
@@ -155,7 +155,7 @@ class TestItemsValidator:
         }
         items_file = tmp_path / "items.json"
         items_file.write_text(json.dumps(data))
-        validator = ItemsValidator(items_file, context)
+        validator = ItemValidator(items_file, context)
         result = validator.validate()
 
         assert any("must be a dictionary" in e for e in result.errors)

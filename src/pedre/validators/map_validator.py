@@ -286,8 +286,10 @@ class MapValidator(Validator):
         try:
             with maps_file.open() as f:
                 data = json.load(f)
-        except (json.JSONDecodeError, OSError):
-            return ValidationResult(errors=[], item_count=0, metadata={})
+        except json.JSONDecodeError as e:
+            return ValidationResult(errors=[f"Failed to parse {maps_file.name}: {e}"], item_count=0, metadata={})
+        except OSError as e:
+            return ValidationResult(errors=[f"Failed to load {maps_file.name}: {e}"], item_count=0, metadata={})
 
         if not isinstance(data, dict):
             return ValidationResult(errors=[], item_count=0, metadata={})

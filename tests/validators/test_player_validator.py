@@ -209,13 +209,14 @@ class TestPlayerValidator:
     def test_validate_cross_references_invalid_json(
         self, context_with_sprites: ValidationContext, tmp_path: Path
     ) -> None:
-        """Invalid JSON during cross-reference returns empty result."""
+        """Invalid JSON during cross-reference reports a parse error."""
         players_file = tmp_path / "players.json"
         players_file.write_text("not valid json{")
         validator = PlayerValidator(players_file, context_with_sprites)
         result = validator.validate_cross_references()
 
-        assert result.errors == []
+        assert len(result.errors) == 1
+        assert "Failed to parse" in result.errors[0]
 
     def test_validate_cross_references_root_not_dict(
         self, context_with_sprites: ValidationContext, tmp_path: Path
