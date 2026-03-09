@@ -181,7 +181,11 @@ class ScenePlugin(SceneBasePlugin):
         # This includes waypoints, portals, interactions, player, NPCs, and camera
         self._load_plugins_from_tiled()
 
-        # 4. Invalidate physics engine (needs new player/walls)
+        # 4. Notify plugins that the scene is fully loaded (all entities available)
+        current_scene = map_file.replace(".tmx", "").lower()
+        self._notify_plugins_scene_loaded(current_scene)
+
+        # 5. Invalidate physics engine (needs new player/walls)
         physics_plugin = self.context.physics_plugin
         physics_plugin.invalidate()
 
@@ -206,6 +210,12 @@ class ScenePlugin(SceneBasePlugin):
                     self.arcade_scene,
                 )
                 logger.debug("Loaded Tiled data for plugin: %s", plugin.name)
+
+    def _notify_plugins_scene_loaded(self, scene_name: str) -> None:
+        """Call on_scene_loaded() on all plugins after Tiled data is fully loaded."""
+        for plugin in self.context.get_plugins().values():
+            plugin.on_scene_loaded(scene_name)
+            logger.debug("Scene loaded notification sent to plugin: %s", plugin.name)
 
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map.

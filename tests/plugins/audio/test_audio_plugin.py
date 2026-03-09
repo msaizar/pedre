@@ -20,81 +20,6 @@ def plugin() -> AudioPlugin:
 class TestAudioPlugin:
     """Unit test class for AudioPlugin."""
 
-    @patch("pedre.plugins.audio.plugin.arcade.load_sound")
-    @patch("pedre.plugins.audio.plugin.asset_path")
-    def test_load_from_tiled_with_music_property(
-        self, mock_asset_path: Mock, mock_load_sound: Mock, plugin: AudioPlugin
-    ) -> None:
-        """Test loading music from Tiled map property."""
-        # Mock the tile map with a music property
-        mock_tile_map = MagicMock()
-        mock_tile_map.properties = {"music": "village_theme.ogg"}
-
-        # Mock arcade sound loading
-        mock_sound = MagicMock()
-        mock_sound.play.return_value = MagicMock()  # music_player
-        mock_load_sound.return_value = mock_sound
-        mock_asset_path.return_value = "/path/to/music/village_theme.ogg"
-
-        mock_scene = MagicMock()
-
-        # Call load_from_tiled (no longer needs settings parameter)
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # Verify music was loaded and played
-        mock_asset_path.assert_called_once_with("audio/music/village_theme.ogg")
-        mock_load_sound.assert_called_once()
-        mock_sound.play.assert_called_once()
-        assert plugin.current_music == mock_sound
-
-    def test_load_from_tiled_without_music_property(self, plugin: AudioPlugin) -> None:
-        """Test that missing music property is handled gracefully."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.properties = {}  # No music property
-
-        mock_scene = MagicMock()
-
-        # Should not raise exception
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # No music should be playing
-        assert plugin.current_music is None
-
-    def test_load_from_tiled_without_properties_attribute(self, plugin: AudioPlugin) -> None:
-        """Test handling of tile_map without properties attribute."""
-        mock_tile_map = MagicMock(spec=[])  # No properties attribute
-        mock_scene = MagicMock()
-
-        # Should not raise exception
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        assert plugin.current_music is None
-
-    def test_load_from_tiled_with_invalid_music_value(self, plugin: AudioPlugin) -> None:
-        """Test handling of invalid music property values."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.properties = {"music": ""}  # Empty string
-
-        mock_scene = MagicMock()
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        assert plugin.current_music is None
-
-    def test_load_from_tiled_respects_music_disabled(self, plugin: AudioPlugin) -> None:
-        """Test that load_from_tiled respects music_enabled flag."""
-        plugin.music_enabled = False
-
-        mock_tile_map = MagicMock()
-        mock_tile_map.properties = {"music": "village_theme.ogg"}
-
-        mock_scene = MagicMock()
-
-        # Should not play music when disabled
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        assert plugin.current_music is None
-
     # Test cleanup and reset methods
     @patch("pedre.plugins.audio.plugin.arcade.load_sound")
     @patch("pedre.plugins.audio.plugin.asset_path")
@@ -756,6 +681,76 @@ class TestAudioPlugin:
         assert plugin.music_enabled is True  # Unchanged
         assert plugin.sfx_enabled is True  # Unchanged
 
+    def test_play_music_when_disabled(self, plugin: AudioPlugin) -> None:
+        """play_music returns False immediately when music_enabled is False."""
+        plugin.music_enabled = False
+        result = plugin.play_music("test.ogg")
+        assert result is False
+
+    # Test on_scene_loaded
+    def test_on_scene_loaded_plays_music_from_registry(self, plugin: AudioPlugin) -> None:
+        """on_scene_loaded plays music defined in the map registry."""
+        maps_mock = MagicMock()
+        maps_mock.has.return_value = True
+        maps_mock.get.return_value = {"music": "beach.ogg"}
+
+        plugin.context = MagicMock()
+        plugin.context.content_registry.get_sub_registry.return_value = maps_mock
+
+        with patch.object(plugin, "play_music", return_value=True) as mock_play:
+            plugin.on_scene_loaded("beach")
+
+        mock_play.assert_called_once_with("beach.ogg", loop=True)
+
+    def test_on_scene_loaded_no_music_in_registry(self, plugin: AudioPlugin) -> None:
+        """on_scene_loaded does nothing when map has no music field."""
+        maps_mock = MagicMock()
+        maps_mock.has.return_value = True
+        maps_mock.get.return_value = {}  # no music key
+
+        plugin.context = MagicMock()
+        plugin.context.content_registry.get_sub_registry.return_value = maps_mock
+
+        with patch.object(plugin, "play_music") as mock_play:
+            plugin.on_scene_loaded("map")
+
+        mock_play.assert_not_called()
+
+    def test_on_scene_loaded_no_registry_entry(self, plugin: AudioPlugin) -> None:
+        """on_scene_loaded does nothing when map has no registry entry."""
+        maps_mock = MagicMock()
+        maps_mock.has.return_value = False
+
+        plugin.context = MagicMock()
+        plugin.context.content_registry.get_sub_registry.return_value = maps_mock
+
+        with patch.object(plugin, "play_music") as mock_play:
+            plugin.on_scene_loaded("unknown")
+
+        mock_play.assert_not_called()
+
+    def test_on_scene_loaded_no_maps_registry(self, plugin: AudioPlugin) -> None:
+        """on_scene_loaded does nothing when maps sub-registry is absent."""
+        plugin.context = MagicMock()
+        plugin.context.content_registry.get_sub_registry.return_value = None
+
+        with patch.object(plugin, "play_music") as mock_play:
+            plugin.on_scene_loaded("map")
+
+        mock_play.assert_not_called()
+
+    def test_on_scene_loaded_logs_warning_on_failed_play(self, plugin: AudioPlugin) -> None:
+        """on_scene_loaded logs a warning when play_music returns False."""
+        maps_mock = MagicMock()
+        maps_mock.has.return_value = True
+        maps_mock.get.return_value = {"music": "missing.ogg"}
+
+        plugin.context = MagicMock()
+        plugin.context.content_registry.get_sub_registry.return_value = maps_mock
+
+        with patch.object(plugin, "play_music", return_value=False):
+            plugin.on_scene_loaded("map")  # Should not raise
+
     def test_get_save_state(self, plugin: AudioPlugin) -> None:
         """Test get_save_state delegates to to_dict."""
         plugin.music_volume = 0.6
@@ -782,16 +777,3 @@ class TestAudioPlugin:
         assert plugin.sfx_volume == 0.9
         assert plugin.music_enabled is False
         assert plugin.sfx_enabled is True
-
-    # Test load_from_tiled with warnings
-    def test_load_from_tiled_with_non_string_music(self, plugin: AudioPlugin) -> None:
-        """Test handling of non-string music property."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.properties = {"music": 123}  # Invalid type
-
-        mock_scene = MagicMock()
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # Should not play music
-        assert plugin.current_music is None

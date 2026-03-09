@@ -451,6 +451,7 @@ CONTENT_DIRECTORY = "data/content"
 (relative to assets directory)."""
 
 INSTALLED_CONTENT = [
+    "pedre.content.registries.map",
     "pedre.content.registries.npc",
     "pedre.content.registries.player",
     "pedre.content.registries.sprite",

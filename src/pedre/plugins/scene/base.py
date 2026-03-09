@@ -73,3 +73,5 @@ class SceneBasePlugin(BasePlugin, ABC):
     def request_transition(self, map_file: str, spawn_waypoint: str | None = None) -> None:
         """Request a transition to a new map."""
         ...
+
+    tile_map: arcade.TileMap | None

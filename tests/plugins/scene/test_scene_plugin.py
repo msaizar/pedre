@@ -275,6 +275,25 @@ class TestScenePlugin:
         mock_plugin1.load_from_tiled.assert_called_once_with(plugin.tile_map, plugin.arcade_scene)
         mock_plugin2.load_from_tiled.assert_called_once_with(plugin.tile_map, plugin.arcade_scene)
 
+    def test_notify_plugins_scene_loaded(self, scene_plugin_ctx: ScenePluginCtx) -> None:
+        """Test that _notify_plugins_scene_loaded calls on_scene_loaded on every plugin."""
+        plugin, mock_context = scene_plugin_ctx
+
+        mock_plugin1 = MagicMock()
+        mock_plugin1.name = "plugin1"
+        mock_plugin2 = MagicMock()
+        mock_plugin2.name = "plugin2"
+
+        mock_context.get_plugins.return_value = {
+            "plugin1": mock_plugin1,
+            "plugin2": mock_plugin2,
+        }
+
+        plugin._notify_plugins_scene_loaded("town")
+
+        mock_plugin1.on_scene_loaded.assert_called_once_with("town")
+        mock_plugin2.on_scene_loaded.assert_called_once_with("town")
+
     @patch.object(ScenePlugin, "_load_map")
     def test_load_level_initial(self, mock_load_map: MagicMock, scene_plugin_ctx: ScenePluginCtx) -> None:
         """Test loading initial level doesn't cache."""
