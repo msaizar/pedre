@@ -2,10 +2,12 @@
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, overload
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from pedre.content.registries.dialog import BaseDialogRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +167,12 @@ class ContentRegistry:
         self._sub_registries: dict[str, BaseContentRegistry] = {}
         for name, registry_cls in ContentTypeRegistry.get_all().items():
             self._sub_registries[name] = registry_cls()
+
+    @overload
+    def get_sub_registry(self, name: Literal["dialogs"]) -> BaseDialogRegistry: ...
+
+    @overload
+    def get_sub_registry(self, name: str) -> BaseContentRegistry: ...
 
     def get_sub_registry(self, name: str) -> BaseContentRegistry:
         """Get a sub-registry by name (e.g. "sprites", "npcs").

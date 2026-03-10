@@ -53,14 +53,13 @@ Example usage:
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
 
 from pedre.actions.registry import ActionParseError, ActionRegistry
 from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 from pedre.conf import settings
-from pedre.content.registries.dialog import DialogRegistry
 from pedre.helpers import asset_path, matches_key
 from pedre.plugins.npc.base import NPCBasePlugin, NPCDialogConfig, NPCState
 from pedre.plugins.npc.events import (
@@ -381,7 +380,7 @@ class NPCPlugin(NPCBasePlugin):
             - dialog_config: NPCDialogConfig if conditions met, None if no dialog found
             - on_condition_fail_actions: List of actions to execute if conditions failed, None otherwise
         """
-        dialog_registry = cast("DialogRegistry", self.context.content_registry.get_sub_registry("dialogs"))
+        dialog_registry = self.context.content_registry.get_sub_registry("dialogs")
         level_str = str(dialog_level)
 
         # Try scene-specific entry first, fall back to "default"

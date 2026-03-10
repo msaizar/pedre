@@ -2,6 +2,7 @@
 
 import json
 import logging
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from pedre.content.registry import (
@@ -18,8 +19,21 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class BaseDialogRegistry(BaseContentRegistry):
+    """Abstract base for dialog registries.
+
+    Extend this class to implement a custom dialog registry. Register it with
+    ``@ContentTypeRegistry.register`` and set ``name = "dialogs"`` so the NPC
+    plugin can locate it via ``content_registry.get_sub_registry("dialogs")``.
+    """
+
+    @abstractmethod
+    def get_dialog(self, scene: str, npc_name: str, level: int | str) -> dict[str, Any] | None:
+        """Return the raw dialog definition for a scene/npc/level, or None if absent."""
+
+
 @ContentTypeRegistry.register
-class DialogRegistry(BaseContentRegistry):
+class DialogRegistry(BaseDialogRegistry):
     """Registry for NPC dialog definitions.
 
     Dialog files live in a ``dialogs/`` subdirectory of the content directory,
