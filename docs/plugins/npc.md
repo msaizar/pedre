@@ -756,7 +756,7 @@ name: merchant
 }
 ```
 
-See the [Content Registry](../content-registry.md) documentation for full details on defining NPC and sprite entries.
+See the [NPCs Content Reference](../content/npcs.md) and [Sprites Content Reference](../content/sprites.md) for full details on defining NPC and sprite entries.
 
 ## Events
 

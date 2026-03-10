@@ -241,7 +241,8 @@ Left-facing animations can be omitted — the sprite will auto-generate them by 
 
 ## See Also
 
-- [Content Registry](../extending/content-registry.md) — How sprite definitions are stored and loaded
+- [Sprites Content Reference](../content/sprites.md) — Full sprites.json schema
+- [Custom Content Types](../extending/custom-content.md) — How the content registry works
 - [Player Plugin](../plugins/player.md) — PlayerPlugin documentation
 - [NPC Plugin](../plugins/npc.md) — NPCPlugin documentation
 - [Tiled Integration](../guides/tiled-integration.md) — Setting up sprites in Tiled

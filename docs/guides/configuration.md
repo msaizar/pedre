@@ -531,7 +531,7 @@ INSTALLED_CONTENT = [
 ]
 ```
 
-- For more details, see the [Content Registry guide](../extending/content-registry.md)
+- For more details, see the [Custom Content Types guide](../extending/custom-content.md)
 
 ### Dialog Plugin Settings
 

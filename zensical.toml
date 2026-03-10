@@ -43,6 +43,14 @@ nav = [
         "plugins/script.md",
         "plugins/waypoint.md",
     ]},
+    {"Content Registries" = [
+        "content/index.md",
+        "content/items.md",
+        "content/maps.md",
+        "content/npcs.md",
+        "content/players.md",
+        "content/sprites.md",
+    ]},
     {"Scripting" = [
         "scripting/index.md",
         "scripting/basics.md",
@@ -59,7 +67,7 @@ nav = [
         "extending/custom-conditions.md",
         "extending/custom-plugins.md",
         "extending/custom-commands.md",
-        "extending/content-registry.md",
+        "extending/custom-content.md",
     ]},
 ]
 

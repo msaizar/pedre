@@ -267,7 +267,7 @@ spawn_at_portal: true
 }
 ```
 
-See the [Content Registry](../content-registry.md) documentation for full details on defining sprite entries.
+See the [Sprites Content Reference](../content/sprites.md) and [Players Content Reference](../content/players.md) for full details on defining sprite and player entries.
 
 ### Portal-Based Spawning
 

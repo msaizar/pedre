@@ -77,7 +77,7 @@ Register custom content type registries for loading and validating JSON-driven g
 - Equipment and weapon schemas
 - Level or map configuration data
 
-**Learn More:** [Custom Content Types](content-registry.md)
+**Learn More:** [Custom Content Types](custom-content.md)
 
 ### CLI Commands
 

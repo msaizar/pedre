@@ -1,6 +1,6 @@
-# Content Registry
+# Custom Content Types
 
-Pedre's content registry system provides a structured way to load, validate, and access JSON-driven game data such as sprites, NPCs, and items. You can extend it with your own content types that integrate seamlessly with the framework's loading and validation lifecycle.
+Pedre's content registry system lets you define your own JSON-driven game data that integrates seamlessly with the framework's loading and validation lifecycle. For the built-in content types (sprites, NPCs, players, maps, items), see the [Content Registry Reference](../content/index.md).
 
 ## How Content Is Loaded
 
@@ -43,29 +43,6 @@ INSTALLED_CONTENT = [
     "myproject.content.enemies",          # Your custom content types
 ]
 ```
-
-## Built-in Content Types
-
-| Type      | Registry Class   | File           | Description                            |
-|-----------|------------------|----------------|----------------------------------------|
-| `sprites` | `SpriteRegistry` | `sprites.json` | Sprite sheet animation definitions.    |
-| `npcs`    | `NPCRegistry`    | `npcs.json`    | NPC definitions with sprite references |
-| `items`   | `ItemRegistry`   | `items.json`   | Inventory item definitions             |
-
-## Accessing Content
-
-Content is accessed through the `content_registry` on the game context:
-
-```python
-# In a plugin or action
-sprites = context.content_registry.get_sub_registry("sprites")
-if sprites:
-    sprite_def = sprites.get("player_idle")   # Raises MissingDefinitionError if not found
-    exists = sprites.has("player_idle")        # Returns bool
-    all_sprites = sprites.all()                # Returns dict of all definitions
-```
-
-`get_sub_registry()` returns `None` if the type is not registered, so always check the result before using it.
 
 ## Creating Custom Content Types
 
@@ -234,7 +211,7 @@ myproject/
 
 ## See Also
 
-- [Custom Actions](custom-actions.md) — Script actions that consume content
-- [Custom Plugins](custom-plugins.md) — Plugins that use content at runtime
-- [Configuration Guide](../guides/configuration.md) — Full settings reference
-- [API Reference](../api/index.md) — Framework architecture
+- [Content Registry Reference](../content/index.md) — built-in content type schemas
+- [Custom Actions](custom-actions.md) — script actions that consume content
+- [Custom Plugins](custom-plugins.md) — plugins that use content at runtime
+- [Configuration Guide](../guides/configuration.md) — full settings reference

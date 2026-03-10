@@ -7,7 +7,7 @@ This guide covers everything you need to know about using [Tiled Map Editor](htt
 - [Installation](#installation)
 - [Map Setup](#map-setup)
 - [Required Layers](#required-layers)
-- [Map Properties](#map-properties)
+- [Map Configuration](#map-configuration)
 - [Player Character Setup](#player-character-setup)
 - [Working with NPCs](#working-with-npcs)
 - [Portals and Transitions](#portals-and-transitions)
@@ -188,89 +188,29 @@ Portals
 Waypoints        (top - drawn last)
 ```
 
-## Map Properties
+## Map Configuration
 
-Set properties on the map itself (not layers) to configure map behavior.
+Per-map settings — background music, camera target, and camera movement style — are defined in `assets/data/content/maps.json`, not as Tiled map properties.
 
-### How to Set Map Properties
+Each entry is keyed by the scene name (TMX filename without extension, lowercased). All fields are optional; only add what you want to override from the defaults.
 
-1. Click on the map name in the Layers panel (deselect any layers)
-2. Open the Properties panel (View → Properties)
-3. Click the **+** button to add custom properties
-
-### Available Map Properties
-
-| Property        | Type   | Required | Description                                                  | Example                      |
-| --------------- | ------ | -------- | ------------------------------------------------------------ | ---------------------------- |
-| `music`         | string | No       | Background music file (relative to assets/audio/music/)      | `"village_theme.mp3"`        |
-| `show_all_npcs` | bool   | No       | Force all NPCs to be visible                                 | `true`                       |
-| `show_npcs`     | string | No       | Comma-separated list of NPCs to show                         | `"merchant,guard,elder"`     |
-| `camera_follow` | string | No       | Camera follow target: "player", "npc:\<name\>", or "none"    | `"player"`, `"npc:merchant"` |
-| `camera_smooth` | bool   | No       | Use smooth interpolation (true) or instant following (false) | `true`                       |
-
-### Example Map Property Configuration
-
-```text
-music: "peaceful_village.ogg"
-show_npcs: "merchant,blacksmith"
-camera_follow: "player"
-camera_smooth: true
+```json
+{
+  "village": {
+    "music": "peaceful_village.ogg",
+    "camera_follow": "player",
+    "camera_smooth": true
+  },
+  "cutscene_tower": {
+    "camera_follow": "npc:wizard"
+  },
+  "puzzle_room": {
+    "camera_follow": "none"
+  }
+}
 ```
 
-### Camera Configuration
-
-The camera plugin can be configured via map properties to control which entity the camera follows and how it moves.
-
-#### Camera Follow Modes
-
-The `camera_follow` property determines what the camera tracks:
-
-- **"player"** (default): Camera smoothly follows the player sprite
-- **"npc:\<name\>"**: Camera follows a specific NPC by name (e.g., "npc:merchant")
-- **"none"**: Static camera with no following
-
-#### Camera Smoothing
-
-The `camera_smooth` property controls the camera movement style:
-
-- **true** (default): Camera smoothly interpolates to target using lerp (cinematic feel)
-- **false**: Camera instantly snaps to target position (no delay)
-
-#### Camera Configuration Examples
-
-**Follow player with smooth camera (default behavior):**
-
-```text
-camera_follow: "player"
-camera_smooth: true
-```
-
-**Follow NPC for cutscene:**
-
-```text
-camera_follow: "npc:wizard"
-camera_smooth: true
-```
-
-**Static camera for puzzle room:**
-
-```text
-camera_follow: "none"
-```
-
-**Instant following for fast-paced gameplay:**
-
-```text
-camera_follow: "player"
-camera_smooth: false
-```
-
-#### Important Notes
-
-- If `camera_follow` specifies an NPC that doesn't exist, the camera will fall back to following the player
-- The camera automatically positions itself at the follow target when the scene loads
-- You can change camera following at runtime using camera actions in scripts (see `FollowPlayerAction`, `FollowNPCAction`, `StopCameraFollowAction`)
-- Default behavior (if no properties are set): follow player if it exists, otherwise center on map with no following
+See [Maps Content Reference](../content/maps.md) for the full field reference, camera follow modes, and more examples.
 
 ## Player Character Setup
 
@@ -403,7 +343,7 @@ Player Object Layer:
 }
 ```
 
-See [Content Registry](../extending/content-registry.md) and [Sprites API](../api/sprites.md) for details on defining sprite states.
+See [Sprites Content Reference](../content/sprites.md) and [Sprites API](../api/sprites.md) for details on defining sprite states.
 
 ### Player Movement
 
@@ -614,7 +554,7 @@ All other appearance settings (`tile_size`, `scale`, `initially_hidden`) belong 
 }
 ```
 
-See [Content Registry](../extending/content-registry.md) and [Sprites API](../api/sprites.md) for the full sprite definition format, including `auto_from` states and directional auto-flip.
+See [Sprites Content Reference](../content/sprites.md) and [Sprites API](../api/sprites.md) for the full sprite definition format, including `auto_from` states and directional auto-flip.
 
 ### Example NPC Setup in Tiled
 
