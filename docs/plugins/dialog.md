@@ -405,37 +405,46 @@ Each tier is a tuple `(small_screen, reference, large_screen)` that interpolates
 
 ## Dialog Configuration Files
 
-Dialogs are typically loaded from JSON files in the `assets/dialogs/` directory. Each file follows the pattern `<scene>_dialogs.json` (e.g., `casa_dialogs.json`).
+Dialogs are loaded from the content registry. Files live in the `dialogs/` subdirectory of your content directory, one file per scene named `{scene}.json`.
+
+```text
+assets/
+  data/
+    content/
+      dialogs/
+        village.json
+        forest.json
+```
 
 ### JSON Structure
 
+Each file is a flat object. Keys follow the pattern `"{npc_name}/{level}"`:
+
 ```json
 {
-    "npc_name": {
-        "0": {
-            "name": "Display Name",
-            "text": [
-                "First page of dialog",
-                "Second page of dialog"
-            ]
-        },
-        "1": {
-            "name": "Display Name",
-            "text": ["Next dialog level"],
-            "conditions": [
-                {
-                    "name": "inventory_accessed",
-                    "equals": true
-                }
-            ],
-            "on_condition_fail": [
-                {
-                    "name": "dialog",
-                    "speaker": "Display Name",
-                    "text": ["Alternative text if condition fails"]
-                }
-            ]
-        }
+    "npc_name/0": {
+        "name": "Display Name",
+        "text": [
+            "First page of dialog",
+            "Second page of dialog"
+        ]
+    },
+    "npc_name/1": {
+        "name": "Display Name",
+        "text": ["Next dialog level"],
+        "conditions": [
+            {
+                "name": "inventory_accessed",
+                "equals": true
+            }
+        ],
+        "on_condition_fail": [
+            {
+                "name": "dialog",
+                "speaker": "Display Name",
+                "text": ["Alternative text if condition fails"]
+            }
+        ]
     }
 }
 ```
@@ -443,7 +452,7 @@ Dialogs are typically loaded from JSON files in the `assets/dialogs/` directory.
 **Fields:**
 
 - `name` - Optional display name shown in the dialog box instead of the NPC's key name
-- `text` - Array of strings, one per page
+- `text` - Required array of strings, one per page
 - `conditions` - Optional array of conditions that must be met to show this dialog
 - `on_condition_fail` - Optional array of actions to run if conditions fail
 
@@ -451,35 +460,33 @@ Dialogs are typically loaded from JSON files in the `assets/dialogs/` directory.
 
 ```json
 {
-    "martin": {
-        "0": {
-            "name": "Martin",
-            "text": [
-                "Buenos días mi amor! Feliz cumpleaños!",
-                "Te hice un café, me acompañas a tomarlo?"
-            ]
-        },
-        "1": {
-            "name": "Martin",
-            "text": ["Qué hermoso día, no?"],
-            "conditions": [
-                {
-                    "name": "inventory_accessed",
-                    "equals": true
-                }
-            ]
-        }
+    "martin/0": {
+        "name": "Martin",
+        "text": [
+            "Buenos días mi amor! Feliz cumpleaños!",
+            "Te hice un café, me acompañas a tomarlo?"
+        ]
     },
-    "merchant": {
-        "0": {
-            "text": [
-                "Welcome to my shop!",
-                "I have the finest wares in town."
-            ]
-        }
+    "martin/1": {
+        "name": "Martin",
+        "text": ["Qué hermoso día, no?"],
+        "conditions": [
+            {
+                "name": "inventory_accessed",
+                "equals": true
+            }
+        ]
+    },
+    "merchant/0": {
+        "text": [
+            "Welcome to my shop!",
+            "I have the finest wares in town."
+        ]
     }
 }
 ```
+
+See [Dialogs Content Reference](../content/dialogs.md) for the full schema.
 
 ## Events
 

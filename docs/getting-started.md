@@ -33,16 +33,20 @@ uv add pedre
 my-rpg/
 ├── assets/
 │   ├── data/
-│   │   ├── content/    # Content registry JSON files (sprites.json, npcs.json, items.json)
-│   │   ├── dialogs/    # NPC dialog JSON files
-│   │   └── scripts/    # Event scripts JSON files
-│   ├── maps/           # Tiled .tmx files
+│   │   ├── content/         # Content registry JSON files
+│   │   │   ├── sprites.json
+│   │   │   ├── npcs.json
+│   │   │   ├── items.json
+│   │   │   └── dialogs/     # NPC dialog files, one per scene
+│   │   │       └── village.json
+│   │   └── scripts/         # Event scripts JSON files
+│   ├── maps/                # Tiled .tmx files
 │   ├── images/
-│   │   └── characters/ # Sprite sheets
+│   │   └── characters/      # Sprite sheets
 │   └── audio/
-│       ├── music/      # Background music
-│       └── sfx/        # Sound effects
-└── main.py             # Your game entry point
+│       ├── music/           # Background music
+│       └── sfx/             # Sound effects
+└── main.py                  # Your game entry point
 ```
 
 ## Step 2: Create Your First Map
@@ -240,36 +244,34 @@ The NPC spawns at the point's position. All appearance config lives in the JSON 
 
 ### Create NPC Dialog
 
-Create `assets/data/dialogs/village_dialogs.json`:
+Create `assets/data/content/dialogs/village.json`:
 
 ```json
 {
-  "merchant": {
-    "0": {
-      "name": "Merchant",
-      "text": [
-        "Hello, traveler!",
-        "Welcome to our village.",
-        "Feel free to look around."
-      ]
-    },
-    "1": {
-      "name": "Merchant",
-      "text": [
-        "Back again?",
-        "I have nothing new to say."
-      ]
-    }
+  "merchant/0": {
+    "name": "Merchant",
+    "text": [
+      "Hello, traveler!",
+      "Welcome to our village.",
+      "Feel free to look around."
+    ]
+  },
+  "merchant/1": {
+    "name": "Merchant",
+    "text": [
+      "Back again?",
+      "I have nothing new to say."
+    ]
   }
 }
 ```
 
 **Dialog Structure:**
 
-- Top-level keys are NPC names
-- Second-level keys are dialog levels (conversation progress)
+- Keys follow the pattern `"{npc_name}/{level}"` (conversation progress)
 - `name` - NPC name displayed in dialog box
 - `text` - Array of text strings (press SPACE to advance)
+- The scene name comes from the filename stem (`village.json` → scene `"village"`)
 
 ### Test NPC Interaction
 

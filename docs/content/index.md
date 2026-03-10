@@ -4,13 +4,14 @@ Pedre ships with built-in content types for the most common game data. Each type
 
 ## Built-in Content Types
 
-| Type      | File           | Description                                        |
-| --------- | -------------- | -------------------------------------------------- |
-| `sprites` | `sprites.json` | Sprite sheet animation definitions                 |
-| `npcs`    | `npcs.json`    | NPC definitions — sprite, scale, visibility        |
-| `players` | `players.json` | Player definitions — sprite and spawn positions    |
-| `maps`    | `maps.json`    | Per-map overrides — music, camera behavior         |
-| `items`   | `items.json`   | Inventory item definitions                         |
+| Type      | File / Directory    | Description                                        |
+| --------- | ------------------- | -------------------------------------------------- |
+| `sprites` | `sprites.json`      | Sprite sheet animation definitions                 |
+| `npcs`    | `npcs.json`         | NPC definitions — sprite, scale, visibility        |
+| `players` | `players.json`      | Player definitions — sprite and spawn positions    |
+| `maps`    | `maps.json`         | Per-map overrides — music, camera behavior         |
+| `items`   | `items.json`        | Inventory item definitions                         |
+| `dialogs` | `dialogs/*.json`    | NPC dialog text, organised per scene               |
 
 Click a type for the full schema and examples:
 
@@ -19,6 +20,7 @@ Click a type for the full schema and examples:
 - [Players](players.md)
 - [Maps](maps.md)
 - [Items](items.md)
+- [Dialogs](dialogs.md)
 
 ## Content Directory
 
@@ -33,6 +35,9 @@ assets/
       players.json
       maps.json
       items.json
+      dialogs/
+        village.json
+        forest.json
 ```
 
 ## Accessing Content at Runtime

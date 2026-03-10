@@ -14,12 +14,6 @@ Manages NPC state, movement, pathfinding, dialog progression, and interactions.
 
 The NPCPlugin uses the following settings from `pedre.conf.settings`:
 
-### Dialog Configuration
-
-| Setting             | Type   | Default         | Description                                                          |
-| ------------------- | ------ | --------------- | -------------------------------------------------------------------- |
-| `DIALOGS_DIRECTORY` | string | "data/dialogs"  | Directory where NPC dialog files are stored (relative to assets)     |
-
 ### Movement and Interaction Configuration
 
 | Setting                    | Type   | Default | Description                                                          |
@@ -32,10 +26,6 @@ The NPCPlugin uses the following settings from `pedre.conf.settings`:
 These can be overridden in your project's `settings.py`:
 
 ```python
-# Custom dialog directory
-DIALOGS_DIRECTORY = "custom_dialogs"
-
-# Custom NPC settings
 NPC_INTERACTION_DISTANCE = 60
 NPC_WAYPOINT_THRESHOLD = 8
 NPC_MOVEMENT_SPEED = 100.0
@@ -71,37 +61,6 @@ npc_plugin.register_npc(animated_sprite, "merchant")
 - Usually called automatically by `load_npcs_from_objects()`
 
 ### Dialog Management
-
-#### load_dialogs_from_json
-
-`load_dialogs_from_json(json_path: Path | str) -> bool`
-
-Load NPC dialog configurations from a JSON file or directory.
-
-**Parameters:**
-
-- `json_path` - Path to JSON file or directory containing dialog files
-
-**Returns:**
-
-- `True` if dialogs loaded successfully, `False` otherwise
-
-**Example:**
-
-```python
-# Load from single file
-npc_plugin.load_dialogs_from_json("assets/dialogs/village_dialogs.json")
-
-# Load all dialogs from directory
-npc_plugin.load_dialogs_from_json("assets/dialogs/")
-```
-
-**Notes:**
-
-- Files are named `{scene}_dialogs.json` (e.g., `village_dialogs.json`)
-- Scene name is extracted from filename
-- Loading a directory processes all `.json` files
-- The directory location is configured via `DIALOGS_DIRECTORY` setting (default: `"data/dialogs"`)
 
 #### get_dialog
 
@@ -637,34 +596,28 @@ Conditions and actions are parsed from JSON at load time via `ConditionRegistry`
 
 ### Dialog JSON Format
 
-Dialog files are named `{scene}_dialogs.json` (e.g., `casa_dialogs.json`). The scene name is extracted from the filename.
+Dialog files live in the `dialogs/` subdirectory of your content directory, one file per scene. The scene name is the filename stem (e.g. `village.json` → scene `"village"`).
+
+Each file is a flat object with keys in the form `"{npc_name}/{level}"`:
 
 ```json
 {
-  "npc_name": {
-    "0": {
-      "name": "Display Name",
-      "text": ["First conversation page", "Second page"],
-      "conditions": [
-        {"name": "inventory_accessed", "equals": true}
-      ],
-      "on_condition_fail": [
-        {"name": "dialog", "speaker": "NPC", "text": ["Not ready yet!"]}
-      ]
-    },
-    "1": {
-      "name": "Display Name",
-      "text": ["Different dialog after progression"]
-    }
+  "npc_name/0": {
+    "name": "Display Name",
+    "text": ["First conversation page", "Second page"],
+    "conditions": [
+      {"name": "inventory_accessed", "equals": true}
+    ],
+    "on_condition_fail": [
+      {"name": "dialog", "speaker": "NPC", "text": ["Not ready yet!"]}
+    ]
+  },
+  "npc_name/1": {
+    "name": "Display Name",
+    "text": ["Different dialog after progression"]
   }
 }
 ```
-
-**Structure:**
-
-- Top level: NPC name (key used in scripts)
-- Second level: Dialog level (string, converted to int)
-- Third level: Dialog configuration object
 
 **Fields:**
 
@@ -673,14 +626,13 @@ Dialog files are named `{scene}_dialogs.json` (e.g., `casa_dialogs.json`). The s
 - `conditions` (optional) - Array of condition checks
 - `on_condition_fail` (optional) - Array of actions if conditions fail
 
+See [Dialogs Content Reference](../content/dialogs.md) for the full schema and file layout.
+
 ### Scene-Aware Dialogs
 
-Dialogs are organized by scene, allowing NPCs to have different conversations depending on location:
+Dialogs are organized by scene, allowing NPCs to have different conversations depending on location. Each scene corresponds to a `{scene}.json` file in the `dialogs/` content directory.
 
 ```python
-# Load scene-specific dialogs
-npc_plugin.load_scene_dialogs("village")
-
 # Get dialog for current scene
 current_scene = context.scene_plugin.get_current_scene()
 dialog_data = npc_plugin.get_dialog("merchant", 0, current_scene)
@@ -694,17 +646,15 @@ Dialog can be conditional based on game state:
 
 ```json
 {
-  "merchant": {
-    "1": {
-      "name": "Merchant",
-      "text": ["You checked your inventory!"],
-      "conditions": [
-        {"name": "inventory_accessed", "equals": true}
-      ],
-      "on_condition_fail": [
-        {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
-      ]
-    }
+  "merchant/1": {
+    "name": "Merchant",
+    "text": ["You checked your inventory!"],
+    "conditions": [
+      {"name": "inventory_accessed", "equals": true}
+    ],
+    "on_condition_fail": [
+      {"name": "dialog", "speaker": "Merchant", "text": ["Please check your inventory first!"]}
+    ]
   }
 }
 ```

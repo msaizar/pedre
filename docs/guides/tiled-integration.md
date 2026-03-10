@@ -218,10 +218,10 @@ The player character is automatically created and managed by the framework, but 
 
 ### Player Spawn Position
 
-The framework determines the player's spawn position based on the Player object configuration:
+The framework determines the player's spawn position based on the player content registry:
 
-1. **Portal Waypoint** - If Player object has `spawn_at_portal=true` and a portal waypoint is set (from portal transition)
-2. **Player Object Position** - Uses the Player object's position in the Player object layer
+1. **Portal Waypoint** - Default behaviour; player spawns at the waypoint named by the portal's `spawn_waypoint` action parameter
+2. **Player Object Position** - Used on maps listed in `spawn_at_position` in `players.json`
 
 **Player Object Setup:**
 
@@ -232,15 +232,21 @@ The Player object must be placed as a **Point object** in the "Player" object la
 1. Select **Player** object layer (create if needed)
 2. Click **Insert Point** (or press **I**)
 3. Click where you want the player to spawn
-4. Set required properties in Properties panel
 
-**Portal Spawning (Optional):**
+**Controlling Spawn Behaviour (Optional):**
 
-To make the player spawn at the Player object position instead of portal waypoints:
+Spawn behaviour is configured in `players.json`, not via Tiled properties. Add the map name to `spawn_at_position` to make the player spawn at the Player object position on that map instead of at a portal waypoint:
 
-1. Select the Player object in Tiled
-2. Add custom property: `spawn_at_portal` (boolean) = `false`
-3. When entering maps via portals, player will spawn at the object position
+```json
+{
+  "player": {
+    "sprite_id": "hero",
+    "spawn_at_position": ["village"]
+  }
+}
+```
+
+If `spawn_at_position` is absent or does not include the current map, the player always spawns at the portal waypoint.
 
 ### Portal Waypoints
 
@@ -277,36 +283,38 @@ Point named "from_village" at spawn location
 
 ### Player Sprite Configuration
 
-The player sprite is driven entirely by the **content registry**. Animation states, sprite sheet path, and frame layout are defined in `sprites.json`.
+The player sprite is driven entirely by the **content registry**. Animation states, sprite sheet path, and frame layout are defined in `sprites.json`. The Tiled Player object only provides the spawn position — no properties are read from it.
 
 **How it works:**
 
 1. The `PlayerPlugin` reads the Player object from Tiled to get the spawn position.
-2. It looks up the sprite definition in the `sprites` content registry — first by the object's `sprite_id` property, then by the fallback ID `"player"`.
-3. It creates an `AnimatedSprite` from that definition.
+2. It looks up the player definition in the `players` content registry (key `"player"` in `players.json`).
+3. The player definition's `sprite_id` field references an entry in `sprites.json`.
+4. It creates an `AnimatedSprite` from that definition.
 
-**Player Object Properties:**
+**`players.json` fields:**
 
-| Property    | Type   | Required | Description                                                                       |
-| ----------- | ------ | -------- | --------------------------------------------------------------------------------- |
-| `sprite_id` | string | No       | ID of the sprite definition in `sprites.json`. Defaults to `"player"`             |
+| Field              | Type            | Required | Description                                                          |
+| ------------------ | --------------- | -------- | -------------------------------------------------------------------- |
+| `sprite_id`        | string          | **Yes**  | ID of the sprite definition in `sprites.json`                        |
+| `spawn_at_position`| list of strings | No       | Map names where player spawns at the Tiled object position           |
 
-**Example Player Object (minimal):**
+**Example Player Object (Tiled — position only):**
 
 ```text
 Player Object Layer:
   - Point at (640, 480)
-    Properties:
-      (no properties needed if sprites.json defines a "player" entry)
+    (no properties needed — sprite and spawn config live in players.json)
 ```
 
-**Example Player Object (with explicit sprite):**
+**Example `assets/data/content/players.json`:**
 
-```text
-Player Object Layer:
-  - Point at (640, 480)
-    Properties:
-      sprite_id: "princess"
+```json
+{
+  "player": {
+    "sprite_id": "princess"
+  }
+}
 ```
 
 **Corresponding `sprites.json` entry:**
@@ -368,6 +376,7 @@ The player automatically collides with:
 
 - Tiles in the **Walls** layer
 - Tiles in the **Collision** layer
+- Tiles in the **Objects** layer
 - Tiles in the **Buildings** layer
 - NPCs (unless they're removed from collision with scripts)
 
@@ -380,13 +389,21 @@ The physics engine uses `arcade.PhysicsEngineSimple` for player-wall collision d
 ```text
 Player Object Layer:
   - Point at (640, 480)
-    Properties:
-      sprite_id: "princess"   (optional — defaults to "player" if omitted)
-      spawn_at_portal: false
-
-Map Properties:
-  music: "village_theme.ogg"
+    (no properties needed — sprite and spawn config live in players.json)
 ```
+
+**In `assets/data/content/players.json`:**
+
+```json
+{
+  "player": {
+    "sprite_id": "princess",
+    "spawn_at_position": ["village"]
+  }
+}
+```
+
+`spawn_at_position: ["village"]` means the player spawns at the Tiled object position (640, 480) when loading `village`. On any other map (e.g. `forest`) the player spawns at the portal's target waypoint.
 
 **In `assets/data/content/sprites.json`:**
 
@@ -423,7 +440,7 @@ Map Properties:
 ```text
 Player Object Layer:
   - Point at (400, 300)
-    (no extra properties needed if sprite is already defined in sprites.json)
+    (position used as fallback only; forest is not in spawn_at_position)
 
 Waypoints Layer:
   - Point named "from_village" at (100, 200)
@@ -452,13 +469,13 @@ if __name__ == "__main__":
 
 This will create a window with your custom settings and start the game.
 
-- Spawn at Player object position (640, 480)
-- Use default princess sprite sheet
+- Spawn at Player object position (640, 480) on `village` (listed in `spawn_at_position`)
+- Use the princess sprite sheet
 - Be able to move with arrow keys
-- Collide with walls and NPCs
+- Collide with walls, objects, and NPCs
 - Interact with objects via SPACE key
 
-**When entering via portal:** Player will spawn at the portal's target waypoint instead of the Player object position.
+**When entering via portal:** Player spawns at the portal's target waypoint (unless the map is listed in `spawn_at_position`).
 
 ## Working with NPCs
 
@@ -483,7 +500,6 @@ NPCs are placed as **Point Objects** in the **NPCs** object layer. Like the play
 | Property    | Type   | Required | Description                                                              |
 | ----------- | ------ | -------- | ------------------------------------------------------------------------ |
 | `name`      | string | **Yes**  | NPC identifier — must match a key in `npcs.json` (case-insensitive)      |
-| `sprite_id` | string | No       | Override the sprite ID from `npcs.json` for this specific object         |
 
 All other appearance settings (`tile_size`, `scale`, `initially_hidden`) belong in `npcs.json`.
 
@@ -719,7 +735,7 @@ Waypoints are **Point Objects** that define named positions on the map.
 | **Portal destinations** | Target location for map transitions (used with portal `spawn_waypoint` property) |
 | **NPC movement**        | Destinations for pathfinding scripts                                             |
 
-**Note:** Waypoints are simple named locations stored as Point objects. They only need a `name` property. The framework converts their pixel coordinates to tile coordinates and stores them in a dictionary for lookup by name.
+**Note:** Waypoints are simple named locations stored as Point objects. They only need a `name` property. The framework stores their pixel coordinates in a dictionary for lookup by name.
 
 ### Example Waypoint Setup
 

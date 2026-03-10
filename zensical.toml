@@ -45,6 +45,7 @@ nav = [
     ]},
     {"Content Registries" = [
         "content/index.md",
+        "content/dialogs.md",
         "content/items.md",
         "content/maps.md",
         "content/npcs.md",
