@@ -195,6 +195,19 @@ class TestDialogRegistryLoadFromFile:
         with pytest.raises(InvalidDefinitionError):
             registry.load_from_file(dialog_file)
 
+    def test_file_not_found_raises(self, registry: DialogRegistry, tmp_path: Path) -> None:
+        """load_from_file() raises RegistryError when the file does not exist."""
+        missing = tmp_path / "nonexistent.json"
+        with pytest.raises(RegistryError, match="file not found"):
+            registry.load_from_file(missing)
+
+    def test_non_dict_entry_raises(self, registry: DialogRegistry, tmp_path: Path) -> None:
+        """An entry whose value is not a dict raises InvalidDefinitionError."""
+        dialog_file = tmp_path / "village.json"
+        dialog_file.write_text(json.dumps({"merchant/0": ["Hello!"]}))
+        with pytest.raises(InvalidDefinitionError, match="must be an object"):
+            registry.load_from_file(dialog_file)
+
 
 class TestDialogRegistryLoadFromDirectory:
     """Tests for DialogRegistry.load_from_directory()."""
@@ -269,6 +282,18 @@ class TestDialogRegistryValidateCrossReferences:
     def test_empty_registry_skips(self, registry: DialogRegistry) -> None:
         """validate_cross_references() is a no-op when no dialogs are registered."""
         npcs_mock = MagicMock()
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.return_value = npcs_mock
+
+        registry.validate_cross_references(content_registry)
+        npcs_mock.has.assert_not_called()
+
+    def test_malformed_key_skipped(self, registry: DialogRegistry) -> None:
+        """Dialog IDs with fewer than 3 parts are skipped without error."""
+        registry._definitions["scene_only"] = VALID_DIALOG
+
+        npcs_mock = MagicMock()
+        npcs_mock.has.return_value = True
         content_registry = MagicMock()
         content_registry.get_sub_registry.return_value = npcs_mock
 
