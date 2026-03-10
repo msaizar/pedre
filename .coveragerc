@@ -17,6 +17,7 @@ exclude_lines =
     pragma: no cover
     if TYPE_CHECKING:
     if __name__ == .__main__.:
+    @overload
 
 fail_under = 98
 show_missing = true
