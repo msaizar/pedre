@@ -35,7 +35,7 @@ my_game/
 │   │   ├── music/
 │   │   └── sfx/
 │   ├── data/
-│   │   ├── dialogs/
+│   │   ├── content/
 │   │   └── scripts/
 │   ├── images/
 │   └── maps/
@@ -65,10 +65,13 @@ pedre validate [options]
 
 **What it checks:**
 
-- Project structure
-- Required files and directories
-- Asset file integrity
-- Configuration validity
+- Maps
+- Items
+- Sprites
+- NPCs
+- Players
+- Scripts
+- Dialogs
 
 ## Installation Methods
 
