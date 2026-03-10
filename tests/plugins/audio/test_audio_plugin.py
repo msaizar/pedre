@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from pedre.content.registry import RegistryError
 from pedre.plugins.audio import AudioPlugin
 
 if TYPE_CHECKING:
@@ -729,15 +730,13 @@ class TestAudioPlugin:
 
         mock_play.assert_not_called()
 
-    def test_on_scene_loaded_no_maps_registry(self, plugin: AudioPlugin) -> None:
-        """on_scene_loaded does nothing when maps sub-registry is absent."""
+    def test_on_scene_loaded_missing_registry_raises(self, plugin: AudioPlugin) -> None:
+        """on_scene_loaded raises RegistryError when maps sub-registry is absent."""
         plugin.context = MagicMock()
-        plugin.context.content_registry.get_sub_registry.return_value = None
+        plugin.context.content_registry.get_sub_registry.side_effect = RegistryError("maps not registered")
 
-        with patch.object(plugin, "play_music") as mock_play:
+        with pytest.raises(RegistryError):
             plugin.on_scene_loaded("map")
-
-        mock_play.assert_not_called()
 
     def test_on_scene_loaded_logs_warning_on_failed_play(self, plugin: AudioPlugin) -> None:
         """on_scene_loaded logs a warning when play_music returns False."""

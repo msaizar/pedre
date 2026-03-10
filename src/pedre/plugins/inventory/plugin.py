@@ -688,9 +688,6 @@ class InventoryPlugin(InventoryBasePlugin):
     def _initialize_default_items(self) -> None:
         """Initialize default inventory items from the content registry."""
         item_registry = self.context.content_registry.get_sub_registry("items")
-        if item_registry is None:
-            logger.warning("Item registry not found in content registry, starting with empty inventory")
-            return
 
         for item_id, definition in item_registry.all().items():
             item = InventoryItem(

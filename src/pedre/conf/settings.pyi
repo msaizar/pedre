@@ -145,9 +145,6 @@ SAVE_SFX_FILE: str
 CONTENT_DIRECTORY: str
 INSTALLED_CONTENT: list[str]
 
-# Dialog settings
-DIALOGS_DIRECTORY: str
-
 # Script settings
 SCRIPTS_DIRECTORY: str
 

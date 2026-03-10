@@ -300,7 +300,6 @@ class TestScenePlugin:
         plugin, mock_context = scene_plugin_ctx
         plugin.current_map = "old_map.tmx"
 
-        mock_context.npc_plugin.load_scene_dialogs = MagicMock()
         mock_context.npc_plugin.get_npcs.return_value = {}
 
         plugin.load_level("new_map.tmx", initial=True)
@@ -309,7 +308,6 @@ class TestScenePlugin:
         mock_context.cache_plugin.cache_scene.assert_not_called()
         mock_load_map.assert_called_once_with("new_map.tmx")
         mock_context.save_plugin.apply_entity_states.assert_called_once()
-        mock_context.npc_plugin.load_scene_dialogs.assert_called_once_with("new_map")
         mock_context.cache_plugin.restore_scene.assert_called_once_with("new_map")
 
     @patch.object(ScenePlugin, "_load_map")
@@ -318,7 +316,6 @@ class TestScenePlugin:
         plugin, mock_context = scene_plugin_ctx
         plugin.current_map = "old_map.tmx"
 
-        mock_context.npc_plugin.load_scene_dialogs = MagicMock()
         mock_context.npc_plugin.get_npcs.return_value = {}
 
         plugin.load_level("new_map.tmx", initial=False)
@@ -351,8 +348,6 @@ class TestScenePlugin:
         # Add invisible NPC to wall list (should be removed)
         plugin.wall_list.append(invisible_npc_sprite)
 
-        mock_context.npc_plugin.load_scene_dialogs = MagicMock()
-
         plugin.load_level("test_map.tmx", initial=True)
 
         # Verify _load_map was called
@@ -381,8 +376,6 @@ class TestScenePlugin:
         # NPC is already in wall list
         plugin.wall_list.append(visible_npc_sprite)
         initial_wall_list_length = len(plugin.wall_list)
-
-        mock_context.npc_plugin.load_scene_dialogs = MagicMock()
 
         plugin.load_level("test_map.tmx", initial=True)
 

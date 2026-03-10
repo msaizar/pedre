@@ -53,7 +53,7 @@ class ValidateCommand(Command):
             "--dialogs-path",
             type=Path,
             default=None,
-            help=f"Path to dialogs directory (default: {settings.ASSETS_DIRECTORY}/{settings.DIALOGS_DIRECTORY})",
+            help=f"Path to dialogs directory (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY})",
         )
         parser.add_argument(
             "--maps-path",
@@ -131,7 +131,7 @@ class ValidateCommand(Command):
         dialogs_path_arg = getattr(args, "dialogs_path", None)
         maps_dir = maps_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCENE_MAPS_DIRECTORY
         scripts_dir = scripts_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCRIPTS_DIRECTORY
-        dialogs_dir = dialogs_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.DIALOGS_DIRECTORY
+        dialogs_dir = dialogs_path_arg or content_dir
         items_path_arg = getattr(args, "items_path", None)
         sprites_path_arg = getattr(args, "sprites_path", None)
         npcs_path_arg = getattr(args, "npcs_path", None)

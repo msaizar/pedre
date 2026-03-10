@@ -69,10 +69,10 @@ class TestValidateCommand:
 
     @pytest.fixture
     def dialogs_dir(self, tmp_path: Path) -> Path:
-        """Create a temporary dialogs directory."""
-        dialogs_dir = tmp_path / "dialogs"
-        dialogs_dir.mkdir(parents=True)
-        return dialogs_dir
+        """Create a temporary content directory with a dialogs/ subdirectory."""
+        content_dir = tmp_path / "content"
+        (content_dir / "dialogs").mkdir(parents=True)
+        return content_dir
 
     @pytest.fixture
     def maps_dir(self, tmp_path: Path) -> Path:
@@ -198,8 +198,8 @@ class TestValidateCommand:
         script_file = scripts_dir / "test_scripts.json"
         script_file.write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
 
-        dialog_file = dialogs_dir / "npc_dialogs.json"
-        dialog_file.write_text(json.dumps({"merchant": {"0": {"text": ["Hello, traveler!"]}}}))
+        dialog_file = dialogs_dir / "dialogs" / "npc.json"
+        dialog_file.write_text(json.dumps({"merchant/0": {"text": ["Hello, traveler!"]}}))
 
         command = ValidateCommand()
         command.execute(
@@ -235,7 +235,7 @@ class TestValidateCommand:
     ) -> None:
         """Test validate uses custom dialogs directory when provided."""
         dialogs_dir = tmp_path / "custom_dialogs"
-        dialogs_dir.mkdir(parents=True)
+        (dialogs_dir / "dialogs").mkdir(parents=True)
 
         tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
@@ -249,7 +249,7 @@ class TestValidateCommand:
   </objectgroup>
 </map>"""
         (maps_dir / "npc.tmx").write_text(tmx_content)
-        (dialogs_dir / "npc_dialogs.json").write_text(json.dumps({"merchant": {"0": {"text": ["Hello!"]}}}))
+        (dialogs_dir / "dialogs" / "npc.json").write_text(json.dumps({"merchant/0": {"text": ["Hello!"]}}))
 
         command = ValidateCommand()
         command.execute(
@@ -305,7 +305,7 @@ class TestValidateCommand:
     ) -> None:
         """Test that errors from both validators are aggregated."""
         (scripts_dir / "test_scripts.json").write_text(json.dumps({"test_script": {"actions": []}}))
-        (dialogs_dir / "npc_dialogs.json").write_text(json.dumps({"merchant": {"0": {}}}))
+        (dialogs_dir / "dialogs" / "npc.json").write_text(json.dumps({"merchant/0": {}}))
 
         command = ValidateCommand()
         with pytest.raises(SystemExit) as exc_info:
@@ -326,8 +326,8 @@ class TestValidateCommand:
 
     def test_validate_cross_reference_errors(self, dialogs_dir: Path, maps_dir: Path) -> None:
         """Test that cross-reference validation errors are detected and aggregated."""
-        (dialogs_dir / "npc_dialogs.json").write_text(
-            json.dumps({"nonexistent_npc": {"0": {"text": ["Hello, traveler!"]}}})
+        (dialogs_dir / "dialogs" / "npc.json").write_text(
+            json.dumps({"nonexistent_npc/0": {"text": ["Hello, traveler!"]}})
         )
 
         command = ValidateCommand()

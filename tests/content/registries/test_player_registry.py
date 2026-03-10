@@ -11,6 +11,7 @@ from pedre.content.registry import (
     ContentTypeRegistry,
     DuplicateIDError,
     InvalidDefinitionError,
+    RegistryError,
 )
 
 if TYPE_CHECKING:
@@ -175,14 +176,15 @@ class TestPlayerRegistryValidateCrossReferences:
         with pytest.raises(InvalidDefinitionError, match="references unknown sprite 'ghost_sprite'"):
             registry.validate_cross_references(content_registry)
 
-    def test_no_sprites_registry_skips(self, registry: PlayerRegistry) -> None:
-        """validate_cross_references() is a no-op when sprites sub-registry is absent."""
+    def test_no_sprites_registry_raises(self, registry: PlayerRegistry) -> None:
+        """validate_cross_references() raises RegistryError when sprites sub-registry is absent."""
         registry.register("player", {"sprite_id": "player_sprite"})
 
         content_registry = MagicMock()
-        content_registry.get_sub_registry.return_value = None
+        content_registry.get_sub_registry.side_effect = RegistryError("sprites not registered")
 
-        registry.validate_cross_references(content_registry)  # Should not raise
+        with pytest.raises(RegistryError):
+            registry.validate_cross_references(content_registry)
 
     def test_empty_registry_skips(self, registry: PlayerRegistry) -> None:
         """validate_cross_references() is a no-op when no players are registered."""

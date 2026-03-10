@@ -2,6 +2,9 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from pedre.content.registry import RegistryError
 from pedre.plugins.player.plugin import PlayerPlugin
 
 
@@ -254,19 +257,16 @@ class TestPlayerPlugin:
         assert plugin.player_sprite is None
         assert plugin.player_list is None
 
-    @patch("pedre.plugins.player.plugin.logger")
-    def test_load_from_tiled_no_players_registry(self, mock_logger: MagicMock) -> None:
-        """Test loading player when players sub-registry is absent."""
+    def test_load_from_tiled_missing_registry_raises(self) -> None:
+        """Test that load_from_tiled raises RegistryError when a sub-registry is absent."""
         plugin, context = _make_plugin()
         mock_tile_map = _make_tile_map()
         mock_arcade_scene = MagicMock()
 
-        context.content_registry.get_sub_registry.return_value = None
+        context.content_registry.get_sub_registry.side_effect = RegistryError("players not registered")
 
-        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
-
-        assert plugin.player_sprite is None
-        mock_logger.warning.assert_called()
+        with pytest.raises(RegistryError):
+            plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
 
     @patch("pedre.plugins.player.plugin.logger")
     def test_load_from_tiled_no_player_definition(self, mock_logger: MagicMock) -> None:

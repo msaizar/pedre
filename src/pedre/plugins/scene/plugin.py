@@ -139,16 +139,13 @@ class ScenePlugin(SceneBasePlugin):
         save_plugin = self.context.save_plugin
         save_plugin.apply_entity_states()
 
-        # Load scene-specific dialogs
-        npc_plugin = self.context.npc_plugin
-        npc_plugin.load_scene_dialogs(current_scene)
-
-        # Scripts are loaded globally at initialization, no per-scene loading needed
+        # Scripts and dialogs are loaded globally at initialization, no per-scene loading needed
 
         # Restore scene state using cache plugin
         cache_plugin.restore_scene(current_scene)
 
         # Sync wall_list with NPC visibility after restore
+        npc_plugin = self.context.npc_plugin
         if self.wall_list:
             for npc_state in npc_plugin.get_npcs().values():
                 if not npc_state.sprite.visible and npc_state.sprite in self.wall_list:

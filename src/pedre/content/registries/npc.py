@@ -28,8 +28,6 @@ class NPCRegistry(BaseContentRegistry):
     def validate_cross_references(self, content_registry: ContentRegistry) -> None:
         """Ensure each NPC's sprite_id references a valid sprite."""
         sprites = content_registry.get_sub_registry("sprites")
-        if sprites is None:
-            return
         for npc_id, npc_def in self.all().items():
             sprite_id = npc_def["sprite_id"]
             if not sprites.has(sprite_id):

@@ -408,7 +408,7 @@ class CameraPlugin(CameraBasePlugin):
 
         maps = self.context.content_registry.get_sub_registry("maps")
         map_def: dict[str, Any] = {}
-        if maps is not None and maps.has(scene_name):
+        if maps.has(scene_name):
             map_def = maps.get(scene_name)
 
         camera_follow: str = map_def.get("camera_follow", "player")

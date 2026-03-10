@@ -456,6 +456,7 @@ INSTALLED_CONTENT = [
     "pedre.content.registries.player",
     "pedre.content.registries.sprite",
     "pedre.content.registries.item",
+    "pedre.content.registries.dialog",
 ]
 """Modules containing @ContentTypeRegistry.register decorators to load.
 
@@ -468,10 +469,6 @@ Users can extend this list to add custom content types:
         "myproject.content.enemies",
     ]
 """
-
-# Dialog settings
-DIALOGS_DIRECTORY = "data/dialogs"
-"""Directory where NPC dialog files are stored (relative to assets directory)."""
 
 # Script settings
 SCRIPTS_DIRECTORY = "data/scripts"

@@ -2,11 +2,11 @@
 
 This module provides the NPCPlugin class, which serves as the central hub for all
 NPC-related functionality in the game. It manages NPC registration, pathfinding-based
-movement, dialog plugin with conditional branching, and animation state tracking.
+movement, dialog with conditional branching, and animation state tracking.
 
 The NPC plugin supports:
 - Dynamic registration and tracking of multiple NPCs per scene
-- Scene-aware dialog plugin with conversation progression
+- Scene-aware dialog with conversation progression via DialogRegistry
 - Conditional dialog branching based on game state
 - Pathfinding-based movement with automatic obstacle avoidance
 - Animation state management (appear, disappear, walk cycles)
@@ -14,9 +14,10 @@ The NPC plugin supports:
 - Interaction distance checking for player-NPC communication
 
 Key features:
-- **Dialog Plugin**: Multi-level conversations with conditional branching. NPCs can have
+- **Dialog**: Multi-level conversations with conditional branching. NPCs can have
   different dialog at each conversation level, with conditions that check inventory state,
-  interaction history, or other NPC dialog levels.
+  interaction history, or other NPC dialog levels. Dialog definitions are loaded via
+  DialogRegistry (content registry) from ``*_dialogs.json`` files in CONTENT_DIRECTORY.
 - **Movement**: NPCs navigate using A* pathfinding, automatically avoiding walls and other
   NPCs. Movement is smooth and frame-rate independent.
 - **Animations**: Integration with AnimatedNPC sprites for appear/disappear effects and
@@ -31,9 +32,6 @@ scripted sequences.
 Example usage:
     # Get the NPC plugin from context
     npc_mgr = context.npc_plugin
-
-    # Load dialog from JSON files
-    npc_mgr.load_dialogs_from_json("assets/dialogs/")
 
     # Register NPCs from map
     for npc_sprite in npc_layer:
@@ -54,16 +52,15 @@ Example usage:
     npc_mgr.update(delta_time, context)
 """
 
-import json
 import logging
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import arcade
 
 from pedre.actions.registry import ActionParseError, ActionRegistry
 from pedre.conditions.registry import ConditionParseError, ConditionRegistry
 from pedre.conf import settings
+from pedre.content.registries.dialog import DialogRegistry
 from pedre.helpers import asset_path, matches_key
 from pedre.plugins.npc.base import NPCBasePlugin, NPCDialogConfig, NPCState
 from pedre.plugins.npc.events import (
@@ -92,15 +89,14 @@ class NPCPlugin(NPCBasePlugin):
 
     Key responsibilities:
     - **Registration**: Track all NPCs in the current scene by name
-    - **Dialog**: Load and serve scene-aware dialog with conditional branching
+    - **Dialog**: Serve scene-aware dialog with conditional branching via DialogRegistry
     - **Movement**: Calculate and execute pathfinding-based movement
     - **Interaction**: Determine which NPCs are within interaction range
     - **Animation**: Track animation state for appear/disappear effects
     - **Events**: Publish events when NPCs complete movements or animations
 
-    The plugin uses a scene-based dialog plugin where conversations are organized by
-    map/scene name, allowing NPCs to have different dialog depending on location. Dialog
-    progression is tracked per-NPC via dialog_level, supporting multi-stage conversations.
+    Dialog definitions live in the content registry (DialogRegistry). Dialog progression
+    is tracked per-NPC via dialog_level, supporting multi-stage conversations.
 
     Movement is handled via A* pathfinding with smooth interpolation between waypoints.
     NPCs automatically avoid walls and other moving NPCs. Movement completes when the
@@ -109,24 +105,16 @@ class NPCPlugin(NPCBasePlugin):
     Attributes:
         npcs: Dictionary mapping NPC names to their NPCState instances. Contains all
              registered NPCs and their current runtime state.
-        dialogs: Nested dictionary structure: scene -> npc_name -> dialog_level -> config.
-                Stores all loaded dialog configurations organized by scene and progression.
         pathfinding: PathfindingPlugin instance used for calculating NPC movement paths.
         interaction_distance: Maximum distance in pixels for player to interact with NPCs.
         waypoint_threshold: Distance in pixels to consider an NPC has reached a waypoint.
         movement_speed: Movement speed in pixels per second. Applied to all NPCs uniformly.
-        inventory_plugin: Optional reference for checking inventory conditions in dialog.
-        event_bus: Optional EventBus for publishing NPC lifecycle events.
         interacted_npcs: Dictionary mapping scene names to sets of NPC names that have
                         been interacted with in that scene. Allows scene-specific interaction tracking.
     """
 
     name: ClassVar[str] = "npc"
     dependencies: ClassVar[list[str]] = ["pathfinding"]
-
-    # Class-level cache for per-scene dialog data (lazy loaded).
-    # Maps scene name to dialog data: scene_name -> npc_name -> dialog_level -> dialog_data
-    _dialog_cache: ClassVar[dict[str, dict[str, dict[int | str, NPCDialogConfig]]]] = {}
 
     def __init__(self) -> None:
         """Initialize the NPC plugin with default values.
@@ -135,8 +123,7 @@ class NPCPlugin(NPCBasePlugin):
         Actual initialization with dependencies happens in setup().
         """
         self.npcs: dict[str, NPCState] = {}
-        # Changed to scene -> npc -> level structure for scene-aware dialogs
-        self.dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]] = {}
+        self._parsed_dialog_cache: dict[str, NPCDialogConfig] = {}
         self.interaction_distance = settings.NPC_INTERACTION_DISTANCE
         self.waypoint_threshold = settings.NPC_WAYPOINT_THRESHOLD
         self.movement_speed = settings.NPC_MOVEMENT_SPEED
@@ -158,13 +145,12 @@ class NPCPlugin(NPCBasePlugin):
         Clears all registered NPCs and resets state.
         """
         self.npcs.clear()
-        self.dialogs.clear()
         logger.debug("NPCPlugin cleanup complete")
 
     def reset(self) -> None:
         """Reset NPC plugin for new game."""
         self.npcs.clear()
-        self.dialogs.clear()
+        self._parsed_dialog_cache.clear()
         self.interacted_npcs.clear()
         logger.debug("NPCPlugin reset complete")
 
@@ -172,170 +158,51 @@ class NPCPlugin(NPCBasePlugin):
         """Get NPCs."""
         return self.npcs
 
-    def load_dialogs(self, dialogs: dict[str, dict[str, dict[int | str, NPCDialogConfig]]]) -> None:
-        """Load NPC dialog configurations.
+    def _parse_dialog_entry(self, npc_name: str, level_str: str, dialog_data: dict[str, Any]) -> NPCDialogConfig:
+        """Parse a raw dialog definition dict into an NPCDialogConfig.
 
         Args:
-            dialogs: Dictionary mapping scenes to NPC names to dialog configs by conversation level.
-        """
-        self.dialogs = dialogs
-
-    def load_scene_dialogs(self, scene_name: str) -> dict[str, Any]:
-        """Load and cache dialogs for a specific scene.
-
-        Args:
-            scene_name: Name of the scene (map file without extension).
-            settings: Game settings for resolving asset paths.
+            npc_name: NPC name (used for log messages).
+            level_str: Dialog level string (used for log messages).
+            dialog_data: Raw dialog definition from the registry.
 
         Returns:
-            The loaded dialog data for the scene.
+            Parsed NPCDialogConfig.
         """
-        if scene_name in self._dialog_cache:
-            self.dialogs[scene_name] = self._dialog_cache[scene_name]
-        else:
-            try:
-                dialog_filename = f"{scene_name}_dialogs.json"
-                scene_dialog_file = asset_path(f"{settings.DIALOGS_DIRECTORY}/{dialog_filename}")
-                if self.load_dialogs_from_json(scene_dialog_file) and scene_name in self.dialogs:
-                    self._dialog_cache[scene_name] = self.dialogs[scene_name]
-                else:
-                    logger.debug("No dialogs found for scene %s", scene_name)
-            except Exception:  # noqa: BLE001
-                # No dialogs found or failed to load
-                logger.debug("No dialogs found for scene %s", scene_name)
-
-        return self.dialogs.get(scene_name, {})
-
-    def load_dialogs_from_json(self, json_path: Path | str) -> bool:
-        """Load NPC dialog configurations from a JSON file or directory.
-
-        Args:
-            json_path: Path to JSON file or directory containing dialog files.
-
-        Returns:
-            True if dialogs loaded successfully, False otherwise.
-        """
-        json_path = Path(json_path)
-
-        if json_path.is_dir():
-            # Load all JSON files in the directory
-            dialog_files = list(json_path.glob("*.json"))
-            if not dialog_files:
-                logger.warning("No dialog files found in directory: %s", json_path)
-                return False
-
-            for dialog_file in dialog_files:
-                self._load_dialog_file(dialog_file)
-            return True
-
-        if json_path.is_file():
-            # Load single file
-            return self._load_dialog_file(json_path)
-
-        logger.warning("Dialog path not found: %s", json_path)
-        return False
-
-    def _load_dialog_file(self, json_path: Path) -> bool:
-        """Load dialogs from a single JSON file.
-
-        Extracts scene name from filename (e.g., casa_dialogs.json -> casa).
-
-        Args:
-            json_path: Path to the JSON file containing dialog data.
-
-        Returns:
-            True if dialogs loaded successfully, False otherwise.
-        """
-        try:
-            with json_path.open() as f:
-                data = json.load(f)
-
-            # Extract scene from filename (e.g., casa_dialogs.json -> casa)
-            # For backwards compatibility, files without scene prefix use "default"
-            filename = json_path.stem  # filename without extension
-            if "_dialogs" in filename:
-                scene = filename.replace("_dialogs", "")
-            elif "_dialog" in filename:
-                scene = filename.replace("_dialog", "")
-            else:
-                # No scene in filename, use default
-                scene = "default"
-
-            # Initialize scene in dialogs dict if not exists
-            if scene not in self.dialogs:
-                self.dialogs[scene] = {}
-
-            # Convert JSON structure to NPCDialogConfig objects
-            npc_count = 0
-
-            for npc_name, npc_dialogs in data.items():
-                # Initialize NPC dialogs dict if not exists
-                if npc_name not in self.dialogs[scene]:
-                    self.dialogs[scene][npc_name] = {}
-
-                for level_str, dialog_data in npc_dialogs.items():
-                    # Try to convert to int, but keep as string if it fails
-                    # String keys can be used for conditional dialogs (e.g., "1_reminder")
-                    try:
-                        level: int | str = int(level_str)
-                    except ValueError:
-                        level = level_str
-
-                    # Parse conditions through ConditionRegistry
-                    parsed_conditions = None
-                    if condition_defs := dialog_data.get("conditions"):
-                        parsed_conditions = []
-                        for condition_def in condition_defs:
-                            try:
-                                parsed_conditions.append(ConditionRegistry.create(condition_def))
-                            except ConditionParseError as e:
-                                logger.warning(
-                                    "Failed to parse condition for NPC '%s' level %s: %s",
-                                    npc_name,
-                                    level_str,
-                                    e,
-                                )
-
-                    # Parse on_condition_fail actions through ActionRegistry
-                    parsed_fail_actions = None
-                    if fail_action_defs := dialog_data.get("on_condition_fail"):
-                        parsed_fail_actions = []
-                        for action_def in fail_action_defs:
-                            try:
-                                parsed_fail_actions.append(ActionRegistry.create(action_def))
-                            except ActionParseError as e:
-                                logger.warning(
-                                    "Failed to parse on_condition_fail action for NPC '%s' level %s: %s",
-                                    npc_name,
-                                    level_str,
-                                    e,
-                                )
-
-                    # Create dialog config
-                    self.dialogs[scene][npc_name][level] = NPCDialogConfig(
-                        text=dialog_data["text"],
-                        name=dialog_data.get("name"),
-                        conditions=parsed_conditions,
-                        on_condition_fail=parsed_fail_actions,
+        parsed_conditions = None
+        if condition_defs := dialog_data.get("conditions"):
+            parsed_conditions = []
+            for condition_def in condition_defs:
+                try:
+                    parsed_conditions.append(ConditionRegistry.create(condition_def))
+                except ConditionParseError as e:
+                    logger.warning(
+                        "Failed to parse condition for NPC '%s' level %s: %s",
+                        npc_name,
+                        level_str,
+                        e,
                     )
 
-                npc_count += 1
+        parsed_fail_actions = None
+        if fail_action_defs := dialog_data.get("on_condition_fail"):
+            parsed_fail_actions = []
+            for action_def in fail_action_defs:
+                try:
+                    parsed_fail_actions.append(ActionRegistry.create(action_def))
+                except ActionParseError as e:
+                    logger.warning(
+                        "Failed to parse on_condition_fail action for NPC '%s' level %s: %s",
+                        npc_name,
+                        level_str,
+                        e,
+                    )
 
-            logger.info("Loaded dialogs for %d NPCs from %s (scene: %s)", npc_count, json_path.name, scene)
-        except FileNotFoundError:
-            logger.warning("Dialog file not found: %s", json_path)
-            return False
-        except json.JSONDecodeError:
-            logger.exception("Failed to parse dialog JSON from %s", json_path)
-            return False
-        except OSError:
-            logger.warning("Failed to access dialog file: %s", json_path)
-            return False
-        except Exception:
-            logger.exception("Unexpected error loading dialogs from %s", json_path)
-            return False
-        else:
-            return True
+        return NPCDialogConfig(
+            text=dialog_data["text"],
+            name=dialog_data.get("name"),
+            conditions=parsed_conditions,
+            on_condition_fail=parsed_fail_actions,
+        )
 
     def register_npc(self, sprite: arcade.Sprite, name: str) -> None:
         """Register an NPC sprite for management.
@@ -507,68 +374,39 @@ class NPCPlugin(NPCBasePlugin):
         Args:
             npc_name: The NPC name.
             dialog_level: The conversation level.
-            scene: The current scene name (defaults to "default" for backwards compatibility).
+            scene: The current scene name (defaults to "default").
 
         Returns:
             Tuple of (dialog_config, on_condition_fail_actions):
             - dialog_config: NPCDialogConfig if conditions met, None if no dialog found
             - on_condition_fail_actions: List of actions to execute if conditions failed, None otherwise
         """
-        # Try to get dialogs for the specified scene first, fall back to default
-        scene_dialogs = self.dialogs.get(scene)
-        if not scene_dialogs:
-            scene_dialogs = self.dialogs.get("default")
+        dialog_registry = cast("DialogRegistry", self.context.content_registry.get_sub_registry("dialogs"))
+        level_str = str(dialog_level)
 
-        if not scene_dialogs or npc_name not in scene_dialogs:
+        # Try scene-specific entry first, fall back to "default"
+        raw = dialog_registry.get_dialog(scene, npc_name, level_str)
+        effective_scene = scene
+        if raw is None and scene != "default":
+            raw = dialog_registry.get_dialog("default", npc_name, level_str)
+            effective_scene = "default"
+
+        if raw is None:
             return None, None
 
-        # Get all available dialog states for this NPC
-        available_dialogs = scene_dialogs[npc_name]
+        cache_key = f"{effective_scene}/{npc_name}/{level_str}"
+        if cache_key not in self._parsed_dialog_cache:
+            self._parsed_dialog_cache[cache_key] = self._parse_dialog_entry(npc_name, level_str, raw)
 
-        # First check for exact conversation level match
-        if dialog_level in available_dialogs:
-            exact_match = available_dialogs[dialog_level]
-            if exact_match.conditions:
-                if self._check_dialog_conditions(exact_match.conditions):
-                    # Conditions met, return the dialog
-                    return exact_match, None
-                # Conditions failed or no context, return on_condition_fail actions
-                logger.debug("Dialog condition failed for %s level %d", npc_name, dialog_level)
-                return None, exact_match.on_condition_fail
-            # No conditions, return the dialog
-            return exact_match, None
+        config = self._parsed_dialog_cache[cache_key]
 
-        # No exact match found, look for fallback dialogs
-        candidates: list[tuple[int | str, NPCDialogConfig]] = []
+        if config.conditions:
+            if self._check_dialog_conditions(config.conditions):
+                return config, None
+            logger.debug("Dialog condition failed for %s level %s", npc_name, level_str)
+            return None, config.on_condition_fail
 
-        for state, dialog_config in available_dialogs.items():
-            # Check if this dialog's conditions are met
-            if dialog_config.conditions:
-                if self._check_dialog_conditions(dialog_config.conditions):
-                    candidates.append((state, dialog_config))
-            else:
-                # No conditions means always available
-                candidates.append((state, dialog_config))
-
-        if not candidates:
-            # No dialogs with met conditions
-            logger.debug("No dialogs with met conditions for %s at level %d", npc_name, dialog_level)
-            return None, None
-
-        # Prefer string keys (like "1_reminder") over numeric progression
-        string_candidates = [(s, d) for s, d in candidates if isinstance(s, str)]
-        if string_candidates:
-            return string_candidates[0][1], None
-
-        # Fall back to numeric progression - highest level <= dialog_level
-        numeric_candidates = [(s, d) for s, d in candidates if isinstance(s, int)]
-        numeric_candidates.sort(key=lambda x: x[0], reverse=True)
-        for state, dialog_config in numeric_candidates:
-            if state <= dialog_level:
-                return dialog_config, None
-
-        # All levels are above dialog_level, return first candidate
-        return candidates[0][1], None
+        return config, None
 
     def advance_dialog(self, npc_name: str) -> int:
         """Advance the dialog level for an NPC.
@@ -914,11 +752,11 @@ class NPCPlugin(NPCBasePlugin):
         npcs = content_registry.get_sub_registry("npcs")
         sprites = content_registry.get_sub_registry("sprites")
         sprite_id = None
-        if npcs and npcs.has(npc_name):
+        if npcs.has(npc_name):
             npc_def = npcs.get(npc_name)
             sprite_id = npc_def.get("sprite_id")
 
-        if sprite_id and sprites and sprites.has(sprite_id):
+        if sprite_id and sprites.has(sprite_id):
             sprite_def = sprites.get(sprite_id)
             # Resolve sprite_sheet path via asset_path helper
             sprite_def = dict(sprite_def)

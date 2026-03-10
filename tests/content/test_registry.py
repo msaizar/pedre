@@ -161,11 +161,13 @@ class TestContentTypeRegistryClear:
 class TestContentRegistryDynamic:
     """Tests for ContentRegistry building from ContentTypeRegistry."""
 
-    def test_empty_registry_has_no_sub_registries(self) -> None:
-        """Test that ContentRegistry has no sub-registries when none are registered."""
+    def test_empty_registry_raises_for_unknown_sub_registry(self) -> None:
+        """Test that ContentRegistry raises RegistryError when no sub-registries exist."""
         registry = ContentRegistry()
-        assert registry.get_sub_registry("sprites") is None
-        assert registry.get_sub_registry("npcs") is None
+        with pytest.raises(RegistryError):
+            registry.get_sub_registry("sprites")
+        with pytest.raises(RegistryError):
+            registry.get_sub_registry("npcs")
 
     def test_builds_sub_registries_from_registered_types(self) -> None:
         """Test that ContentRegistry instantiates a sub-registry for each registered type."""
@@ -178,7 +180,6 @@ class TestContentRegistryDynamic:
 
         registry = ContentRegistry()
         sub = registry.get_sub_registry("type_a")
-        assert sub is not None
         assert isinstance(sub, TypeA)
 
     def test_multiple_sub_registries(self) -> None:
@@ -197,13 +198,14 @@ class TestContentRegistryDynamic:
             display_name = "B"
 
         registry = ContentRegistry()
-        assert registry.get_sub_registry("type_a") is not None
-        assert registry.get_sub_registry("type_b") is not None
+        assert isinstance(registry.get_sub_registry("type_a"), TypeA)
+        assert isinstance(registry.get_sub_registry("type_b"), TypeB)
 
-    def test_get_sub_registry_unknown_returns_none(self) -> None:
-        """Test that get_sub_registry() returns None for an unregistered name."""
+    def test_get_sub_registry_unknown_raises(self) -> None:
+        """Test that get_sub_registry() raises RegistryError for an unregistered name."""
         registry = ContentRegistry()
-        assert registry.get_sub_registry("nonexistent") is None
+        with pytest.raises(RegistryError, match="nonexistent"):
+            registry.get_sub_registry("nonexistent")
 
 
 class TestContentRegistryLoadFromDirectory:

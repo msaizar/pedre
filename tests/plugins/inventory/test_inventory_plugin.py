@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import arcade
 import pytest
 
+from pedre.content.registry import RegistryError
 from pedre.plugins.inventory.base import InventoryItem
 from pedre.plugins.inventory.plugin import InventoryPlugin
 
@@ -1041,13 +1042,14 @@ class TestInventoryPlugin:
 
             assert mock_outline.called
 
-    def test_initialize_default_items_registry_not_found(self, plugin: InventoryPlugin) -> None:
-        """Test graceful handling when item registry is absent."""
-        cast("MagicMock", plugin.context.content_registry.get_sub_registry).return_value = None
+    def test_initialize_default_items_missing_registry_raises(self, plugin: InventoryPlugin) -> None:
+        """Test that _initialize_default_items raises RegistryError when item registry is absent."""
+        cast("MagicMock", plugin.context.content_registry.get_sub_registry).side_effect = RegistryError(
+            "items not registered"
+        )
 
-        plugin._initialize_default_items()
-
-        assert len(plugin.items) == 0
+        with pytest.raises(RegistryError):
+            plugin._initialize_default_items()
 
     def test_initialize_default_items_success(self, plugin: InventoryPlugin) -> None:
         """Test successful loading of items from the content registry."""

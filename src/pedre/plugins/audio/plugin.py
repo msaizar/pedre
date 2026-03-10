@@ -587,7 +587,7 @@ class AudioPlugin(AudioBasePlugin):
         """
         maps = self.context.content_registry.get_sub_registry("maps")
         music_filename: str | None = None
-        if maps is not None and maps.has(scene_name):
+        if maps.has(scene_name):
             music_filename = maps.get(scene_name).get("music")
 
         if not music_filename:

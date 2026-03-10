@@ -63,7 +63,7 @@ class PlayerPlugin(PlayerBasePlugin):
         # Resolve player definition from content registry
         content_registry = self.context.content_registry
         players = content_registry.get_sub_registry("players")
-        if players is None or not players.has("player"):
+        if not players.has("player"):
             logger.warning("PlayerPlugin: No 'player' definition found in players registry.")
             return
         player_def = players.get("player")
@@ -105,7 +105,7 @@ class PlayerPlugin(PlayerBasePlugin):
         sprites = content_registry.get_sub_registry("sprites")
         sprite_id = player_def["sprite_id"]
 
-        if sprite_id and sprites and sprites.has(sprite_id):
+        if sprite_id and sprites.has(sprite_id):
             sprite_def = dict(sprites.get(sprite_id))
             sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
             self.player_sprite = AnimatedSprite.from_definition(

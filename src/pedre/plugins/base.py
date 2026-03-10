@@ -113,7 +113,7 @@ class BasePlugin(ABC):
         Example:
             def on_scene_loaded(self, scene_name):
                 maps = self.context.content_registry.get_sub_registry("maps")
-                if maps and maps.has(scene_name):
+                if maps.has(scene_name):
                     music = maps.get(scene_name).get("music")
                     if music:
                         self.play_music(music)

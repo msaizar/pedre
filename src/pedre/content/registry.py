@@ -166,9 +166,19 @@ class ContentRegistry:
         for name, registry_cls in ContentTypeRegistry.get_all().items():
             self._sub_registries[name] = registry_cls()
 
-    def get_sub_registry(self, name: str) -> BaseContentRegistry | None:
-        """Get a sub-registry by name (e.g. "sprites", "npcs")."""
-        return self._sub_registries.get(name)
+    def get_sub_registry(self, name: str) -> BaseContentRegistry:
+        """Get a sub-registry by name (e.g. "sprites", "npcs").
+
+        Raises:
+            RegistryError: If no sub-registry with the given name is registered.
+                This indicates a misconfiguration — ensure the module is listed
+                in INSTALLED_CONTENT.
+        """
+        registry = self._sub_registries.get(name)
+        if registry is None:
+            msg = f"Sub-registry '{name}' is not registered. Is it in INSTALLED_CONTENT?"
+            raise RegistryError(msg)
+        return registry
 
     def load_from_directory(self, directory: Path) -> None:
         """Load JSON files from directory for each registered content type."""
