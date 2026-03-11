@@ -73,6 +73,37 @@ pedre validate [options]
 - Scripts
 - Dialogs
 
+**Options:**
+
+| Flag                  | Default                                    | Description                          |
+| --------------------- | ------------------------------------------ | ------------------------------------ |
+| `--maps-path PATH`    | `{ASSETS_DIR}/{MAPS_DIR}`                  | Path to maps directory (TMX files)   |
+| `--items-path PATH`   | `{ASSETS_DIR}/{CONTENT_DIR}/items.json`    | Path to inventory items file         |
+| `--sprites-path PATH` | `{ASSETS_DIR}/{CONTENT_DIR}/sprites.json`  | Path to sprites file                 |
+| `--npcs-path PATH`    | `{ASSETS_DIR}/{CONTENT_DIR}/npcs.json`     | Path to NPCs file                    |
+| `--players-path PATH` | `{ASSETS_DIR}/{CONTENT_DIR}/players.json`  | Path to players file                 |
+| `--scripts-path PATH` | `{ASSETS_DIR}/{SCRIPTS_DIR}`               | Path to scripts directory            |
+| `--dialogs-path PATH` | `{ASSETS_DIR}/{CONTENT_DIR}`               | Path to dialogs directory            |
+
+Each validator is optional — it only runs when its default path exists or an explicit `--*-path` flag is provided.
+
+**Examples:**
+
+```bash
+# Validate everything (uses defaults from settings.py)
+pedre validate
+
+# Validate only maps and scripts
+pedre validate --maps-path assets/maps --scripts-path assets/data/scripts
+
+# Validate with a non-standard content directory
+pedre validate --npcs-path custom/npcs.json --sprites-path custom/sprites.json
+```
+
+Validation runs in two phases — structural checks first, then cross-reference checks (e.g. verifying that NPC names referenced in scripts exist in the map files). Exits with code `1` if any errors are found.
+
+See [Validators API](../api/validators.md) for details on the underlying validation system.
+
 ## Installation Methods
 
 ### With uv (recommended)

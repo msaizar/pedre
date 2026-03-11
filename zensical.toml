@@ -20,6 +20,7 @@ nav = [
         "api/game-context.md",
         "api/event-bus.md",
         "api/plugin-loader.md",
+        "api/validators.md",
     ]},
     {"Plugins" = [
         "plugins/index.md",
