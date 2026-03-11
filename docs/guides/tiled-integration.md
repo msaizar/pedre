@@ -598,7 +598,7 @@ Each NPC needs:
 
 1. A unique `name` property matching a key in `npcs.json`
 2. A corresponding entry in `npcs.json` referencing a `sprite_id` in `sprites.json`
-3. Optional: Dialog entries in `assets/data/dialogs/{scene_name}_dialogs.json` if the NPC should be interactive
+3. Optional: Dialog entries in `assets/data/content/dialogs/{scene_name}.json` if the NPC should be interactive
 
 ## Portals and Transitions
 
@@ -798,26 +798,6 @@ You can add any custom properties to objects and reference them in scripts.
       - **string** - Text
       - **color** - Color value
       - **file** - File path
-
-### Example: Custom NPC with Additional Properties
-
-```text
-Layer: NPCs
-Object: Point
-
-Required Properties:
-  name: "quest_giver"
-
-Custom Properties:
-  quest_id: "find_amulet"
-  quest_stage: 1
-  greeting_message: "Greetings, traveler!"
-  relationship_level: 0
-```
-
-Appearance is defined in `npcs.json` / `sprites.json`.
-
-You can add any custom properties you need to objects. These properties are stored in the object's `properties` dictionary and can be accessed in your game code or scripts to implement custom behavior, track state, or configure object-specific settings.
 
 ## Resources
 
