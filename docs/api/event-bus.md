@@ -63,15 +63,22 @@ event_bus.unsubscribe(DialogClosedEvent, on_dialog_closed)
 
 ## Available Events
 
-| Event                       | Fields                     | Description                      |
-| --------------------------- | -------------------------- | -------------------------------- |
-| `DialogClosedEvent`         | `npc_name`, `dialog_level` | Dialog window closed             |
-| `NPCInteractedEvent`        | `npc_name`, `position`     | Player interacted with NPC       |
-| `NPCMovementCompleteEvent`  | `npc_name`, `waypoint`     | NPC reached destination          |
-| `NPCDisappearCompleteEvent` | `npc_name`                 | NPC disappear animation finished |
-| `InventoryClosedEvent`      | -                          | Inventory screen closed          |
-| `ObjectInteractedEvent`     | `object_name`, `position`  | Player interacted with object    |
-| `ScriptCompleteEvent`       | `script_name`              | Script finished executing        |
+| Event                       | Fields                            | Description                      |
+| --------------------------- | --------------------------------- | -------------------------------- |
+| `DialogClosedEvent`         | `npc_name`, `dialog_level`        | Dialog window closed             |
+| `DialogOpenedEvent`         | `npc_name`, `dialog_level`        | Dialog window opened             |
+| `NPCInteractedEvent`        | `npc_name`, `dialog_level`        | Player interacted with NPC       |
+| `NPCMovementCompleteEvent`  | `npc_name`                        | NPC reached destination          |
+| `NPCAppearCompleteEvent`    | `npc_name`                        | NPC appear animation finished    |
+| `NPCDisappearCompleteEvent` | `npc_name`                        | NPC disappear animation finished |
+| `InventoryClosedEvent`      | `has_been_accessed`               | Inventory screen closed          |
+| `ItemAcquiredEvent`         | `item_id`                         | Item added to inventory          |
+| `ItemAcquisitionFailedEvent`| `item_id`, `reason`               | Item could not be acquired       |
+| `ItemConsumedEvent`         | `item_id`, `category`             | Item consumed from inventory     |
+| `ObjectInteractedEvent`     | `object_name`                     | Player interacted with object    |
+| `PortalEnteredEvent`        | `portal_name`                     | Player entered a portal zone     |
+| `SceneStartEvent`           | `scene_name`                      | Scene finished loading           |
+| `ScriptCompleteEvent`       | `script_name`                     | Script finished executing        |
 
 ## Creating Custom Events
 

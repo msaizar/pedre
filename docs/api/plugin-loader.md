@@ -38,6 +38,12 @@ Resets all plugins to their initial state for a new game session.
 - Preserves persistent wiring (event bus connections)
 - Called when starting a new game
 
+### update_all
+
+`update_all(delta_time: float) -> None`
+
+Calls `update()` on all plugins each frame.
+
 ### cleanup_all
 
 `cleanup_all() -> None`
