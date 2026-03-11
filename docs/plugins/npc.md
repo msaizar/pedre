@@ -681,10 +681,6 @@ NPCs are placed in Tiled maps using object layers:
 
 - `name` (string) - NPC identifier (lowercased), must match an entry in the `npcs` content registry
 
-**Optional Tiled Object Properties:**
-
-- `sprite_id` (string) - Override the sprite definition from the content registry
-
 All other configuration (sprite sheet, tile size, scale, animation rows/frames, `initially_hidden`) comes from the NPC and sprite definitions in the content registry (`npcs.json` / `sprites.json`).
 
 **Example Tiled Object:**
