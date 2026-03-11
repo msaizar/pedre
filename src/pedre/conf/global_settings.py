@@ -307,9 +307,6 @@ SAVE_SFX_FILE = "save.wav"
 """Sound effect played when saving/loading."""
 
 # Pause Menu settings
-PAUSE_MENU_OVERLAY_ALPHA = 180
-"""Semi-transparent background overlay alpha value (0-255)."""
-
 PAUSE_MENU_TITLE = "Pedre Game"
 """Title text displayed at the top of the pause menu."""
 

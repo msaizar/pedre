@@ -661,7 +661,7 @@ Add a new item to the inventory plugin.
 
 **Parameters:**
 
-- `name: str` - Display name of the item (required)
+- `item_name: str` - Display name of the item (required)
 - `description: str` - Description text for the item (required)
 - `item_id: str` - Unique identifier (optional, auto-generates UUID if omitted)
 - `image_path: str` - Path to full-size image (optional)
@@ -675,7 +675,7 @@ Add a new item to the inventory plugin.
 ```json
 {
     "name": "add_item",
-    "name": "Health Potion",
+    "item_name": "Health Potion",
     "description": "Restores 50 HP",
     "icon_path": "items/potion.png",
     "category": "potion",
@@ -690,7 +690,7 @@ Add a new item to the inventory plugin.
 {
     "name": "add_item",
     "item_id": "rusty_key",
-    "name": "Rusty Key",
+    "item_name": "Rusty Key",
     "description": "Opens an old door",
     "icon_path": "items/key.png",
     "category": "key",

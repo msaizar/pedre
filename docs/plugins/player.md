@@ -230,7 +230,7 @@ player_plugin.from_dict({"player_x": 320.0, "player_y": 240.0})
 
 ## Player Sprite and Content Registry
 
-The player sprite is defined via the content registry rather than inline Tiled properties. During `load_from_tiled()` the plugin looks up the `sprite_id` property on the Tiled object (defaulting to `"player"`) in the `sprites` sub-registry and creates an `AnimatedSprite` from that definition.
+The player sprite is defined entirely via the content registry — no properties are read from the Tiled Player object (only its spawn position). The plugin looks up the `"player"` key in the `players` sub-registry (`players.json`), then uses that entry's `sprite_id` field to find the sprite definition in `sprites.json`.
 
 ### Tiled Map Integration
 
@@ -239,17 +239,24 @@ The player is placed in Tiled maps using the "Player" object layer:
 1. Create a "Player" object layer
 2. Add a point object where the player should spawn by default
 
-**Optional Tiled Object Properties:**
+No Tiled object properties are needed. All sprite and spawn configuration lives in `players.json`.
 
-- `sprite_id` (string) - Override which sprite definition to use from the `sprites` content registry (default: `"player"`)
-- `spawn_at_portal` (bool) - Whether to use portal spawn waypoint (default: true)
+**`players.json` fields:**
 
-All animation configuration (sprite sheet, frames, rows) comes from the sprite definition in the content registry.
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `sprite_id` | string | **Yes** | ID of the sprite definition in `sprites.json` |
+| `spawn_at_position` | list of strings | No | Map names where the player spawns at the Tiled object position instead of a portal waypoint |
 
-**Example Tiled Object:**
+**Example `players.json`:**
 
-```yaml
-spawn_at_portal: true
+```json
+{
+  "player": {
+    "sprite_id": "hero",
+    "spawn_at_position": ["village"]
+  }
+}
 ```
 
 **Example sprite content registry entry (`sprites.json`):**
@@ -276,9 +283,9 @@ When loading a scene, the player can spawn at a waypoint instead of the default 
 **How It Works:**
 
 1. ScenePlugin stores a `next_spawn_waypoint` when transitioning scenes
-2. PlayerPlugin checks for this waypoint during `load_from_tiled()`
-3. If `spawn_at_portal=true` and waypoint exists, player spawns at waypoint's pixel coordinates
-4. If waypoint not found or `spawn_at_portal=false`, uses default position from Tiled
+2. PlayerPlugin checks `spawn_at_position` in `players.json` for the current map name
+3. If the map is **not** in `spawn_at_position` and a waypoint exists, player spawns at the waypoint's pixel coordinates
+4. If the map **is** in `spawn_at_position` or no waypoint is set, uses the default position from the Tiled object
 
 **Example:**
 
