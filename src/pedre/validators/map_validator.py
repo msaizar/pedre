@@ -167,13 +167,6 @@ class MapValidator(Validator):
                 errors.append(f"Map '{map_name}': NPCs layer: NPC missing required 'name' property")
                 continue
 
-            if npc.properties and "initially_hidden" in npc.properties:
-                error = self._validate_property_type(
-                    npc.properties["initially_hidden"], bool, "initially_hidden", f"NPC '{name}'"
-                )
-                if error:
-                    errors.append(f"Map '{map_name}': NPCs layer: {error}")
-
             # Register NPC in context
             self.context.add_map_entity(map_name, "npcs", name)
 
