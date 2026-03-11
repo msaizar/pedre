@@ -533,23 +533,6 @@ INSTALLED_CONTENT = [
 
 - For more details, see the [Custom Content Types guide](../extending/custom-content.md)
 
-### Dialog Plugin Settings
-
-Dialog plugin configuration for NPC dialogs.
-
-| Setting             | Type   | Default         | Description                                                          |
-| ------------------- | ------ | --------------- | -------------------------------------------------------------------- |
-| `DIALOGS_DIRECTORY` | string | "data/dialogs"  | Directory where NPC dialog files are stored (relative to assets)     |
-
-**Notes:**
-
-- `DIALOGS_DIRECTORY` specifies where the NPCPlugin looks for `*_dialogs.json` files
-  - Path is relative to the assets directory
-  - Example: If `ASSETS_HANDLE` points to "assets/", then "data/dialogs" resolves to "assets/data/dialogs/"
-  - Dialog files are named `{scene}_dialogs.json` (e.g., `village_dialogs.json`)
-  - Dialogs are loaded automatically when a scene starts
-- For more details, see the [NPCPlugin documentation](../plugins/npc.md)
-
 ### Script Plugin Settings
 
 Script plugin configuration for event-driven scripting.
@@ -560,10 +543,10 @@ Script plugin configuration for event-driven scripting.
 
 **Notes:**
 
-- `SCRIPTS_DIRECTORY` specifies where the ScriptPlugin looks for `*_scripts.json` files
+- `SCRIPTS_DIRECTORY` specifies where the ScriptPlugin looks for `*.json` files
   - Path is relative to the assets directory
   - Example: If `ASSETS_HANDLE` points to "assets/", then "data/scripts" resolves to "assets/data/scripts/"
-  - All script files matching the pattern `*_scripts.json` in this directory are loaded automatically
+  - All script files matching the pattern `*.json` in this directory are loaded automatically
 - Scripts are loaded globally during plugin initialization and made available across all scenes
 - The `scene` field in each script definition controls when it can execute
 - For more details, see the [ScriptPlugin documentation](../plugins/script.md)
