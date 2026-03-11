@@ -195,7 +195,7 @@ class TestValidateCommand:
 </map>"""
         (maps_dir / "npc.tmx").write_text(tmx_content)
 
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
 
         dialog_file = dialogs_dir / "dialogs" / "npc.json"
@@ -281,7 +281,7 @@ class TestValidateCommand:
 
     def test_validate_with_validation_errors_exits(self, scripts_dir: Path, setup_registries: None) -> None:
         """Test validate exits with error code when validation fails."""
-        (scripts_dir / "test_scripts.json").write_text(json.dumps({"test_script": {"actions": []}}))
+        (scripts_dir / "test.json").write_text(json.dumps({"test_script": {"actions": []}}))
 
         command = ValidateCommand()
         with pytest.raises(SystemExit) as exc_info:
@@ -291,9 +291,7 @@ class TestValidateCommand:
 
     def test_validate_no_errors_succeeds(self, scripts_dir: Path, setup_registries: None) -> None:
         """Test validate completes successfully when no errors."""
-        (scripts_dir / "test_scripts.json").write_text(
-            json.dumps({"test_script": {"actions": [{"name": "test_action"}]}})
-        )
+        (scripts_dir / "test.json").write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
 
         command = ValidateCommand()
         command.execute(self._make_args(scripts_path=scripts_dir))
@@ -304,7 +302,7 @@ class TestValidateCommand:
         self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None
     ) -> None:
         """Test that errors from both validators are aggregated."""
-        (scripts_dir / "test_scripts.json").write_text(json.dumps({"test_script": {"actions": []}}))
+        (scripts_dir / "test.json").write_text(json.dumps({"test_script": {"actions": []}}))
         (dialogs_dir / "dialogs" / "npc.json").write_text(json.dumps({"merchant/0": {}}))
 
         command = ValidateCommand()
@@ -315,8 +313,8 @@ class TestValidateCommand:
 
     def test_validate_aggregates_errors_from_multiple_files(self, scripts_dir: Path, setup_registries: None) -> None:
         """Test that errors from multiple files are aggregated."""
-        (scripts_dir / "game_scripts.json").write_text(json.dumps({"script1": {"actions": []}}))
-        (scripts_dir / "npc_scripts.json").write_text(json.dumps({"script2": {"actions": []}}))
+        (scripts_dir / "game.json").write_text(json.dumps({"script1": {"actions": []}}))
+        (scripts_dir / "npc.json").write_text(json.dumps({"script2": {"actions": []}}))
 
         command = ValidateCommand()
         with pytest.raises(SystemExit) as exc_info:

@@ -289,7 +289,7 @@ Scripts let you trigger actions when events occur. Let's make the NPC give the p
 
 ### Create Script File
 
-Create `assets/data/scripts/village_scripts.json`:
+Create `assets/data/scripts/village.json`:
 
 ```json
 {
@@ -379,7 +379,7 @@ Let's create a second map and a portal to travel between them.
 
 ### Wire Up Portals with Scripts
 
-Portal transitions are handled through scripts, not Tiled properties. Add to `assets/data/scripts/village_scripts.json`:
+Portal transitions are handled through scripts, not Tiled properties. Add to `assets/data/scripts/village.json`:
 
 ```json
 {
@@ -393,7 +393,7 @@ Portal transitions are handled through scripts, not Tiled properties. Add to `as
 }
 ```
 
-Create `assets/data/scripts/forest_scripts.json`:
+Create `assets/data/scripts/forest.json`:
 
 ```json
 {
@@ -472,7 +472,7 @@ The content registry loads this file automatically on startup. Items with `image
 
 ### Create Collection Script
 
-Add to `assets/data/scripts/forest_scripts.json`:
+Add to `assets/data/scripts/forest.json`:
 
 ```json
 {
@@ -523,7 +523,7 @@ Let's make an NPC walk to different locations.
 
 ### Create Movement Script
 
-Add to `assets/data/scripts/village_scripts.json`:
+Add to `assets/data/scripts/village.json`:
 
 ```json
 {

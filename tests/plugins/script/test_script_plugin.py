@@ -92,7 +92,7 @@ class TestScriptPlugin:
         }
 
         mock_file = MagicMock()
-        mock_file.name = "test_scripts.json"
+        mock_file.name = "test.json"
         m_open = mock_open(read_data=json.dumps(script_data))
         mock_file.open = m_open
 
@@ -1213,7 +1213,7 @@ class TestScriptPlugin:
         """Test setup handles JSON decode errors gracefully."""
         plugin, mock_context = script_plugin_ctx
         mock_file = MagicMock()
-        mock_file.name = "invalid_scripts.json"
+        mock_file.name = "invalid.json"
         m_open = mock_open(read_data="invalid json{")
         mock_file.open = m_open
 
@@ -1239,7 +1239,7 @@ class TestScriptPlugin:
         """Test setup handles generic exceptions during file load."""
         plugin, mock_context = script_plugin_ctx
         mock_file = MagicMock()
-        mock_file.name = "error_scripts.json"
+        mock_file.name = "error.json"
         mock_file.open.side_effect = OSError("Cannot read file")
 
         mock_path = MagicMock()

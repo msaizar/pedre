@@ -80,9 +80,9 @@ Scripts are stored in the directory specified by the `SCRIPTS_DIRECTORY` setting
 
 ```text
 assets/data/scripts/
-  ├── village_scripts.json
-  ├── forest_scripts.json
-  └── castle_scripts.json
+  ├── village.json
+  ├── forest.json
+  └── castle.json
 ```
 
 Each file contains multiple scripts related to that specific scene or map.

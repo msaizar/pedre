@@ -35,7 +35,7 @@ class ScriptValidator(Validator):
                 metadata={},
             )
 
-        script_files = list(self.path.glob("*_scripts.json"))
+        script_files = list(self.path.glob("*.json"))
 
         if not script_files:
             return ValidationResult(errors=[], item_count=0, metadata={})
