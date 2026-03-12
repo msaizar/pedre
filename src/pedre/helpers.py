@@ -251,5 +251,5 @@ def asset_exists(asset_path_str: str) -> bool:
         path_str = asset_path(asset_path_str)
         resolved = Path(path_str)
         return resolved.exists() and resolved.is_file()
-    except (OSError, ValueError, TypeError):
+    except OSError, ValueError, TypeError:
         return False

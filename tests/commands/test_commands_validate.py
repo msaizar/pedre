@@ -126,7 +126,7 @@ class TestValidateCommand:
 
     def _make_args(self, **kwargs: object) -> argparse.Namespace:
         """Create a Namespace with all expected path arguments defaulting to None."""
-        defaults = {
+        defaults: dict[str, object] = {
             "scripts_path": None,
             "dialogs_path": None,
             "maps_path": None,

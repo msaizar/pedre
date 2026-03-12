@@ -126,18 +126,20 @@ class MapValidator(Validator):
                 continue
 
             # Shape should be a list/tuple with at least 2 numeric elements [x, y]
-            try:
-                if len(waypoint.shape) < 2:
-                    errors.append(
-                        f"Map '{map_name}': Waypoints layer: '{name}': "
-                        f"shape must have at least 2 coordinates, got {len(waypoint.shape)}"
-                    )
-                    continue
-                # Validate coordinates are numeric
-                float(waypoint.shape[0])
-                float(waypoint.shape[1])
-            except (TypeError, ValueError) as e:
-                errors.append(f"Map '{map_name}': Waypoints layer: '{name}': invalid shape coordinates: {e}")
+            if len(waypoint.shape) < 2:
+                errors.append(
+                    f"Map '{map_name}': Waypoints layer: '{name}': "
+                    f"shape must have at least 2 coordinates, got {len(waypoint.shape)}"
+                )
+                continue
+            # Validate coordinates are numeric (shape[0] and shape[1] must be scalars)
+            coord_x = waypoint.shape[0]
+            coord_y = waypoint.shape[1]
+            if not isinstance(coord_x, (int, float)) or not isinstance(coord_y, (int, float)):
+                errors.append(
+                    f"Map '{map_name}': Waypoints layer: '{name}': invalid shape coordinates: "
+                    f"expected numeric, got {type(coord_x)}, {type(coord_y)}"
+                )
                 continue
 
             # Register waypoint in context

@@ -57,8 +57,13 @@ class PlayerPlugin(PlayerBasePlugin):
         player_obj = player_layer[0]
 
         # Determine spawn position
-        spawn_x = float(player_obj.shape[0])
-        spawn_y = float(player_obj.shape[1])
+        shape_x = player_obj.shape[0]
+        shape_y = player_obj.shape[1]
+        if not isinstance(shape_x, (int, float)) or not isinstance(shape_y, (int, float)):
+            logger.warning("PlayerPlugin: Player object has invalid shape coordinates, skipping")
+            return
+        spawn_x = float(shape_x)
+        spawn_y = float(shape_y)
 
         # Resolve player definition from content registry
         content_registry = self.context.content_registry

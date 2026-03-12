@@ -1,10 +1,12 @@
 """Unit tests for ScriptPlugin in src/pedre/plugins/script/plugin.py."""
 
 import json
+from typing import cast
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
+from pedre.actions.base import Action
 from pedre.actions.registry import ActionParseError
 from pedre.conditions.registry import ConditionParseError
 from pedre.plugins.script.base import Script, ScriptTrigger
@@ -373,7 +375,7 @@ class TestScriptPlugin:
         mock_action_3 = MagicMock()
         mock_action_3.name = "dialog"
 
-        actions = [mock_action_1, mock_action_2, mock_action_3]
+        actions = cast("list[Action]", [mock_action_1, mock_action_2, mock_action_3])
 
         resume_index = plugin._calculate_resume_index(actions, 1)
         assert resume_index == 0
@@ -388,7 +390,7 @@ class TestScriptPlugin:
         mock_action_3 = MagicMock()
         mock_action_3.name = "wait_for_dialog"
 
-        actions = [mock_action_1, mock_action_2, mock_action_3]
+        actions = cast("list[Action]", [mock_action_1, mock_action_2, mock_action_3])
 
         resume_index = plugin._calculate_resume_index(actions, 1)
         assert resume_index == 1
@@ -401,7 +403,7 @@ class TestScriptPlugin:
         mock_action_2 = MagicMock()
         mock_action_2.name = "dialog"
 
-        actions = [mock_action_1, mock_action_2]
+        actions = cast("list[Action]", [mock_action_1, mock_action_2])
 
         resume_index = plugin._calculate_resume_index(actions, 0)
         assert resume_index == 0

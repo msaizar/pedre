@@ -197,6 +197,24 @@ class TestPortalPlugin:
         # Portal should still be registered (valid points are used)
         assert len(plugin.portals) == 1
 
+    def test_load_from_tiled_flat_shape_invalid_second_elem(self, portal_plugin_ctx: PortalPluginCtx) -> None:
+        """Test loading skips portal when flat shape has non-numeric second element."""
+        plugin, _, _ = portal_plugin_ctx
+        mock_tile_map = MagicMock()
+        mock_arcade_scene = MagicMock()
+
+        mock_portal = MagicMock()
+        mock_portal.name = "bad_portal"
+        mock_portal.properties = {}
+        # First element is scalar (enters else branch), second is a tuple (triggers guard)
+        mock_portal.shape = [100.0, (10.0, 20.0)]
+
+        mock_tile_map.object_lists.get.return_value = [mock_portal]
+
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+
+        assert len(plugin.portals) == 0
+
     def test_check_portals_no_player(self, portal_plugin_ctx: PortalPluginCtx) -> None:
         """Test check_portals handles missing player."""
         plugin, _, _ = portal_plugin_ctx

@@ -234,7 +234,7 @@ class AddItemAction(Action):
             acquired: Whether the item should be immediately acquired. Default is True.
             consumable: Whether the item can be consumed from the inventory overlay. Default is False.
         """
-        self.item_id = item_id if item_id else str(uuid.uuid4())
+        self.item_id = item_id or str(uuid.uuid4())
         self.item_name = item_name
         self.description = description
         self.image_path = image_path
