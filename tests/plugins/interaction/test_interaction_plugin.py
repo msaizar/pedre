@@ -442,6 +442,27 @@ class TestInteractionPlugin:
             # Should return False when no player
             assert result is False
 
+    def test_load_from_tiled_flat_shape_invalid_second_elem(self, plugin: InteractionPlugin) -> None:
+        """Test load_from_tiled with flat shape where second element is not numeric."""
+        mock_tile_map = MagicMock()
+        mock_layer = MagicMock()
+
+        mock_obj = MagicMock()
+        mock_obj.name = "BadSecond"
+        mock_obj.properties = {}
+        # First element is a scalar (not tuple/list) so we enter the else branch,
+        # but second element is a tuple
+        mock_obj.shape = [100, (10, 20)]
+
+        mock_layer.__iter__.return_value = [mock_obj]
+        mock_tile_map.object_lists = {"Interactive": mock_layer}
+        mock_scene = MagicMock()
+
+        plugin.load_from_tiled(mock_tile_map, mock_scene)
+
+        # Object should be skipped because second element is not numeric
+        assert "badsecond" not in plugin.interactive_objects
+
     def test_load_from_tiled_shape_with_invalid_points(self, plugin: InteractionPlugin) -> None:
         """Test load_from_tiled with nested shape containing invalid points - covers branch 136->135."""
         mock_tile_map = MagicMock()

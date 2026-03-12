@@ -179,6 +179,20 @@ class TestPlayerPlugin:
 
         assert plugin.player_sprite is None
 
+    def test_load_from_tiled_invalid_shape_coordinates(self) -> None:
+        """Test loading when player object has non-numeric shape coordinates."""
+        plugin, _ = _make_plugin()
+        mock_tile_map = MagicMock()
+        mock_arcade_scene = MagicMock()
+        mock_player_obj = MagicMock()
+        mock_player_obj.shape = [(10, 20), (30, 40)]  # tuples, not scalars
+        mock_player_obj.properties = {}
+        mock_tile_map.object_lists.get.return_value = [mock_player_obj]
+
+        plugin.load_from_tiled(mock_tile_map, mock_arcade_scene)
+
+        assert plugin.player_sprite is None
+
     def test_update_no_sprite(self) -> None:
         """Test update when no player sprite exists."""
         plugin, _ = _make_plugin()
