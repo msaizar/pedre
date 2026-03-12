@@ -137,8 +137,12 @@ class InteractionPlugin(InteractionBasePlugin):
                             xs.append(float(p[0]))
                             ys.append(float(p[1]))
                 else:
-                    xs.append(float(obj.shape[0]))
-                    ys.append(float(obj.shape[1]))
+                    second_elem = obj.shape[1]
+                    if not isinstance(second_elem, (int, float)):
+                        logger.warning("Interactive object '%s' has invalid shape, skipping", obj.name)
+                        continue
+                    xs.append(float(first_elem))
+                    ys.append(float(second_elem))
             else:
                 logger.warning("Interactive object '%s' has invalid shape, skipping", obj.name)
                 continue

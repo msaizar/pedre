@@ -257,7 +257,7 @@ class InventoryPlugin(InventoryBasePlugin):
                 try:
                     self.icon_textures[item.id] = arcade.load_texture(icon_path)
                     logger.debug("Loaded icon for item: %s", item.id)
-                except (FileNotFoundError, OSError):
+                except FileNotFoundError, OSError:
                     logger.warning("Failed to load icon for item: %s at %s", item.id, icon_path)
 
         logger.debug("Inventory overlay shown")

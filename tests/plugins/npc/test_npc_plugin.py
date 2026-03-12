@@ -1,12 +1,15 @@
 """Unit tests for NPCPlugin in src/pedre/plugins/npc/plugin.py."""
 
 from collections import deque
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import arcade
 import pytest
 
+from pedre.actions.base import Action
 from pedre.actions.registry import ActionParseError
+from pedre.conditions.base import Condition
 from pedre.conditions.registry import ConditionParseError
 from pedre.content.registry import RegistryError
 from pedre.plugins.npc.base import NPCDialogConfig
@@ -589,8 +592,9 @@ class TestNPCPlugin:
         context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
         mock_condition = MagicMock()
-        fail_actions = [mock_action]
-        parsed_config = NPCDialogConfig(text=["Success"], conditions=[mock_condition], on_condition_fail=fail_actions)
+        fail_actions = cast("list[Action]", [mock_action])
+        conditions = cast("list[Condition]", [mock_condition])
+        parsed_config = NPCDialogConfig(text=["Success"], conditions=conditions, on_condition_fail=fail_actions)
         with (
             patch.object(plugin, "_parse_dialog_entry", return_value=parsed_config),
             patch.object(plugin, "_check_dialog_conditions", return_value=False),
@@ -1514,8 +1518,8 @@ class TestNPCPlugin:
         sprites_registry.get.return_value = {"sprite_sheet": "guard.png", "frame_width": 32, "frame_height": 32}
 
         content_registry = MagicMock()
-        content_registry.get_sub_registry.side_effect = (
-            lambda name: npcs_registry if name == "npcs" else sprites_registry
+        content_registry.get_sub_registry.side_effect = lambda name: (
+            npcs_registry if name == "npcs" else sprites_registry
         )
 
         mock_sprite = MagicMock()
@@ -1549,8 +1553,8 @@ class TestNPCPlugin:
         sprites_registry.get.return_value = {"sprite_sheet": "guard.png", "frame_width": 32, "frame_height": 32}
 
         content_registry = MagicMock()
-        content_registry.get_sub_registry.side_effect = (
-            lambda name: npcs_registry if name == "npcs" else sprites_registry
+        content_registry.get_sub_registry.side_effect = lambda name: (
+            npcs_registry if name == "npcs" else sprites_registry
         )
 
         mock_sprite = MagicMock()

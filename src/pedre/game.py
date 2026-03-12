@@ -142,7 +142,7 @@ class Game:
         registry = ContentRegistry()
         try:
             content_dir = Path(asset_path(settings.CONTENT_DIRECTORY))
-        except (OSError, ValueError, TypeError):
+        except OSError, ValueError, TypeError:
             logger.debug("Content directory '%s' could not be resolved", settings.CONTENT_DIRECTORY)
             return registry
 

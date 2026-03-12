@@ -1,6 +1,6 @@
 """Unit tests for PluginLoader."""
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -473,10 +473,13 @@ class TestPluginLoader:
 
     def test_resolve_dependencies_simple(self, loader: PluginLoader) -> None:
         """Test dependency resolution with simple chain."""
-        plugins = {
-            "plugin_a": PluginA,
-            "plugin_b": PluginB,
-        }
+        plugins = cast(
+            "dict[str, type[BasePlugin]]",
+            {
+                "plugin_a": PluginA,
+                "plugin_b": PluginB,
+            },
+        )
 
         order = loader._resolve_dependencies(plugins)
 
@@ -484,12 +487,15 @@ class TestPluginLoader:
 
     def test_resolve_dependencies_complex(self, loader: PluginLoader) -> None:
         """Test dependency resolution with complex graph."""
-        plugins = {
-            "plugin_c": PluginC,
-            "plugin_a": PluginA,
-            "plugin_d": PluginD,
-            "plugin_b": PluginB,
-        }
+        plugins = cast(
+            "dict[str, type[BasePlugin]]",
+            {
+                "plugin_c": PluginC,
+                "plugin_a": PluginA,
+                "plugin_d": PluginD,
+                "plugin_b": PluginB,
+            },
+        )
 
         order = loader._resolve_dependencies(plugins)
 
@@ -500,9 +506,12 @@ class TestPluginLoader:
 
     def test_resolve_dependencies_no_dependencies(self, loader: PluginLoader) -> None:
         """Test dependency resolution with no dependencies."""
-        plugins = {
-            "plugin_a": PluginA,
-        }
+        plugins = cast(
+            "dict[str, type[BasePlugin]]",
+            {
+                "plugin_a": PluginA,
+            },
+        )
 
         order = loader._resolve_dependencies(plugins)
 
@@ -510,10 +519,13 @@ class TestPluginLoader:
 
     def test_resolve_dependencies_circular(self, loader: PluginLoader) -> None:
         """Test dependency resolution detects circular dependencies."""
-        plugins = {
-            "circular_1": PluginCircular1,
-            "circular_2": PluginCircular2,
-        }
+        plugins = cast(
+            "dict[str, type[BasePlugin]]",
+            {
+                "circular_1": PluginCircular1,
+                "circular_2": PluginCircular2,
+            },
+        )
 
         with pytest.raises(CircularDependencyError) as context:
             loader._resolve_dependencies(plugins)
@@ -522,9 +534,12 @@ class TestPluginLoader:
 
     def test_resolve_dependencies_missing(self, loader: PluginLoader) -> None:
         """Test dependency resolution detects missing dependencies."""
-        plugins = {
-            "missing_dep": PluginMissingDep,
-        }
+        plugins = cast(
+            "dict[str, type[BasePlugin]]",
+            {
+                "missing_dep": PluginMissingDep,
+            },
+        )
 
         with pytest.raises(MissingDependencyError) as context:
             loader._resolve_dependencies(plugins)

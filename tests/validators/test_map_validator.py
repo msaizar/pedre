@@ -52,7 +52,7 @@ class TestMapValidator:
         self,
         name: str | None = None,
         properties: dict[str, Any] | None = None,
-        shape: list[float] | list[int | float | tuple[int | float, int | float]] | None = None,
+        shape: list[int | float | tuple[int | float, int | float]] | None = None,
     ) -> Mock:
         """Create a mock map object (waypoint, NPC, portal, etc).
 

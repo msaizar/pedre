@@ -157,8 +157,12 @@ class PortalPlugin(BasePlugin):
                             xs.append(float(p[0]))
                             ys.append(float(p[1]))
                 else:
-                    xs.append(float(portal.shape[0]))
-                    ys.append(float(portal.shape[1]))
+                    second_elem = portal.shape[1]
+                    if not isinstance(second_elem, (int, float)):
+                        logger.warning("Portal '%s' has invalid shape, skipping", portal.name)
+                        continue
+                    xs.append(float(first_elem))
+                    ys.append(float(second_elem))
             else:
                 logger.warning("Portal '%s' has invalid shape, skipping", portal.name)
                 continue
