@@ -253,7 +253,6 @@ UI scaling bounds:
 
 | Setting                      | Type   | Default                     | Description                         |
 | ---------------------------- | ------ | --------------------------- | ----------------------------------- |
-| `INVENTORY_ITEMS_FILE`       | string | "data/inventory_items.json" | Path to item definitions JSON       |
 | `INVENTORY_BACKGROUND_IMAGE` | string | ""                          | Optional background image path      |
 | `INVENTORY_KEY_TOGGLE`       | string | "I"                         | Key to open/close overlay           |
 | `INVENTORY_KEY_VIEW`         | string | "V"                         | Key to view item in detail          |
@@ -505,22 +504,34 @@ Asset management configuration.
   - In PyInstaller bundles, uses the bundled assets directory
 - Typically both settings use the same value ("assets"), but can differ for flexibility
 
-### Dialog Plugin Settings
+### Content Registry Settings
 
-Dialog plugin configuration for NPC dialogs.
+Content registry configuration for loading JSON-defined game data.
 
-| Setting             | Type   | Default         | Description                                                          |
-| ------------------- | ------ | --------------- | -------------------------------------------------------------------- |
-| `DIALOGS_DIRECTORY` | string | "data/dialogs"  | Directory where NPC dialog files are stored (relative to assets)     |
+| Setting              | Type         | Default          | Description                                                        |
+| -------------------- | ------------ | ---------------- | ------------------------------------------------------------------ |
+| `CONTENT_DIRECTORY`  | string       | `"data/content"` | Directory where content JSON files are stored (relative to assets) |
+| `INSTALLED_CONTENT`  | list[string] | Built-in types   | Modules containing `@ContentTypeRegistry.register` decorators      |
 
 **Notes:**
 
-- `DIALOGS_DIRECTORY` specifies where the NPCPlugin looks for `*_dialogs.json` files
-  - Path is relative to the assets directory
-  - Example: If `ASSETS_HANDLE` points to "assets/", then "data/dialogs" resolves to "assets/data/dialogs/"
-  - Dialog files are named `{scene}_dialogs.json` (e.g., `village_dialogs.json`)
-  - Dialogs are loaded automatically when a scene starts
-- For more details, see the [NPCPlugin documentation](../plugins/npc.md)
+- `CONTENT_DIRECTORY` is relative to the assets directory
+  - Example: If `ASSETS_HANDLE` points to "assets/", then "data/content" resolves to "assets/data/content/"
+  - Each registered content type looks for its own JSON file in this directory (e.g., `sprites.json`, `npcs.json`)
+- `INSTALLED_CONTENT` controls which content type modules are imported at startup
+  - Each module must contain at least one `@ContentTypeRegistry.register`-decorated class
+  - To add custom content types, extend the default list:
+
+```python
+from pedre.conf import global_settings
+
+INSTALLED_CONTENT = [
+    *global_settings.INSTALLED_CONTENT,  # Include built-in types
+    "myproject.content.enemies",          # Your custom content types
+]
+```
+
+- For more details, see the [Custom Content Types guide](../extending/custom-content.md)
 
 ### Script Plugin Settings
 
@@ -532,10 +543,10 @@ Script plugin configuration for event-driven scripting.
 
 **Notes:**
 
-- `SCRIPTS_DIRECTORY` specifies where the ScriptPlugin looks for `*_scripts.json` files
+- `SCRIPTS_DIRECTORY` specifies where the ScriptPlugin looks for `*.json` files
   - Path is relative to the assets directory
   - Example: If `ASSETS_HANDLE` points to "assets/", then "data/scripts" resolves to "assets/data/scripts/"
-  - All script files matching the pattern `*_scripts.json` in this directory are loaded automatically
+  - All script files matching the pattern `*.json` in this directory are loaded automatically
 - Scripts are loaded globally during plugin initialization and made available across all scenes
 - The `scene` field in each script definition controls when it can execute
 - For more details, see the [ScriptPlugin documentation](../plugins/script.md)

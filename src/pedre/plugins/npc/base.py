@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pedre.plugins.base import BasePlugin
 
@@ -115,11 +115,6 @@ class NPCBasePlugin(BasePlugin, ABC):
     @abstractmethod
     def get_npcs(self) -> dict[str, NPCState]:
         """Get NPCs."""
-        ...
-
-    @abstractmethod
-    def load_scene_dialogs(self, scene_name: str) -> dict[str, Any]:
-        """Load dialogs for a specific scene."""
         ...
 
     @abstractmethod

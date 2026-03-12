@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from pedre.plugins.base import BasePlugin
 
 if TYPE_CHECKING:
-    from pedre.plugins.player.sprites import AnimatedPlayer
+    from pedre.sprites import AnimatedSprite
 
 
 class PlayerBasePlugin(BasePlugin, ABC):
@@ -15,6 +15,6 @@ class PlayerBasePlugin(BasePlugin, ABC):
     role = "player_plugin"
 
     @abstractmethod
-    def get_player_sprite(self) -> AnimatedPlayer | None:
+    def get_player_sprite(self) -> AnimatedSprite | None:
         """Get the player sprite."""
         ...

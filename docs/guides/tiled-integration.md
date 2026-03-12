@@ -7,7 +7,7 @@ This guide covers everything you need to know about using [Tiled Map Editor](htt
 - [Installation](#installation)
 - [Map Setup](#map-setup)
 - [Required Layers](#required-layers)
-- [Map Properties](#map-properties)
+- [Map Configuration](#map-configuration)
 - [Player Character Setup](#player-character-setup)
 - [Working with NPCs](#working-with-npcs)
 - [Portals and Transitions](#portals-and-transitions)
@@ -188,89 +188,29 @@ Portals
 Waypoints        (top - drawn last)
 ```
 
-## Map Properties
+## Map Configuration
 
-Set properties on the map itself (not layers) to configure map behavior.
+Per-map settings — background music, camera target, and camera movement style — are defined in `assets/data/content/maps.json`, not as Tiled map properties.
 
-### How to Set Map Properties
+Each entry is keyed by the scene name (TMX filename without extension, lowercased). All fields are optional; only add what you want to override from the defaults.
 
-1. Click on the map name in the Layers panel (deselect any layers)
-2. Open the Properties panel (View → Properties)
-3. Click the **+** button to add custom properties
-
-### Available Map Properties
-
-| Property        | Type   | Required | Description                                                  | Example                      |
-| --------------- | ------ | -------- | ------------------------------------------------------------ | ---------------------------- |
-| `music`         | string | No       | Background music file (relative to assets/audio/music/)      | `"village_theme.mp3"`        |
-| `show_all_npcs` | bool   | No       | Force all NPCs to be visible                                 | `true`                       |
-| `show_npcs`     | string | No       | Comma-separated list of NPCs to show                         | `"merchant,guard,elder"`     |
-| `camera_follow` | string | No       | Camera follow target: "player", "npc:\<name\>", or "none"    | `"player"`, `"npc:merchant"` |
-| `camera_smooth` | bool   | No       | Use smooth interpolation (true) or instant following (false) | `true`                       |
-
-### Example Map Property Configuration
-
-```text
-music: "peaceful_village.ogg"
-show_npcs: "merchant,blacksmith"
-camera_follow: "player"
-camera_smooth: true
+```json
+{
+  "village": {
+    "music": "peaceful_village.ogg",
+    "camera_follow": "player",
+    "camera_smooth": true
+  },
+  "cutscene_tower": {
+    "camera_follow": "npc:wizard"
+  },
+  "puzzle_room": {
+    "camera_follow": "none"
+  }
+}
 ```
 
-### Camera Configuration
-
-The camera plugin can be configured via map properties to control which entity the camera follows and how it moves.
-
-#### Camera Follow Modes
-
-The `camera_follow` property determines what the camera tracks:
-
-- **"player"** (default): Camera smoothly follows the player sprite
-- **"npc:\<name\>"**: Camera follows a specific NPC by name (e.g., "npc:merchant")
-- **"none"**: Static camera with no following
-
-#### Camera Smoothing
-
-The `camera_smooth` property controls the camera movement style:
-
-- **true** (default): Camera smoothly interpolates to target using lerp (cinematic feel)
-- **false**: Camera instantly snaps to target position (no delay)
-
-#### Camera Configuration Examples
-
-**Follow player with smooth camera (default behavior):**
-
-```text
-camera_follow: "player"
-camera_smooth: true
-```
-
-**Follow NPC for cutscene:**
-
-```text
-camera_follow: "npc:wizard"
-camera_smooth: true
-```
-
-**Static camera for puzzle room:**
-
-```text
-camera_follow: "none"
-```
-
-**Instant following for fast-paced gameplay:**
-
-```text
-camera_follow: "player"
-camera_smooth: false
-```
-
-#### Important Notes
-
-- If `camera_follow` specifies an NPC that doesn't exist, the camera will fall back to following the player
-- The camera automatically positions itself at the follow target when the scene loads
-- You can change camera following at runtime using camera actions in scripts (see `FollowPlayerAction`, `FollowNPCAction`, `StopCameraFollowAction`)
-- Default behavior (if no properties are set): follow player if it exists, otherwise center on map with no following
+See [Maps Content Reference](../content/maps.md) for the full field reference, camera follow modes, and more examples.
 
 ## Player Character Setup
 
@@ -278,10 +218,10 @@ The player character is automatically created and managed by the framework, but 
 
 ### Player Spawn Position
 
-The framework determines the player's spawn position based on the Player object configuration:
+The framework determines the player's spawn position based on the player content registry:
 
-1. **Portal Waypoint** - If Player object has `spawn_at_portal=true` and a portal waypoint is set (from portal transition)
-2. **Player Object Position** - Uses the Player object's position in the Player object layer
+1. **Portal Waypoint** - Default behaviour; player spawns at the waypoint named by the portal's `spawn_waypoint` action parameter
+2. **Player Object Position** - Used on maps listed in `spawn_at_position` in `players.json`
 
 **Player Object Setup:**
 
@@ -292,15 +232,21 @@ The Player object must be placed as a **Point object** in the "Player" object la
 1. Select **Player** object layer (create if needed)
 2. Click **Insert Point** (or press **I**)
 3. Click where you want the player to spawn
-4. Set required properties in Properties panel
 
-**Portal Spawning (Optional):**
+**Controlling Spawn Behaviour (Optional):**
 
-To make the player spawn at the Player object position instead of portal waypoints:
+Spawn behaviour is configured in `players.json`, not via Tiled properties. Add the map name to `spawn_at_position` to make the player spawn at the Player object position on that map instead of at a portal waypoint:
 
-1. Select the Player object in Tiled
-2. Add custom property: `spawn_at_portal` (boolean) = `false`
-3. When entering maps via portals, player will spawn at the object position
+```json
+{
+  "player": {
+    "sprite_id": "hero",
+    "spawn_at_position": ["village"]
+  }
+}
+```
+
+If `spawn_at_position` is absent or does not include the current map, the player always spawns at the portal waypoint.
 
 ### Portal Waypoints
 
@@ -337,67 +283,75 @@ Point named "from_village" at spawn location
 
 ### Player Sprite Configuration
 
-The framework uses the `AnimatedPlayer` class which loads sprite sheets with directional animations.
+The player sprite is driven entirely by the **content registry**. Animation states, sprite sheet path, and frame layout are defined in `sprites.json`. The Tiled Player object only provides the spawn position — no properties are read from it.
 
-**Example Player Sprite:**
+**How it works:**
 
-```text
-File: assets/images/characters/princess.png
-Tile Size: 64×64 pixels
-Columns: 12 animation frames
-Scale: 1.0
-```
+1. The `PlayerPlugin` reads the Player object from Tiled to get the spawn position.
+2. It looks up the player definition in the `players` content registry (key `"player"` in `players.json`).
+3. The player definition's `sprite_id` field references an entry in `sprites.json`.
+4. It creates an `AnimatedSprite` from that definition.
 
-**Note:** The framework does not provide a default player sprite. You must specify the `sprite_sheet` property in your Player object in Tiled.
+**`players.json` fields:**
 
-**Sprite Sheet Layout:**
+| Field              | Type            | Required | Description                                                          |
+| ------------------ | --------------- | -------- | -------------------------------------------------------------------- |
+| `sprite_id`        | string          | **Yes**  | ID of the sprite definition in `sprites.json`                        |
+| `spawn_at_position`| list of strings | No       | Map names where player spawns at the Tiled object position           |
 
-The player sprite sheet can have:
-
-- **4 directions:** Up, Down, Left, Right
-- **2 animation states:** Idle and walking
-- **Multiple frames:** 12 columns for smooth animation
-- **Consistent size:** All frames must be the same dimensions
-
-**Required Player Object Properties:**
-
-| Property       | Type   | Default | Description                                |
-| -------------- | ------ | ------- | ------------------------------------------ |
-| `sprite_sheet` | string | **Yes** | Path to sprite sheet (relative to assets/) |
-| `tile_size`    | int    | 64      | Size of each sprite frame in pixels        |
-
-**Animation Properties (Optional):**
-
-| Property                                                                      | Type | Default | Description               |
-| ----------------------------------------------------------------------------- | ---- | ------- | ------------------------- |
-| `idle_up_frames`, `idle_down_frames`, `idle_left_frames`, `idle_right_frames` | int  | None    | Idle frames per direction |
-| `idle_up_row`, `idle_down_row`, `idle_left_row`, `idle_right_row`             | int  | None    | Row index per direction   |
-| `walk_up_frames`, `walk_down_frames`, `walk_left_frames`, `walk_right_frames` | int  | None    | Walk frames per direction |
-| `walk_up_row`, `walk_down_row`, `walk_left_row`, `walk_right_row`             | int  | None    | Row index per direction   |
-
-**4-Directional Example:**
+**Example Player Object (Tiled — position only):**
 
 ```text
-Player Object Properties:
-  sprite_sheet: "images/characters/warrior.png"
-  tile_size: 64
-  idle_up_frames: 6
-  idle_up_row: 0
-  idle_down_frames: 6
-  idle_down_row: 1
-  idle_left_frames: 6
-  idle_left_row: 2
-  idle_right_frames: 6
-  idle_right_row: 3
-  walk_up_frames: 8
-  walk_up_row: 4
-  walk_down_frames: 8
-  walk_down_row: 5
-  walk_left_frames: 8
-  walk_left_row: 6
-  walk_right_frames: 8
-  walk_right_row: 7
+Player Object Layer:
+  - Point at (640, 480)
+    (no properties needed — sprite and spawn config live in players.json)
 ```
+
+**Example `assets/data/content/players.json`:**
+
+```json
+{
+  "player": {
+    "sprite_id": "princess"
+  }
+}
+```
+
+**Corresponding `sprites.json` entry:**
+
+```json
+{
+  "princess": {
+    "sprite_sheet": "images/characters/princess.png",
+    "frame_width": 64,
+    "frame_height": 64,
+    "states": {
+      "idle": {
+        "directional": true,
+        "loop": true,
+        "priority": 0,
+        "directions": {
+          "down":  {"frames": 4, "row": 0},
+          "up":    {"frames": 4, "row": 1},
+          "right": {"frames": 4, "row": 2}
+        }
+      },
+      "walk": {
+        "directional": true,
+        "loop": true,
+        "priority": 1,
+        "directions": {
+          "down":  {"frames": 6, "row": 3},
+          "up":    {"frames": 6, "row": 4},
+          "right": {"frames": 6, "row": 5}
+        }
+      }
+    }
+  }
+}
+```
+
+See [Sprites Content Reference](../content/sprites.md) and [Sprites API](../api/sprites.md) for details on defining sprite states.
 
 ### Player Movement
 
@@ -422,6 +376,7 @@ The player automatically collides with:
 
 - Tiles in the **Walls** layer
 - Tiles in the **Collision** layer
+- Tiles in the **Objects** layer
 - Tiles in the **Buildings** layer
 - NPCs (unless they're removed from collision with scripts)
 
@@ -434,29 +389,50 @@ The physics engine uses `arcade.PhysicsEngineSimple` for player-wall collision d
 ```text
 Player Object Layer:
   - Point at (640, 480)
-    Properties:
-      sprite_sheet: "images/characters/princess.png"
-      tile_size: 64
-      idle_up_frames: 4
-      idle_up_row: 0
-      idle_down_frames: 4
-      idle_down_row: 1
-      idle_left_frames: 4
-      idle_left_row: 2
-      idle_right_frames: 4
-      idle_right_row: 3
-      walk_up_frames: 6
-      walk_up_row: 4
-      walk_down_frames: 6
-      walk_down_row: 5
-      walk_left_frames: 6
-      walk_left_row: 6
-      walk_right_frames: 6
-      walk_right_row: 7
-      spawn_at_portal: false
+    (no properties needed — sprite and spawn config live in players.json)
+```
 
-Map Properties:
-  music: "village_theme.ogg"
+**In `assets/data/content/players.json`:**
+
+```json
+{
+  "player": {
+    "sprite_id": "princess",
+    "spawn_at_position": ["village"]
+  }
+}
+```
+
+`spawn_at_position: ["village"]` means the player spawns at the Tiled object position (640, 480) when loading `village`. On any other map (e.g. `forest`) the player spawns at the portal's target waypoint.
+
+**In `assets/data/content/sprites.json`:**
+
+```json
+{
+  "princess": {
+    "sprite_sheet": "images/characters/princess.png",
+    "frame_width": 64,
+    "frame_height": 64,
+    "states": {
+      "idle": {
+        "directional": true, "loop": true, "priority": 0,
+        "directions": {
+          "down": {"frames": 4, "row": 0},
+          "up":   {"frames": 4, "row": 1},
+          "right":{"frames": 4, "row": 2}
+        }
+      },
+      "walk": {
+        "directional": true, "loop": true, "priority": 1,
+        "directions": {
+          "down": {"frames": 6, "row": 3},
+          "up":   {"frames": 6, "row": 4},
+          "right":{"frames": 6, "row": 5}
+        }
+      }
+    }
+  }
+}
 ```
 
 **For Portal-Only Entry (forest.tmx):**
@@ -464,25 +440,7 @@ Map Properties:
 ```text
 Player Object Layer:
   - Point at (400, 300)
-    Properties:
-      sprite_sheet: "images/characters/princess.png"
-      tile_size: 64
-      idle_up_frames: 4
-      idle_up_row: 0
-      idle_down_frames: 4
-      idle_down_row: 1
-      idle_left_frames: 4
-      idle_left_row: 2
-      idle_right_frames: 4
-      idle_right_row: 3
-      walk_up_frames: 6
-      walk_up_row: 4
-      walk_down_frames: 6
-      walk_down_row: 5
-      walk_left_frames: 6
-      walk_left_row: 6
-      walk_right_frames: 6
-      walk_right_row: 7
+    (position used as fallback only; forest is not in spawn_at_position)
 
 Waypoints Layer:
   - Point named "from_village" at (100, 200)
@@ -511,171 +469,136 @@ if __name__ == "__main__":
 
 This will create a window with your custom settings and start the game.
 
-- Spawn at Player object position (640, 480)
-- Use default princess sprite sheet
+- Spawn at Player object position (640, 480) on `village` (listed in `spawn_at_position`)
+- Use the princess sprite sheet
 - Be able to move with arrow keys
-- Collide with walls and NPCs
+- Collide with walls, objects, and NPCs
 - Interact with objects via SPACE key
 
-**When entering via portal:** Player will spawn at the portal's target waypoint instead of the Player object position.
+**When entering via portal:** Player spawns at the portal's target waypoint (unless the map is listed in `spawn_at_position`).
 
 ## Working with NPCs
 
-NPCs are placed as **Point Objects** in the **NPCs** object layer.
+NPCs are placed as **Point Objects** in the **NPCs** object layer. Like the player, NPC appearance is driven by the **content registry** — sprite sheets, animation states, scale, and visibility are defined in `npcs.json` and `sprites.json`.
+
+### How NPC Loading Works
+
+1. The `NPCPlugin` reads each Point object from the `NPCs` layer to get the name and spawn position.
+2. It looks up the NPC definition in `npcs.json` by the object's `name` property.
+3. The NPC definition references a `sprite_id` pointing to an entry in `sprites.json`.
+4. An `AnimatedSprite` is created from the sprite definition, with `scale`, `tile_size`, and `initially_hidden` taken from the NPC definition.
 
 ### Adding an NPC
 
 1. Select the **NPCs** object layer
-2. Click **Insert Point** button (or press **I**)
-3. Click on the map where you want to NPC
-4. In Properties panel, set the NPC's properties
+2. Click **Insert Point** (or press **I**)
+3. Click where you want the NPC to spawn
+4. In the Properties panel, set the `name` property
 
-### Required NPC Properties
+### Tiled Object Properties
 
-| Property       | Type   | Required | Description                                |
-| -------------- | ------ | -------- | ------------------------------------------ |
-| `name`         | string | **Yes**  | Unique identifier for this NPC             |
-| `sprite_sheet` | string | **Yes**  | Path to sprite sheet (relative to assets/) |
+| Property    | Type   | Required | Description                                                              |
+| ----------- | ------ | -------- | ------------------------------------------------------------------------ |
+| `name`      | string | **Yes**  | NPC identifier — must match a key in `npcs.json` (case-insensitive)      |
 
-### Optional NPC Properties
+All other appearance settings (`tile_size`, `scale`, `initially_hidden`) belong in `npcs.json`.
 
-| Property           | Type   | Default  | Description                                     |
-| ------------------ | ------ | -------- | ----------------------------------------------- |
-| `tile_size`        | int    | `64`     | Size of each sprite frame in pixels             |
-| `columns`          | int    | `12`     | Total number of columns in the sprite sheet     |
-| `scale`            | float  | `1.0`    | Sprite scale multiplier for rendering           |
-| `initially_hidden` | bool   | `false`  | Whether NPC starts hidden (if map property set) |
-| `dialog_level`     | int    | `0`      | Starting conversation level                     |
-| `animation`        | string | `"idle"` | Starting animation state                        |
+### NPC Content Registry Definitions
 
-### NPC Sprite Sheets
+**`assets/data/content/npcs.json`:**
 
-NPC sprite sheets support 4-directional animation with flexible layout. Specify properties for each animation state and direction.
+```json
+{
+  "merchant": {
+    "sprite_id": "merchant_sprite",
+    "scale": 1.0,
+    "tile_size": 64
+  },
+  "wizard": {
+    "sprite_id": "wizard_sprite",
+    "initially_hidden": true
+  }
+}
+```
 
-**Sprite Sheet Format:**
+**`assets/data/content/sprites.json`:**
 
-- **Any number of rows** (for different directions and animation types)
-- **Any number of columns** (animation frames per row)
-- **Consistent tile size** across all frames (e.g., 64×64)
-- **Animation states**: idle, walk
-- **Directions**: up, down, left, right
-- **Optional special animations**: appear, disappear, interact
+```json
+{
+  "merchant_sprite": {
+    "sprite_sheet": "images/characters/merchant.png",
+    "frame_width": 64,
+    "frame_height": 64,
+    "states": {
+      "idle": {
+        "directional": true, "loop": true, "priority": 0,
+        "directions": {
+          "down": {"frames": 4, "row": 0},
+          "up":   {"frames": 4, "row": 1},
+          "right":{"frames": 4, "row": 2}
+        }
+      },
+      "walk": {
+        "directional": true, "loop": true, "priority": 1,
+        "directions": {
+          "down": {"frames": 6, "row": 3},
+          "up":   {"frames": 6, "row": 4},
+          "right":{"frames": 6, "row": 5}
+        }
+      }
+    }
+  },
+  "wizard_sprite": {
+    "sprite_sheet": "images/characters/wizard.png",
+    "frame_width": 64,
+    "frame_height": 64,
+    "states": {
+      "idle": {
+        "directional": false, "loop": true, "priority": 0,
+        "frames": 4, "row": 0
+      },
+      "appear": {
+        "directional": false, "loop": false, "priority": 5,
+        "on_complete": "idle", "frames": 9, "row": 1
+      },
+      "disappear": {
+        "directional": false, "loop": false, "priority": 5,
+        "on_complete": "hide", "auto_from": "appear"
+      }
+    }
+  }
+}
+```
 
-**4-Directional Animation Properties:**
+See [Sprites Content Reference](../content/sprites.md) and [Sprites API](../api/sprites.md) for the full sprite definition format, including `auto_from` states and directional auto-flip.
 
-| Property                                                                      | Type | Description               |
-| ----------------------------------------------------------------------------- | ---- | ------------------------- |
-| `idle_up_frames`, `idle_down_frames`, `idle_left_frames`, `idle_right_frames` | int  | Idle frames per direction |
-| `idle_up_row`, `idle_down_row`, `idle_left_row`, `idle_right_row`             | int  | Row index per direction   |
-| `walk_up_frames`, `walk_down_frames`, `walk_left_frames`, `walk_right_frames` | int  | Walk frames per direction |
-| `walk_up_row`, `walk_down_row`, `walk_left_row`, `walk_right_row`             | int  | Row index per direction   |
+### Example NPC Setup in Tiled
 
-**Optional Special Animation Properties:**
-
-| Property                | Type | Description                                          |
-| ----------------------- | ---- | ---------------------------------------------------- |
-| `appear_frames`         | int  | Number of frames for appear animation (optional)     |
-| `appear_row`            | int  | Row index for appear animation frames (optional)     |
-| `disappear_frames`      | int  | Number of frames for disappear animation (optional)  |
-| `disappear_row`         | int  | Row index for disappear animation frames (optional)  |
-| `interact_up_frames`    | int  | Number of frames for up-facing interact animation    |
-| `interact_up_row`       | int  | Row index for up-facing interact animation           |
-| `interact_down_frames`  | int  | Number of frames for down-facing interact animation  |
-| `interact_down_row`     | int  | Row index for down-facing interact animation         |
-| `interact_left_frames`  | int  | Number of frames for left-facing interact animation  |
-| `interact_left_row`     | int  | Row index for left-facing interact animation         |
-| `interact_right_frames` | int  | Number of frames for right-facing interact animation |
-| `interact_right_row`    | int  | Row index for right-facing interact animation        |
-
-**Auto-Generation Behavior:**
-
-- **Appear/Disappear Animations:**
-  - If only `appear_*` is defined: `disappear` is auto-generated by reversing appear frames
-  - If only `disappear_*` is defined: `appear` is auto-generated by reversing disappear frames
-  - If both are defined: each is loaded independently (no auto-generation)
-  - If neither is defined: no appear/disappear animations
-
-- **Interact Animations:**
-  - Left is auto-generated from right if not specified (horizontally flipped)
-
-**Note:**
-
-- Specify only the animation properties you need for each direction. The framework will only load the specified animations.
-- If `interact_left` is not specified but `interact_right` exists, the left animation will be auto-generated by flipping the right frames horizontally.
-
-### Example NPC Setup
-
-**Basic NPC with 4-directional animations:**
+**Minimal — all appearance config is in the registry:**
 
 ```text
 Layer: NPCs
 Object Type: Point
 Position: (320, 240)
 
-Custom Properties:
+Properties:
   name: "merchant"
-  sprite_sheet: "images/characters/merchant.png"
-  tile_size: 64
-  idle_up_frames: 4
-  idle_up_row: 0
-  idle_down_frames: 4
-  idle_down_row: 1
-  idle_left_frames: 4
-  idle_left_row: 2
-  idle_right_frames: 4
-  idle_right_row: 3
-  walk_up_frames: 6
-  walk_up_row: 4
-  walk_down_frames: 6
-  walk_down_row: 5
-  walk_left_frames: 6
-  walk_left_row: 6
-  walk_right_frames: 6
-  walk_right_row: 7
-  initially_hidden: false
-  dialog_level: 0
 ```
 
-**NPC with special animations:**
-
-```text
-Layer: NPCs
-Object Type: Point
-Position: (640, 480)
-
-Custom Properties:
-  name: "wizard"
-  sprite_sheet: "images/characters/wizard.png"
-  tile_size: 64
-  idle_down_frames: 4
-  idle_down_row: 0
-  walk_down_frames: 6
-  walk_down_row: 1
-  appear_frames: 9
-  appear_row: 8
-  interact_down_frames: 5
-  interact_down_row: 9
-  initially_hidden: true
-```
-
-### Multiple NPCs
-
-You can have as many NPCs as you want on a single map:
+**Multiple NPCs:**
 
 ```text
 NPCs Layer:
-  - Point named "merchant" at (320, 240)
-  - Point named "guard" at (640, 480)
-  - Point named "elder" at (800, 360)
-  - Point named "child" at (200, 500)
+  - Point at (320, 240)  → name: "merchant"
+  - Point at (640, 480)  → name: "guard"
+  - Point at (800, 360)  → name: "elder"
 ```
 
 Each NPC needs:
 
-1. Unique `name` property
-2. `sprite_sheet` property pointing to the sprite sheet file
-3. Animation properties (idle/walk frames and rows for each direction you want to support)
-4. Optional: Dialog entries in `assets/dialogs/{scene_name}_dialogs.json` if the NPC should be interactive
+1. A unique `name` property matching a key in `npcs.json`
+2. A corresponding entry in `npcs.json` referencing a `sprite_id` in `sprites.json`
+3. Optional: Dialog entries in `assets/data/content/dialogs/{scene_name}.json` if the NPC should be interactive
 
 ## Portals and Transitions
 
@@ -812,7 +735,7 @@ Waypoints are **Point Objects** that define named positions on the map.
 | **Portal destinations** | Target location for map transitions (used with portal `spawn_waypoint` property) |
 | **NPC movement**        | Destinations for pathfinding scripts                                             |
 
-**Note:** Waypoints are simple named locations stored as Point objects. They only need a `name` property. The framework converts their pixel coordinates to tile coordinates and stores them in a dictionary for lookup by name.
+**Note:** Waypoints are simple named locations stored as Point objects. They only need a `name` property. The framework stores their pixel coordinates in a dictionary for lookup by name.
 
 ### Example Waypoint Setup
 
@@ -875,28 +798,6 @@ You can add any custom properties to objects and reference them in scripts.
       - **string** - Text
       - **color** - Color value
       - **file** - File path
-
-### Example: Custom NPC with Additional Properties
-
-```text
-Layer: NPCs
-Object: Point
-
-Built-in Properties:
-  name: "quest_giver"
-  sprite_sheet: "images/characters/elder.png"
-  tile_size: 64
-  idle_down_frames: 4
-  idle_down_row: 0
-
-Custom Properties:
-  quest_id: "find_amulet"
-  quest_stage: 1
-  greeting_message: "Greetings, traveler!"
-  relationship_level: 0
-```
-
-You can add any custom properties you need to objects. These properties are stored in the object's `properties` dictionary and can be accessed in your game code or scripts to implement custom behavior, track state, or configure object-specific settings.
 
 ## Resources
 

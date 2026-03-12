@@ -1,11 +1,13 @@
 """Unit tests for InventoryPlugin in src/pedre/plugins/inventory/plugin.py."""
 
 import json
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import arcade
 import pytest
 
+from pedre.content.registry import RegistryError
 from pedre.plugins.inventory.base import InventoryItem
 from pedre.plugins.inventory.plugin import InventoryPlugin
 
@@ -15,26 +17,16 @@ def mock_context() -> MagicMock:
     """Fixture for mock context."""
     ctx = MagicMock()
     ctx.event_bus = MagicMock()
+    ctx.content_registry.get_sub_registry.return_value.all.return_value = {}
     return ctx
 
 
 @pytest.fixture
 def plugin(mock_context: MagicMock) -> InventoryPlugin:
-    """Fixture for InventoryPlugin with patched file I/O."""
-    with (
-        patch("pedre.plugins.inventory.plugin.asset_path") as mock_asset_path,
-        patch("pathlib.Path.open") as mock_path_open,
-        patch("json.load") as mock_json_load,
-    ):
-        mock_asset_path.return_value = "/mock/path"
-        mock_file = MagicMock()
-        mock_path_open.return_value.__enter__.return_value = mock_file
-        mock_json_load.return_value = {"items": []}
-
-        p = InventoryPlugin()
-        p.setup(mock_context)
-        p.items.clear()
-
+    """Fixture for InventoryPlugin with empty content registry."""
+    p = InventoryPlugin()
+    p.setup(mock_context)
+    p.items.clear()
     return p
 
 
@@ -1050,51 +1042,36 @@ class TestInventoryPlugin:
 
             assert mock_outline.called
 
-    def test_initialize_default_items_file_not_found_with_filename(self, plugin: InventoryPlugin) -> None:
-        """Test handling FileNotFoundError with filename attribute."""
-        with (
-            patch("pedre.plugins.inventory.plugin.asset_path", return_value="/mock/path"),
-            patch("pathlib.Path.open") as mock_open,
-        ):
-            error = FileNotFoundError("File not found")
-            error.filename = "/mock/path/items.json"
-            mock_open.side_effect = error
+    def test_initialize_default_items_missing_registry_raises(self, plugin: InventoryPlugin) -> None:
+        """Test that _initialize_default_items raises RegistryError when item registry is absent."""
+        cast("MagicMock", plugin.context.content_registry.get_sub_registry).side_effect = RegistryError(
+            "items not registered"
+        )
 
+        with pytest.raises(RegistryError):
             plugin._initialize_default_items()
-
-            assert len(plugin.items) == 0
 
     def test_initialize_default_items_success(self, plugin: InventoryPlugin) -> None:
-        """Test successful loading of items from JSON."""
-        with (
-            patch("pedre.plugins.inventory.plugin.asset_path", return_value="/mock/path"),
-            patch("pathlib.Path.open") as mock_open,
-            patch(
-                "json.load",
-                return_value={
-                    "items": [
-                        {
-                            "id": "test_item",
-                            "name": "Test Item",
-                            "description": "A test item",
-                            "image_path": "test.png",
-                            "icon_path": "icon.png",
-                            "category": "test",
-                            "acquired": False,
-                            "consumable": False,
-                        }
-                    ]
-                },
-            ),
-        ):
-            mock_file = MagicMock()
-            mock_open.return_value.__enter__.return_value = mock_file
+        """Test successful loading of items from the content registry."""
+        mock_registry = MagicMock()
+        mock_registry.all.return_value = {
+            "test_item": {
+                "name": "Test Item",
+                "description": "A test item",
+                "image_path": "test.png",
+                "icon_path": "icon.png",
+                "category": "test",
+                "acquired": False,
+                "consumable": False,
+            }
+        }
+        cast("MagicMock", plugin.context.content_registry.get_sub_registry).return_value = mock_registry
 
-            plugin._initialize_default_items()
+        plugin._initialize_default_items()
 
-            assert len(plugin.items) == 1
-            assert "test_item" in plugin.items
-            assert plugin.items["test_item"].name == "Test Item"
+        assert len(plugin.items) == 1
+        assert "test_item" in plugin.items
+        assert plugin.items["test_item"].name == "Test Item"
 
     def test_consume_item_failed_to_consume(self, plugin: InventoryPlugin) -> None:
         """Test the logger message for failed consume."""

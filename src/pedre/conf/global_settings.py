@@ -134,9 +134,6 @@ INVENTORY_BACKGROUND_IMAGE = ""
 INVENTORY_MAX_SPACE = 12
 """Maximum number of items that can be held in inventory."""
 
-INVENTORY_ITEMS_FILE = "data/inventory_items.json"
-"""Path to the inventory items JSON data file."""
-
 INVENTORY_KEY_TOGGLE = "I"
 """Key to open/close the inventory overlay."""
 
@@ -310,9 +307,6 @@ SAVE_SFX_FILE = "save.wav"
 """Sound effect played when saving/loading."""
 
 # Pause Menu settings
-PAUSE_MENU_OVERLAY_ALPHA = 180
-"""Semi-transparent background overlay alpha value (0-255)."""
-
 PAUSE_MENU_TITLE = "Pedre Game"
 """Title text displayed at the top of the pause menu."""
 
@@ -448,9 +442,30 @@ INVENTORY_COLOR_PHOTO_BACKGROUND = (0, 0, 0)
 INVENTORY_EMPTY_BOX_ALPHA = 180
 """Transparency of empty inventory slot backgrounds (0-255)."""
 
-# Dialog settings
-DIALOGS_DIRECTORY = "data/dialogs"
-"""Directory where NPC dialog files are stored (relative to assets directory)."""
+# Content registry settings
+CONTENT_DIRECTORY = "data/content"
+"""Directory where content registry JSON files (sprites.json, npcs.json) are stored
+(relative to assets directory)."""
+
+INSTALLED_CONTENT = [
+    "pedre.content.registries.map",
+    "pedre.content.registries.npc",
+    "pedre.content.registries.player",
+    "pedre.content.registries.sprite",
+    "pedre.content.registries.item",
+    "pedre.content.registries.dialog",
+]
+"""Modules containing @ContentTypeRegistry.register decorators to load.
+
+Users can extend this list to add custom content types:
+
+    from pedre.conf import global_settings
+
+    INSTALLED_CONTENT = [
+        *global_settings.INSTALLED_CONTENT,
+        "myproject.content.enemies",
+    ]
+"""
 
 # Script settings
 SCRIPTS_DIRECTORY = "data/scripts"

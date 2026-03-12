@@ -1,4 +1,4 @@
-"""Validate command for checking game scripts and dialogs."""
+"""Validate command for checking game assets."""
 
 import sys
 from pathlib import Path
@@ -20,9 +20,12 @@ from pedre.events.registry import EventRegistry
 from pedre.main import setup_resources
 from pedre.validators.context import ValidationContext
 from pedre.validators.dialog_validator import DialogValidator
-from pedre.validators.inventory_items_validator import InventoryItemsValidator
+from pedre.validators.item_validator import ItemValidator
 from pedre.validators.map_validator import MapValidator
+from pedre.validators.npc_validator import NPCValidator
+from pedre.validators.player_validator import PlayerValidator
 from pedre.validators.script_validator import ScriptValidator
+from pedre.validators.sprite_validator import SpriteValidator
 
 if TYPE_CHECKING:
     import argparse
@@ -32,11 +35,11 @@ console = Console()
 
 @CommandRegistry.register
 class ValidateCommand(Command):
-    """Validate game scripts and dialogs for errors."""
+    """Validate all game assets for errors."""
 
     name = "validate"
-    help = "Validate game scripts and dialogs"
-    description = "Validate all game scripts and dialogs for errors"
+    help = "Validate all game assets"
+    description = "Validate all game assets for errors"
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Add validate-specific arguments."""
@@ -47,17 +50,10 @@ class ValidateCommand(Command):
             help=f"Path to scripts directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCRIPTS_DIRECTORY})",
         )
         parser.add_argument(
-            "--type",
-            "-t",
-            choices=["all", "scripts", "dialogs", "maps", "inventory_items"],
-            default="all",
-            help="Type of validation to run (default: all)",
-        )
-        parser.add_argument(
             "--dialogs-path",
             type=Path,
             default=None,
-            help=f"Path to dialogs directory (default: {settings.ASSETS_DIRECTORY}/{settings.DIALOGS_DIRECTORY})",
+            help=f"Path to dialogs directory (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY})",
         )
         parser.add_argument(
             "--maps-path",
@@ -66,21 +62,42 @@ class ValidateCommand(Command):
             help=f"Path to maps directory (default: {settings.ASSETS_DIRECTORY}/{settings.SCENE_MAPS_DIRECTORY})",
         )
         parser.add_argument(
-            "--inventory-items-path",
+            "--items-path",
             type=Path,
             default=None,
-            help=f"Path to inventory items file (default: {settings.INVENTORY_ITEMS_FILE})",
+            help=(
+                f"Path to inventory items file (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}"
+                "/items.json)"
+            ),
+        )
+        parser.add_argument(
+            "--sprites-path",
+            type=Path,
+            default=None,
+            help=(
+                f"Path to sprites file (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}/sprites.json)"
+            ),
+        )
+        parser.add_argument(
+            "--npcs-path",
+            type=Path,
+            default=None,
+            help=(f"Path to NPCs file (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}/npcs.json)"),
+        )
+        parser.add_argument(
+            "--players-path",
+            type=Path,
+            default=None,
+            help=(
+                f"Path to players file (default: {settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}/players.json)"
+            ),
         )
 
     def execute(self, args: argparse.Namespace) -> None:
-        """Validate game scripts and dialogs for errors.
+        """Validate all game assets for errors.
 
-        Loads and validates script and dialog files, checking:
-        - Script triggers, conditions, and actions are valid
-        - Dialog structure and required fields
-        - All parameters are correct
-
-        Displays results using rich formatting with colors and tables.
+        Runs all validators against maps, scripts, dialogs, items, sprites,
+        and NPCs. Displays results using rich formatting with colors and tables.
 
         Args:
             args: Parsed command-line arguments containing optional path parameters.
@@ -107,50 +124,43 @@ class ValidateCommand(Command):
             f"{len(ConditionRegistry.get_all_names())} conditions[/dim]"
         )
 
+        # Resolve paths
+        content_dir = Path.cwd() / settings.ASSETS_DIRECTORY / settings.CONTENT_DIRECTORY
+        maps_path_arg = getattr(args, "maps_path", None)
+        scripts_path_arg = getattr(args, "scripts_path", None)
+        dialogs_path_arg = getattr(args, "dialogs_path", None)
+        maps_dir = maps_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCENE_MAPS_DIRECTORY
+        scripts_dir = scripts_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCRIPTS_DIRECTORY
+        dialogs_dir = dialogs_path_arg or content_dir
+        items_path_arg = getattr(args, "items_path", None)
+        sprites_path_arg = getattr(args, "sprites_path", None)
+        npcs_path_arg = getattr(args, "npcs_path", None)
+        players_path_arg = getattr(args, "players_path", None)
+        items_file = items_path_arg or content_dir / "items.json"
+        sprites_file = sprites_path_arg or content_dir / "sprites.json"
+        npcs_file = npcs_path_arg or content_dir / "npcs.json"
+        players_file = players_path_arg or content_dir / "players.json"
+
         # Create shared validation context
         context = ValidationContext()
 
-        # Determine which validators to run based on args.type
-        validation_type = getattr(args, "type", "all")
-        dialogs_path_arg = getattr(args, "dialogs_path", None)
-        scripts_path_arg = getattr(args, "scripts_path", None)
-        maps_path_arg = getattr(args, "maps_path", None)
-        inventory_items_path_arg = getattr(args, "inventory_items_path", None)
-
-        # Always create MapValidator to populate context, but only add to validators list if needed for validation
-        maps_dir = maps_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCENE_MAPS_DIRECTORY
-        map_validator = MapValidator(maps_dir, context)
-
-        # Always create InventoryItemsValidator to populate context, same pattern as MapValidator
-        inventory_items_file = (
-            inventory_items_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.INVENTORY_ITEMS_FILE
-        )
-        inventory_items_validator = InventoryItemsValidator(inventory_items_file, context)
-
-        # Determine which validators to run
+        # Build validator list — order matters: sprites before npcs (for cross-ref context).
+        # All validators are optional: only included if explicitly provided or the default path exists.
         validators = []
-
-        if validation_type in ["all", "maps"]:
-            validators.append(map_validator)
-
-        if validation_type in ["all", "scripts"]:
-            scripts_dir = scripts_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.SCRIPTS_DIRECTORY
+        if maps_path_arg or maps_dir.exists():
+            validators.append(MapValidator(maps_dir, context))
+        if items_path_arg or items_file.exists():
+            validators.append(ItemValidator(items_file, context))
+        if sprites_path_arg or sprites_file.exists():
+            validators.append(SpriteValidator(sprites_file, context))
+        if npcs_path_arg or npcs_file.exists():
+            validators.append(NPCValidator(npcs_file, context))
+        if players_path_arg or players_file.exists():
+            validators.append(PlayerValidator(players_file, context))
+        if scripts_path_arg or scripts_dir.exists():
             validators.append(ScriptValidator(scripts_dir, context))
-
-        if validation_type in ["all", "dialogs"]:
-            dialogs_dir = dialogs_path_arg or Path.cwd() / settings.ASSETS_DIRECTORY / settings.DIALOGS_DIRECTORY
+        if dialogs_path_arg or dialogs_dir.exists():
             validators.append(DialogValidator(dialogs_dir, context))
-
-        if validation_type in ["all", "inventory_items"]:
-            validators.append(inventory_items_validator)
-
-        # Always populate context from maps and inventory items (needed for cross-reference validation)
-        # Run silently if not in the validators list
-        if validation_type not in {"all", "maps"}:
-            map_validator.validate()  # Populates context but we don't report errors
-
-        if validation_type not in {"all", "inventory_items"}:
-            inventory_items_validator.validate()  # Populates context but we don't report errors
 
         # Phase 1: Structural validation (also populates context)
         console.print("\n[bold]Phase 1: Structural Validation[/bold]")

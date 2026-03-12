@@ -18,6 +18,8 @@ graph TD
     Events["Events"]
     Conditions["Conditions"]
     Plugins["Plugins"]
+    Validators["Validators<br/><i>(CLI / offline)</i>"]
+    ValidationContext["ValidationContext"]
 
     Game --> EventBus
     Game --> GameContext
@@ -27,6 +29,7 @@ graph TD
     Game --> GameView
     EventBus --> GameContext
     GameContext --> Plugins
+    Validators --> ValidationContext
 ```
 
 ## Core Components
@@ -86,6 +89,21 @@ Publish-subscribe event system for decoupled communication.
 - `subscribe(event_type, callback)`
 - `publish(event)`
 - `unsubscribe(event_type, callback)`
+
+### [Validators](validators.md)
+
+Two-phase asset validation system for maps, scripts, dialogs, sprites, NPCs, players, and items. Used by the `pedre validate` CLI command and can be called programmatically.
+
+**Responsibilities:**
+
+- Structural validation of individual asset files (Phase 1)
+- Cross-reference validation between asset types (Phase 2)
+
+**Key Classes:**
+
+- `ValidationResult` — result dataclass with `errors`, `item_count`, and `metadata`
+- `Validator` — ABC to subclass for custom validators
+- `ValidationContext` — shared context populated in Phase 1 and read in Phase 2
 
 ### [PluginLoader](plugin-loader.md)
 

@@ -384,63 +384,36 @@ class CameraPlugin(CameraBasePlugin):
                     else:
                         self.instant_follow(npc_state.sprite.center_x, npc_state.sprite.center_y)
 
-    def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
-        """Load camera configuration from Tiled and create camera.
+    def on_scene_loaded(self, scene_name: str) -> None:
+        """Create camera and apply configuration for the loaded scene.
 
-        This method:
-        1. Reads camera_follow and camera_smooth properties
-        2. Stores map dimensions for bounds calculation
-        3. Creates the camera with correct initial position
-        4. Sets bounds and applies follow configuration
+        Reads camera_follow and camera_smooth from maps.json for the scene,
+        then creates the camera with correct initial position and bounds.
+        Map dimensions are read from scene_plugin.tile_map, which is available
+        at this point since on_scene_loaded runs after load_from_tiled.
 
-        Dependencies are satisfied at this point (player and npc plugins loaded).
-
-        Map Property Configuration in Tiled:
-            1. Click on the map name in Layers panel (deselect any layers)
-            2. Open Properties panel (View → Properties)
-            3. Add custom properties as needed
-
-        Supported Properties:
-            - camera_follow (string): "player", "npc:<name>", or "none"
-              Default: "player"
-            - camera_smooth (bool): true for smooth, false for instant
-              Default: true
-
-        Examples:
-            camera_follow: "player"           # Follow player (default)
-            camera_follow: "npc:merchant"     # Follow NPC named merchant
-            camera_follow: "none"             # Static camera
-            camera_smooth: false              # Instant following
+        Supported map registry fields:
+            - camera_follow (string): "player", "npc:<name>", or "none" (default: "player")
+            - camera_smooth (bool): true for smooth, false for instant (default: true)
 
         Args:
-            tile_map: Loaded TileMap with properties.
-            arcade_scene: Scene created from tile_map (unused).
+            scene_name: Name of the scene that just loaded.
         """
-        # Calculate map dimensions for camera creation
+        tile_map = self.context.scene_plugin.tile_map
+        if tile_map is None:
+            logger.warning("CameraPlugin: no tile_map found in ScenePlugin")
+            return
         map_width = tile_map.width * tile_map.tile_width
         map_height = tile_map.height * tile_map.tile_height
 
-        # Check if tile_map has properties
-        if not hasattr(tile_map, "properties") or tile_map.properties is None:
-            logger.debug("TileMap does not have properties, using defaults")
-            self._follow_config = {"mode": "player", "smooth": True}
-            self._create_camera(map_width, map_height)
-            return
+        maps = self.context.content_registry.get_sub_registry("maps")
+        map_def: dict[str, Any] = {}
+        if maps.has(scene_name):
+            map_def = maps.get(scene_name)
 
-        # Get camera properties with defaults
-        camera_follow = tile_map.properties.get("camera_follow", "player")
-        camera_smooth = tile_map.properties.get("camera_smooth", True)
+        camera_follow: str = map_def.get("camera_follow", "player")
+        camera_smooth: bool = map_def.get("camera_smooth", True)
 
-        # Validate types
-        if not isinstance(camera_follow, str):
-            logger.warning("Invalid camera_follow property type: %s, using 'player'", type(camera_follow))
-            camera_follow = "player"
-
-        if not isinstance(camera_smooth, bool):
-            logger.warning("Invalid camera_smooth property type: %s, using True", type(camera_smooth))
-            camera_smooth = True
-
-        # Parse camera_follow
         camera_follow = camera_follow.strip().lower()
 
         if camera_follow == "none":
@@ -453,11 +426,7 @@ class CameraPlugin(CameraBasePlugin):
                 logger.warning("camera_follow 'npc:' requires NPC name, using 'player'")
                 config = {"mode": "player", "smooth": camera_smooth}
             else:
-                # Validate NPC exists
-                npc_plugin = self.context.npc_plugin
-                # NPCs are registered during load_from_tiled phase
-                # We can check if NPC will exist (it's in the map)
-                npc_state = npc_plugin.get_npc_by_name(npc_name)
+                npc_state = self.context.npc_plugin.get_npc_by_name(npc_name)
                 if npc_state is None:
                     logger.warning(
                         "camera_follow references NPC '%s' which does not exist, using 'player'",
@@ -474,7 +443,6 @@ class CameraPlugin(CameraBasePlugin):
         self._follow_config = config
         logger.debug("Camera follow config loaded: %s", config)
 
-        # Create camera now that configuration is loaded
         self._create_camera(map_width, map_height)
 
     def get_follow_config(self) -> dict[str, Any] | None:

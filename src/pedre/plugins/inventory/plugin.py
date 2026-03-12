@@ -48,9 +48,7 @@ Example usage:
     inventory_mgr.from_dict(save_data)
 """
 
-import json
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import arcade
@@ -688,42 +686,23 @@ class InventoryPlugin(InventoryBasePlugin):
             self.from_dict(state["inventory_items"])
 
     def _initialize_default_items(self) -> None:
-        """Initialize default inventory items from JSON data file."""
-        try:
-            items_file = asset_path(settings.INVENTORY_ITEMS_FILE)
+        """Initialize default inventory items from the content registry."""
+        item_registry = self.context.content_registry.get_sub_registry("items")
 
-            with Path(items_file).open("r", encoding="utf-8") as f:
-                data = json.load(f)
-
-            for item_data in data.get("items", []):
-                item = InventoryItem(
-                    id=item_data["id"],
-                    name=item_data["name"],
-                    description=item_data["description"],
-                    image_path=item_data.get("image_path"),
-                    icon_path=item_data.get("icon_path"),
-                    category=item_data.get("category", "general"),
-                    acquired=item_data.get("acquired", False),
-                    consumable=item_data.get("consumable", False),
-                )
-                self.items[item.id] = item
-
-            logger.info("Loaded %d inventory items from JSON", len(self.items))
-
-        except FileNotFoundError as e:
-            logger.warning(
-                "Inventory items file not found: %s",
-                e.filename if hasattr(e, "filename") else "data/inventory_items.json",
+        for item_id, definition in item_registry.all().items():
+            item = InventoryItem(
+                id=item_id,
+                name=definition["name"],
+                description=definition["description"],
+                image_path=definition.get("image_path"),
+                icon_path=definition.get("icon_path"),
+                category=definition.get("category", "general"),
+                acquired=definition.get("acquired", False),
+                consumable=definition.get("consumable", False),
             )
-        except json.JSONDecodeError:
-            logger.exception("Failed to parse inventory items JSON")
-        except KeyError:
-            logger.exception("Missing required field in inventory item data")
-        except OSError as e:
-            if "No such file or directory" in str(e):
-                logger.warning("Assets directory or inventory items file not found, continuing with empty inventory")
-            else:
-                logger.warning("Failed to load inventory items (continuing with empty inventory): %s", str(e))
+            self.items[item.id] = item
+
+        logger.info("Loaded %d inventory items from content registry", len(self.items))
 
     def add_item(self, item: InventoryItem) -> bool:
         """Add a new item to the inventory plugin and optionally acquire it.

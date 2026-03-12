@@ -44,7 +44,7 @@ class InitCommand(Command):
             - music/
             - sfx/
           - data/
-            - dialogs/ (DIALOGS_DIRECTORY)
+            - content/ (CONTENT_DIRECTORY)
             - scripts/ (SCRIPTS_DIRECTORY)
           - images/
           - maps/ (SCENE_MAPS_DIRECTORY)
@@ -88,7 +88,7 @@ class InitCommand(Command):
             f"{settings.ASSETS_DIRECTORY}/{settings.AUDIO_SFX_DIRECTORY}",
             # Data folders
             f"{settings.ASSETS_DIRECTORY}/data",
-            f"{settings.ASSETS_DIRECTORY}/{settings.DIALOGS_DIRECTORY}",
+            f"{settings.ASSETS_DIRECTORY}/{settings.CONTENT_DIRECTORY}",
             f"{settings.ASSETS_DIRECTORY}/{settings.SCRIPTS_DIRECTORY}",
             # Images folder
             f"{settings.ASSETS_DIRECTORY}/images",

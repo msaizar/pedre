@@ -6,8 +6,6 @@ Manages player spawning, movement, animation, and state.
 
 - Implementation: [src/pedre/plugins/player/plugin.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/plugin.py)
 - Base class: [src/pedre/plugins/player/base.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/base.py)
-- Sprites: [src/pedre/plugins/player/sprites.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/sprites.py)
-- Types: [src/pedre/plugins/player/types.py](https://github.com/msaizar/pedre/blob/main/src/pedre/plugins/player/types.py)
 
 ## Configuration
 
@@ -32,13 +30,13 @@ TILE_SIZE = 32
 
 #### get_player_sprite
 
-`get_player_sprite() -> AnimatedPlayer | None`
+`get_player_sprite() -> AnimatedSprite | None`
 
 Get the player sprite instance.
 
 **Returns:**
 
-- The AnimatedPlayer sprite or None if not loaded
+- The `AnimatedSprite` instance or None if not loaded
 
 **Example:**
 
@@ -113,7 +111,7 @@ Load player from Tiled map object layer.
 - Called automatically by PluginLoader
 - Looks for "Player" object layer
 - Uses first player object in layer
-- Creates AnimatedPlayer sprite from object data
+- Resolves sprite via content registry (`sprites` sub-registry, using `sprite_id` property or `"player"` as default)
 - Supports portal-based spawning via waypoints
 
 #### reset
@@ -230,97 +228,53 @@ player_plugin.from_dict({"player_x": 320.0, "player_y": 240.0})
 - Only applies position if player sprite exists
 - Requires both `player_x` and `player_y` keys
 
-## AnimatedPlayer Sprites
+## Player Sprite and Content Registry
 
-AnimatedPlayer is a specialized sprite for the player character with 4-directional animations.
-
-### Creating AnimatedPlayer
-
-```python
-from pedre.plugins.player.sprites import AnimatedPlayer
-
-player = AnimatedPlayer(
-    sprite_sheet="characters/player.png",
-    center_x=320,
-    center_y=240,
-    scale=2.0,
-    tile_size=32,
-    # Idle animations (4 directions)
-    idle_up_frames=4,
-    idle_up_row=0,
-    idle_down_frames=4,
-    idle_down_row=1,
-    idle_left_frames=4,
-    idle_left_row=2,
-    idle_right_frames=4,
-    idle_right_row=3,
-    # Walk animations (4 directions)
-    walk_up_frames=6,
-    walk_up_row=4,
-    walk_down_frames=6,
-    walk_down_row=5,
-    walk_left_frames=6,
-    walk_left_row=6,
-    walk_right_frames=6,
-    walk_right_row=7
-)
-```
-
-### Animation Properties
-
-**Base Animation Properties (from sprite sheet):**
-
-- `idle_up_frames`, `idle_up_row` - Idle facing up
-- `idle_down_frames`, `idle_down_row` - Idle facing down
-- `idle_left_frames`, `idle_left_row` - Idle facing left
-- `idle_right_frames`, `idle_right_row` - Idle facing right
-- `walk_up_frames`, `walk_up_row` - Walk upward animation
-- `walk_down_frames`, `walk_down_row` - Walk downward animation
-- `walk_left_frames`, `walk_left_row` - Walk left animation
-- `walk_right_frames`, `walk_right_row` - Walk right animation
-
-### Key Differences from AnimatedNPC
-
-AnimatedPlayer does not include special animations (appear, disappear, interact) to keep the player character implementation simple and focused on core movement functionality. This reflects the different use cases:
-
-- **Player**: Always visible, user-controlled, focused on movement
-- **NPC**: May appear/disappear, has interaction states, AI-controlled
+The player sprite is defined entirely via the content registry — no properties are read from the Tiled Player object (only its spawn position). The plugin looks up the `"player"` key in the `players` sub-registry (`players.json`), then uses that entry's `sprite_id` field to find the sprite definition in `sprites.json`.
 
 ### Tiled Map Integration
 
-The player can be placed in Tiled maps using the "Player" object layer:
+The player is placed in Tiled maps using the "Player" object layer:
 
 1. Create a "Player" object layer
-2. Add a point object where the player should spawn
-3. Set custom properties on the object:
+2. Add a point object where the player should spawn by default
 
-**Required Properties:**
+No Tiled object properties are needed. All sprite and spawn configuration lives in `players.json`.
 
-- `sprite_sheet` (string) - Path to sprite sheet (relative to assets)
+**`players.json` fields:**
 
-**Optional Properties:**
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `sprite_id` | string | **Yes** | ID of the sprite definition in `sprites.json` |
+| `spawn_at_position` | list of strings | No | Map names where the player spawns at the Tiled object position instead of a portal waypoint |
 
-- `tile_size` (int) - Size of each tile in sprite sheet (default: from sheet)
-- `scale` (float) - Sprite scale multiplier (default: 1.0)
-- `spawn_at_portal` (bool) - Whether to use portal spawn waypoint (default: true)
-- Animation properties (see above)
+**Example `players.json`:**
 
-**Example Tiled Properties:**
-
-```yaml
-sprite_sheet: characters/player.png
-tile_size: 32
-scale: 2.0
-spawn_at_portal: true
-walk_up_frames: 6
-walk_up_row: 0
-walk_down_frames: 6
-walk_down_row: 1
-idle_up_frames: 4
-idle_up_row: 4
-idle_down_frames: 4
-idle_down_row: 5
+```json
+{
+  "player": {
+    "sprite_id": "hero",
+    "spawn_at_position": ["village"]
+  }
+}
 ```
+
+**Example sprite content registry entry (`sprites.json`):**
+
+```json
+{
+  "player": {
+    "sprite_sheet": "characters/player.png",
+    "frame_width": 32,
+    "states": {
+      "idle": {"row": 0, "frames": 4},
+      "walk": {"row": 1, "frames": 6}
+    }
+  }
+}
+```
+
+See the [Sprites Content Reference](../content/sprites.md) and [Players Content Reference](../content/players.md) for full details on defining sprite and player entries.
 
 ### Portal-Based Spawning
 
@@ -329,9 +283,9 @@ When loading a scene, the player can spawn at a waypoint instead of the default 
 **How It Works:**
 
 1. ScenePlugin stores a `next_spawn_waypoint` when transitioning scenes
-2. PlayerPlugin checks for this waypoint during `load_from_tiled()`
-3. If `spawn_at_portal=true` and waypoint exists, player spawns at waypoint's pixel coordinates
-4. If waypoint not found or `spawn_at_portal=false`, uses default position from Tiled
+2. PlayerPlugin checks `spawn_at_position` in `players.json` for the current map name
+3. If the map is **not** in `spawn_at_position` and a waypoint exists, player spawns at the waypoint's pixel coordinates
+4. If the map **is** in `spawn_at_position` or no waypoint is set, uses the default position from the Tiled object
 
 **Example:**
 
@@ -564,7 +518,7 @@ physics_engine.update()
 If the player doesn't appear on the map:
 
 1. **Check Player layer** - Ensure Tiled map has "Player" object layer
-2. **Verify sprite sheet** - Check `sprite_sheet` property points to valid file
+2. **Verify content registry** - Ensure a `"player"` entry (or the value of `sprite_id`) exists in your `sprites` content registry
 3. **Check spawn position** - Verify player object has valid x/y coordinates
 4. **Review logs** - Look for errors during `load_from_tiled()`
 
@@ -581,8 +535,8 @@ If the player sprite exists but doesn't move:
 
 If animations aren't working:
 
-1. **Check sprite sheet** - Ensure animation frames exist in sprite sheet
-2. **Verify properties** - Check `idle_*` and `walk_*` frame/row properties
+1. **Check sprite definition** - Ensure animation states are defined in the content registry sprite entry
+2. **Verify sprite sheet** - Ensure the sprite sheet file exists at the configured path
 3. **Test movement** - Animations require actual movement to trigger walk states
 4. **Review AnimatedSprite** - Check base animation plugin is functioning
 
@@ -611,7 +565,7 @@ Your custom player plugin must implement these abstract methods:
 
 ```python
 from pedre.plugins.player.base import PlayerBasePlugin
-from pedre.plugins.player.sprites import AnimatedPlayer
+from pedre.sprites import AnimatedSprite
 
 class CustomPlayerPlugin(PlayerBasePlugin):
     """Custom player implementation."""
@@ -619,7 +573,7 @@ class CustomPlayerPlugin(PlayerBasePlugin):
     name = "player"
     dependencies = ["input", "waypoint"]
 
-    def get_player_sprite(self) -> AnimatedPlayer | None:
+    def get_player_sprite(self) -> AnimatedSprite | None:
         """Get the player sprite."""
         ...
 ```
@@ -666,7 +620,7 @@ class PhysicsPlayerPlugin(PlayerBasePlugin):
         self.velocity = (0, 0)
         # ... rest of initialization ...
 
-    def get_player_sprite(self) -> AnimatedPlayer | None:
+    def get_player_sprite(self) -> AnimatedSprite | None:
         return self.player_sprite
 
     def update(self, delta_time: float) -> None:

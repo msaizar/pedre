@@ -114,28 +114,24 @@ When debug mode is enabled with Shift+D, the overlay shows:
 ### Player Information
 
 ```text
-Player: tile (10, 15)
 Player: coords (320, 480)
 ```
 
 **Fields:**
 
-- First line: Tile coordinates (x, y) calculated by dividing pixel position by TILE_SIZE
-- Second line: Pixel coordinates (x, y) from sprite center position
+- Pixel coordinates (x, y) from sprite center position
 
 ### NPC Information
 
 For each visible NPC:
 
 ```text
-merchant: tile (12, 15) level 2
 merchant: coords (384, 480) level 2
 ```
 
 **Fields:**
 
-- First line: NPC name, tile coordinates, and current dialog level
-- Second line: NPC name, pixel coordinates, and current dialog level
+- NPC name, pixel coordinates, and current dialog level
 
 **Notes:**
 

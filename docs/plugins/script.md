@@ -22,7 +22,7 @@ The ScriptPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Script Loading
 
-All scripts are loaded globally during plugin setup. The ScriptPlugin automatically scans the scripts directory for all `*_scripts.json` files and loads them at initialization time. This makes scripts available for condition checking across all scenes, with the `scene` field in each script definition controlling when it can actually execute.
+All scripts are loaded globally during plugin setup. The ScriptPlugin automatically scans the scripts directory for all `*.json` files and loads them at initialization time. This makes scripts available for condition checking across all scenes, with the `scene` field in each script definition controlling when it can actually execute.
 
 **Automatic Loading:**
 
@@ -36,13 +36,13 @@ script_plugin.setup(context)  # Loads all scripts from scripts directory
 
 **Script File Naming:**
 
-Script files should follow the naming pattern `*_scripts.json` and be placed in the directory specified by `SCRIPTS_DIRECTORY` (default: `data/scripts`):
+Script files should follow the naming pattern `*.json` and be placed in the directory specified by `SCRIPTS_DIRECTORY` (default: `data/scripts`):
 
 ```text
 assets/data/scripts/
-  ├── village_scripts.json
-  ├── forest_scripts.json
-  └── castle_scripts.json
+  ├── village.json
+  ├── forest.json
+  └── castle.json
 ```
 
 You can customize the scripts directory in your `settings.py`:
@@ -319,7 +319,7 @@ script = Script(
 
 ### Script JSON Format
 
-Scripts are defined in JSON files located in `assets/data/scripts/` with the naming pattern `*_scripts.json`:
+Scripts are defined in JSON files located in `assets/data/scripts/` with the naming pattern `*.json`:
 
 ```json
 {
@@ -432,7 +432,7 @@ For available condition types, see [Conditions](../scripting/conditions.md).
 
 All scripts are loaded globally during plugin initialization:
 
-1. ScriptPlugin scans the `SCRIPTS_DIRECTORY` (default: `assets/data/scripts/`) for all `*_scripts.json` files
+1. ScriptPlugin scans the `SCRIPTS_DIRECTORY` (default: `assets/data/scripts/`) for all `*.json` files
 2. All scripts are loaded into a single registry
 3. Event triggers are registered with the EventBus
 4. Scripts can be referenced in conditions across all scenes

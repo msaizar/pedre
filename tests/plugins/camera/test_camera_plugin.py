@@ -459,310 +459,6 @@ class TestCameraPlugin:
             mock_player.assert_not_called()
             mock_npc.assert_not_called()
 
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_no_properties(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled when tile_map has no properties."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        # No properties attribute
-        del mock_tile_map.properties
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        assert plugin._follow_config == {"mode": "player", "smooth": True}
-        assert plugin.camera is not None
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_with_player_config(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with player camera configuration."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": "player", "camera_smooth": True}
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 200.0
-        mock_player_sprite.center_y = 200.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        assert plugin._follow_config == {"mode": "player", "smooth": True}
-        assert plugin.follow_mode == "player"
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_with_npc_config(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with NPC camera configuration."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": "npc:merchant", "camera_smooth": False}
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_npc_state = MagicMock()
-        mock_npc_state.sprite.center_x = 300.0
-        mock_npc_state.sprite.center_y = 300.0
-        mock_context.npc_plugin.get_npc_by_name.return_value = mock_npc_state
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        assert plugin._follow_config == {"mode": "npc", "target": "merchant", "smooth": False}
-        assert plugin.follow_mode == "npc"
-        assert plugin.follow_target_npc == "merchant"
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_with_none_config(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with 'none' camera configuration."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": "none", "camera_smooth": True}
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        assert plugin._follow_config == {"mode": "none", "smooth": True}
-        assert plugin.follow_mode is None
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_invalid_camera_follow_type(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with invalid camera_follow type."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": 123, "camera_smooth": True}  # Invalid type
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # Should default to player
-        assert plugin._follow_config == {"mode": "player", "smooth": True}
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_invalid_camera_smooth_type(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with invalid camera_smooth type."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": "player", "camera_smooth": "yes"}  # Invalid type
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # Should default smooth to True
-        assert plugin._follow_config == {"mode": "player", "smooth": True}
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_npc_without_name(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with 'npc:' but no NPC name."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": "npc:", "camera_smooth": True}
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # Should default to player
-        assert plugin._follow_config == {"mode": "player", "smooth": True}
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_npc_not_found(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with NPC that doesn't exist."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": "npc:nonexistent", "camera_smooth": True}
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_context.npc_plugin.get_npc_by_name.return_value = None
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # Should default to player
-        assert plugin._follow_config == {"mode": "player", "smooth": True}
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
-    @patch("arcade.get_window")
-    @patch("arcade.camera.Camera2D")
-    def test_load_from_tiled_invalid_camera_follow_value(
-        self, mock_camera_cls: MagicMock, mock_get_window: MagicMock, plugin: CameraPlugin
-    ) -> None:
-        """Test load_from_tiled with invalid camera_follow value."""
-        mock_tile_map = MagicMock()
-        mock_tile_map.width = 50
-        mock_tile_map.height = 40
-        mock_tile_map.tile_width = 32
-        mock_tile_map.tile_height = 32
-        mock_tile_map.properties = {"camera_follow": "invalid_value", "camera_smooth": True}
-
-        mock_scene = MagicMock()
-        mock_window = MagicMock()
-        mock_window.width = 800
-        mock_window.height = 600
-        mock_get_window.return_value = mock_window
-
-        mock_context = MagicMock()
-        mock_player_sprite = MagicMock()
-        mock_player_sprite.center_x = 100.0
-        mock_player_sprite.center_y = 100.0
-        mock_context.player_plugin.get_player_sprite.return_value = mock_player_sprite
-        plugin.setup(mock_context)
-
-        plugin.load_from_tiled(mock_tile_map, mock_scene)
-
-        # Should default to player
-        assert plugin._follow_config == {"mode": "player", "smooth": True}
-        mock_get_window.assert_called()
-        mock_camera_cls.assert_called_once()
-
     def test_get_initial_position_npc_mode(self, plugin: CameraPlugin) -> None:
         """Test _get_initial_position with NPC follow mode."""
         mock_context = MagicMock()
@@ -849,6 +545,147 @@ class TestCameraPlugin:
 
         # Should fallback to player
         assert pos == (200.0, 250.0)
+
+    # Test load_from_tiled
+    def _make_tile_map(self, width: int = 50, height: int = 40, tile_size: int = 32) -> MagicMock:
+        """Helper to build a minimal tile_map mock."""
+        tile_map = MagicMock()
+        tile_map.width = width
+        tile_map.height = height
+        tile_map.tile_width = tile_size
+        tile_map.tile_height = tile_size
+        return tile_map
+
+    def _make_context(
+        self,
+        plugin: CameraPlugin,
+        map_def: dict | None = None,
+        *,
+        has_map_entry: bool = True,
+        npc_state: object = None,
+        tile_map: MagicMock | None = None,
+    ) -> MagicMock:
+        """Helper to wire up a mock context for on_scene_loaded tests."""
+        context = MagicMock()
+        context.scene_plugin.tile_map = tile_map or self._make_tile_map()
+        maps_mock = MagicMock()
+        maps_mock.has.return_value = has_map_entry
+        maps_mock.get.return_value = map_def or {}
+        context.content_registry.get_sub_registry.return_value = maps_mock
+        context.npc_plugin.get_npc_by_name.return_value = npc_state
+        plugin.setup(context)
+        return context
+
+    def test_on_scene_loaded_defaults_no_registry_entry(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded uses player/smooth defaults when map has no registry entry."""
+        self._make_context(plugin, has_map_entry=False)
+
+        with patch.object(plugin, "_create_camera") as mock_create:
+            plugin.on_scene_loaded("map")
+
+        assert plugin._follow_config == {"mode": "player", "smooth": True}
+        mock_create.assert_called_once_with(50 * 32, 40 * 32)
+
+    def test_on_scene_loaded_player_follow(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded sets player follow mode from registry."""
+        self._make_context(plugin, map_def={"camera_follow": "player", "camera_smooth": False})
+
+        with patch.object(plugin, "_create_camera"):
+            plugin.on_scene_loaded("map")
+
+        assert plugin._follow_config == {"mode": "player", "smooth": False}
+
+    def test_on_scene_loaded_none_follow(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded sets static camera when camera_follow is 'none'."""
+        self._make_context(plugin, map_def={"camera_follow": "none"})
+
+        with patch.object(plugin, "_create_camera"):
+            plugin.on_scene_loaded("map")
+
+        assert plugin._follow_config == {"mode": "none", "smooth": True}
+
+    def test_on_scene_loaded_npc_follow(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded sets NPC follow mode when NPC exists."""
+        mock_npc = MagicMock()
+        self._make_context(plugin, map_def={"camera_follow": "npc:merchant"}, npc_state=mock_npc)
+
+        with patch.object(plugin, "_create_camera"):
+            plugin.on_scene_loaded("map")
+
+        assert plugin._follow_config == {"mode": "npc", "target": "merchant", "smooth": True}
+
+    def test_on_scene_loaded_npc_follow_no_npc_name(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded falls back to player when 'npc:' has no name."""
+        self._make_context(plugin, map_def={"camera_follow": "npc:"})
+
+        with patch.object(plugin, "_create_camera"):
+            plugin.on_scene_loaded("map")
+
+        assert plugin._follow_config == {"mode": "player", "smooth": True}
+
+    def test_on_scene_loaded_npc_follow_npc_not_found(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded falls back to player when referenced NPC does not exist."""
+        self._make_context(plugin, map_def={"camera_follow": "npc:ghost"}, npc_state=None)
+
+        with patch.object(plugin, "_create_camera"):
+            plugin.on_scene_loaded("map")
+
+        assert plugin._follow_config == {"mode": "player", "smooth": True}
+
+    def test_on_scene_loaded_invalid_camera_follow(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded falls back to player for unknown camera_follow values."""
+        self._make_context(plugin, map_def={"camera_follow": "freeform"})
+
+        with patch.object(plugin, "_create_camera"):
+            plugin.on_scene_loaded("map")
+
+        assert plugin._follow_config == {"mode": "player", "smooth": True}
+
+    def test_on_scene_loaded_no_tile_map_returns_early(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded returns early and creates no camera when tile_map is None."""
+        context = MagicMock()
+        context.scene_plugin.tile_map = None
+        plugin.setup(context)
+
+        with patch.object(plugin, "_create_camera") as mock_create:
+            plugin.on_scene_loaded("map")
+
+        mock_create.assert_not_called()
+
+    def test_on_scene_loaded_map_dimensions_from_tile_map(self, plugin: CameraPlugin) -> None:
+        """on_scene_loaded reads map pixel dimensions from scene_plugin.tile_map."""
+        tile_map = self._make_tile_map(width=20, height=15, tile_size=16)
+        self._make_context(plugin, has_map_entry=False, tile_map=tile_map)
+
+        with patch.object(plugin, "_create_camera") as mock_create:
+            plugin.on_scene_loaded("map")
+
+        mock_create.assert_called_once_with(20 * 16, 15 * 16)
+
+    # Test _create_camera
+    def test_create_camera_creates_camera_and_sets_bounds(self, plugin: CameraPlugin) -> None:
+        """_create_camera creates a Camera2D, sets bounds, and applies follow config."""
+        mock_context = MagicMock()
+        mock_context.player_plugin.get_player_sprite.return_value = None
+        plugin.setup(mock_context)
+        plugin._follow_config = {"mode": "player", "smooth": True}
+
+        mock_window = MagicMock()
+        mock_window.width = 1280
+        mock_window.height = 720
+
+        with (
+            patch("pedre.plugins.camera.plugin.arcade.camera.Camera2D") as mock_cam_cls,
+            patch("pedre.plugins.camera.plugin.arcade.get_window", return_value=mock_window),
+            patch.object(plugin, "set_bounds") as mock_set_bounds,
+            patch.object(plugin, "apply_follow_config") as mock_apply,
+        ):
+            mock_cam_cls.return_value = MagicMock()
+            plugin._create_camera(800, 600)
+
+        mock_set_bounds.assert_called_once_with(800, 600, 1280, 720)
+        mock_apply.assert_called_once()
+        assert plugin.camera is not None
 
     def test_get_initial_position_npc_mode_npc_not_found(self, plugin: CameraPlugin) -> None:
         """Test _get_initial_position with NPC mode but NPC not found."""

@@ -128,8 +128,9 @@ Pedre uses a **plugin-based architecture** where plugins communicate via a centr
 - **GameContext** - Central coordinator providing plugins access to each other
 - **EventBus** - Powers the event-driven scripting system (triggers and actions)
 - **Plugins** - Modular, replaceable components for different game aspects. See [Plugin Reference](https://msaizar.github.io/pedre/plugins/) for complete list
+- **Content Registry** - JSON-driven data layer for sprites, NPCs, maps, players, items, and dialogs. See [Content Registry](https://msaizar.github.io/pedre/content/)
 - **Extensible scripting system** - Create custom actions, events, and conditions
-- **Sprites** - AnimatedPlayer and AnimatedNPC with multi-directional sprite sheet support
+- **Sprites** - `AnimatedSprite` with multi-directional sprite sheet support for players and NPCs
 
 All core plugins can be replaced or extended to customize your game's behavior.
 
@@ -176,6 +177,7 @@ Key guides:
 - [Configuration](https://msaizar.github.io/pedre/guides/configuration/) - Settings and customization
 - [Tiled Integration](https://msaizar.github.io/pedre/guides/tiled-integration/) - Creating maps in Tiled
 - [Scripting System](https://msaizar.github.io/pedre/scripting/) - Event-driven gameplay
+- [Content Registry](https://msaizar.github.io/pedre/content/) - Sprites, NPCs, maps, players, items, and dialogs
 - [Plugin Reference](https://msaizar.github.io/pedre/plugins/) - Complete plugin documentation
 - [API Reference](https://msaizar.github.io/pedre/api/) - Python API docs
 

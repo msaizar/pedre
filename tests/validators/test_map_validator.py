@@ -1,5 +1,6 @@
 """Tests for MapValidator."""
 
+import json
 from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
@@ -206,79 +207,6 @@ class TestMapValidator:
         assert len(result.errors) == 1
         assert "NPC missing required 'name' property" in result.errors[0]
 
-    def test_npc_missing_sprite_sheet(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC without sprite_sheet property."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(name="merchant", properties={})
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "missing required 'sprite_sheet' property" in result.errors[0]
-
-    def test_npc_invalid_tile_size_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC with tile_size that is not an int."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(
-            name="merchant",
-            properties={"sprite_sheet": "merchant.png", "tile_size": "not_an_int"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'tile_size' must be int" in result.errors[0]
-
-    def test_npc_invalid_scale_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC with scale that is not int or float."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(
-            name="merchant",
-            properties={"sprite_sheet": "merchant.png", "scale": "not_numeric"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'scale' must be int or float" in result.errors[0]
-
-    def test_npc_invalid_initially_hidden_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test NPC with initially_hidden that is not bool."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        npc = self._create_mock_object(
-            name="merchant",
-            properties={"sprite_sheet": "merchant.png", "initially_hidden": "not_bool"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"NPCs": [npc]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'initially_hidden' must be bool" in result.errors[0]
-
     def test_npc_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test that map without NPCs layer is valid."""
         map_file = maps_dir / "test.tmx"
@@ -333,26 +261,6 @@ class TestMapValidator:
 
         assert len(result.errors) == 1
         assert "portal missing required 'name' property" in result.errors[0]
-
-    def test_portal_missing_properties(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test portal without properties."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        portal = Mock()
-        portal.name = "exit_portal"
-        portal.properties = None
-        portal.shape = [100.0, 200.0]
-
-        tile_map = self._create_mock_tilemap(object_lists={"Portals": [portal]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "missing required properties" in result.errors[0]
 
     def test_portal_missing_shape(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test portal without shape."""
@@ -451,209 +359,6 @@ class TestMapValidator:
 
         assert result.errors == []
 
-    # Player Layer Tests
-
-    def test_player_valid(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test valid player with sprite_sheet."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(name="player", properties={"sprite_sheet": "player.png"})
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert result.errors == []
-
-    def test_player_missing_sprite_sheet(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player without sprite_sheet property."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(name="player", properties={})
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "missing required 'sprite_sheet' property" in result.errors[0]
-
-    def test_player_invalid_tile_size_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with tile_size that is not an int."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(
-            name="player",
-            properties={"sprite_sheet": "player.png", "tile_size": "not_int"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'tile_size' must be int" in result.errors[0]
-
-    def test_player_invalid_scale_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with scale that is not int or float."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(
-            name="player",
-            properties={"sprite_sheet": "player.png", "scale": "not_numeric"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'scale' must be int or float" in result.errors[0]
-
-    def test_player_invalid_spawn_at_portal_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with spawn_at_portal that is not bool."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(
-            name="player",
-            properties={"sprite_sheet": "player.png", "spawn_at_portal": "not_bool"},
-        )
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'spawn_at_portal' must be bool" in result.errors[0]
-
-    def test_player_layer_optional(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test that map without Player layer is valid."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        tile_map = self._create_mock_tilemap(object_lists={})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert result.errors == []
-
-    # Map Properties Tests
-
-    def test_map_properties_valid(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test valid map properties."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        tile_map = self._create_mock_tilemap(
-            properties={
-                "music": "village_theme.mp3",
-                "camera_follow": "player",
-                "camera_smooth": True,
-            }
-        )
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert result.errors == []
-
-    def test_map_properties_invalid_music_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test map with music that is not a string."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        tile_map = self._create_mock_tilemap(properties={"music": 123})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=True),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'music' must be str" in result.errors[0]
-
-    def test_map_properties_invalid_camera_follow_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test map with camera_follow that is not a string."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        tile_map = self._create_mock_tilemap(properties={"camera_follow": 123})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'camera_follow' must be str" in result.errors[0]
-
-    def test_map_properties_invalid_camera_smooth_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test map with camera_smooth that is not a bool."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        tile_map = self._create_mock_tilemap(properties={"camera_smooth": "not_bool"})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "'camera_smooth' must be bool" in result.errors[0]
-
-    def test_map_properties_optional(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test that map without properties is valid."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        tile_map = self._create_mock_tilemap(properties={})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert result.errors == []
-
     # Property Type Validation Helper Tests
 
     def test_validate_property_type_valid_single(self, maps_dir: Path, context: ValidationContext) -> None:
@@ -696,14 +401,144 @@ class TestMapValidator:
 
     # Cross-Reference Validation Tests
 
-    def test_validate_cross_references_empty(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test that maps don't validate cross-references."""
+    def test_validate_cross_references_no_maps_json(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test cross-references pass when maps.json does not exist."""
         validator = MapValidator(maps_dir, context)
         result = validator.validate_cross_references()
 
         assert result.errors == []
         assert result.item_count == 0
         assert result.metadata == {}
+
+    def test_validate_cross_references_valid(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test cross-references pass when maps.json entry matches a known TMX."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps({"village": {"music": "bg.ogg"}}))
+        context.map_entities["village"] = {}
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("pedre.validators.map_validator.asset_exists", return_value=True):
+            result = validator.validate_cross_references()
+
+        assert result.errors == []
+
+    def test_validate_cross_references_missing_tmx(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test cross-references fail when maps.json entry has no TMX file."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps({"ghost_map": {}}))
+
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "ghost_map" in result.errors[0]
+        assert "no corresponding TMX file" in result.errors[0]
+
+    def test_validate_cross_references_invalid_music_type(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test cross-references fail when maps.json music field is not a string."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps({"village": {"music": 123}}))
+
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "music" in result.errors[0]
+        assert "string" in result.errors[0]
+
+    def test_validate_cross_references_music_not_found(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test cross-references fail when maps.json music file does not exist."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps({"village": {"music": "missing.ogg"}}))
+        context.map_entities["village"] = {}
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("pedre.validators.map_validator.asset_exists", return_value=False):
+            result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert f"music file '{settings.AUDIO_MUSIC_DIRECTORY}/missing.ogg' not found" in result.errors[0]
+
+    def test_validate_cross_references_invalid_camera_follow(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test cross-references fail when camera_follow has an invalid value."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps({"village": {"camera_follow": "invalid"}}))
+        context.map_entities["village"] = {}
+
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "camera_follow" in result.errors[0]
+
+    def test_validate_cross_references_camera_follow_npc(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Test cross-references pass for valid npc: camera_follow format."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps({"village": {"camera_follow": "npc:bob"}}))
+        context.map_entities["village"] = {}
+
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert result.errors == []
+
+    def test_validate_cross_references_invalid_json(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Invalid JSON in maps.json during cross-reference reports a parse error."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text("not valid json{")
+
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "Failed to parse" in result.errors[0]
+
+    def test_validate_cross_references_os_error(self, maps_dir: Path, context: ValidationContext) -> None:
+        """OSError reading maps.json during cross-reference reports a load error."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text("{}")
+
+        validator = MapValidator(maps_dir, context)
+
+        with patch("pathlib.Path.open", side_effect=PermissionError("Permission denied")):
+            result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "Failed to load" in result.errors[0]
+
+    def test_validate_cross_references_root_not_dict(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Non-dict root in maps.json during cross-reference returns empty result."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps([{"music": "bg.ogg"}]))
+
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert result.errors == []
+
+    def test_validate_cross_references_map_entry_not_dict(self, maps_dir: Path, context: ValidationContext) -> None:
+        """Map entry that is not a dict produces an error."""
+        content_dir = maps_dir.parent / settings.CONTENT_DIRECTORY
+        content_dir.mkdir(parents=True)
+        (content_dir / "maps.json").write_text(json.dumps({"village": "not_a_dict"}))
+
+        validator = MapValidator(maps_dir, context)
+        result = validator.validate_cross_references()
+
+        assert len(result.errors) == 1
+        assert "village" in result.errors[0]
+        assert "must be a dictionary" in result.errors[0]
 
     # Metadata and Multiple Maps Tests
 
@@ -848,59 +683,6 @@ class TestMapValidator:
             result = validator.validate()
 
         assert result.errors == []
-
-    def test_player_invalid_sprite_sheet_type(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with sprite_sheet that is not a string."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(name="player", properties={"sprite_sheet": 123})
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with patch("arcade.load_tilemap", return_value=tile_map):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "sprite_sheet' must be string" in result.errors[0]
-
-    def test_player_sprite_sheet_not_found(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test player with sprite_sheet that does not exist."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        player = self._create_mock_object(name="player", properties={"sprite_sheet": "missing.png"})
-        tile_map = self._create_mock_tilemap(object_lists={"Player": [player]})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=False),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert "sprite_sheet 'missing.png' not found" in result.errors[0]
-
-    def test_map_music_not_found(self, maps_dir: Path, context: ValidationContext) -> None:
-        """Test map with music file that does not exist."""
-        map_file = maps_dir / "test.tmx"
-        map_file.write_text("")
-
-        tile_map = self._create_mock_tilemap(properties={"music": "missing.mp3"})
-
-        validator = MapValidator(maps_dir, context)
-
-        with (
-            patch("arcade.load_tilemap", return_value=tile_map),
-            patch("pedre.validators.map_validator.asset_exists", return_value=False),
-        ):
-            result = validator.validate()
-
-        assert len(result.errors) == 1
-        assert f"music file '{settings.AUDIO_MUSIC_DIRECTORY}/missing.mp3' not found" in result.errors[0]
 
     def test_map_with_prepopulated_context(self, maps_dir: Path, context: ValidationContext) -> None:
         """Test validation when context already has the map registered."""

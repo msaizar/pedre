@@ -96,6 +96,30 @@ class BasePlugin(ABC):
         """
         self.context = context
 
+    def on_scene_loaded(self, scene_name: str) -> None:
+        """Called after all plugins have finished loading data from the Tiled map.
+
+        Override this method to react to a fully-loaded scene. All plugins have
+        completed load_from_tiled() at this point, so entities (player, NPCs,
+        waypoints, portals) are available.
+
+        This is the right place for logic that depends on the scene name but
+        not on Tiled map data directly (e.g. playing music, configuring HUD).
+
+        Args:
+            scene_name: Name of the scene that just loaded (TMX filename without
+                extension, lowercase).
+
+        Example:
+            def on_scene_loaded(self, scene_name):
+                maps = self.context.content_registry.get_sub_registry("maps")
+                if maps.has(scene_name):
+                    music = maps.get(scene_name).get("music")
+                    if music:
+                        self.play_music(music)
+        """
+        return
+
     def load_from_tiled(self, tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None:
         """Load plugin-specific data from Tiled map (optional hook).
 

@@ -6,19 +6,14 @@ from the main GameView.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 import arcade
 
 from pedre.helpers import asset_path
 from pedre.plugins.player.base import PlayerBasePlugin
-from pedre.plugins.player.sprites import AnimatedPlayer
 from pedre.plugins.registry import PluginRegistry
-from pedre.sprites.constants import BASE_ANIMATION_PROPERTIES
-
-if TYPE_CHECKING:
-    from pedre.plugins.player.types import PlayerInitKwargs
-
+from pedre.sprites import AnimatedSprite
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +34,10 @@ class PlayerPlugin(PlayerBasePlugin):
 
     def __init__(self) -> None:
         """Initialize the player plugin."""
-        self.player_sprite: AnimatedPlayer | None = None
+        self.player_sprite: AnimatedSprite | None = None
         self.player_list: arcade.SpriteList | None = None
 
-    def get_player_sprite(self) -> AnimatedPlayer | None:
+    def get_player_sprite(self) -> AnimatedSprite | None:
         """Get the player sprite."""
         return self.player_sprite
 
@@ -65,8 +60,19 @@ class PlayerPlugin(PlayerBasePlugin):
         spawn_x = float(player_obj.shape[0])
         spawn_y = float(player_obj.shape[1])
 
-        # Check for portal spawn override (defaults to True)
-        spawn_at_portal = player_obj.properties.get("spawn_at_portal", True)
+        # Resolve player definition from content registry
+        content_registry = self.context.content_registry
+        players = content_registry.get_sub_registry("players")
+        if not players.has("player"):
+            logger.warning("PlayerPlugin: No 'player' definition found in players registry.")
+            return
+        player_def = players.get("player")
+
+        # Determine spawn behavior from registry definition
+        spawn_at_position_maps = player_def.get("spawn_at_position", [])
+        current_map = self.context.scene_plugin.get_current_scene()
+        spawn_at_portal = current_map not in spawn_at_position_maps
+
         next_spawn_waypoint = self.context.scene_plugin.get_next_spawn_waypoint()
         logger.debug(
             "PlayerPlugin: spawn_at_portal=%s, next_spawn_waypoint=%s",
@@ -95,53 +101,21 @@ class PlayerPlugin(PlayerBasePlugin):
                     next_spawn_waypoint,
                 )
 
-        # Get sprite sheet properties
-        sprite_sheet = player_obj.properties.get("sprite_sheet")
-        if not sprite_sheet:
-            logger.error("Player object missing required 'sprite_sheet' property")
+        # Resolve sprite definition via content registry
+        sprites = content_registry.get_sub_registry("sprites")
+        sprite_id = player_def["sprite_id"]
+
+        if sprite_id and sprites.has(sprite_id):
+            sprite_def = dict(sprites.get(sprite_id))
+            sprite_def["sprite_sheet"] = asset_path(sprite_def["sprite_sheet"])
+            self.player_sprite = AnimatedSprite.from_definition(
+                sprite_def,
+                center_x=spawn_x,
+                center_y=spawn_y,
+            )
+        else:
+            logger.warning("Player: no content registry sprite definition found. Cannot create player sprite.")
             return
-
-        sprite_sheet_path = asset_path(sprite_sheet)
-
-        # Validate tile_size if present (optional)
-        tile_size = player_obj.properties.get("tile_size")
-        if tile_size is not None and not isinstance(tile_size, int):
-            logger.warning(
-                "Player property 'tile_size' must be of type int, got %s: %s. Using default.",
-                type(tile_size).__name__,
-                tile_size,
-            )
-            tile_size = None
-
-        # Validate scale if present (optional)
-        scale = player_obj.properties.get("scale")
-        if scale is not None and not isinstance(scale, (int, float)):
-            logger.warning(
-                "Player property 'scale' must be of type float, got %s: %s. Using default.",
-                type(scale).__name__,
-                scale,
-            )
-            scale = None
-
-        # Helper to extract animation props
-        anim_props = self._get_animation_properties(player_obj.properties)
-
-        # Build sprite kwargs
-        kwargs: PlayerInitKwargs = {
-            "center_x": spawn_x,
-            "center_y": spawn_y,
-        }
-        if scale is not None:
-            kwargs["scale"] = scale
-        if tile_size is not None:
-            kwargs["tile_size"] = tile_size
-
-        # Create sprite
-        self.player_sprite = AnimatedPlayer(
-            sprite_sheet_path,
-            **kwargs,
-            **anim_props,
-        )
 
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player_sprite)
@@ -178,7 +152,7 @@ class PlayerPlugin(PlayerBasePlugin):
         self.player_sprite.change_y = dy
 
         # Update direction state logic
-        if isinstance(self.player_sprite, AnimatedPlayer):
+        if isinstance(self.player_sprite, AnimatedSprite):
             # Determine direction based on movement
             new_direction = self.player_sprite.current_direction
 
@@ -196,7 +170,11 @@ class PlayerPlugin(PlayerBasePlugin):
                 self.player_sprite.set_direction(new_direction)
 
             # Update animation
-            self.player_sprite.update_animation(delta_time, moving=moving)
+            if moving:
+                self.player_sprite.request_state("walk")
+            else:
+                self.player_sprite.release_state("walk")
+            self.player_sprite.update_animation(delta_time)
 
     def get_save_state(self) -> dict[str, Any]:
         """Get save state."""
@@ -233,23 +211,3 @@ class PlayerPlugin(PlayerBasePlugin):
         if self.player_sprite:
             return {"player_x": self.player_sprite.center_x, "player_y": self.player_sprite.center_y}
         return {}
-
-    def _get_animation_properties(self, properties: dict) -> dict[str, int]:
-        """Extract animation properties from dictionary."""
-        animation_props: dict[str, int] = {}
-        if not properties:
-            return animation_props
-
-        for key in BASE_ANIMATION_PROPERTIES:
-            if key in properties:
-                if isinstance(properties[key], int):
-                    animation_props[key] = properties[key]
-                else:
-                    logger.warning(
-                        "Animation property '%s' must be of type int, got %s: %s. Skipping.",
-                        key,
-                        type(properties[key]).__name__,
-                        properties[key],
-                    )
-
-        return animation_props

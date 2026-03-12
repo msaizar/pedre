@@ -302,53 +302,33 @@ Update camera position based on follow mode.
 
 ### Integration Methods
 
-#### load_from_tiled
+#### on_scene_loaded
 
-`load_from_tiled(tile_map: arcade.TileMap, arcade_scene: arcade.Scene) -> None`
+`on_scene_loaded(scene_name: str) -> None`
 
-Load camera configuration from a Tiled map and create the camera.
+Create the camera and apply configuration for the loaded scene.
 
 **Parameters:**
 
-- `tile_map` - Loaded TileMap with properties
-- `arcade_scene` - Scene created from tile_map (unused)
+- `scene_name` - Name of the scene that just loaded
 
 **Notes:**
 
-- Automatically called by the scene plugin when loading maps
-- Reads camera properties from the map and applies configuration
+- Automatically called by the scene plugin after each map loads
+- Reads `camera_follow` and `camera_smooth` from the maps content registry (`maps.json`) for the scene
 - Creates the camera with correct initial position and bounds
-
-**Tiled Configuration:**
-
-1. Click on the map name in Layers panel (deselect any layers)
-2. Open Properties panel (View → Properties)
-3. Add custom properties as needed
-
-**Supported Properties:**
-
-- `camera_follow` (string): `"player"`, `"npc:<name>"`, or `"none"` (default: `"player"`)
-- `camera_smooth` (bool): `true` for smooth following, `false` for instant (default: `true`)
-
-**Examples:**
-
-```yaml
-camera_follow: "player"           # Follow player (default)
-camera_follow: "npc:merchant"     # Follow NPC named merchant
-camera_follow: "none"             # Static camera
-camera_smooth: false              # Instant following (no interpolation)
-```
+- See the [Maps Content Reference](../content/maps.md) for the full field reference and examples
 
 #### apply_follow_config
 
 `apply_follow_config() -> None`
 
-Apply camera following configuration loaded from Tiled.
+Apply camera following configuration loaded from the maps content registry.
 
 **Notes:**
 
-- Called by ScenePlugin after camera is created and set
-- Applies the configuration stored by `load_from_tiled()`
+- Called by ScenePlugin after the camera is created and set
+- Applies the configuration stored by `on_scene_loaded()`
 
 #### get_follow_config
 

@@ -13,7 +13,7 @@ The PauseMenuPlugin uses the following settings from `pedre.conf.settings`:
 
 ### Visual Settings
 
-- `PAUSE_MENU_OVERLAY_ALPHA` - Opacity of the semi-transparent overlay (0-255, default: 180)
+- `PAUSE_MENU_OVERLAY_ALPHA` - Opacity of the semi-transparent overlay (0-255, default: 128)
 - `PAUSE_MENU_COLOR_OVERLAY` - RGB color of the overlay (default: (0, 0, 0))
 - `PAUSE_MENU_COLOR_BOX_BACKGROUND` - RGB color of the menu box background (default: (102, 102, 153))
 - `PAUSE_MENU_COLOR_BOX_BORDER` - RGB color of the menu box border (default: (255, 255, 255))
@@ -38,17 +38,17 @@ The PauseMenuPlugin uses the following settings from `pedre.conf.settings`:
 ### Layout Settings
 
 - `PAUSE_MENU_DESIGN` - Dictionary containing design specifications:
-  - `box_width` - Width of the menu box in design units (default: 500)
-  - `box_height` - Height of the menu box in design units (default: 400)
-  - `border_width` - Width of the menu box border in design units (default: 4)
+  - `box_width` - Width of the menu box in design units (default: 512)
+  - `box_height` - Height of the menu box in design units (default: 396)
+  - `border_width` - Width of the menu box border in design units (default: 2)
   - `title_padding` - Padding above the title in design units (default: 20)
-  - `title_area_height` - Height reserved for the title area (default: 80)
-  - `horizontal_padding` - Left/right padding inside the box (default: 40)
-  - `spacing` - Vertical spacing between options (default: 50)
-  - `content_bottom_padding` - Bottom padding for slot lists (default: 20)
-  - `confirmation_message_offset` - Vertical offset for confirmation message (default: 50)
-  - `confirmation_options_offset` - Vertical offset for confirmation options (default: 30)
-  - `feedback_offset` - Offset for feedback messages (default: 50)
+  - `title_area_height` - Height reserved for the title area (default: 59)
+  - `horizontal_padding` - Left/right padding inside the box (default: 25)
+  - `spacing` - Vertical spacing between options (default: 28)
+  - `content_bottom_padding` - Bottom padding for slot lists (default: 40)
+  - `confirmation_message_offset` - Vertical offset for confirmation message (default: 40)
+  - `confirmation_options_offset` - Vertical offset for confirmation options (default: 20)
+  - `feedback_offset` - Offset for feedback messages (default: 40)
 
 ### Scaling Settings
 

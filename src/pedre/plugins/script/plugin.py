@@ -301,7 +301,7 @@ class ScriptPlugin(ScriptBasePlugin):
     def _load_all_scripts(self) -> None:
         """Load all scripts from the scripts directory.
 
-        Scans the scripts directory for all *_scripts.json files and loads them globally.
+        Scans the scripts directory for all *.json files and loads them globally.
         This makes all scripts available for conditions regardless of the current scene.
         The scene field in each script definition controls when it can actually execute.
 
@@ -315,7 +315,7 @@ class ScriptPlugin(ScriptBasePlugin):
                 return
 
             # Find all script files
-            script_files = list(scripts_dir.glob("*_scripts.json"))
+            script_files = list(scripts_dir.glob("*.json"))
             if not script_files:
                 logger.info("No script files found in %s", scripts_dir)
                 return
@@ -543,6 +543,8 @@ class ScriptPlugin(ScriptBasePlugin):
         if not self.context:
             return
 
+        for action in action_data_list:
+            action.reset()
         sequence = ActionSequence(action_data_list)
         self.active_sequences.append((sequence_name, sequence))
         logger.info(

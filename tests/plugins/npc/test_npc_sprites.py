@@ -1,12 +1,16 @@
-"""Unit tests for AnimatedNPC in src/pedre/plugins/npc/sprites.py."""
+"""Tests for AnimatedSprite with NPC-type animation states.
+
+AnimatedNPC has been removed. NPCs now use the generic AnimatedSprite with
+data-driven state configs (appear, disappear, interact, idle, walk).
+"""
 
 from typing import TYPE_CHECKING
-from unittest.mock import patch
 
 import pytest
 from PIL import Image
 
-from pedre.plugins.npc.sprites import AnimatedNPC
+from pedre.sprites import AnimatedSprite
+from pedre.sprites.types import AnimationStateConfig
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -18,7 +22,7 @@ def sprite_sheet_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
     tmp_path = tmp_path_factory.mktemp("npc_sprites")
     path = tmp_path / "test_npc_sprite.png"
     tile_size = 16
-    rows = 10
+    rows = 12
     cols = 10
 
     image = Image.new("RGBA", (cols * tile_size, rows * tile_size), (0, 0, 0, 0))
@@ -29,536 +33,424 @@ def sprite_sheet_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
                 for y in range(tile_size):
                     pixel_x = col * tile_size + x
                     pixel_y = row * tile_size + y
-                    color = (row * 25, col * 25, 128, 255)
+                    color = (row * 20, col * 25, 128, 255)
                     image.putpixel((pixel_x, pixel_y), color)
 
     image.save(path)
     return path
 
 
-class TestAnimatedNPC:
-    """Test Suite for AnimatedNPC sprite class."""
-
-    def test_initialization_basic(self, sprite_sheet_path: Path) -> None:
-        """Test basic initialization of AnimatedNPC."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            tile_size=16,
+def make_npc_states(
+    *,
+    include_appear: bool = False,
+    include_disappear: bool = False,
+    include_interact: bool = False,
+    disappear_auto_from: bool = False,
+) -> dict[str, AnimationStateConfig]:
+    """Build a standard NPC state config dict."""
+    states: dict[str, AnimationStateConfig] = {
+        "idle": AnimationStateConfig(
+            name="idle",
+            directional=True,
+            loop=True,
+            priority=0,
+            directions={"down": {"frames": 4, "row": 0}},
+        ),
+    }
+    if include_appear:
+        states["appear"] = AnimationStateConfig(
+            name="appear",
+            directional=False,
+            loop=False,
+            priority=3,
+            on_complete="idle",
+            reverse_load=True,
+            frames=5,
+            row=8,
         )
+    if include_disappear:
+        if disappear_auto_from and "appear" in states:
+            states["disappear"] = AnimationStateConfig(
+                name="disappear",
+                directional=False,
+                loop=False,
+                priority=4,
+                on_complete="hide",
+                auto_from="appear",
+            )
+        else:
+            states["disappear"] = AnimationStateConfig(
+                name="disappear",
+                directional=False,
+                loop=False,
+                priority=4,
+                on_complete="hide",
+                frames=5,
+                row=8,
+            )
+    if include_interact:
+        states["interact"] = AnimationStateConfig(
+            name="interact",
+            directional=True,
+            loop=False,
+            priority=5,
+            on_complete="idle",
+            directions={"down": {"frames": 3, "row": 2}},
+        )
+    return states
 
-        # Check NPC-specific state
-        assert not npc.is_appearing
-        assert not npc.appear_complete
-        assert not npc.is_disappearing
-        assert not npc.disappear_complete
-        assert not npc.is_interacting
-        assert not npc.interact_complete
 
-        # Check animation texture keys exist
-        assert "appear" in npc.animation_textures
-        assert "disappear" in npc.animation_textures
-        assert "interact_up" in npc.animation_textures
-        assert "interact_down" in npc.animation_textures
-        assert "interact_left" in npc.animation_textures
-        assert "interact_right" in npc.animation_textures
+class TestNPCAnimatedSpriteInitialization:
+    """Test NPC-type AnimatedSprite initialization."""
 
-    def test_initialization_with_all_idle_and_walk_animations(self, sprite_sheet_path: Path) -> None:
-        """Test initialization with all 4-directional idle and walk animations."""
-        npc = AnimatedNPC(
+    def test_basic_initialization_idle_only(self, sprite_sheet_path: Path) -> None:
+        """Test basic NPC sprite with idle state only."""
+        states = make_npc_states()
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert sprite.has_state("idle")
+        assert not sprite.has_state("appear")
+        assert not sprite.has_state("disappear")
+        assert not sprite.has_state("interact")
+        assert "idle_down" in sprite.animation_textures
+
+    def test_initialization_with_appear_state(self, sprite_sheet_path: Path) -> None:
+        """Test NPC sprite with appear animation."""
+        states = make_npc_states(include_appear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert sprite.has_state("appear")
+        assert len(sprite.animation_textures["appear"]) == 5
+        assert not sprite.is_state_complete("appear")
+
+    def test_initialization_with_disappear_auto_from_appear(self, sprite_sheet_path: Path) -> None:
+        """Test NPC sprite with disappear auto-generated from appear."""
+        states = make_npc_states(include_appear=True, include_disappear=True, disappear_auto_from=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert sprite.has_state("appear")
+        assert sprite.has_state("disappear")
+        assert len(sprite.animation_textures["appear"]) == 5
+        assert len(sprite.animation_textures["disappear"]) == 5
+        # Disappear frames should be the reverse of appear frames
+        assert sprite.animation_textures["disappear"] == list(reversed(sprite.animation_textures["appear"]))
+
+    def test_initialization_with_explicit_disappear(self, sprite_sheet_path: Path) -> None:
+        """Test NPC sprite with independently defined disappear animation."""
+        states = make_npc_states(include_appear=True, include_disappear=True, disappear_auto_from=False)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert len(sprite.animation_textures["appear"]) == 5
+        assert len(sprite.animation_textures["disappear"]) == 5
+
+    def test_initialization_with_interact_state(self, sprite_sheet_path: Path) -> None:
+        """Test NPC sprite with interact animation."""
+        states = make_npc_states(include_interact=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert sprite.has_state("interact")
+        assert "interact_down" in sprite.animation_textures
+        assert len(sprite.animation_textures["interact_down"]) == 3
+
+    def test_initialization_with_all_npc_states(self, sprite_sheet_path: Path) -> None:
+        """Test NPC sprite with all standard NPC states."""
+        states = make_npc_states(
+            include_appear=True,
+            include_disappear=True,
+            include_interact=True,
+            disappear_auto_from=True,
+        )
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert sprite.has_state("idle")
+        assert sprite.has_state("appear")
+        assert sprite.has_state("disappear")
+        assert sprite.has_state("interact")
+
+    def test_initial_completion_flags_false(self, sprite_sheet_path: Path) -> None:
+        """Test that all one-shot states start with completion False."""
+        states = make_npc_states(include_appear=True, include_disappear=True, include_interact=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        assert not sprite.is_state_complete("appear")
+        assert not sprite.is_state_complete("disappear")
+        assert not sprite.is_state_complete("interact")
+
+    def test_position_and_scale(self, sprite_sheet_path: Path) -> None:
+        """Test position and scale initialization."""
+        sprite = AnimatedSprite(
             str(sprite_sheet_path),
-            idle_up_frames=4,
-            idle_up_row=0,
-            idle_down_frames=4,
-            idle_down_row=1,
-            idle_left_frames=4,
-            idle_left_row=2,
-            idle_right_frames=4,
-            idle_right_row=3,
-            walk_up_frames=6,
-            walk_up_row=4,
-            walk_down_frames=6,
-            walk_down_row=5,
-            walk_left_frames=6,
-            walk_left_row=6,
-            walk_right_frames=6,
-            walk_right_row=7,
             tile_size=16,
             scale=2.0,
             center_x=100,
             center_y=200,
+            states=make_npc_states(),
         )
+        assert sprite.center_x == 100
+        assert sprite.center_y == 200
+        assert sprite.scale == (2.0, 2.0)
 
-        # Check position and scale (scale is a tuple in arcade)
-        assert npc.center_x == 100
-        assert npc.center_y == 200
-        assert npc.scale == (2.0, 2.0)
 
-        # Check that base animations were loaded (via parent class)
-        assert len(npc.animation_textures["idle_up"]) == 4
-        assert len(npc.animation_textures["idle_down"]) == 4
-        assert len(npc.animation_textures["walk_up"]) == 6
-        assert len(npc.animation_textures["walk_down"]) == 6
+class TestNPCAppearAnimation:
+    """Tests for appear animation via state machine."""
 
-    def test_initialization_with_appear_animation(self, sprite_sheet_path: Path) -> None:
-        """Test initialization with appear animation."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            appear_frames=5,
-            appear_row=8,
-            tile_size=16,
-        )
+    def test_request_appear_activates_state(self, sprite_sheet_path: Path) -> None:
+        """Test that requesting appear state activates it."""
+        states = make_npc_states(include_appear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
 
-        # Appear animation should be loaded
-        assert len(npc.animation_textures["appear"]) == 5
-        # Disappear should be auto-generated (reversed)
-        assert len(npc.animation_textures["disappear"]) == 5
-        assert npc.appear_frames == 5
-        assert npc.appear_row == 8
+        sprite.request_state("appear")
+        assert "appear" in sprite._active_states
+        assert not sprite.is_state_complete("appear")
 
-    def test_initialization_with_disappear_animation(self, sprite_sheet_path: Path) -> None:
-        """Test initialization with disappear animation (appear auto-generated)."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            disappear_frames=5,
-            disappear_row=8,
-            tile_size=16,
-        )
+    def test_appear_advances_through_frames(self, sprite_sheet_path: Path) -> None:
+        """Test appear animation advances through frames."""
+        states = make_npc_states(include_appear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.request_state("appear")
 
-        # Disappear animation should be loaded
-        assert len(npc.animation_textures["disappear"]) == 5
-        # Appear should be auto-generated (reversed)
-        assert len(npc.animation_textures["appear"]) == 5
-        assert npc.disappear_frames == 5
-        assert npc.disappear_row == 8
+        # First update — advances timer
+        sprite.update_animation(delta_time=0.05)
+        assert sprite.current_frame == 0
+        assert sprite.animation_timer == 0.05
 
-    def test_initialization_with_both_appear_and_disappear(self, sprite_sheet_path: Path) -> None:
-        """Test initialization with both appear and disappear animations."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            appear_frames=5,
-            appear_row=8,
-            disappear_frames=6,
-            disappear_row=9,
-            tile_size=16,
-        )
+        # Second update — advances frame
+        sprite.update_animation(delta_time=0.06)
+        assert sprite.current_frame == 1
+        assert sprite.animation_timer == 0.0
 
-        # Both animations should be loaded independently
-        assert len(npc.animation_textures["appear"]) == 5
-        assert len(npc.animation_textures["disappear"]) == 6
-        assert npc.appear_frames == 5
-        assert npc.disappear_frames == 6
+    def test_appear_completes_after_all_frames(self, sprite_sheet_path: Path) -> None:
+        """Test appear animation completes and sets flag."""
+        states = make_npc_states(include_appear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.request_state("appear")
 
-    def test_initialization_with_interact_animations(self, sprite_sheet_path: Path) -> None:
-        """Test initialization with interact animations for all directions."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            interact_up_frames=3,
-            interact_up_row=1,
-            interact_down_frames=3,
-            interact_down_row=2,
-            interact_left_frames=3,
-            interact_left_row=3,
-            interact_right_frames=3,
-            interact_right_row=4,
-            tile_size=16,
-        )
-
-        # All interact animations should be loaded
-        assert len(npc.animation_textures["interact_up"]) == 3
-        assert len(npc.animation_textures["interact_down"]) == 3
-        assert len(npc.animation_textures["interact_left"]) == 3
-        assert len(npc.animation_textures["interact_right"]) == 3
-
-    def test_initialization_without_base_animations_uses_appear_texture(self, sprite_sheet_path: Path) -> None:
-        """Test that appear texture is used when no idle/walk animations are provided."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            appear_frames=5,
-            appear_row=8,
-            tile_size=16,
-        )
-
-        # Should use first appear frame as initial texture
-        assert npc.texture is not None
-        assert npc.texture == npc.animation_textures["appear"][0]
-
-    def test_start_appear_animation(self, sprite_sheet_path: Path) -> None:
-        """Test starting the appear animation."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            appear_frames=5,
-            appear_row=8,
-            tile_size=16,
-        )
-
-        npc.start_appear_animation()
-
-        assert npc.is_appearing
-        assert not npc.appear_complete
-        assert npc.current_frame == 0
-        assert npc.animation_timer == 0.0
-        assert npc.texture == npc.animation_textures["appear"][0]
-
-    def test_start_appear_animation_without_textures(self, sprite_sheet_path: Path) -> None:
-        """Test starting appear animation when no appear textures are loaded."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            tile_size=16,
-        )
-
-        npc.visible = False
-        npc.start_appear_animation()
-
-        # Should set visible and complete immediately
-        assert npc.visible
-        assert npc.appear_complete
-        assert not npc.is_appearing
-
-    def test_start_disappear_animation(self, sprite_sheet_path: Path) -> None:
-        """Test starting the disappear animation."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            disappear_frames=5,
-            disappear_row=8,
-            tile_size=16,
-        )
-
-        npc.start_disappear_animation()
-
-        assert npc.is_disappearing
-        assert not npc.disappear_complete
-        assert npc.current_frame == 0
-        assert npc.animation_timer == 0.0
-        assert npc.texture == npc.animation_textures["disappear"][0]
-
-    def test_start_disappear_animation_without_textures(self, sprite_sheet_path: Path) -> None:
-        """Test starting disappear animation when no disappear textures are loaded."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            tile_size=16,
-        )
-
-        npc.visible = True
-        npc.start_disappear_animation()
-
-        # Should set invisible and complete immediately
-        assert not npc.visible
-        assert npc.disappear_complete
-        assert not npc.is_disappearing
-
-    def test_start_interact_animation(self, sprite_sheet_path: Path) -> None:
-        """Test starting the interact animation."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            interact_down_frames=3,
-            interact_down_row=2,
-            tile_size=16,
-        )
-
-        npc.current_direction = "down"
-        npc.start_interact_animation()
-
-        assert npc.is_interacting
-        assert not npc.interact_complete
-        assert npc.current_frame == 0
-        assert npc.animation_timer == 0.0
-        assert npc.texture == npc.animation_textures["interact_down"][0]
-
-    def test_start_interact_animation_without_textures(self, sprite_sheet_path: Path) -> None:
-        """Test starting interact animation when no textures exist for the direction."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            tile_size=16,
-        )
-
-        npc.current_direction = "down"
-        npc.start_interact_animation()
-
-        # Should not start animation
-        assert not npc.is_interacting
-        assert not npc.interact_complete
-
-    def test_update_animation_interact(self, sprite_sheet_path: Path) -> None:
-        """Test update_animation during interact animation."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            interact_down_frames=3,
-            interact_down_row=2,
-            tile_size=16,
-        )
-
-        npc.current_direction = "down"
-        npc.animation_speed = 0.1
-        npc.start_interact_animation()
-
-        # First update - should advance timer but not frame
-        npc.update_animation(delta_time=0.05)
-        assert npc.current_frame == 0
-        assert npc.animation_timer == 0.05
-
-        # Second update - should advance frame (timer resets to 0 when frame advances)
-        npc.update_animation(delta_time=0.06)
-        assert npc.current_frame == 1
-        assert npc.animation_timer == 0.0
-        assert npc.texture == npc.animation_textures["interact_down"][1]
-
-    def test_update_animation_interact_completion(self, sprite_sheet_path: Path) -> None:
-        """Test interact animation completion and return to idle."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            interact_down_frames=3,
-            interact_down_row=2,
-            tile_size=16,
-        )
-
-        npc.current_direction = "down"
-        npc.animation_speed = 0.1
-        npc.start_interact_animation()
-
-        # Advance through all frames
-        for _ in range(3):
-            npc.update_animation(delta_time=0.1)
-
-        # Should complete and return to idle
-        assert not npc.is_interacting
-        assert npc.interact_complete
-        assert npc.current_frame == 0
-        assert npc.texture == npc.animation_textures["idle_down"][0]
-
-    def test_update_animation_disappear(self, sprite_sheet_path: Path) -> None:
-        """Test update_animation during disappear animation."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            disappear_frames=5,
-            disappear_row=8,
-            tile_size=16,
-        )
-
-        npc.animation_speed = 0.1
-        npc.start_disappear_animation()
-
-        # First update - should advance timer but not frame
-        npc.update_animation(delta_time=0.05)
-        assert npc.current_frame == 0
-        assert npc.animation_timer == 0.05
-
-        # Second update - should advance frame (timer resets to 0 when frame advances)
-        npc.update_animation(delta_time=0.06)
-        assert npc.current_frame == 1
-        assert npc.animation_timer == 0.0
-        assert npc.texture == npc.animation_textures["disappear"][1]
-
-    def test_update_animation_disappear_completion(self, sprite_sheet_path: Path) -> None:
-        """Test disappear animation completion and becoming invisible."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            disappear_frames=5,
-            disappear_row=8,
-            tile_size=16,
-        )
-
-        npc.animation_speed = 0.1
-        npc.start_disappear_animation()
-
-        # Advance through all frames
         for _ in range(5):
-            npc.update_animation(delta_time=0.1)
+            sprite.update_animation(delta_time=0.11)
 
-        # Should complete and become invisible
-        assert not npc.is_disappearing
-        assert npc.disappear_complete
-        assert not npc.visible
-        assert npc.current_frame == 0
+        assert sprite.is_state_complete("appear")
+        assert "appear" not in sprite._active_states
+        assert sprite.current_frame == 0
 
-    def test_update_animation_appear(self, sprite_sheet_path: Path) -> None:
-        """Test update_animation during appear animation."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            appear_frames=5,
-            appear_row=8,
-            tile_size=16,
-        )
+    def test_appear_returns_to_idle_after_completion(self, sprite_sheet_path: Path) -> None:
+        """Test that after appear completes, idle plays."""
+        states = make_npc_states(include_appear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.request_state("appear")
 
-        npc.animation_speed = 0.1
-        npc.start_appear_animation()
-
-        # First update - should advance timer but not frame
-        npc.update_animation(delta_time=0.05)
-        assert npc.current_frame == 0
-        assert npc.animation_timer == 0.05
-
-        # Second update - should advance frame (timer resets to 0 when frame advances)
-        npc.update_animation(delta_time=0.06)
-        assert npc.current_frame == 1
-        assert npc.animation_timer == 0.0
-        assert npc.texture == npc.animation_textures["appear"][1]
-
-    def test_update_animation_appear_completion(self, sprite_sheet_path: Path) -> None:
-        """Test appear animation completion."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            appear_frames=5,
-            appear_row=8,
-            tile_size=16,
-        )
-
-        npc.animation_speed = 0.1
-        npc.start_appear_animation()
-
-        # Advance through all frames
         for _ in range(5):
-            npc.update_animation(delta_time=0.1)
+            sprite.update_animation(delta_time=0.11)
 
-        # Should complete
-        assert not npc.is_appearing
-        assert npc.appear_complete
-        assert npc.current_frame == 0
+        # Next update should play idle
+        sprite.update_animation(delta_time=0.11)
+        assert sprite._current_playing == "idle"
 
-    def test_update_animation_falls_back_to_parent(self, sprite_sheet_path: Path) -> None:
-        """Test that update_animation delegates to parent when no special animation is active."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            walk_down_frames=6,
-            walk_down_row=1,
-            tile_size=16,
-        )
 
-        npc.current_direction = "down"
-        npc.animation_speed = 0.1
+class TestNPCDisappearAnimation:
+    """Tests for disappear animation via state machine."""
 
-        # Should use idle animation when not moving
-        npc.update_animation(delta_time=0.1, moving=False)
+    def test_request_disappear_activates_state(self, sprite_sheet_path: Path) -> None:
+        """Test that requesting disappear state activates it."""
+        states = make_npc_states(include_disappear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
 
-        # Should use walk animation when moving
-        npc.update_animation(delta_time=0.1, moving=True)
+        sprite.request_state("disappear")
+        assert "disappear" in sprite._active_states
+        assert not sprite.is_state_complete("disappear")
 
-    def test_animation_priority_interact_over_disappear(self, sprite_sheet_path: Path) -> None:
-        """Test that interact animation has priority over disappear."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            disappear_frames=5,
-            disappear_row=8,
-            interact_down_frames=3,
-            interact_down_row=2,
-            tile_size=16,
-        )
+    def test_disappear_advances_through_frames(self, sprite_sheet_path: Path) -> None:
+        """Test disappear animation advances through frames."""
+        states = make_npc_states(include_disappear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.request_state("disappear")
 
-        npc.current_direction = "down"
-        npc.animation_speed = 0.1
+        sprite.update_animation(delta_time=0.05)
+        assert sprite.current_frame == 0
 
-        # Start both animations
-        npc.start_disappear_animation()
-        npc.start_interact_animation()
+        sprite.update_animation(delta_time=0.06)
+        assert sprite.current_frame == 1
 
-        # Interact should play first
-        npc.update_animation(delta_time=0.1)
-        assert npc.is_interacting
-        assert npc.texture == npc.animation_textures["interact_down"][1]
+    def test_disappear_completes_and_hides_sprite(self, sprite_sheet_path: Path) -> None:
+        """Test disappear animation completes and sets visible=False."""
+        states = make_npc_states(include_disappear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.visible = True
+        sprite.request_state("disappear")
 
-    def test_load_npc_textures_logging(self, sprite_sheet_path: Path) -> None:
-        """Test that _load_npc_textures logs appropriate messages."""
-        with patch("pedre.plugins.npc.sprites.logger") as mock_logger:
-            AnimatedNPC(
-                str(sprite_sheet_path),
-                idle_down_frames=4,
-                idle_down_row=0,
-                appear_frames=5,
-                appear_row=8,
-                interact_down_frames=3,
-                interact_down_row=2,
-                tile_size=16,
-            )
+        for _ in range(5):
+            sprite.update_animation(delta_time=0.11)
 
-            # Should have logged info about animations being loaded
-            assert mock_logger.info.called
-            assert mock_logger.debug.called
+        assert sprite.is_state_complete("disappear")
+        assert not sprite.visible
+        assert sprite.current_frame == 0
 
-    def test_interact_animation_different_directions(self, sprite_sheet_path: Path) -> None:
-        """Test interact animation works for all four directions."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            idle_down_frames=4,
-            idle_down_row=0,
-            interact_up_frames=3,
-            interact_up_row=1,
-            interact_down_frames=3,
-            interact_down_row=2,
-            interact_left_frames=3,
-            interact_left_row=3,
-            interact_right_frames=3,
-            interact_right_row=4,
-            tile_size=16,
-        )
 
-        # Test each direction
-        for direction in ["up", "down", "left", "right"]:
-            npc.current_direction = direction
-            npc.start_interact_animation()
+class TestNPCInteractAnimation:
+    """Tests for interact animation via state machine."""
 
-            assert npc.is_interacting
-            assert npc.texture == npc.animation_textures[f"interact_{direction}"][0]
+    def test_request_interact_activates_state(self, sprite_sheet_path: Path) -> None:
+        """Test that requesting interact state activates it."""
+        states = make_npc_states(include_interact=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
 
-            # Reset for next direction
-            npc.is_interacting = False
-            npc.current_frame = 0
+        sprite.request_state("interact")
+        assert "interact" in sprite._active_states
+        assert not sprite.is_state_complete("interact")
 
-    def test_interact_completion_without_idle_animation(self, sprite_sheet_path: Path) -> None:
-        """Test interact animation completion when no idle animation exists for direction."""
-        npc = AnimatedNPC(
-            str(sprite_sheet_path),
-            interact_down_frames=3,
-            interact_down_row=2,
-            tile_size=16,
-        )
+    def test_interact_advances_through_frames(self, sprite_sheet_path: Path) -> None:
+        """Test interact animation advances through frames."""
+        states = make_npc_states(include_interact=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.current_direction = "down"
+        sprite.request_state("interact")
 
-        npc.current_direction = "down"
-        npc.animation_speed = 0.1
-        npc.start_interact_animation()
+        sprite.update_animation(delta_time=0.05)
+        assert sprite.current_frame == 0
+        assert sprite.animation_timer == 0.05
 
-        # Advance through all frames to complete the animation
+        # This call advances current_frame to 1 but texture is updated at start of next call
+        sprite.update_animation(delta_time=0.06)
+        assert sprite.current_frame == 1
+        assert sprite.animation_timer == 0.0
+
+        # Texture for frame 1 is applied at the start of the next update_animation call
+        sprite.update_animation(delta_time=0.05)
+        assert sprite.texture == sprite.animation_textures["interact_down"][1]
+
+    def test_interact_completes_and_returns_to_idle(self, sprite_sheet_path: Path) -> None:
+        """Test interact animation completes and returns to idle."""
+        states = make_npc_states(include_interact=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.current_direction = "down"
+        sprite.request_state("interact")
+
         for _ in range(3):
-            npc.update_animation(delta_time=0.1)
+            sprite.update_animation(delta_time=0.11)
 
-        # Should complete but not change texture (no idle to fall back to)
-        assert not npc.is_interacting
-        assert npc.interact_complete
-        assert npc.current_frame == 0
-        # Texture should remain as it was since no idle animation exists
+        assert sprite.is_state_complete("interact")
+        assert "interact" not in sprite._active_states
+        assert sprite.current_frame == 0
+
+
+class TestNPCAnimationPriority:
+    """Tests for priority resolution among NPC states."""
+
+    def test_interact_takes_priority_over_walk(self, sprite_sheet_path: Path) -> None:
+        """Test interact (priority 5) takes priority over walk (priority 1)."""
+        states = {
+            "idle": AnimationStateConfig(
+                name="idle",
+                directional=True,
+                loop=True,
+                priority=0,
+                directions={"down": {"frames": 4, "row": 0}},
+            ),
+            "walk": AnimationStateConfig(
+                name="walk",
+                directional=True,
+                loop=True,
+                priority=1,
+                directions={"down": {"frames": 4, "row": 1}},
+            ),
+            "interact": AnimationStateConfig(
+                name="interact",
+                directional=True,
+                loop=False,
+                priority=5,
+                on_complete="idle",
+                directions={"down": {"frames": 3, "row": 2}},
+            ),
+        }
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.current_direction = "down"
+        sprite.request_state("walk")
+        sprite.request_state("interact")
+        sprite.update_animation(delta_time=0.11)
+        assert sprite._current_playing == "interact"
+
+    def test_disappear_takes_priority_over_appear(self, sprite_sheet_path: Path) -> None:
+        """Test disappear (priority 4) takes priority over appear (priority 3)."""
+        states = make_npc_states(include_appear=True, include_disappear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.request_state("appear")
+        sprite.request_state("disappear")
+        sprite.update_animation(delta_time=0.11)
+        assert sprite._current_playing == "disappear"
+
+    def test_appear_takes_priority_over_walk(self, sprite_sheet_path: Path) -> None:
+        """Test appear (priority 3) takes priority over walk (priority 1)."""
+        walk_cfg = AnimationStateConfig(
+            name="walk",
+            directional=True,
+            loop=True,
+            priority=1,
+            directions={"down": {"frames": 4, "row": 1}},
+        )
+        states = {
+            "idle": AnimationStateConfig(
+                name="idle",
+                directional=True,
+                loop=True,
+                priority=0,
+                directions={"down": {"frames": 4, "row": 0}},
+            ),
+            "walk": walk_cfg,
+            "appear": AnimationStateConfig(
+                name="appear",
+                directional=False,
+                loop=False,
+                priority=3,
+                on_complete="idle",
+                frames=5,
+                row=8,
+            ),
+        }
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.request_state("walk")
+        sprite.request_state("appear")
+        sprite.update_animation(delta_time=0.11)
+        assert sprite._current_playing == "appear"
+
+
+class TestNPCStatePersistence:
+    """Tests for save/restore state machine persistence."""
+
+    def test_mark_state_complete_for_save_restore(self, sprite_sheet_path: Path) -> None:
+        """Test mark_state_complete can be used to restore saved appear state."""
+        states = make_npc_states(include_appear=True, include_disappear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+
+        # Simulate restoring a saved state where appear was already complete
+        sprite.mark_state_complete("appear")
+
+        assert sprite.is_state_complete("appear")
+        assert not sprite.is_state_complete("disappear")
+
+    def test_reset_state_allows_replaying(self, sprite_sheet_path: Path) -> None:
+        """Test reset_state allows one-shot animation to be played again."""
+        states = make_npc_states(include_appear=True)
+        sprite = AnimatedSprite(str(sprite_sheet_path), tile_size=16, states=states)
+        sprite.animation_speed = 0.1
+        sprite.request_state("appear")
+
+        for _ in range(5):
+            sprite.update_animation(delta_time=0.11)
+
+        assert sprite.is_state_complete("appear")
+
+        sprite.reset_state("appear")
+        assert not sprite.is_state_complete("appear")
+
+        # Should be able to replay
+        sprite.request_state("appear")
+        assert "appear" in sprite._active_states

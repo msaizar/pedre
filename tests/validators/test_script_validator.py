@@ -127,7 +127,7 @@ class TestScriptValidator:
         self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
     ) -> None:
         """Test error on invalid JSON."""
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text("not valid json{")
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -138,7 +138,7 @@ class TestScriptValidator:
         self, scripts_dir: Path, context: ValidationContext, setup_basic_registries: None
     ) -> None:
         """Test error handling when OSError occurs while reading file."""
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
 
         validator = ScriptValidator(scripts_dir, context)
@@ -154,7 +154,7 @@ class TestScriptValidator:
     ) -> None:
         """Test error when trigger is missing event key."""
         data = {"test_script": {"trigger": {"filter_key": "value"}, "actions": [{"name": "test_action"}]}}
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -166,7 +166,7 @@ class TestScriptValidator:
     ) -> None:
         """Test error when trigger references unknown event."""
         data = {"test_script": {"trigger": {"event": "unknown_event"}, "actions": [{"name": "test_action"}]}}
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -183,7 +183,7 @@ class TestScriptValidator:
                 "actions": [{"name": "test_action"}],
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -201,7 +201,7 @@ class TestScriptValidator:
                 "actions": [{"name": "test_action"}],
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -213,7 +213,7 @@ class TestScriptValidator:
     ) -> None:
         """Test error when action fails to parse."""
         data = {"test_script": {"actions": [{"name": "nonexistent_action"}]}}
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -225,7 +225,7 @@ class TestScriptValidator:
     ) -> None:
         """Test error when actions list is empty."""
         data = {"test_script": {"actions": []}}
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -242,7 +242,7 @@ class TestScriptValidator:
                 "on_condition_fail": [{"name": "nonexistent_action"}],
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -263,7 +263,7 @@ class TestScriptValidator:
                 "run_once": True,
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -284,7 +284,7 @@ class TestScriptValidator:
                 "scene": "test_map",
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -331,7 +331,7 @@ class TestScriptValidator:
                 "actions": [{"name": "test_action"}],
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -392,7 +392,7 @@ class TestScriptValidator:
                 "on_condition_fail": [{"name": "ref_action", "target": "door"}],
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -496,7 +496,7 @@ class TestScriptValidator:
             "script1": {"actions": [{"name": "test_action"}]},
             "script2": {"actions": [{"name": "test_action"}]},
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()
@@ -540,7 +540,7 @@ class TestScriptValidator:
                 "actions": [{"name": "test_action"}],
             }
         }
-        script_file = scripts_dir / "test_scripts.json"
+        script_file = scripts_dir / "test.json"
         script_file.write_text(json.dumps(data))
         validator = ScriptValidator(scripts_dir, context)
         result = validator.validate()

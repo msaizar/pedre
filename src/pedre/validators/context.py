@@ -46,6 +46,9 @@ class ValidationContext:
     script_references: dict[str, set[EntityReference]] = field(default_factory=dict)
     dialog_references: dict[tuple[str, str, str], set[EntityReference]] = field(default_factory=dict)
     inventory_items: set[str] = field(default_factory=set)
+    sprite_ids: set[str] = field(default_factory=set)
+    npc_ids: set[str] = field(default_factory=set)
+    player_ids: set[str] = field(default_factory=set)
 
     def add_map_entity(
         self,
@@ -133,3 +136,39 @@ class ValidationContext:
     def get_inventory_items(self) -> set[str]:
         """Return all known inventory item IDs registered in the context."""
         return self.inventory_items
+
+    def add_sprite_id(self, sprite_id: str) -> None:
+        """Register a sprite ID discovered in the sprites file.
+
+        Args:
+            sprite_id: Unique identifier of the sprite definition.
+        """
+        self.sprite_ids.add(sprite_id)
+
+    def get_sprite_ids(self) -> set[str]:
+        """Return all known sprite IDs registered in the context."""
+        return self.sprite_ids
+
+    def add_npc_id(self, npc_id: str) -> None:
+        """Register an NPC ID discovered in the npcs file.
+
+        Args:
+            npc_id: Unique identifier of the NPC definition.
+        """
+        self.npc_ids.add(npc_id)
+
+    def get_npc_ids(self) -> set[str]:
+        """Return all known NPC IDs registered in the context."""
+        return self.npc_ids
+
+    def add_player_id(self, player_id: str) -> None:
+        """Register a player ID discovered in the players file.
+
+        Args:
+            player_id: Unique identifier of the player definition.
+        """
+        self.player_ids.add(player_id)
+
+    def get_player_ids(self) -> set[str]:
+        """Return all known player IDs registered in the context."""
+        return self.player_ids

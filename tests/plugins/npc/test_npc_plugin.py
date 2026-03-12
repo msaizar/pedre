@@ -1,9 +1,6 @@
 """Unit tests for NPCPlugin in src/pedre/plugins/npc/plugin.py."""
 
-import json
 from collections import deque
-from pathlib import Path
-from typing import cast
 from unittest.mock import MagicMock, patch
 
 import arcade
@@ -11,9 +8,10 @@ import pytest
 
 from pedre.actions.registry import ActionParseError
 from pedre.conditions.registry import ConditionParseError
+from pedre.content.registry import RegistryError
 from pedre.plugins.npc.base import NPCDialogConfig
 from pedre.plugins.npc.plugin import NPCPlugin
-from pedre.plugins.npc.sprites import AnimatedNPC
+from pedre.sprites import AnimatedSprite
 
 
 @pytest.fixture
@@ -33,7 +31,7 @@ class TestNPCPlugin:
         plugin, context = npc_plugin_ctx
         assert plugin.name == "npc"
         assert plugin.npcs == {}
-        assert plugin.dialogs == {}
+        assert plugin._parsed_dialog_cache == {}
         assert plugin.interacted_npcs == {}
         assert plugin.context == context
 
@@ -106,8 +104,9 @@ class TestNPCPlugin:
         mock_sprite = MagicMock()
         plugin.register_npc(mock_sprite, "elder")
 
-        dialog_config = NPCDialogConfig(text=["Hello there"], name="Elder One")
-        plugin.dialogs = {"village": {"elder": {0: dialog_config}}}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = {"text": ["Hello there"], "name": "Elder One"}
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
         result = plugin.interact_with_npc("elder")
 
@@ -122,6 +121,10 @@ class TestNPCPlugin:
 
         mock_sprite = MagicMock()
         plugin.register_npc(mock_sprite, "mime")
+
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = None
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
         result = plugin.interact_with_npc("mime")
 
@@ -161,13 +164,11 @@ class TestNPCPlugin:
     def test_cache_scene_state(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test caching scene state."""
         plugin, _ = npc_plugin_ctx
-        mock_sprite = MagicMock(spec=AnimatedNPC)
+        mock_sprite = MagicMock(spec=AnimatedSprite)
         mock_sprite.center_x = 200.0
         mock_sprite.center_y = 300.0
         mock_sprite.visible = True
-        mock_sprite.appear_complete = True
-        mock_sprite.disappear_complete = False
-        mock_sprite.interact_complete = False
+        mock_sprite.is_state_complete.side_effect = lambda name: name == "appear"
 
         plugin.register_npc(mock_sprite, "guard")
         plugin.npcs["guard"].dialog_level = 2
@@ -185,7 +186,7 @@ class TestNPCPlugin:
     def test_restore_scene_state(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test restoring scene state."""
         plugin, _ = npc_plugin_ctx
-        mock_sprite = MagicMock(spec=AnimatedNPC)
+        mock_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(mock_sprite, "guard")
 
         state = {
@@ -207,9 +208,8 @@ class TestNPCPlugin:
         assert npc.sprite.visible is False
         assert npc.dialog_level == 5
 
-        sprite = cast("AnimatedNPC", npc.sprite)
-        assert sprite.appear_complete is True
-        assert sprite.disappear_complete is True
+        mock_sprite.mark_state_complete.assert_any_call("appear")
+        mock_sprite.mark_state_complete.assert_any_call("disappear")
 
     def test_get_save_state_includes_history(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test that get_save_state includes global interaction history."""
@@ -226,7 +226,7 @@ class TestNPCPlugin:
     def test_apply_entity_state(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test applying entity state (restoring from save)."""
         plugin, _ = npc_plugin_ctx
-        mock_sprite = MagicMock(spec=AnimatedNPC)
+        mock_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(mock_sprite, "alice")
 
         save_data = {
@@ -265,29 +265,27 @@ class TestNPCPlugin:
             mock_load.assert_called_once_with([mock_npc_obj], mock_scene)
 
     def test_cleanup(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test cleanup clears all NPCs and dialogs."""
+        """Test cleanup clears all NPCs."""
         plugin, _ = npc_plugin_ctx
         mock_sprite = MagicMock()
         plugin.register_npc(mock_sprite, "test_npc")
-        plugin.dialogs = {"scene": {"npc": {0: NPCDialogConfig(text=["test"])}}}
 
         plugin.cleanup()
 
         assert len(plugin.npcs) == 0
-        assert len(plugin.dialogs) == 0
 
     def test_reset(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test reset clears all plugin state."""
         plugin, _ = npc_plugin_ctx
         mock_sprite = MagicMock()
         plugin.register_npc(mock_sprite, "test_npc")
-        plugin.dialogs = {"scene": {"npc": {0: NPCDialogConfig(text=["test"])}}}
+        plugin._parsed_dialog_cache["village/npc/0"] = NPCDialogConfig(text=["cached"])
         plugin.interacted_npcs = {"scene": {"npc1"}}
 
         plugin.reset()
 
         assert len(plugin.npcs) == 0
-        assert len(plugin.dialogs) == 0
+        assert len(plugin._parsed_dialog_cache) == 0
         assert len(plugin.interacted_npcs) == 0
 
     def test_get_npcs(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
@@ -301,246 +299,52 @@ class TestNPCPlugin:
         assert "npc1" in npcs
         assert npcs["npc1"].name == "npc1"
 
-    def test_load_dialogs(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_dialogs sets dialog dictionary."""
+    def test_parse_dialog_entry_with_conditions(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _parse_dialog_entry parses conditions and on_condition_fail."""
         plugin, _ = npc_plugin_ctx
-        dialogs = {"scene1": {"npc1": {0: NPCDialogConfig(text=["Hello"])}}}
-
-        plugin.load_dialogs(dialogs)
-
-        assert plugin.dialogs == dialogs
-
-    def test_load_scene_dialogs_cached(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_scene_dialogs returns cached dialogs."""
-        plugin, _ = npc_plugin_ctx
-        dialog_config = NPCDialogConfig(text=["Cached dialog"])
-        NPCPlugin._dialog_cache["test_scene"] = {"npc1": {0: dialog_config}}
-
-        result = plugin.load_scene_dialogs("test_scene")
-
-        assert "npc1" in result
-        assert result["npc1"][0] == dialog_config
-        assert "test_scene" in plugin.dialogs
-
-    def test_load_scene_dialogs_from_file(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_scene_dialogs loads from JSON file."""
-        plugin, _ = npc_plugin_ctx
-        NPCPlugin._dialog_cache.clear()
-
-        with (
-            patch.object(plugin, "load_dialogs_from_json") as mock_load,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value=Path("/assets/dialogs/new_scene_dialogs.json")),
-        ):
-
-            def side_effect(_path: Path) -> bool:
-                plugin.dialogs["new_scene"] = {"npc1": {0: NPCDialogConfig(text=["Test"])}}
-                return True
-
-            mock_load.side_effect = side_effect
-
-            plugin.load_scene_dialogs("new_scene")
-
-            assert mock_load.called
-            assert "new_scene" in NPCPlugin._dialog_cache
-
-    def test_load_scene_dialogs_file_not_found(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_scene_dialogs when file doesn't exist."""
-        plugin, _ = npc_plugin_ctx
-        NPCPlugin._dialog_cache.clear()
-
-        with patch.object(plugin, "load_dialogs_from_json") as mock_load:
-            mock_load.return_value = False
-
-            result = plugin.load_scene_dialogs("nonexistent")
-
-            assert result == {}
-
-    def test_load_dialogs_from_json_single_file(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialogs from a single JSON file."""
-        plugin, _ = npc_plugin_ctx
-        mock_path = MagicMock(spec=Path)
-        mock_path.is_file.return_value = True
-        mock_path.is_dir.return_value = False
-        mock_path.stem = "test_dialogs"
-        mock_path.name = "test_dialogs.json"
-
-        with (
-            patch("pedre.plugins.npc.plugin.Path", return_value=mock_path),
-            patch.object(plugin, "_load_dialog_file", return_value=True) as mock_load_file,
-        ):
-            result = plugin.load_dialogs_from_json("/fake/test_dialogs.json")
-
-            assert result is True
-            mock_load_file.assert_called_once_with(mock_path)
-
-    def test_load_dialogs_from_json_directory(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialogs from a directory."""
-        plugin, _ = npc_plugin_ctx
-        with (
-            patch("pathlib.Path.is_dir", return_value=True),
-            patch("pathlib.Path.glob", return_value=[Path("file1.json"), Path("file2.json")]),
-            patch.object(plugin, "_load_dialog_file", return_value=True) as mock_load,
-        ):
-            result = plugin.load_dialogs_from_json(Path("/fake/dialogs/"))
-
-            assert result is True
-            assert mock_load.call_count == 2
-
-    def test_load_dialogs_from_json_empty_directory(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialogs from empty directory."""
-        plugin, _ = npc_plugin_ctx
-        with patch("pathlib.Path.is_dir", return_value=True), patch("pathlib.Path.glob", return_value=[]):
-            result = plugin.load_dialogs_from_json(Path("/fake/empty/"))
-
-            assert result is False
-
-    def test_load_dialogs_from_json_path_not_found(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialogs from non-existent path."""
-        plugin, _ = npc_plugin_ctx
-        with patch("pathlib.Path.is_file", return_value=False), patch("pathlib.Path.is_dir", return_value=False):
-            result = plugin.load_dialogs_from_json(Path("/fake/nonexistent"))
-
-            assert result is False
-
-    def test_load_dialog_file_with_conditions(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialog file with conditions and on_condition_fail actions."""
-        plugin, _ = npc_plugin_ctx
-        dialog_data = {
-            "npc1": {
-                "0": {
-                    "text": ["Conditional dialog"],
-                    "conditions": [{"name": "has_item", "item": "key"}],
-                    "on_condition_fail": [{"name": "dialog", "speaker": "Guard", "text": ["You need a key"]}],
-                }
-            }
+        raw = {
+            "text": ["Conditional dialog"],
+            "conditions": [{"name": "has_item", "item": "key"}],
+            "on_condition_fail": [{"name": "dialog", "speaker": "Guard", "text": ["You need a key"]}],
         }
-
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "scene_dialogs"
-        mock_path.name = "scene_dialogs.json"
-
         mock_condition = MagicMock()
         mock_action = MagicMock()
         with (
-            patch("json.load", return_value=dialog_data),
             patch("pedre.plugins.npc.plugin.ConditionRegistry.create", return_value=mock_condition),
             patch("pedre.plugins.npc.plugin.ActionRegistry.create", return_value=mock_action),
         ):
-            result = plugin._load_dialog_file(mock_path)
+            config = plugin._parse_dialog_entry("guard", "0", raw)
 
-            assert result is True
-            assert "scene" in plugin.dialogs
-            assert "npc1" in plugin.dialogs["scene"]
-            config = plugin.dialogs["scene"]["npc1"][0]
+            assert config.text == ["Conditional dialog"]
             assert config.conditions == [mock_condition]
             assert config.on_condition_fail == [mock_action]
 
-    def test_load_dialog_file_condition_parse_error_skips_condition(
+    def test_parse_dialog_entry_condition_parse_error_skips_condition(
         self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
     ) -> None:
         """Test that a ConditionParseError during condition parsing is logged and skipped."""
         plugin, _ = npc_plugin_ctx
-        dialog_data = {
-            "npc1": {
-                "0": {
-                    "text": ["Hello"],
-                    "conditions": [{"name": "bad_condition"}],
-                }
-            }
-        }
+        raw = {"text": ["Hello"], "conditions": [{"name": "bad_condition"}]}
 
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "scene_dialogs"
-        mock_path.name = "scene_dialogs.json"
-
-        with (
-            patch("json.load", return_value=dialog_data),
-            patch(
-                "pedre.plugins.npc.plugin.ConditionRegistry.create",
-                side_effect=ConditionParseError("unknown condition"),
-            ),
+        with patch(
+            "pedre.plugins.npc.plugin.ConditionRegistry.create",
+            side_effect=ConditionParseError("unknown condition"),
         ):
-            result = plugin._load_dialog_file(mock_path)
+            config = plugin._parse_dialog_entry("npc1", "0", raw)
 
-            assert result is True
-            config = plugin.dialogs["scene"]["npc1"][0]
             assert config.conditions == []
 
-    def test_load_dialog_file_on_condition_fail_parse_error_skips_action(
+    def test_parse_dialog_entry_action_parse_error_skips_action(
         self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
     ) -> None:
         """Test that an ActionParseError during on_condition_fail parsing is logged and skipped."""
         plugin, _ = npc_plugin_ctx
-        dialog_data = {
-            "npc1": {
-                "0": {
-                    "text": ["Hello"],
-                    "on_condition_fail": [{"name": "bad_action"}],
-                }
-            }
-        }
+        raw = {"text": ["Hello"], "on_condition_fail": [{"name": "bad_action"}]}
 
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "scene_dialogs"
-        mock_path.name = "scene_dialogs.json"
+        with patch("pedre.plugins.npc.plugin.ActionRegistry.create", side_effect=ActionParseError("unknown action")):
+            config = plugin._parse_dialog_entry("npc1", "0", raw)
 
-        with (
-            patch("json.load", return_value=dialog_data),
-            patch("pedre.plugins.npc.plugin.ActionRegistry.create", side_effect=ActionParseError("unknown action")),
-        ):
-            result = plugin._load_dialog_file(mock_path)
-
-            assert result is True
-            config = plugin.dialogs["scene"]["npc1"][0]
             assert config.on_condition_fail == []
-
-    def test_load_dialog_file_json_decode_error(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialog file with invalid JSON."""
-        plugin, _ = npc_plugin_ctx
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "bad"
-        mock_path.name = "bad.json"
-
-        with patch("json.load", side_effect=json.JSONDecodeError("msg", "doc", 0)):
-            result = plugin._load_dialog_file(mock_path)
-
-            assert result is False
-
-    def test_load_dialog_file_file_not_found(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialog file that doesn't exist."""
-        plugin, _ = npc_plugin_ctx
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "missing"
-        mock_path.name = "missing.json"
-        mock_path.open.side_effect = FileNotFoundError
-
-        result = plugin._load_dialog_file(mock_path)
-
-        assert result is False
-
-    def test_load_dialog_file_os_error(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialog file with OS error."""
-        plugin, _ = npc_plugin_ctx
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "error"
-        mock_path.name = "error.json"
-        mock_path.open.side_effect = OSError
-
-        result = plugin._load_dialog_file(mock_path)
-
-        assert result is False
-
-    def test_load_dialog_file_unexpected_error(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test loading dialog file with unexpected error."""
-        plugin, _ = npc_plugin_ctx
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "error"
-        mock_path.name = "error.json"
-        mock_path.open.side_effect = RuntimeError("Unexpected")
-
-        result = plugin._load_dialog_file(mock_path)
-
-        assert result is False
 
     def test_get_npc_by_name_found(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test getting NPC by name when it exists."""
@@ -653,14 +457,18 @@ class TestNPCPlugin:
         plugin.register_npc(mock_sprite, "guard")
 
         mock_action = MagicMock()
-        dialog_config = NPCDialogConfig(
-            text=["You shall pass"],
-            conditions=[MagicMock()],
-            on_condition_fail=[mock_action],
-        )
-        plugin.dialogs = {"dungeon": {"guard": {0: dialog_config}}}
+        raw = {"text": ["You shall pass"], "conditions": [{}], "on_condition_fail": [{}]}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = raw
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
-        with patch.object(plugin, "_check_dialog_conditions", return_value=False):
+        parsed_config = NPCDialogConfig(
+            text=["You shall pass"], conditions=[MagicMock()], on_condition_fail=[mock_action]
+        )
+        with (
+            patch.object(plugin, "_parse_dialog_entry", return_value=parsed_config),
+            patch.object(plugin, "_check_dialog_conditions", return_value=False),
+        ):
             result = plugin.interact_with_npc("guard")
 
             assert result is True
@@ -724,73 +532,88 @@ class TestNPCPlugin:
         assert result is False
         mock_condition.check.assert_called_once_with(context)
 
+    def test_get_dialog_uses_content_registry(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test get_dialog queries content_registry for the 'dialogs' sub-registry."""
+        plugin, context = npc_plugin_ctx
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = {"text": ["Hello"]}
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
+
+        plugin.get_dialog("npc1", 0, "village")
+
+        context.content_registry.get_sub_registry.assert_called_with("dialogs")
+        mock_dialog_registry.get_dialog.assert_called_with("village", "npc1", "0")
+
     def test_get_dialog_with_scene_fallback(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog falls back to default scene."""
-        plugin, _ = npc_plugin_ctx
-        dialog_config = NPCDialogConfig(text=["Default dialog"])
-        plugin.dialogs = {"default": {"npc1": {0: dialog_config}}}
+        """Test get_dialog falls back to default scene when scene-specific entry is absent."""
+        plugin, context = npc_plugin_ctx
+        raw = {"text": ["Default dialog"]}
+        mock_dialog_registry = MagicMock()
+        # First call (scene-specific) returns None, second (default) returns data
+        mock_dialog_registry.get_dialog.side_effect = [None, raw]
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
         result, fail_actions = plugin.get_dialog("npc1", 0, "nonexistent_scene")
 
-        assert result == dialog_config
+        assert result is not None
+        assert result.text == ["Default dialog"]
         assert fail_actions is None
 
     def test_get_dialog_npc_not_found(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog with non-existent NPC."""
-        plugin, _ = npc_plugin_ctx
-        plugin.dialogs = {"scene1": {}}
+        """Test get_dialog with non-existent NPC returns (None, None)."""
+        plugin, context = npc_plugin_ctx
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = None
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
         result, fail_actions = plugin.get_dialog("nonexistent", 0, "scene1")
 
         assert result is None
         assert fail_actions is None
 
-    def test_get_dialog_condition_failed_returns_actions(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog returns on_condition_fail actions (pre-parsed Action objects)."""
-        plugin, _ = npc_plugin_ctx
-        mock_action = MagicMock()
-        fail_actions = [mock_action]
-        dialog_config = NPCDialogConfig(text=["Success"], conditions=[MagicMock()], on_condition_fail=fail_actions)
-        plugin.dialogs = {"scene1": {"npc1": {0: dialog_config}}}
+    def test_get_dialog_missing_registry_raises(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test get_dialog raises RegistryError when dialogs sub-registry is absent."""
+        plugin, context = npc_plugin_ctx
+        context.content_registry.get_sub_registry.side_effect = RegistryError("dialogs not registered")
 
-        with patch.object(plugin, "_check_dialog_conditions", return_value=False):
+        with pytest.raises(RegistryError):
+            plugin.get_dialog("npc1", 0, "scene1")
+
+    def test_get_dialog_condition_failed_returns_actions(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test get_dialog returns on_condition_fail actions when conditions fail."""
+        plugin, context = npc_plugin_ctx
+        mock_action = MagicMock()
+        raw = {"text": ["Success"], "conditions": [{}], "on_condition_fail": [{}]}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = raw
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
+
+        mock_condition = MagicMock()
+        fail_actions = [mock_action]
+        parsed_config = NPCDialogConfig(text=["Success"], conditions=[mock_condition], on_condition_fail=fail_actions)
+        with (
+            patch.object(plugin, "_parse_dialog_entry", return_value=parsed_config),
+            patch.object(plugin, "_check_dialog_conditions", return_value=False),
+        ):
             result, returned_actions = plugin.get_dialog("npc1", 0, "scene1")
 
-            assert result is None
-            assert returned_actions == fail_actions
+        assert result is None
+        assert returned_actions == fail_actions
 
-    def test_get_dialog_fallback_to_string_key(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog fallback prefers string keys."""
-        plugin, _ = npc_plugin_ctx
-        string_dialog = NPCDialogConfig(text=["String key dialog"])
-        numeric_dialog = NPCDialogConfig(text=["Numeric dialog"])
-        plugin.dialogs = {"scene1": {"npc1": {"1_special": string_dialog, 0: numeric_dialog}}}
+    def test_get_dialog_caches_parsed_entry(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test get_dialog caches parsed NPCDialogConfig to avoid re-parsing."""
+        plugin, context = npc_plugin_ctx
+        raw = {"text": ["Hello"]}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = raw
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
-        result, _ = plugin.get_dialog("npc1", 5, "scene1")
+        with patch.object(plugin, "_parse_dialog_entry", return_value=NPCDialogConfig(text=["Hello"])) as mock_parse:
+            plugin.get_dialog("npc1", 0, "scene1")
+            plugin.get_dialog("npc1", 0, "scene1")
 
-        assert result == string_dialog
-
-    def test_get_dialog_fallback_to_numeric_progression(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog fallback to numeric progression."""
-        plugin, _ = npc_plugin_ctx
-        dialog_level_1 = NPCDialogConfig(text=["Level 1"])
-        dialog_level_3 = NPCDialogConfig(text=["Level 3"])
-        plugin.dialogs = {"scene1": {"npc1": {1: dialog_level_1, 3: dialog_level_3}}}
-
-        result, _ = plugin.get_dialog("npc1", 5, "scene1")
-
-        assert result == dialog_level_3
-
-    def test_get_dialog_no_candidates(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog when no candidates with met conditions."""
-        plugin, _ = npc_plugin_ctx
-        dialog_config = NPCDialogConfig(text=["Conditional"], conditions=[MagicMock()])
-        plugin.dialogs = {"scene1": {"npc1": {0: dialog_config}}}
-
-        with patch.object(plugin, "_check_dialog_conditions", return_value=False):
-            result, _ = plugin.get_dialog("npc1", 5, "scene1")
-
-            assert result is None
+            # Should only parse once despite two calls
+            mock_parse.assert_called_once()
 
     def test_advance_dialog_unknown_npc(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test advancing dialog for unknown NPC."""
@@ -847,19 +670,20 @@ class TestNPCPlugin:
     def test_show_npcs_starts_animation(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs starts appear animation for AnimatedNPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = False
+        npc_sprite.has_state.return_value = True
         plugin.register_npc(npc_sprite, "animated_npc")
 
         plugin.show_npcs(["animated_npc"])
 
         assert npc_sprite.visible is True
-        npc_sprite.start_appear_animation.assert_called_once()
+        npc_sprite.request_state.assert_called_once_with("appear")
 
     def test_show_npcs_adds_to_wall_list(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs adds NPC to wall list."""
         plugin, context = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = False
         plugin.register_npc(npc_sprite, "npc1")
 
@@ -870,13 +694,13 @@ class TestNPCPlugin:
     def test_show_npcs_already_visible(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs skips already visible NPCs."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = True
         plugin.register_npc(npc_sprite, "visible_npc")
 
         plugin.show_npcs(["visible_npc"])
 
-        npc_sprite.start_appear_animation.assert_not_called()
+        npc_sprite.request_state.assert_not_called()
 
     def test_show_npcs_unknown_npc(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test show_npcs with unknown NPC."""
@@ -919,7 +743,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_direction(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update changes animated NPC direction based on movement."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "down"
@@ -937,7 +761,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_appear_event(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update emits appear complete event."""
         plugin, context = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = True
         npc_sprite.disappear_complete = False
         plugin.register_npc(npc_sprite, "appearing")
@@ -951,7 +775,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_disappear_event(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update emits disappear complete event."""
         plugin, context = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = False
         npc_sprite.disappear_complete = True
         plugin.register_npc(npc_sprite, "disappearing")
@@ -1032,25 +856,14 @@ class TestNPCPlugin:
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
-        mock_obj.properties = {
-            "name": "Guard",
-            "sprite_sheet": "sprites/guard.png",
-            "tile_size": 32,
-            "scale": 2.0,
-        }
+        mock_obj.name = "Guard"
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
-            mock_anim_npc_class.assert_called_once()
             assert "guard" in plugin.npcs
 
     def test_load_npcs_from_objects_no_properties(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
@@ -1069,14 +882,14 @@ class TestNPCPlugin:
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock()
         mock_obj = MagicMock()
-        mock_obj.properties = {"sprite_sheet": "test.png"}
+        mock_obj.name = ""
 
         plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
         assert len(plugin.npcs) == 0
 
-    def test_load_npcs_from_objects_no_sprite_sheet(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects skips objects without sprite_sheet."""
+    def test_load_npcs_from_objects_no_registry_entry(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test load_npcs_from_objects skips objects with no matching registry entry."""
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock()
         mock_obj = MagicMock()
@@ -1088,27 +901,19 @@ class TestNPCPlugin:
         assert len(plugin.npcs) == 0
 
     def test_load_npcs_from_objects_initially_hidden(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects handles initially_hidden flag."""
-        plugin, _ = npc_plugin_ctx
+        """Test load_npcs_from_objects does not add hidden NPCs to the wall list."""
+        plugin, context = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
-        mock_obj.properties = {
-            "name": "HiddenGuard",
-            "sprite_sheet": "sprites/guard.png",
-            "initially_hidden": True,
-        }
+        mock_obj.properties = {"name": "HiddenGuard"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = False  # _create_npc_sprite sets this from npc_def
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
-            assert mock_npc_instance.visible is False
+            context.scene_plugin.add_to_wall_list.assert_not_called()
 
     def test_load_npcs_from_objects_adds_to_wall_list(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test load_npcs_from_objects adds visible NPCs to wall list."""
@@ -1118,137 +923,22 @@ class TestNPCPlugin:
         mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             context.scene_plugin.add_to_wall_list.assert_called_once_with(mock_npc_instance)
 
-    def test_load_npcs_from_objects_invalid_tile_size(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects handles invalid tile_size."""
-        plugin, _ = npc_plugin_ctx
-        mock_scene = MagicMock(spec=arcade.Scene)
-        mock_obj = MagicMock()
-        mock_obj.properties = {
-            "name": "Guard",
-            "sprite_sheet": "sprites/guard.png",
-            "tile_size": "invalid",
-        }
-        mock_obj.shape = [100.0, 200.0]
-
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
-            plugin.load_npcs_from_objects([mock_obj], mock_scene)
-
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "tile_size" not in call_kwargs
-
-    def test_load_npcs_from_objects_invalid_scale(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects handles invalid scale."""
-        plugin, _ = npc_plugin_ctx
-        mock_scene = MagicMock(spec=arcade.Scene)
-        mock_obj = MagicMock()
-        mock_obj.properties = {
-            "name": "Guard",
-            "sprite_sheet": "sprites/guard.png",
-            "scale": "invalid",
-        }
-        mock_obj.shape = [100.0, 200.0]
-
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
-            plugin.load_npcs_from_objects([mock_obj], mock_scene)
-
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "scale" not in call_kwargs
-
-    def test_load_npcs_from_objects_animation_properties(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects extracts animation properties."""
-        plugin, _ = npc_plugin_ctx
-        mock_scene = MagicMock(spec=arcade.Scene)
-        mock_obj = MagicMock()
-        mock_obj.properties = {
-            "name": "Guard",
-            "sprite_sheet": "sprites/guard.png",
-            "idle_up_frames": 4,
-            "walk_down_frames": 8,
-        }
-        mock_obj.shape = [100.0, 200.0]
-
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
-            plugin.load_npcs_from_objects([mock_obj], mock_scene)
-
-            mock_anim_npc_class.assert_called_once()
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "idle_up_frames" in call_kwargs
-            assert "walk_down_frames" in call_kwargs
-            assert call_kwargs["idle_up_frames"] == 4
-            assert call_kwargs["walk_down_frames"] == 8
-
-    def test_load_npcs_from_objects_invalid_animation_property(
-        self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
-    ) -> None:
-        """Test load_npcs_from_objects skips invalid animation properties."""
-        plugin, _ = npc_plugin_ctx
-        mock_scene = MagicMock(spec=arcade.Scene)
-        mock_obj = MagicMock()
-        mock_obj.properties = {
-            "name": "Guard",
-            "sprite_sheet": "sprites/guard.png",
-            "idle_up_frames": "invalid",
-        }
-        mock_obj.shape = [100.0, 200.0]
-
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
-            plugin.load_npcs_from_objects([mock_obj], mock_scene)
-
-            call_kwargs = mock_anim_npc_class.call_args.kwargs
-            assert "idle_up_frames" not in call_kwargs
-
     def test_load_npcs_from_objects_creation_failure(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects handles AnimatedNPC creation failure."""
+        """Test load_npcs_from_objects handles sprite creation failure."""
         plugin, _ = npc_plugin_ctx
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
         mock_obj.properties = {"name": "BrokenGuard", "sprite_sheet": "sprites/guard.png"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC", side_effect=Exception("Creation failed")),
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
+        with patch.object(plugin, "_create_npc_sprite", side_effect=Exception("Creation failed")):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             assert "brokenguard" not in plugin.npcs
@@ -1256,13 +946,11 @@ class TestNPCPlugin:
     def test_get_save_state_with_animated_npcs(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test get_save_state includes animation flags for AnimatedNPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 200.0
         npc_sprite.visible = True
-        npc_sprite.appear_complete = True
-        npc_sprite.disappear_complete = False
-        npc_sprite.interact_complete = True
+        npc_sprite.is_state_complete.side_effect = lambda name: name in ("appear", "interact")
         plugin.register_npc(npc_sprite, "animated")
 
         save_state = plugin.get_save_state()
@@ -1282,7 +970,7 @@ class TestNPCPlugin:
     def test_apply_entity_state_restores_animation_flags(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test apply_entity_state restores animation flags for AnimatedNPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(npc_sprite, "animated")
 
         save_data = {
@@ -1302,71 +990,10 @@ class TestNPCPlugin:
 
         plugin.apply_entity_state(save_data)
 
-        assert npc_sprite.appear_complete is True
-        assert npc_sprite.disappear_complete is True
-        assert npc_sprite.interact_complete is False
-
-    def test_load_scene_dialogs_exception_handling(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_scene_dialogs handles exceptions during load."""
-        plugin, _ = npc_plugin_ctx
-        NPCPlugin._dialog_cache.clear()
-
-        with (
-            patch.object(plugin, "load_dialogs_from_json", side_effect=RuntimeError("Unexpected error")),
-            patch("pedre.plugins.npc.plugin.asset_path", return_value=Path("/assets/dialogs/error_scene_dialogs.json")),
-        ):
-            result = plugin.load_scene_dialogs("error_scene")
-
-            assert result == {}
-
-    def test_load_dialog_file_filename_with_dialog_suffix(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test _load_dialog_file with '_dialog' (singular) in filename."""
-        plugin, _ = npc_plugin_ctx
-        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
-
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "scene_dialog"
-        mock_path.name = "scene_dialog.json"
-
-        with patch("json.load", return_value=dialog_data):
-            result = plugin._load_dialog_file(mock_path)
-
-            assert result is True
-            assert "scene" in plugin.dialogs
-
-    def test_load_dialog_file_filename_without_suffix(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test _load_dialog_file with filename without '_dialog(s)' suffix."""
-        plugin, _ = npc_plugin_ctx
-        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
-
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "custom_name"
-        mock_path.name = "custom_name.json"
-
-        with patch("json.load", return_value=dialog_data):
-            result = plugin._load_dialog_file(mock_path)
-
-            assert result is True
-            assert "default" in plugin.dialogs
-
-    def test_load_dialog_file_string_level_key_not_convertible(
-        self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
-    ) -> None:
-        """Test _load_dialog_file with string level keys that are not numbers."""
-        plugin, _ = npc_plugin_ctx
-        dialog_data = {"npc1": {"special_state": {"text": ["Special dialog"]}}}
-
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "scene_dialogs"
-        mock_path.name = "scene_dialogs.json"
-
-        with patch("json.load", return_value=dialog_data):
-            result = plugin._load_dialog_file(mock_path)
-
-            assert result is True
-            assert "scene" in plugin.dialogs
-            assert "npc1" in plugin.dialogs["scene"]
-            assert "special_state" in plugin.dialogs["scene"]["npc1"]
+        npc_sprite.mark_state_complete.assert_any_call("appear")
+        npc_sprite.mark_state_complete.assert_any_call("disappear")
+        # interact_complete is False so mark_state_complete should not be called for it
+        assert not any(call.args == ("interact",) for call in npc_sprite.mark_state_complete.call_args_list)
 
     def test_interact_with_npc_no_dialog_config_returned(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test interact_with_npc when get_dialog returns (None, None)."""
@@ -1375,7 +1002,10 @@ class TestNPCPlugin:
 
         mock_sprite = MagicMock()
         plugin.register_npc(mock_sprite, "silent_npc")
-        plugin.dialogs = {}
+
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = None
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
         result = plugin.interact_with_npc("silent_npc")
 
@@ -1385,45 +1015,27 @@ class TestNPCPlugin:
     def test_get_dialog_exact_match_with_conditions_met_returns_dialog(
         self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
     ) -> None:
-        """Test get_dialog returns dialog when exact match has conditions that are met."""
-        plugin, _ = npc_plugin_ctx
-        dialog_config = NPCDialogConfig(text=["Conditional success"], conditions=[MagicMock()])
-        plugin.dialogs = {"scene1": {"npc1": {5: dialog_config}}}
+        """Test get_dialog returns dialog when conditions are met."""
+        plugin, context = npc_plugin_ctx
+        raw = {"text": ["Conditional success"]}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = raw
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
-        with patch.object(plugin, "_check_dialog_conditions", return_value=True):
+        dialog_config = NPCDialogConfig(text=["Conditional success"], conditions=[MagicMock()])
+        with (
+            patch.object(plugin, "_parse_dialog_entry", return_value=dialog_config),
+            patch.object(plugin, "_check_dialog_conditions", return_value=True),
+        ):
             result, fail_actions = plugin.get_dialog("npc1", 5, "scene1")
 
             assert result == dialog_config
             assert fail_actions is None
 
-    def test_get_dialog_fallback_with_conditions_appends_candidates(
-        self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
-    ) -> None:
-        """Test get_dialog fallback includes dialogs with met conditions."""
-        plugin, _ = npc_plugin_ctx
-        dialog_no_cond = NPCDialogConfig(text=["No conditions"])
-        dialog_with_cond = NPCDialogConfig(text=["With met conditions"], conditions=[MagicMock()])
-        plugin.dialogs = {"scene1": {"npc1": {1: dialog_no_cond, 2: dialog_with_cond}}}
-
-        with patch.object(plugin, "_check_dialog_conditions", return_value=True):
-            result, _ = plugin.get_dialog("npc1", 10, "scene1")
-
-            assert result is not None
-
-    def test_get_dialog_fallback_last_resort_first_candidate(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog returns first candidate as last resort."""
-        plugin, _ = npc_plugin_ctx
-        dialog_high = NPCDialogConfig(text=["High level"])
-        plugin.dialogs = {"scene1": {"npc1": {10: dialog_high}}}
-
-        result, _ = plugin.get_dialog("npc1", 5, "scene1")
-
-        assert result == dialog_high
-
     def test_update_animated_npc_direction_left(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update sets direction to left for animated NPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "right"
@@ -1441,7 +1053,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_direction_up(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update sets direction to up for animated NPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "down"
@@ -1459,7 +1071,7 @@ class TestNPCPlugin:
     def test_update_animated_npc_direction_down(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update sets direction to down for animated NPC."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "up"
@@ -1479,7 +1091,7 @@ class TestNPCPlugin:
     ) -> None:
         """Test update doesn't change direction if it's already correct."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "right"
@@ -1503,14 +1115,9 @@ class TestNPCPlugin:
         mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             mock_scene.remove_sprite_list_by_name.assert_called_once_with("NPCs")
@@ -1530,51 +1137,6 @@ class TestNPCPlugin:
 
         assert npc_sprite.center_x == 100.0
 
-    def test_load_scene_dialogs_load_returns_false(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_scene_dialogs when load_dialogs_from_json returns False."""
-        plugin, _ = npc_plugin_ctx
-        NPCPlugin._dialog_cache.clear()
-
-        with (
-            patch.object(plugin, "load_dialogs_from_json", return_value=False),
-            patch("pedre.plugins.npc.plugin.asset_path", return_value=Path("/assets/dialogs/missing_dialogs.json")),
-        ):
-            result = plugin.load_scene_dialogs("missing_scene")
-
-            assert result == {}
-
-    def test_load_dialog_file_scene_already_exists(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test _load_dialog_file when scene already exists in dialogs."""
-        plugin, _ = npc_plugin_ctx
-        plugin.dialogs["existing_scene"] = {}
-
-        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "existing_scene_dialogs"
-        mock_path.name = "existing_scene_dialogs.json"
-
-        with patch("json.load", return_value=dialog_data):
-            result = plugin._load_dialog_file(mock_path)
-
-            assert result is True
-            assert "npc1" in plugin.dialogs["existing_scene"]
-
-    def test_load_dialog_file_npc_already_exists_in_scene(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test _load_dialog_file when NPC already exists in scene."""
-        plugin, _ = npc_plugin_ctx
-        plugin.dialogs["scene"] = {"npc1": {}}
-
-        dialog_data = {"npc1": {"0": {"text": ["Hello"]}}}
-        mock_path = MagicMock(spec=Path)
-        mock_path.stem = "scene_dialogs"
-        mock_path.name = "scene_dialogs.json"
-
-        with patch("json.load", return_value=dialog_data):
-            result = plugin._load_dialog_file(mock_path)
-
-            assert result is True
-            assert 0 in plugin.dialogs["scene"]["npc1"]
-
     def test_interact_with_npc_with_on_condition_fail_but_no_dialog_plugin(
         self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
     ) -> None:
@@ -1587,32 +1149,26 @@ class TestNPCPlugin:
         plugin.register_npc(mock_sprite, "test_npc")
 
         mock_action = MagicMock()
-        dialog_config = NPCDialogConfig(
+        raw = {"text": ["You shall pass"], "conditions": [{}], "on_condition_fail": [{}]}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = raw
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
+
+        parsed_config = NPCDialogConfig(
             text=["You shall pass"], conditions=[MagicMock()], on_condition_fail=[mock_action]
         )
-        plugin.dialogs = {"test_scene": {"test_npc": {0: dialog_config}}}
-
-        with patch.object(plugin, "_check_dialog_conditions", return_value=False):
+        with (
+            patch.object(plugin, "_parse_dialog_entry", return_value=parsed_config),
+            patch.object(plugin, "_check_dialog_conditions", return_value=False),
+        ):
             result = plugin.interact_with_npc("test_npc")
 
             assert result is False
 
-    def test_get_dialog_fallback_skip_exact_level_in_loop(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test get_dialog skips the exact level when building candidates."""
-        plugin, _ = npc_plugin_ctx
-        dialog_level_3 = NPCDialogConfig(text=["Level 3"])
-        dialog_level_5 = NPCDialogConfig(text=["Level 5"])
-        dialog_level_7 = NPCDialogConfig(text=["Level 7"])
-        plugin.dialogs = {"scene1": {"npc1": {3: dialog_level_3, 5: dialog_level_5, 7: dialog_level_7}}}
-
-        result, _ = plugin.get_dialog("npc1", 6, "scene1")
-
-        assert result == dialog_level_5
-
     def test_update_animated_npc_no_movement_keeps_direction(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test update when NPC is at exact waypoint position (dx=0, dy=0)."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.center_x = 100.0
         npc_sprite.center_y = 100.0
         npc_sprite.current_direction = "down"
@@ -1635,8 +1191,9 @@ class TestNPCPlugin:
 
         mock_sprite = MagicMock()
         plugin.register_npc(mock_sprite, "npc")
-        dialog_config = NPCDialogConfig(text=["Hello"])
-        plugin.dialogs = {"village": {"npc": {0: dialog_config}}}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = {"text": ["Hello"]}
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
         result = plugin.interact_with_npc("npc")
 
@@ -1645,34 +1202,26 @@ class TestNPCPlugin:
     def test_get_dialog_exact_level_match_with_failed_conditions(
         self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
     ) -> None:
-        """Test get_dialog when exact level exists but conditions fail (line 413 in interact)."""
+        """Test get_dialog when conditions fail returns (None, on_condition_fail)."""
         plugin, context = npc_plugin_ctx
         context.scene_plugin.get_current_scene.return_value = "castle"
 
         mock_sprite = MagicMock()
         plugin.register_npc(mock_sprite, "guard")
 
-        dialog_config = NPCDialogConfig(text=["You shall pass"], conditions=[MagicMock()])
-        plugin.dialogs = {"castle": {"guard": {0: dialog_config}}}
+        raw = {"text": ["You shall pass"], "conditions": [{}]}
+        mock_dialog_registry = MagicMock()
+        mock_dialog_registry.get_dialog.return_value = raw
+        context.content_registry.get_sub_registry.return_value = mock_dialog_registry
 
-        with patch.object(plugin, "_check_dialog_conditions", return_value=False):
+        dialog_config = NPCDialogConfig(text=["You shall pass"], conditions=[MagicMock()])
+        with (
+            patch.object(plugin, "_parse_dialog_entry", return_value=dialog_config),
+            patch.object(plugin, "_check_dialog_conditions", return_value=False),
+        ):
             result = plugin.interact_with_npc("guard")
 
             assert result is False
-
-    def test_get_dialog_candidates_loop_with_exact_level_skipped(
-        self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]
-    ) -> None:
-        """Test get_dialog fallback loop actually skips exact level (line 535)."""
-        plugin, _ = npc_plugin_ctx
-        dialog_level_2 = NPCDialogConfig(text=["Level 2"])
-        dialog_level_4 = NPCDialogConfig(text=["Level 4"])
-        dialog_level_6 = NPCDialogConfig(text=["Level 6"])
-        plugin.dialogs = {"scene": {"npc": {2: dialog_level_2, 4: dialog_level_4, 6: dialog_level_6}}}
-
-        result, _ = plugin.get_dialog("npc", 5, "scene")
-
-        assert result == dialog_level_4
 
     def test_mark_npc_as_interacted_creates_new_scene_set(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test mark_npc_as_interacted creates new set for new scene (line 447-448)."""
@@ -1705,7 +1254,7 @@ class TestNPCPlugin:
         """Test show_npcs when scene_plugin is None (line 641-643)."""
         plugin, context = npc_plugin_ctx
         context.scene_plugin = None
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.visible = False
         plugin.register_npc(npc_sprite, "npc1")
 
@@ -1733,7 +1282,7 @@ class TestNPCPlugin:
         """Test update when appear completes but no event bus (line 717)."""
         plugin, context = npc_plugin_ctx
         context.event_bus = None
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = True
         npc_sprite.disappear_complete = False
         plugin.register_npc(npc_sprite, "appearing")
@@ -1747,7 +1296,7 @@ class TestNPCPlugin:
         """Test update when disappear completes but no event bus (line 724)."""
         plugin, context = npc_plugin_ctx
         context.event_bus = None
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         npc_sprite.appear_complete = False
         npc_sprite.disappear_complete = True
         plugin.register_npc(npc_sprite, "disappearing")
@@ -1758,22 +1307,17 @@ class TestNPCPlugin:
         assert plugin.npcs["disappearing"].disappear_event_emitted is True
 
     def test_load_npcs_from_objects_without_scene_plugin(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
-        """Test load_npcs_from_objects when scene_plugin is None (line 920)."""
+        """Test load_npcs_from_objects when scene_plugin is None."""
         plugin, context = npc_plugin_ctx
         context.scene_plugin = None
         mock_scene = MagicMock(spec=arcade.Scene)
         mock_obj = MagicMock()
-        mock_obj.properties = {"name": "Guard", "sprite_sheet": "sprites/guard.png"}
+        mock_obj.name = "Guard"
         mock_obj.shape = [100.0, 200.0]
 
-        with (
-            patch("pedre.plugins.npc.plugin.AnimatedNPC") as mock_anim_npc_class,
-            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/sprites/guard.png"),
-        ):
-            mock_npc_instance = MagicMock()
-            mock_npc_instance.visible = True
-            mock_anim_npc_class.return_value = mock_npc_instance
-
+        mock_npc_instance = MagicMock()
+        mock_npc_instance.visible = True
+        with patch.object(plugin, "_create_npc_sprite", return_value=mock_npc_instance):
             plugin.load_npcs_from_objects([mock_obj], mock_scene)
 
             assert "guard" in plugin.npcs
@@ -1873,7 +1417,7 @@ class TestNPCPlugin:
     def test_apply_entity_state_without_interacted_npcs(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
         """Test apply_entity_state when state has no interacted_npcs key."""
         plugin, _ = npc_plugin_ctx
-        npc_sprite = MagicMock(spec=AnimatedNPC)
+        npc_sprite = MagicMock(spec=AnimatedSprite)
         plugin.register_npc(npc_sprite, "npc1")
         plugin.interacted_npcs = {"old_scene": {"old_npc"}}
 
@@ -1884,6 +1428,146 @@ class TestNPCPlugin:
         plugin.apply_entity_state(save_data)
 
         assert plugin.interacted_npcs == {"old_scene": {"old_npc"}}
+
+    def test_apply_entity_state_restores_interact_complete(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test apply_entity_state marks interact state complete when interact_complete is True."""
+        plugin, _ = npc_plugin_ctx
+        npc_sprite = MagicMock(spec=AnimatedSprite)
+        plugin.register_npc(npc_sprite, "npc1")
+
+        save_data = {
+            "npcs": {
+                "npc1": {
+                    "x": 10.0,
+                    "y": 20.0,
+                    "visible": True,
+                    "dialog_level": 1,
+                    "interact_complete": True,
+                }
+            },
+            "interacted_npcs": {},
+        }
+
+        plugin.apply_entity_state(save_data)
+
+        npc_sprite.mark_state_complete.assert_any_call("interact")
+
+    def test_update_animated_npc_no_completed_animations(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test update with animated NPC when no animations are complete (branches 727->734, 734->660)."""
+        plugin, context = npc_plugin_ctx
+        npc_sprite = MagicMock(spec=AnimatedSprite)
+        npc_sprite.is_state_complete.return_value = False
+        plugin.register_npc(npc_sprite, "idle_npc")
+
+        plugin.update(0.1)
+
+        context.event_bus.publish.assert_not_called()
+        assert plugin.npcs["idle_npc"].appear_event_emitted is False
+        assert plugin.npcs["idle_npc"].disappear_event_emitted is False
+
+    def test_load_npcs_from_objects_sprite_is_none(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test load_npcs_from_objects skips NPC when _create_npc_sprite returns None (line 873)."""
+        plugin, _ = npc_plugin_ctx
+        mock_scene = MagicMock(spec=arcade.Scene)
+        mock_obj = MagicMock()
+        mock_obj.properties = {"name": "Ghost"}
+        mock_obj.shape = [100.0, 200.0]
+
+        with patch.object(plugin, "_create_npc_sprite", return_value=None):
+            plugin.load_npcs_from_objects([mock_obj], mock_scene)
+
+        assert "ghost" not in plugin.npcs
+
+    def test_create_npc_sprite_npc_not_in_registry(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _create_npc_sprite returns None when NPC name is not in the registry."""
+        plugin, _ = npc_plugin_ctx
+        mock_obj = MagicMock()
+        mock_obj.properties = {}
+
+        mock_npcs = MagicMock()
+        mock_npcs.has.return_value = False
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.return_value = mock_npcs
+
+        result = plugin._create_npc_sprite(
+            npc_name="unknown",
+            npc_obj=mock_obj,
+            spawn_x=100.0,
+            spawn_y=200.0,
+            content_registry=content_registry,
+        )
+
+        assert result is None
+
+    def test_create_npc_sprite_initially_hidden(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _create_npc_sprite sets sprite invisible when initially_hidden is True (lines 936-944)."""
+        plugin, _ = npc_plugin_ctx
+        mock_obj = MagicMock()
+        mock_obj.properties = {}
+
+        npcs_registry = MagicMock()
+        npcs_registry.has.return_value = True
+        npcs_registry.get.return_value = {"sprite_id": "guard_sprite", "initially_hidden": True, "scale": 1.0}
+
+        sprites_registry = MagicMock()
+        sprites_registry.has.return_value = True
+        sprites_registry.get.return_value = {"sprite_sheet": "guard.png", "frame_width": 32, "frame_height": 32}
+
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.side_effect = (
+            lambda name: npcs_registry if name == "npcs" else sprites_registry
+        )
+
+        mock_sprite = MagicMock()
+        with (
+            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/guard.png"),
+            patch("pedre.plugins.npc.plugin.AnimatedSprite.from_definition", return_value=mock_sprite),
+        ):
+            result = plugin._create_npc_sprite(
+                npc_name="guard",
+                npc_obj=mock_obj,
+                spawn_x=100.0,
+                spawn_y=200.0,
+                content_registry=content_registry,
+            )
+
+        assert result is mock_sprite
+        assert mock_sprite.visible is False
+
+    def test_create_npc_sprite_not_initially_hidden(self, npc_plugin_ctx: tuple[NPCPlugin, MagicMock]) -> None:
+        """Test _create_npc_sprite does not set visible=False when initially_hidden is False."""
+        plugin, _ = npc_plugin_ctx
+        mock_obj = MagicMock()
+        mock_obj.properties = {}
+
+        npcs_registry = MagicMock()
+        npcs_registry.has.return_value = True
+        npcs_registry.get.return_value = {"sprite_id": "guard_sprite", "scale": 1.0}
+
+        sprites_registry = MagicMock()
+        sprites_registry.has.return_value = True
+        sprites_registry.get.return_value = {"sprite_sheet": "guard.png", "frame_width": 32, "frame_height": 32}
+
+        content_registry = MagicMock()
+        content_registry.get_sub_registry.side_effect = (
+            lambda name: npcs_registry if name == "npcs" else sprites_registry
+        )
+
+        mock_sprite = MagicMock()
+        with (
+            patch("pedre.plugins.npc.plugin.asset_path", return_value="/assets/guard.png"),
+            patch("pedre.plugins.npc.plugin.AnimatedSprite.from_definition", return_value=mock_sprite),
+        ):
+            result = plugin._create_npc_sprite(
+                npc_name="guard",
+                npc_obj=mock_obj,
+                spawn_x=100.0,
+                spawn_y=200.0,
+                content_registry=content_registry,
+            )
+
+        assert result is mock_sprite
+        assert mock_sprite.visible is not False
 
 
 class TestCheckDialogConditions:

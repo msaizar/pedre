@@ -46,19 +46,16 @@ class TestValidateCommand:
     @pytest.fixture(autouse=True)
     def _clear_registries(self) -> object:
         """Clear all registries before and after each test to ensure isolation."""
-        # Save original state
         original_actions = ActionRegistry._actions.copy()
         original_events = EventRegistry._events.copy()
         original_conditions = ConditionRegistry._conditions.copy()
 
-        # Clear for test
         ActionRegistry.clear()
         EventRegistry.clear()
         ConditionRegistry.clear()
 
         yield
 
-        # Restore original state after test
         ActionRegistry._actions = original_actions
         EventRegistry._events = original_events
         ConditionRegistry._conditions = original_conditions
@@ -72,10 +69,10 @@ class TestValidateCommand:
 
     @pytest.fixture
     def dialogs_dir(self, tmp_path: Path) -> Path:
-        """Create a temporary dialogs directory."""
-        dialogs_dir = tmp_path / "dialogs"
-        dialogs_dir.mkdir(parents=True)
-        return dialogs_dir
+        """Create a temporary content directory with a dialogs/ subdirectory."""
+        content_dir = tmp_path / "content"
+        (content_dir / "dialogs").mkdir(parents=True)
+        return content_dir
 
     @pytest.fixture
     def maps_dir(self, tmp_path: Path) -> Path:
@@ -85,22 +82,20 @@ class TestValidateCommand:
         return maps_dir
 
     @pytest.fixture
-    def inventory_items_file(self, tmp_path: Path) -> Path:
-        """Create a temporary inventory_items.json file with no items."""
-        items_file = tmp_path / "inventory_items.json"
-        items_file.write_text(json.dumps({"items": []}))
+    def items_file(self, tmp_path: Path) -> Path:
+        """Create a temporary items.json file."""
+        items_file = tmp_path / "items.json"
+        items_file.write_text(json.dumps({}))
         return items_file
 
     @pytest.fixture
     def setup_registries(self) -> None:
         """Setup basic registries for tests."""
 
-        # Register a simple event
         @EventRegistry.register
         class TestEvent(Event):
             name: ClassVar[str] = "test_event"
 
-        # Register a simple action
         @ActionRegistry.register
         class TestAction(Action):
             name = "test_action"
@@ -118,7 +113,6 @@ class TestValidateCommand:
             def reset(self) -> None:
                 return
 
-        # Register a simple condition
         @ConditionRegistry.register
         class TestCondition(Condition):
             name = "test_condition"
@@ -130,6 +124,20 @@ class TestValidateCommand:
             def from_dict(cls, data: dict[str, Any]) -> TestCondition:
                 return cls()
 
+    def _make_args(self, **kwargs: object) -> argparse.Namespace:
+        """Create a Namespace with all expected path arguments defaulting to None."""
+        defaults = {
+            "scripts_path": None,
+            "dialogs_path": None,
+            "maps_path": None,
+            "items_path": None,
+            "sprites_path": None,
+            "npcs_path": None,
+            "players_path": None,
+        }
+        defaults.update(kwargs)
+        return argparse.Namespace(**defaults)
+
     # Argument Parsing Tests
 
     def test_add_arguments_defaults(self) -> None:
@@ -140,11 +148,11 @@ class TestValidateCommand:
 
         args = parser.parse_args([])
         assert args.scripts_path is None
-        assert args.type == "all"
         assert args.dialogs_path is None
+        assert args.maps_path is None
 
-    def test_add_arguments_with_path(self, tmp_path: Path) -> None:
-        """Test add_arguments accepts custom path."""
+    def test_add_arguments_with_scripts_path(self, tmp_path: Path) -> None:
+        """Test add_arguments accepts custom scripts path."""
         command = ValidateCommand()
         parser = argparse.ArgumentParser()
         command.add_arguments(parser)
@@ -152,21 +160,6 @@ class TestValidateCommand:
         test_path = tmp_path / "custom"
         args = parser.parse_args(["--scripts-path", str(test_path)])
         assert args.scripts_path == test_path
-
-    def test_add_arguments_with_type(self) -> None:
-        """Test add_arguments accepts validation type."""
-        command = ValidateCommand()
-        parser = argparse.ArgumentParser()
-        command.add_arguments(parser)
-
-        args = parser.parse_args(["--type", "scripts"])
-        assert args.type == "scripts"
-
-        args = parser.parse_args(["--type", "dialogs"])
-        assert args.type == "dialogs"
-
-        args = parser.parse_args(["--type", "all"])
-        assert args.type == "all"
 
     def test_add_arguments_with_dialogs_dir(self, tmp_path: Path) -> None:
         """Test add_arguments accepts custom dialogs directory."""
@@ -178,66 +171,17 @@ class TestValidateCommand:
         args = parser.parse_args(["--dialogs-path", str(dialogs_path)])
         assert args.dialogs_path == dialogs_path
 
-    # Validator Selection Tests
+    # Validation Tests
 
-    def test_validate_type_scripts_only(self, scripts_dir: Path, setup_registries: None, maps_dir: Path) -> None:
-        """Test --type scripts validates only scripts."""
-        script_data = {
-            "test_script": {
-                "actions": [{"name": "test_action"}],
-            }
-        }
-
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        args = argparse.Namespace(
-            scripts_path=scripts_dir,
-            type="scripts",
-            dialogs_path=None,
-            maps_path=maps_dir,
-        )
-        command.execute(args)
-
-    def test_validate_type_dialogs_only(self, dialogs_dir: Path, maps_dir: Path, setup_registries: None) -> None:
-        """Test --type dialogs validates only dialogs."""
-        # Create a map file with the merchant NPC to satisfy cross-reference validation
-        # Create a simple TMX file
-        tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
-    tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="2">
-  <objectgroup id="1" name="NPCs">
-    <object id="1" name="merchant" x="100" y="100" width="32" height="32">
-      <properties>
-        <property name="sprite_sheet" value="merchant.png"/>
-      </properties>
-    </object>
-  </objectgroup>
-</map>"""
-        map_file = maps_dir / "npc.tmx"
-        map_file.write_text(tmx_content)
-
-        dialog_data = {
-            "merchant": {
-                "0": {
-                    "text": ["Hello, traveler!"],
-                }
-            }
-        }
-
-        dialog_file = dialogs_dir / "npc_dialogs.json"
-        dialog_file.write_text(json.dumps(dialog_data))
-
-        command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=None, type="dialogs", dialogs_path=dialogs_dir, maps_path=maps_dir)
-        command.execute(args)
-
-    def test_validate_type_all_with_both(
-        self, scripts_dir: Path, dialogs_dir: Path, maps_dir: Path, inventory_items_file: Path, setup_registries: None
+    def test_validate_scripts_and_dialogs(
+        self,
+        scripts_dir: Path,
+        dialogs_dir: Path,
+        maps_dir: Path,
+        items_file: Path,
+        setup_registries: None,
     ) -> None:
-        """Test --type all validates both scripts and dialogs."""
-        # Create a map file with the merchant NPC
+        """Test validation runs all validators successfully."""
         tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
     tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="2">
@@ -249,151 +193,108 @@ class TestValidateCommand:
     </object>
   </objectgroup>
 </map>"""
-        map_file = maps_dir / "npc.tmx"
-        map_file.write_text(tmx_content)
+        (maps_dir / "npc.tmx").write_text(tmx_content)
 
-        script_data = {
-            "test_script": {
-                "actions": [{"name": "test_action"}],
-            }
-        }
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
+        script_file = scripts_dir / "test.json"
+        script_file.write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
 
-        dialog_data = {
-            "merchant": {
-                "0": {
-                    "text": ["Hello, traveler!"],
-                }
-            }
-        }
-        dialog_file = dialogs_dir / "npc_dialogs.json"
-        dialog_file.write_text(json.dumps(dialog_data))
+        dialog_file = dialogs_dir / "dialogs" / "npc.json"
+        dialog_file.write_text(json.dumps({"merchant/0": {"text": ["Hello, traveler!"]}}))
 
         command = ValidateCommand()
-        args = argparse.Namespace(
-            scripts_path=scripts_dir,
-            type="all",
-            dialogs_path=dialogs_dir,
-            maps_path=maps_dir,
-            inventory_items_path=inventory_items_file,
+        command.execute(
+            self._make_args(
+                scripts_path=scripts_dir,
+                dialogs_path=dialogs_dir,
+                maps_path=maps_dir,
+                items_path=items_file,
+            )
         )
-        command.execute(args)
-
-    def test_validate_with_custom_dialogs_dir(
-        self, scripts_dir: Path, tmp_path: Path, maps_dir: Path, inventory_items_file: Path, setup_registries: None
-    ) -> None:
-        """Test validate uses custom dialogs directory when provided."""
-        dialogs_dir = tmp_path / "custom_dialogs"
-        dialogs_dir.mkdir(parents=True)
-
-        # Create a map file with the merchant NPC
-        tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
-    tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="2">
-  <objectgroup id="1" name="NPCs">
-    <object id="1" name="merchant" x="100" y="100" width="32" height="32">
-      <properties>
-        <property name="sprite_sheet" value="merchant.png"/>
-      </properties>
-    </object>
-  </objectgroup>
-</map>"""
-        map_file = maps_dir / "npc.tmx"
-        map_file.write_text(tmx_content)
-
-        dialog_data = {
-            "merchant": {
-                "0": {
-                    "text": ["Hello!"],
-                }
-            }
-        }
-        dialog_file = dialogs_dir / "npc_dialogs.json"
-        dialog_file.write_text(json.dumps(dialog_data))
-
-        command = ValidateCommand()
-        args = argparse.Namespace(
-            scripts_path=scripts_dir,
-            type="all",
-            dialogs_path=dialogs_dir,
-            maps_path=maps_dir,
-            inventory_items_path=inventory_items_file,
-        )
-        command.execute(args)
-
-    # Error Handling Tests
-
-    def test_validate_scripts_directory_not_found(self, tmp_path: Path) -> None:
-        """Test validate exits with error when scripts directory not found."""
-        nonexistent_dir = tmp_path / "nonexistent"
-
-        command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=nonexistent_dir, type="scripts", dialogs_path=None)
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(args)
-
-        assert exc_info.value.code == 1
-
-    def test_validate_dialogs_directory_not_found(self, tmp_path: Path) -> None:
-        """Test validate exits with error when dialogs directory not found."""
-        nonexistent_dir = tmp_path / "nonexistent"
-
-        command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=None, type="dialogs", dialogs_path=nonexistent_dir)
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(args)
-
-        assert exc_info.value.code == 1
-
-    def test_validate_with_validation_errors_exits(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate exits with error code when validation fails."""
-        # Create invalid script (empty actions)
-        script_data = {"test_script": {"actions": []}}
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
-        with pytest.raises(SystemExit) as exc_info:
-            command.execute(args)
-
-        assert exc_info.value.code == 1
-
-    def test_validate_no_errors_succeeds(self, scripts_dir: Path, setup_registries: None) -> None:
-        """Test validate completes successfully when no errors."""
-        script_data = {
-            "test_script": {
-                "actions": [{"name": "test_action"}],
-            }
-        }
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
-        # Should not raise
-        command.execute(args)
 
     def test_validate_empty_directories_succeeds(
         self,
         scripts_dir: Path,
         dialogs_dir: Path,
         maps_dir: Path,
-        inventory_items_file: Path,
+        items_file: Path,
         setup_registries: None,
     ) -> None:
         """Test validate succeeds with empty directories (no files to validate)."""
         command = ValidateCommand()
-        args = argparse.Namespace(
-            scripts_path=scripts_dir,
-            type="all",
-            dialogs_path=dialogs_dir,
-            maps_path=maps_dir,
-            inventory_items_path=inventory_items_file,
+        command.execute(
+            self._make_args(
+                scripts_path=scripts_dir,
+                dialogs_path=dialogs_dir,
+                maps_path=maps_dir,
+                items_path=items_file,
+            )
         )
-        # Should not raise
-        command.execute(args)
+
+    def test_validate_with_custom_dialogs_dir(
+        self, scripts_dir: Path, tmp_path: Path, maps_dir: Path, items_file: Path, setup_registries: None
+    ) -> None:
+        """Test validate uses custom dialogs directory when provided."""
+        dialogs_dir = tmp_path / "custom_dialogs"
+        (dialogs_dir / "dialogs").mkdir(parents=True)
+
+        tmx_content = """<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="10" height="10" \
+    tilewidth="32" tileheight="32" infinite="0" nextlayerid="2" nextobjectid="2">
+  <objectgroup id="1" name="NPCs">
+    <object id="1" name="merchant" x="100" y="100" width="32" height="32">
+      <properties>
+        <property name="sprite_sheet" value="merchant.png"/>
+      </properties>
+    </object>
+  </objectgroup>
+</map>"""
+        (maps_dir / "npc.tmx").write_text(tmx_content)
+        (dialogs_dir / "dialogs" / "npc.json").write_text(json.dumps({"merchant/0": {"text": ["Hello!"]}}))
+
+        command = ValidateCommand()
+        command.execute(
+            self._make_args(
+                scripts_path=scripts_dir,
+                dialogs_path=dialogs_dir,
+                maps_path=maps_dir,
+                items_path=items_file,
+            )
+        )
+
+    # Error Handling Tests
+
+    def test_validate_scripts_directory_not_found(self, tmp_path: Path) -> None:
+        """Test validate exits with error when scripts directory not found."""
+        command = ValidateCommand()
+        with pytest.raises(SystemExit) as exc_info:
+            command.execute(self._make_args(scripts_path=tmp_path / "nonexistent"))
+
+        assert exc_info.value.code == 1
+
+    def test_validate_dialogs_directory_not_found(self, tmp_path: Path) -> None:
+        """Test validate exits with error when dialogs directory not found."""
+        command = ValidateCommand()
+        with pytest.raises(SystemExit) as exc_info:
+            command.execute(self._make_args(dialogs_path=tmp_path / "nonexistent"))
+
+        assert exc_info.value.code == 1
+
+    def test_validate_with_validation_errors_exits(self, scripts_dir: Path, setup_registries: None) -> None:
+        """Test validate exits with error code when validation fails."""
+        (scripts_dir / "test.json").write_text(json.dumps({"test_script": {"actions": []}}))
+
+        command = ValidateCommand()
+        with pytest.raises(SystemExit) as exc_info:
+            command.execute(self._make_args(scripts_path=scripts_dir))
+
+        assert exc_info.value.code == 1
+
+    def test_validate_no_errors_succeeds(self, scripts_dir: Path, setup_registries: None) -> None:
+        """Test validate completes successfully when no errors."""
+        (scripts_dir / "test.json").write_text(json.dumps({"test_script": {"actions": [{"name": "test_action"}]}}))
+
+        command = ValidateCommand()
+        command.execute(self._make_args(scripts_path=scripts_dir))
 
     # Error Aggregation Tests
 
@@ -401,69 +302,53 @@ class TestValidateCommand:
         self, scripts_dir: Path, dialogs_dir: Path, setup_registries: None
     ) -> None:
         """Test that errors from both validators are aggregated."""
-        # Invalid script
-        script_data = {"test_script": {"actions": []}}
-        script_file = scripts_dir / "test_scripts.json"
-        script_file.write_text(json.dumps(script_data))
-
-        # Invalid dialog
-        dialog_data = {"merchant": {"0": {}}}  # Missing text field
-        dialog_file = dialogs_dir / "npc_dialogs.json"
-        dialog_file.write_text(json.dumps(dialog_data))
+        (scripts_dir / "test.json").write_text(json.dumps({"test_script": {"actions": []}}))
+        (dialogs_dir / "dialogs" / "npc.json").write_text(json.dumps({"merchant/0": {}}))
 
         command = ValidateCommand()
-        args = argparse.Namespace(
-            scripts_path=scripts_dir, type="all", dialogs_path=dialogs_dir, maps_path=None, inventory_items_path=None
-        )
         with pytest.raises(SystemExit) as exc_info:
-            command.execute(args)
+            command.execute(self._make_args(scripts_path=scripts_dir, dialogs_path=dialogs_dir))
 
-        # Should exit with error - both validators found issues
         assert exc_info.value.code == 1
 
     def test_validate_aggregates_errors_from_multiple_files(self, scripts_dir: Path, setup_registries: None) -> None:
         """Test that errors from multiple files are aggregated."""
-        # First invalid script file
-        script_data1 = {"script1": {"actions": []}}
-        script_file1 = scripts_dir / "game_scripts.json"
-        script_file1.write_text(json.dumps(script_data1))
-
-        # Second invalid script file
-        script_data2 = {"script2": {"actions": []}}
-        script_file2 = scripts_dir / "npc_scripts.json"
-        script_file2.write_text(json.dumps(script_data2))
+        (scripts_dir / "game.json").write_text(json.dumps({"script1": {"actions": []}}))
+        (scripts_dir / "npc.json").write_text(json.dumps({"script2": {"actions": []}}))
 
         command = ValidateCommand()
-        args = argparse.Namespace(scripts_path=scripts_dir, type="scripts", dialogs_path=None)
         with pytest.raises(SystemExit) as exc_info:
-            command.execute(args)
+            command.execute(self._make_args(scripts_path=scripts_dir))
 
-        # Should exit with error - multiple files with errors
         assert exc_info.value.code == 1
 
     def test_validate_cross_reference_errors(self, dialogs_dir: Path, maps_dir: Path) -> None:
         """Test that cross-reference validation errors are detected and aggregated."""
-        # Create a dialog that references a non-existent NPC (no map files, so no NPCs exist)
-        dialog_data = {
-            "nonexistent_npc": {
-                "0": {
-                    "text": ["Hello, traveler!"],
-                }
-            }
-        }
-
-        dialog_file = dialogs_dir / "npc_dialogs.json"
-        dialog_file.write_text(json.dumps(dialog_data))
+        (dialogs_dir / "dialogs" / "npc.json").write_text(
+            json.dumps({"nonexistent_npc/0": {"text": ["Hello, traveler!"]}})
+        )
 
         command = ValidateCommand()
-        args = argparse.Namespace(
-            scripts_path=None,
-            type="dialogs",
-            dialogs_path=dialogs_dir,
-            maps_path=maps_dir,
-        )
         with pytest.raises(SystemExit) as exc_info:
-            command.execute(args)
+            command.execute(self._make_args(dialogs_path=dialogs_dir, maps_path=maps_dir))
 
-        # Should exit with error due to cross-reference validation failure
         assert exc_info.value.code == 1
+
+    def test_validate_with_explicit_sprites_and_npcs_paths(self, tmp_path: Path) -> None:
+        """Test validate includes sprites and npcs validators when paths are explicitly provided."""
+        sprites_file = tmp_path / "sprites.json"
+        sprites_file.write_text(json.dumps({}))
+        npcs_file = tmp_path / "npcs.json"
+        npcs_file.write_text(json.dumps({}))
+
+        command = ValidateCommand()
+        # Should not raise — explicit paths trigger the validators even if files are otherwise absent
+        command.execute(self._make_args(sprites_path=sprites_file, npcs_path=npcs_file))
+
+    def test_validate_with_explicit_players_path(self, tmp_path: Path) -> None:
+        """Test validate includes players validator when path is explicitly provided."""
+        players_file = tmp_path / "players.json"
+        players_file.write_text(json.dumps({}))
+
+        command = ValidateCommand()
+        command.execute(self._make_args(players_path=players_file))
