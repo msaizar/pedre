@@ -68,6 +68,16 @@ class BaseContentRegistry:
         """Return all definitions."""
         return dict(self._definitions)
 
+    def load_from_directory(self, directory: Path) -> None:
+        """Load definitions from a content directory.
+
+        Default implementation loads from a single file at ``directory / filename``.
+        Override in subclasses that load from multiple files (e.g. one per scene).
+        """
+        file_path = directory / self.filename
+        if file_path.exists():
+            self.load_from_file(file_path)
+
     def load_from_file(self, file_path: Path) -> None:
         """Load definitions from file."""
         if not file_path.exists():
@@ -191,9 +201,7 @@ class ContentRegistry:
     def load_from_directory(self, directory: Path) -> None:
         """Load JSON files from directory for each registered content type."""
         for sub_registry in self._sub_registries.values():
-            file_path = directory / sub_registry.filename
-            if file_path.exists():
-                sub_registry.load_from_file(file_path)
+            sub_registry.load_from_directory(directory)
 
     def validate_cross_references(self) -> None:
         """Call validate_cross_references on each sub-registry."""
